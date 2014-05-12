@@ -5,7 +5,7 @@
 	;  Коллекция - http://forum.script-coding.com/viewtopic.php?pid=72459#p72459
 	;  GitHub - https://github.com/serzh82saratov/AhkSpy/blob/master/AhkSpy.ahk
 
-AhkSpyVersion=1.120
+AhkSpyVersion=1.122
 #NoTrayIcon
 #SingleInstance Force
 #NoEnv
@@ -138,8 +138,10 @@ PausedScript:
 	Try SetTimer, Loop_%ThisMode%, % isPaused ? "Off" : "On"
 	If ThisMode = Hotkey
 		Hotkey_Hook := isPaused ? 0 : 1
-	Menu, Sys, % isPaused ? "Check" : "UnCheck", Pause AhkSpy
+	If !WinActive("ahk_id" hGui)
+		(ThisMode = "Mouse" ? Spot_Win() : ThisMode = "Win" ? Spot_Mouse() : 0)
 	HideMarker()
+	Menu, Sys, % isPaused ? "Check" : "UnCheck", Pause AhkSpy
 	Return
 
 #If WinActive("ahk_id" hGui)
@@ -1212,4 +1214,4 @@ Class Events  {
 		(!isPaused ? (Hotkey_Hook := 1) : 0)
 	}
 }
-	;      
+	;       
