@@ -5,7 +5,7 @@
 	;  Коллекция - http://forum.script-coding.com/viewtopic.php?pid=72459#p72459
 	;  GitHub - https://github.com/serzh82saratov/AhkSpy/blob/master/AhkSpy.ahk
 
-AhkSpyVersion=1.118
+AhkSpyVersion=1.119 
 #NoTrayIcon
 #SingleInstance Force
 #NoEnv
@@ -1132,7 +1132,7 @@ Class Update  {
 		Try Text := oIeUpd.Document.Body.outerText
 		If (url = txt && RegExMatch(Text, "im)version\s*(?<er>.*?)\s*$", v))
 			(ver > AhkSpyVersion) ? Update.Navigate(Ahk) : Update.Release()
-		else If (url = ahk && InStr(Text, "AhkSpy"))
+		else If (url = ahk && InStr(Text, "AhkSpyVersion"))
 		{ 
 			Update.Release()
 			MsgBox, % 32+262144+8192+4, AhkSpy, Exist new version!`nUpdate v%AhkSpyVersion% to v%ver%?
@@ -1213,4 +1213,4 @@ Class Events  {
 		(!isPaused ? (Hotkey_Hook := 1) : 0)
 	}
 }
-	;       
+	;      
