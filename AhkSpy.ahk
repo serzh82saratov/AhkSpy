@@ -5,7 +5,7 @@
 	;  Коллекция - http://forum.script-coding.com/viewtopic.php?pid=72459#p72459
 	;  GitHub - https://github.com/serzh82saratov/AhkSpy/blob/master/AhkSpy.ahk
 
-AhkSpyVersion=1.122
+AhkSpyVersion=1.123
 #NoTrayIcon
 #SingleInstance Force
 #NoEnv
@@ -136,7 +136,7 @@ PausedScript:
 	isPaused := !isPaused
 	oDoc.body.style.background := (ColorBg := isPaused ? ColorBgPaused : ColorBgOriginal)
 	Try SetTimer, Loop_%ThisMode%, % isPaused ? "Off" : "On"
-	If ThisMode = Hotkey
+	If (ThisMode = "Hotkey" && WinActive("ahk_id" hGui))
 		Hotkey_Hook := isPaused ? 0 : 1
 	If !WinActive("ahk_id" hGui)
 		(ThisMode = "Mouse" ? Spot_Win() : ThisMode = "Win" ? Spot_Mouse() : 0)
