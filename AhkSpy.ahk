@@ -5,7 +5,7 @@
 	;  Коллекция - http://forum.script-coding.com/viewtopic.php?pid=72459#p72459
 	;  GitHub - https://github.com/serzh82saratov/AhkSpy/blob/master/AhkSpy.ahk
 
-AhkSpyVersion=v1.115
+AhkSpyVersion=1.116
 #NoTrayIcon
 #SingleInstance Force
 #NoEnv
@@ -28,12 +28,12 @@ Global ThisMode := "Mouse"						;  Стартовый режим - Win|Mouse|Hot
 , ColorParam := "189200"						;  Цвет шрифта параметров
 
 , DP := "  <span style='color: " Color# "'>" # "</span>  ", D1, D2, DB
-, StateLight:=((t:=IniRead("StateLight"))=""||t>3?3:t), StateLightAcc:=IniRead("StateLightAcc")
-, hGui, hActiveX, hMarkerGui, hMarkerAccGui, oDoc, ShowMarker, isIE, isPaused, ScrollPos:={}, AccCoord:=[]
+, StateLight:=((t:=IniRead("StateLight"))=""||t>3?3:t), StateLightAcc:=IniRead("StateLightAcc"), StateUpdate:=IniRead("StateUpdate")
+, hGui, hActiveX, hMarkerGui, hMarkerAccGui, oDoc, oIeUpd, UpdTry, ShowMarker, isIE, isPaused, ScrollPos:={}, AccCoord:=[]
 , HWND_3, WinCloseID, WinProcessPath, CtrlStyle, HTML_Win, HTML_Mouse, HTML_Hotkey, o_edithotkey, o_editkeyname, rmCtrlX, rmCtrlY
 , copy_button := "<span contenteditable='false' unselectable='on'><button id='copy_button'> copy </button></span>"
 , pause_button := "<span contenteditable='false' unselectable='on'><button id='pause_button'> pause </button></span>"
-TitleTextP2 := "     ( Shift+Tab - Freeze | RButton - CopySelected | Shift - Backlight object | Break - Pause )     " AhkSpyVersion
+TitleTextP2 := "     ( Shift+Tab - Freeze | RButton - CopySelected | Shift - Backlight object | Break - Pause )     v" AhkSpyVersion
 
 wKey := 140					;  Ширина кнопок
 wColor := wKey//2			;  Ширина цветного фрагмента
@@ -62,7 +62,7 @@ Gui, TB: Show, % "x0 y0 NA h" HeigtButton " w" widthTB := wKey*3+wColor
 
 OnExit, Exit
 OnMessage(0x201, "WM_LBUTTONDOWN")
-ComObjConnect(oDoc, eventshtml)
+ComObjConnect(oDoc, Events)
 DllCall("RegisterShellHookWindow", "UInt", A_ScriptHwnd)
 OnMessage(DllCall("RegisterWindowMessage", "str", "SHELLHOOK"), "ShellProc")
 
@@ -88,9 +88,17 @@ Menu, Sys, Add, Pause AhkSpy, PausedScript
 Menu, Sys, Add, Default size, DefaultSize
 Menu, Sys, Add, Reload AhkSpy, Reload
 Menu, Sys, Add
-Menu, Help, Add, About AhkSpy, Sys_Help
 If !A_IsCompiled
-	Menu, Help, Add, Update AhkSpy, UpdateAhkSpy
+{
+	Menu, Sys, Add, Check updates, CheckUpdate
+	Menu, Sys, % StateUpdate ? "Check" : "UnCheck", Check updates
+	Menu, Sys, Add
+	If StateUpdate
+		SetTimer, UpdateAhkSpy, -1500
+}
+Else
+	StateUpdate := IniWrite(0, "StateUpdate")
+Menu, Help, Add, About AhkSpy, Sys_Help
 Menu, Help, Add
 If FileExist(SubStr(A_AhkPath,1,InStr(A_AhkPath,"\",,0,1)) "AutoHotkey.chm")
 	Menu, Help, Add, AutoHotKey help file, LaunchHelp
@@ -690,8 +698,8 @@ Write_Hotkey(Mods, KeyName, Prefix, Hotkey, VkCode, SCCode, ThisKey)   {
 
 Write_HotkeyHTML() {
 	oDoc.body.innerHTML := HTML_Hotkey
-	Try ComObjConnect(o_edithotkey:=oDoc.getElementById("edithotkey"),eventshtml)
-	Try ComObjConnect(o_editkeyname:=oDoc.getElementById("editkeyname"),eventshtml)
+	Try ComObjConnect(o_edithotkey:=oDoc.getElementById("edithotkey"),Events)
+	Try ComObjConnect(o_editkeyname:=oDoc.getElementById("editkeyname"),Events)
 }
 
 	; _________________________________________________ Hotkey Rules _________________________________________________
@@ -824,39 +832,21 @@ GuiSize:
 Exit:
 GuiClose:
 GuiEscape:
-	Hotkey_Control(0), oDoc := ""
+	Try Hotkey_Control(0), oDoc := "", Update.Release()
 	DllCall("DeregisterShellHookWindow", "UInt", A_ScriptHwnd)
-	ExitApp
+	Try ExitApp
 
 TitleShow:
 	SendMessage, 0xC, 0, &TitleText, , ahk_id %hGui%
 	Return
 
 RevAhkVersion:
-	If A_AhkVersion < 1.1.12.00
+	If A_AhkVersion < 1.1.11.00
 	{
 		MsgBox Requires AutoHotkey_L version 1.1.12.00+
 		LaunchLink("http://ahkscript.org/download/")
 		ExitApp
 	}
-	Return
-
-UpdateAhkSpy:
-	Gui, 1: Minimize
-    SetTaskbarProgress(1)
-	UrlDownloadToFile, https://raw.githubusercontent.com/serzh82saratov/AhkSpy/master/AhkSpy.ahk, %A_ScriptFullPath%
-	If !ErrorLevel
-	{
-		Run %A_ScriptFullPath%
-		ExitApp
-	}
-	MsgBox, % 16+262144+8192, AhkSpy, Update error
-	Gui, 1: Show
-    SetTaskbarProgress(0)
-	Return
-
-ShowSys:
-	Menu, Sys, Show
 	Return
 
 LaunchHelp:
@@ -872,6 +862,21 @@ DefaultSize:
 
 Reload:
 	Reload
+	Return
+
+UpdateAhkSpy:
+	Update.Start()
+	Return
+
+CheckUpdate:
+	Try StateUpdate := IniWrite(!StateUpdate, "StateUpdate"), Update.Release()
+	Menu, Sys, % StateUpdate ? "Check" : "UnCheck", Check updates
+	If StateUpdate
+		GoSub, UpdateAhkSpy
+	Return
+
+ShowSys:
+	Menu, Sys, Show
 	Return
 
 Sys_Backlight:
@@ -908,13 +913,6 @@ WM_CONTEXTMENU() {
 		SetTimer ShowSys, -1
 		Return 0
 	}
-}
-
-SetTaskbarProgress(s)   {
-    static tbl
-    if !tbl
-		Try tbl := ComObjCreate("{56FDF344-FD6D-11d0-958A-006097C9A090}", "{ea1afb91-9e28-4b86-90e9-9e9f8a5eefaf}")
-	DllCall(NumGet(NumGet(tbl+0)+40), "uint", tbl, "uint", hGui, "uint", s)
 }
 
 LaunchLink(Link)   {
@@ -1124,9 +1122,48 @@ NextLink(s = "")   {
 	oDoc.body.scrollTop := curpos + res
 }
 
+Class Update  {
+    DocumentComplete(o, url)
+	{
+		Global AhkSpyVersion
+		Static ver, ahk := "https://raw.githubusercontent.com/serzh82saratov/AhkSpy/master/AhkSpy.ahk"
+			, txt = "https://raw.githubusercontent.com/serzh82saratov/AhkSpy/master/Readme.txt"
+
+		Try Text := oIeUpd.Document.Body.outerText
+		If (url = txt && RegExMatch(Text, "im)version\s*(?<er>.*?)\s*$", v))
+			(ver > AhkSpyVersion) ? Update.Navigate(Ahk) : Update.Release()
+		else If (url = ahk && InStr(Text, "AhkSpy"))
+		{ 
+			Update.Release()
+			MsgBox, % 32+262144+8192+4, AhkSpy, Exist new version!`nUpdate v%AhkSpyVersion% to v%ver%?
+			IfMsgBox, No
+				Return
+			File := FileOpen(A_ScriptFullPath, "w", "UTF-8")
+			File.Length := 0, File.Write(Text), File.Close()
+			Reload
+		}
+		else If (url = ahk && ++UpdTry < 3)
+			Update.Navigate(Ahk)
+		else
+			Update.Release()
+    }
+	Navigate(url)  {
+		Try (!oIeUpd ? oIeUpd := ComObjCreate("InternetExplorer.Application") : 0)
+		Try oIeUpd.navigate(url), ComObjConnect(oIeUpd, Update)
+	}
+    Start()  {
+		If InStr(FileExist(A_ScriptFullPath), "R")
+			Return
+		Update.Navigate("https://raw.githubusercontent.com/serzh82saratov/AhkSpy/master/Readme.txt")
+	}
+    Release()  {
+		Try oIeUpd.Quit(), oIeUpd := "", UpdTry := 0
+	}
+}
+
 	;  http://forum.script-coding.com/viewtopic.php?pid=82283#p82283
 
-class eventshtml  {
+Class Events  {
 	onclick()   {
 		oevent := oDoc.parentWindow.event.srcElement
 		If (oevent.TagName = "BUTTON")
@@ -1176,4 +1213,4 @@ class eventshtml  {
 		(!isPaused ? (Hotkey_Hook := 1) : 0)
 	}
 }
-	;  
+	;   
