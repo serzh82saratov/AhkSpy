@@ -3,8 +3,9 @@
 	;  Спасибо wisgest за помощь в создании HTML интерфейса этой версии скрипта
 	;  Тема - http://forum.script-coding.com/viewtopic.php?pid=72244#p72244
 	;  Коллекция - http://forum.script-coding.com/viewtopic.php?pid=72459#p72459
+	;  github - https://github.com/serzh82saratov/AhkSpy/blob/master/AhkSpy.ahk
 
-AhkSpyVersion = 1.111
+AhkSpyVersion = 1.112
 #NoTrayIcon
 #SingleInstance Force
 #NoEnv
@@ -1152,4 +1153,3 @@ class eventshtml  {
 	}
 }
 	;
- 
