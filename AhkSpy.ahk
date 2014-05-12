@@ -5,7 +5,7 @@
 	;  Коллекция - http://forum.script-coding.com/viewtopic.php?pid=72459#p72459
 	;  GitHub - https://github.com/serzh82saratov/AhkSpy/blob/master/AhkSpy.ahk
 
-AhkSpyVersion=1.119 
+AhkSpyVersion=1.120
 #NoTrayIcon
 #SingleInstance Force
 #NoEnv
@@ -1123,8 +1123,7 @@ NextLink(s = "")   {
 }
 
 Class Update  {
-    DocumentComplete(o, url)
-	{
+    DocumentComplete(o, url)   {
 		Global AhkSpyVersion
 		Static ver, ahk := "https://raw.githubusercontent.com/serzh82saratov/AhkSpy/master/AhkSpy.ahk"
 			, txt = "https://raw.githubusercontent.com/serzh82saratov/AhkSpy/master/Readme.txt"
@@ -1147,16 +1146,16 @@ Class Update  {
 		else
 			Update.Release()
     }
-	Navigate(url)  {
+	Navigate(url)   {
 		Try (!oIeUpd ? oIeUpd := ComObjCreate("InternetExplorer.Application") : 0)
 		Try oIeUpd.navigate(url), ComObjConnect(oIeUpd, Update)
 	}
-    Start()  {
+    Start()   {
 		If InStr(FileExist(A_ScriptFullPath), "R")
 			Return
 		Update.Navigate("https://raw.githubusercontent.com/serzh82saratov/AhkSpy/master/Readme.txt")
 	}
-    Release()  {
+    Release()   {
 		Try oIeUpd.Quit(), oIeUpd := "", UpdTry := 0
 	}
 }
