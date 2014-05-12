@@ -1213,4 +1213,4 @@ Class Events  {
 		(!isPaused ? (Hotkey_Hook := 1) : 0)
 	}
 }
-	;     
+	;      
