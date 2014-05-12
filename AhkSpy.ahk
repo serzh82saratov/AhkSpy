@@ -5,7 +5,7 @@
 	;  Коллекция - http://forum.script-coding.com/viewtopic.php?pid=72459#p72459
 	;  GitHub - https://github.com/serzh82saratov/AhkSpy/blob/master/AhkSpy.ahk
 
-AhkSpyVersion=1.116
+AhkSpyVersion=1.117
 #NoTrayIcon
 #SingleInstance Force
 #NoEnv
@@ -1142,7 +1142,7 @@ Class Update  {
 			File.Length := 0, File.Write(Text), File.Close()
 			Reload
 		}
-		else If (url = ahk && ++UpdTry < 3)
+		else If ((url = ahk || url = txt) && ++UpdTry < 6)
 			Update.Navigate(Ahk)
 		else
 			Update.Release()
@@ -1213,4 +1213,4 @@ Class Events  {
 		(!isPaused ? (Hotkey_Hook := 1) : 0)
 	}
 }
-	;   
+	;     
