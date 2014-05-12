@@ -5,7 +5,7 @@
 	;  Коллекция - http://forum.script-coding.com/viewtopic.php?pid=72459#p72459
 	;  GitHub - https://github.com/serzh82saratov/AhkSpy/blob/master/AhkSpy.ahk
 
-AhkSpyVersion=v1.114
+AhkSpyVersion=v1.115
 #NoTrayIcon
 #SingleInstance Force
 #NoEnv
@@ -89,12 +89,13 @@ Menu, Sys, Add, Default size, DefaultSize
 Menu, Sys, Add, Reload AhkSpy, Reload
 Menu, Sys, Add
 Menu, Help, Add, About AhkSpy, Sys_Help
+If !A_IsCompiled
+	Menu, Help, Add, Update AhkSpy, UpdateAhkSpy
+Menu, Help, Add
 If FileExist(SubStr(A_AhkPath,1,InStr(A_AhkPath,"\",,0,1)) "AutoHotkey.chm")
 	Menu, Help, Add, AutoHotKey help file, LaunchHelp
 Menu, Help, Add, AutoHotKey official help online, Sys_Help
 Menu, Help, Add, AutoHotKey russian help online, Sys_Help
-If !A_IsCompiled
-	Menu, Help, Add, Update AhkSpy, UpdateAhkSpy
 Menu, Sys, Add, Help, :Help
 Menu, Sys, Color, % ColorBgOriginal
 OnMessage(0x7B, "WM_CONTEXTMENU")
@@ -845,7 +846,10 @@ UpdateAhkSpy:
     SetTaskbarProgress(1)
 	UrlDownloadToFile, https://raw.githubusercontent.com/serzh82saratov/AhkSpy/master/AhkSpy.ahk, %A_ScriptFullPath%
 	If !ErrorLevel
+	{
 		Run %A_ScriptFullPath%
+		ExitApp
+	}
 	MsgBox, % 16+262144+8192, AhkSpy, Update error
 	Gui, 1: Show
     SetTaskbarProgress(0)
@@ -1172,4 +1176,4 @@ class eventshtml  {
 		(!isPaused ? (Hotkey_Hook := 1) : 0)
 	}
 }
-	; 
+	;  
