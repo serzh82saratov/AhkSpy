@@ -865,7 +865,7 @@ Sys_Backlight:
 
 Sys_Acclight:
 	StateLightAcc := IniWrite(!StateLightAcc, "StateLightAcc"), HideAccMarker()
-	Menu, Sys, % StateLightAcc ? "Check" : "UnCheck", Acc object backlight
+	Menu, Sys, % StateLightAcc ? "Check" : "UnCheck", Acc span id=object backlight
 	Return
 
 Sys_Help:
@@ -1152,4 +1152,4 @@ class eventshtml  {
 		(!isPaused ? (Hotkey_Hook := 1) : 0)
 	}
 }
-	;
+	;  
