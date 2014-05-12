@@ -5,7 +5,7 @@
 	;  Коллекция - http://forum.script-coding.com/viewtopic.php?pid=72459#p72459
 	;  GitHub - https://github.com/serzh82saratov/AhkSpy/blob/master/AhkSpy.ahk
 
-AhkSpyVersion = v1.113
+AhkSpyVersion=v1.114
 #NoTrayIcon
 #SingleInstance Force
 #NoEnv
@@ -93,6 +93,8 @@ If FileExist(SubStr(A_AhkPath,1,InStr(A_AhkPath,"\",,0,1)) "AutoHotkey.chm")
 	Menu, Help, Add, AutoHotKey help file, LaunchHelp
 Menu, Help, Add, AutoHotKey official help online, Sys_Help
 Menu, Help, Add, AutoHotKey russian help online, Sys_Help
+If !A_IsCompiled
+	Menu, Help, Add, Update AhkSpy, UpdateAhkSpy
 Menu, Sys, Add, Help, :Help
 Menu, Sys, Color, % ColorBgOriginal
 OnMessage(0x7B, "WM_CONTEXTMENU")
@@ -838,6 +840,17 @@ RevAhkVersion:
 	}
 	Return
 
+UpdateAhkSpy:
+	Gui, 1: Minimize
+    SetTaskbarProgress(1)
+	UrlDownloadToFile, https://raw.githubusercontent.com/serzh82saratov/AhkSpy/master/AhkSpy.ahk, %A_ScriptFullPath%
+	If !ErrorLevel
+		Run %A_ScriptFullPath%
+	MsgBox, % 16+262144+8192, AhkSpy, Update error
+	Gui, 1: Show
+    SetTaskbarProgress(0)
+	Return
+
 ShowSys:
 	Menu, Sys, Show
 	Return
@@ -891,6 +904,13 @@ WM_CONTEXTMENU() {
 		SetTimer ShowSys, -1
 		Return 0
 	}
+}
+
+SetTaskbarProgress(s)   {
+    static tbl
+    if !tbl
+		Try tbl := ComObjCreate("{56FDF344-FD6D-11d0-958A-006097C9A090}", "{ea1afb91-9e28-4b86-90e9-9e9f8a5eefaf}")
+	DllCall(NumGet(NumGet(tbl+0)+40), "uint", tbl, "uint", hGui, "uint", s)
 }
 
 LaunchLink(Link)   {
@@ -1138,7 +1158,7 @@ class eventshtml  {
 		If (thisid = "winclose")
 		{
 			WinGet, WinPID, PID, ahk_id %WinCloseID%
-			WinKill, ahk_id %WinCloseID%,, 0.4 
+			WinKill, ahk_id %WinCloseID%,, 0.4
 			IfWinExist, ahk_id %WinCloseID%
 				Process, Close, %WinPID%
 		}
@@ -1152,4 +1172,4 @@ class eventshtml  {
 		(!isPaused ? (Hotkey_Hook := 1) : 0)
 	}
 }
-	;
+	; 
