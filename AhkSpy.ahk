@@ -3,7 +3,7 @@
 	;  Спасибо wisgest за помощь в создании HTML интерфейса этой версии скрипта
 	;  Тема - http://forum.script-coding.com/viewtopic.php?pid=72244#p72244
 	;  Коллекция - http://forum.script-coding.com/viewtopic.php?pid=72459#p72459
-	;  github - https://github.com/serzh82saratov/AhkSpy/blob/master/AhkSpy.ahk
+	;  GitHub - https://github.com/serzh82saratov/AhkSpy/blob/master/AhkSpy.ahk
 
 AhkSpyVersion = v1.112
 #NoTrayIcon
@@ -1152,4 +1152,4 @@ class eventshtml  {
 		(!isPaused ? (Hotkey_Hook := 1) : 0)
 	}
 }
-	;   
+	;
