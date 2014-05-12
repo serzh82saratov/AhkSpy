@@ -5,7 +5,7 @@
 	;  Коллекция - http://forum.script-coding.com/viewtopic.php?pid=72459#p72459
 	;  GitHub - https://github.com/serzh82saratov/AhkSpy/blob/master/AhkSpy.ahk
 
-AhkSpyVersion = v1.112
+AhkSpyVersion = v1.113
 #NoTrayIcon
 #SingleInstance Force
 #NoEnv
@@ -865,7 +865,7 @@ Sys_Backlight:
 
 Sys_Acclight:
 	StateLightAcc := IniWrite(!StateLightAcc, "StateLightAcc"), HideAccMarker()
-	Menu, Sys, % StateLightAcc ? "Check" : "UnCheck", Acc span id=object backlight
+	Menu, Sys, % StateLightAcc ? "Check" : "UnCheck", Acc object backlight
 	Return
 
 Sys_Help:
@@ -1152,4 +1152,4 @@ class eventshtml  {
 		(!isPaused ? (Hotkey_Hook := 1) : 0)
 	}
 }
-	;  
+	;
