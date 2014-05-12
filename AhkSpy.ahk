@@ -5,7 +5,7 @@
 	;  Коллекция - http://forum.script-coding.com/viewtopic.php?pid=72459#p72459
 	;  github - https://github.com/serzh82saratov/AhkSpy/blob/master/AhkSpy.ahk
 
-AhkSpyVersion = 1.112
+AhkSpyVersion = v1.112
 #NoTrayIcon
 #SingleInstance Force
 #NoEnv
@@ -33,7 +33,7 @@ Global ThisMode := "Mouse"						;  Стартовый режим - Win|Mouse|Hot
 , HWND_3, WinCloseID, WinProcessPath, CtrlStyle, HTML_Win, HTML_Mouse, HTML_Hotkey, o_edithotkey, o_editkeyname, rmCtrlX, rmCtrlY
 , copy_button := "<span contenteditable='false' unselectable='on'><button id='copy_button'> copy </button></span>"
 , pause_button := "<span contenteditable='false' unselectable='on'><button id='pause_button'> pause </button></span>"
-TitleTextP2 := "     ( Shift+Tab - Freeze | RButton - CopySelected | Shift - Backlight object | Break - Pause )     v" AhkSpyVersion
+TitleTextP2 := "     ( Shift+Tab - Freeze | RButton - CopySelected | Shift - Backlight object | Break - Pause )     " AhkSpyVersion
 
 wKey := 140					;  Ширина кнопок
 wColor := wKey//2			;  Ширина цветного фрагмента
@@ -1152,4 +1152,4 @@ class eventshtml  {
 		(!isPaused ? (Hotkey_Hook := 1) : 0)
 	}
 }
-	;
+	;   
