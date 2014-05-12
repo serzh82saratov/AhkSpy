@@ -5,7 +5,7 @@
 	;  Коллекция - http://forum.script-coding.com/viewtopic.php?pid=72459#p72459
 	;  GitHub - https://github.com/serzh82saratov/AhkSpy/blob/master/AhkSpy.ahk
 
-AhkSpyVersion=1.123
+AhkSpyVersion=1.124
 #NoTrayIcon
 #SingleInstance Force
 #NoEnv
@@ -1125,16 +1125,16 @@ NextLink(s = "")   {
 }
 
 Class Update  {
-    DocumentComplete(o, url)   {
+	DocumentComplete(o, url)   {
 		Global AhkSpyVersion
 		Static ver, ahk := "https://raw.githubusercontent.com/serzh82saratov/AhkSpy/master/AhkSpy.ahk"
 			, txt = "https://raw.githubusercontent.com/serzh82saratov/AhkSpy/master/Readme.txt"
 
 		Try Text := oIeUpd.Document.Body.outerText
 		If (url = txt && RegExMatch(Text, "im)version\s*(?<er>.*?)\s*$", v))
-			(ver > AhkSpyVersion) ? Update.Navigate(Ahk) : Update.Release()
-		else If (url = ahk && InStr(Text, "AhkSpyVersion"))
-		{ 
+			(ver > AhkSpyVersion) ? Update.Navigate(ahk) : Update.Release()
+		Else If (url = ahk && InStr(Text, "AhkSpyVersion"))
+		{
 			Update.Release()
 			MsgBox, % 32+262144+8192+4, AhkSpy, Exist new version!`nUpdate v%AhkSpyVersion% to v%ver%?
 			IfMsgBox, No
@@ -1143,21 +1143,21 @@ Class Update  {
 			File.Length := 0, File.Write(Text), File.Close()
 			Reload
 		}
-		else If ((url = ahk || url = txt) && ++UpdTry < 6) 
+		Else If ((url = ahk || url = txt) && ++UpdTry < 6)
 			Update.Navigate(url)
-		else
+		Else
 			Update.Release()
-    }
+	}
 	Navigate(url)   {
 		Try (!oIeUpd ? oIeUpd := ComObjCreate("InternetExplorer.Application") : 0)
 		Try oIeUpd.navigate(url), ComObjConnect(oIeUpd, Update)
 	}
-    Start()   {
+	Start()   {
 		If InStr(FileExist(A_ScriptFullPath), "R")
 			Return
 		Update.Navigate("https://raw.githubusercontent.com/serzh82saratov/AhkSpy/master/Readme.txt")
 	}
-    Release()   {
+	Release()   {
 		Try oIeUpd.Quit(), oIeUpd := "", UpdTry := 0
 	}
 }
@@ -1214,4 +1214,4 @@ Class Events  {
 		(!isPaused ? (Hotkey_Hook := 1) : 0)
 	}
 }
-	;       
+	; 
