@@ -5,7 +5,7 @@
 	;  Коллекция - http://forum.script-coding.com/viewtopic.php?pid=72459#p72459
 	;  GitHub - https://github.com/serzh82saratov/AhkSpy/blob/master/AhkSpy.ahk
 
-Global AhkSpyVersion=1.129
+Global AhkSpyVersion=1.130
 #NoTrayIcon
 #SingleInstance Force
 #NoEnv
@@ -1129,9 +1129,9 @@ Update(in=1)   {
 		, url1 := "https://raw.githubusercontent.com/serzh82saratov/AhkSpy/master/Readme.txt"
 		, url2 := "https://raw.githubusercontent.com/serzh82saratov/AhkSpy/master/AhkSpy.ahk"
 	If !req
-		Try req := ComObjCreate("WinHttp.WinHttpRequest.5.1")
-	Try req.Option(6) := 0, req.open("GET", url%in%, 1), req.send(), att:=0
-	SetTimer, Upd_Verifi, -2000
+		Try req := ComObjCreate("WinHttp.WinHttpRequest.5.1"), req.Option(6)
+	Try req.open("GET", url%in%, 1), req.send(), att:=0
+	SetTimer, Upd_Verifi, -3000
 	Return
 
 	Upd_Verifi:
@@ -1139,7 +1139,7 @@ Update(in=1)   {
 		{
 			Try Text := req.responseText
 			Try If (req.Option(1) = url1)
-				Return ((ver:=RegExReplace(Text, "i).*?version\s*(.*?)\R.*", "$1")) > AhkSpyVersion) ? Update(2) : 0
+				Return (ver:=RegExReplace(Text, "i).*?version\s*(.*?)\R.*", "$1")) > AhkSpyVersion ? Update(2) : 0
 			Try If (req.Option(1) = url2 && !InStr(Text, "AhkSpyVersion"))
 				Return
 			MsgBox, % 32+262144+4, AhkSpy, Exist new version!`nUpdate v%AhkSpyVersion% to v%ver%?
@@ -1149,7 +1149,8 @@ Update(in=1)   {
 			File.Length := 0, File.Write(Text), File.Close()
 			Reload
 		}
-		SetTimer, Upd_Verifi, % (++att > 60 || Status != "") ? "Off" : -1000
+		Error := (++att = 20 || Status != "")
+		SetTimer,  % Error ? "UpdateAhkSpy" : "Upd_Verifi", % Error ? -60000 : -3000
 		Return
 }
 
