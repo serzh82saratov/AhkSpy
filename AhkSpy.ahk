@@ -1138,7 +1138,7 @@ Update(in=1)   {
 		Try If (Status:=req.Status) = 200
 		{
 			Try Text := req.responseText
-			If (req.Option(1) = url1)
+			Try If (req.Option(1) = url1)
 				Return (ver:=RegExReplace(Text, "i).*?version\s*(.*?)\R.*", "$1")) > AhkSpyVersion ? Update(2) : 0
 			If (!InStr(Text, "AhkSpyVersion"))
 				Return
