@@ -2,10 +2,10 @@
 	;  Автор - serzh82saratov
 	;  Спасибо wisgest за помощь в создании HTML интерфейса этой версии скрипта
 	;  Тема - http://forum.script-coding.com/viewtopic.php?pid=72244#p72244
-	;  Коллекция - http://forum.script-coding.com/viewtopic.php?pid=72459#p72459  
+	;  Коллекция - http://forum.script-coding.com/viewtopic.php?pid=72459#p72459
 	;  GitHub - https://github.com/serzh82saratov/AhkSpy/blob/master/AhkSpy.ahk
 
-AhkSpyVersion=1.125
+Global AhkSpyVersion=1.126
 #NoTrayIcon
 #SingleInstance Force
 #NoEnv
@@ -29,7 +29,7 @@ Global ThisMode := "Mouse"						;  Стартовый режим - Win|Mouse|Hot
 
 , DP := "  <span style='color: " Color# "'>" # "</span>  ", D1, D2, DB
 , StateLight:=((t:=IniRead("StateLight"))=""||t>3?3:t), StateLightAcc:=IniRead("StateLightAcc"), StateUpdate:=IniRead("StateUpdate")
-, hGui, hActiveX, hMarkerGui, hMarkerAccGui, oDoc, oIeUpd, UpdTry, ShowMarker, isIE, isPaused, ScrollPos:={}, AccCoord:=[]
+, hGui, hActiveX, hMarkerGui, hMarkerAccGui, oDoc, ShowMarker, isIE, isPaused, ScrollPos:={}, AccCoord:=[]
 , HWND_3, WinCloseID, WinProcessPath, CtrlStyle, HTML_Win, HTML_Mouse, HTML_Hotkey, o_edithotkey, o_editkeyname, rmCtrlX, rmCtrlY
 , copy_button := "<span contenteditable='false' unselectable='on'><button id='copy_button'> copy </button></span>"
 , pause_button := "<span contenteditable='false' unselectable='on'><button id='pause_button'> pause </button></span>"
@@ -94,7 +94,7 @@ If !A_IsCompiled
 	Menu, Sys, % StateUpdate ? "Check" : "UnCheck", Check updates
 	Menu, Sys, Add
 	If StateUpdate
-		SetTimer, UpdateAhkSpy, -1500
+		SetTimer, UpdateAhkSpy, -1000
 }
 Else
 	StateUpdate := IniWrite(0, "StateUpdate")
@@ -834,7 +834,7 @@ GuiSize:
 Exit:
 GuiClose:
 GuiEscape:
-	Try Hotkey_Control(0), oDoc := "", Update.Release()
+	Try Hotkey_Control(0), oDoc := ""
 	DllCall("DeregisterShellHookWindow", "UInt", A_ScriptHwnd)
 	Try ExitApp
 
@@ -867,11 +867,11 @@ Reload:
 	Return
 
 UpdateAhkSpy:
-	Update.Start()
+	Update(1)
 	Return
 
 CheckUpdate:
-	Try StateUpdate := IniWrite(!StateUpdate, "StateUpdate"), Update.Release()
+	Try StateUpdate := IniWrite(!StateUpdate, "StateUpdate")
 	Menu, Sys, % StateUpdate ? "Check" : "UnCheck", Check updates
 	If StateUpdate
 		GoSub, UpdateAhkSpy
@@ -1124,42 +1124,37 @@ NextLink(s = "")   {
 	oDoc.body.scrollTop := curpos + res
 }
 
-Class Update  {
-	DocumentComplete(o, url)   {
-		Global AhkSpyVersion
-		Static ver, ahk := "https://raw.githubusercontent.com/serzh82saratov/AhkSpy/master/AhkSpy.ahk"
-			, txt = "https://raw.githubusercontent.com/serzh82saratov/AhkSpy/master/Readme.txt"
+Update(in)   {
+	Static att, ver, req
+		, url1 = "https://raw.githubusercontent.com/serzh82saratov/AhkSpy/master/Readme.txt"
+		, url2 := "https://raw.githubusercontent.com/serzh82saratov/AhkSpy/master/AhkSpy.ahk"
 
-		Try Text := oIeUpd.Document.Body.outerText
-		If (url = txt && RegExMatch(Text, "im)version\s*(?<er>.*?)\s*$", v))
-			(ver > AhkSpyVersion) ? Update.Navigate(ahk) : Update.Release()
-		Else If (url = ahk && InStr(Text, "AhkSpyVersion"))
+	If !req
+		Try req := ComObjCreate("WinHttp.WinHttpRequest.5.1")
+
+	Try req.Option(6) := 0, req.open("GET", url%in%, 1), req.send(), att:=0
+	SetTimer, Upd_Verifi, -2000
+	Return
+
+	Upd_Verifi:
+		Try If (req.Status = 200)
 		{
-			Update.Release()
+			Try Text := req.responseText
+			Try If (req.Option(1) = url1)
+				Return ((ver:=RegExReplace(Text, "i).*?version\s*(.*?)\R.*", "$1")) > AhkSpyVersion) ? Update(2) : 0
+			Try If (req.Option(1) = url2 && !InStr(Text, "AhkSpyVersion"))
+				Return 0
+
 			MsgBox, % 32+262144+4, AhkSpy, Exist new version!`nUpdate v%AhkSpyVersion% to v%ver%?
 			IfMsgBox, No
 				Return
 			File := FileOpen(A_ScriptFullPath, "w", "UTF-8")
 			File.Length := 0, File.Write(Text), File.Close()
 			Reload
-		}
-		Else If ((url = ahk || url = txt) && ++UpdTry < 6)
-			Update.Navigate(url)
-		Else
-			Update.Release()
-	}
-	Navigate(url)   {
-		Try (!oIeUpd ? oIeUpd := ComObjCreate("InternetExplorer.Application") : 0)
-		Try oIeUpd.navigate(url), ComObjConnect(oIeUpd, Update)
-	}
-	Start()   {
-		If InStr(FileExist(A_ScriptFullPath), "R")
 			Return
-		Update.Navigate("https://raw.githubusercontent.com/serzh82saratov/AhkSpy/master/Readme.txt")
-	}
-	Release()   {
-		Try oIeUpd.Quit(), oIeUpd := "", UpdTry := 0
-	}
+		}
+		SetTimer, Upd_Verifi, % (++att > 60) ? "Off" : -1000
+		Return IsObject(req)
 }
 
 	;  http://forum.script-coding.com/viewtopic.php?pid=82283#p82283
@@ -1214,4 +1209,4 @@ Class Events  {
 		(!isPaused ? (Hotkey_Hook := 1) : 0)
 	}
 }
-	;  
+	; 
