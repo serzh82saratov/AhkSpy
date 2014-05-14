@@ -5,7 +5,7 @@
 	;  Коллекция - http://forum.script-coding.com/viewtopic.php?pid=72459#p72459
 	;  GitHub - https://github.com/serzh82saratov/AhkSpy/blob/master/AhkSpy.ahk
 
-Global AhkSpyVersion=1.126
+Global AhkSpyVersion=1.127
 #NoTrayIcon
 #SingleInstance Force
 #NoEnv
@@ -1126,12 +1126,10 @@ NextLink(s = "")   {
 
 Update(in)   {
 	Static att, ver, req
-		, url1 = "https://raw.githubusercontent.com/serzh82saratov/AhkSpy/master/Readme.txt"
-		, url2 := "https://raw.githubusercontent.com/serzh82saratov/AhkSpy/master/AhkSpy.ahk"
-
+		, url1 := "https://raw.githubusercontent.com/serzh82saratov/AhkSpy/master/Readme.txt"
+		, url2 := "https://raw.githubusercontent.com/serzh82saratov/AhkSpy/master/AhkSpy.ahk" 
 	If !req
-		Try req := ComObjCreate("WinHttp.WinHttpRequest.5.1")
-
+		Try req := ComObjCreate("WinHttp.WinHttpRequest.5.1") 
 	Try req.Option(6) := 0, req.open("GET", url%in%, 1), req.send(), att:=0
 	SetTimer, Upd_Verifi, -2000
 	Return
@@ -1143,8 +1141,7 @@ Update(in)   {
 			Try If (req.Option(1) = url1)
 				Return ((ver:=RegExReplace(Text, "i).*?version\s*(.*?)\R.*", "$1")) > AhkSpyVersion) ? Update(2) : 0
 			Try If (req.Option(1) = url2 && !InStr(Text, "AhkSpyVersion"))
-				Return 0
-
+				Return 0 
 			MsgBox, % 32+262144+4, AhkSpy, Exist new version!`nUpdate v%AhkSpyVersion% to v%ver%?
 			IfMsgBox, No
 				Return
@@ -1154,7 +1151,7 @@ Update(in)   {
 			Return
 		}
 		SetTimer, Upd_Verifi, % (++att > 60) ? "Off" : -1000
-		Return IsObject(req)
+		Return
 }
 
 	;  http://forum.script-coding.com/viewtopic.php?pid=82283#p82283
