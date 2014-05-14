@@ -5,7 +5,7 @@
 	;  Коллекция - http://forum.script-coding.com/viewtopic.php?pid=72459#p72459
 	;  GitHub - https://github.com/serzh82saratov/AhkSpy/blob/master/AhkSpy.ahk
 
-Global AhkSpyVersion := 1.133
+Global AhkSpyVersion := 1.134
 #NoTrayIcon
 #SingleInstance Force
 #NoEnv
@@ -1129,7 +1129,7 @@ Update(in=1)   {
 		, url1 := "https://raw.githubusercontent.com/serzh82saratov/AhkSpy/master/Readme.txt"
 		, url2 := "https://raw.githubusercontent.com/serzh82saratov/AhkSpy/master/AhkSpy.ahk"
 	If !req
-		Try req := ComObjCreate("WinHttp.WinHttpRequest.5.1"), req.Option(6) := 0 
+		Try req := ComObjCreate("WinHttp.WinHttpRequest.5.1"), req.Option(6) := 0
 	Try req.open("GET", url%in%, 1), req.send(), att:=0
 	SetTimer, Upd_Verifi, -3000
 	Return
@@ -1138,9 +1138,9 @@ Update(in=1)   {
 		Try If (Status:=req.Status) = 200
 		{
 			Try Text := req.responseText
-			Try If (req.Option(1) = url1)
+			If (req.Option(1) = url1)
 				Return (ver:=RegExReplace(Text, "i).*?version\s*(.*?)\R.*", "$1")) > AhkSpyVersion ? Update(2) : 0
-			Try If (req.Option(1) = url2 && !InStr(Text, "AhkSpyVersion"))
+			If (!InStr(Text, "AhkSpyVersion"))
 				Return
 			MsgBox, % 32+262144+4, AhkSpy, Exist new version!`nUpdate v%AhkSpyVersion% to v%ver%?
 			IfMsgBox, No
@@ -1172,31 +1172,28 @@ Class Events  {
 				Sleep 400
 				o.style.backgroundColor := ColorBg
 			}
+			Else If thisid = keyname
+			{
+				KeyName := GetKeyName(o_edithotkey.value), o_editkeyname.value := KeyName
+				o := KeyName = "" ? o_edithotkey : o_editkeyname
+				o.focus(), o2 := o.createTextRange(), o2.collapse(false), o2.select()
+			}
 			Else If thisid = pause_button
 				Gosub PausedScript
-			Else
-			{
-				If (thisid = "folder" && FileExist(WinProcessPath))
-					SelectFilePath(WinProcessPath)
-				Else If thisid = keyname
-				{
-					KeyName := GetKeyName(o_edithotkey.value), o_editkeyname.value := KeyName
-					o := KeyName = "" ? o_edithotkey : o_editkeyname
-					o.focus(), o2 := o.createTextRange(), o2.collapse(false), o2.select()
-				}
-			}
+			Else If (thisid = "folder" && FileExist(WinProcessPath))
+				SelectFilePath(WinProcessPath)
 		}
 	}
 	ondblclick()   {
 		thisid := oDoc.parentWindow.event.srcElement.id
-		If (thisid = "winclose")
+		If thisid = winclose
 		{
 			WinGet, WinPID, PID, ahk_id %WinCloseID%
 			WinKill, ahk_id %WinCloseID%,, 0.4
 			IfWinExist, ahk_id %WinCloseID%
 				Process, Close, %WinPID%
 		}
-		Else If (thisid = "pause_button")
+		Else If thisid = pause_button
 			Gosub PausedScript
 	}
 	onfocus()   {
@@ -1206,4 +1203,4 @@ Class Events  {
 		(!isPaused ? (Hotkey_Hook := 1) : 0)
 	}
 }
-	;
+	;)
