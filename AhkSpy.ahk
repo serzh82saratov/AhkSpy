@@ -5,7 +5,7 @@
 	;  Коллекция - http://forum.script-coding.com/viewtopic.php?pid=72459#p72459
 	;  GitHub - https://github.com/serzh82saratov/AhkSpy/blob/master/AhkSpy.ahk
 
-Global AhkSpyVersion=1.130
+Global AhkSpyVersion := 1.131
 #NoTrayIcon
 #SingleInstance Force
 #NoEnv
@@ -1135,7 +1135,7 @@ Update(in=1)   {
 	Return
 
 	Upd_Verifi:
-		Try If (Status := req.Status = 200)
+		Try If (Status:=req.Status) = 200
 		{
 			Try Text := req.responseText
 			Try If (req.Option(1) = url1)
