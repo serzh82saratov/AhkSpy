@@ -5,7 +5,7 @@
 	;  Коллекция - http://forum.script-coding.com/viewtopic.php?pid=72459#p72459
 	;  GitHub - https://github.com/serzh82saratov/AhkSpy/blob/master/AhkSpy.ahk
 
-Global AhkSpyVersion=1.128
+Global AhkSpyVersion=1.129
 #NoTrayIcon
 #SingleInstance Force
 #NoEnv
@@ -1135,13 +1135,13 @@ Update(in=1)   {
 	Return
 
 	Upd_Verifi:
-		Try If (req.Status = 200)
+		Try If (Status := req.Status = 200)
 		{
 			Try Text := req.responseText
 			Try If (req.Option(1) = url1)
 				Return ((ver:=RegExReplace(Text, "i).*?version\s*(.*?)\R.*", "$1")) > AhkSpyVersion) ? Update(2) : 0
 			Try If (req.Option(1) = url2 && !InStr(Text, "AhkSpyVersion"))
-				Return 0
+				Return
 			MsgBox, % 32+262144+4, AhkSpy, Exist new version!`nUpdate v%AhkSpyVersion% to v%ver%?
 			IfMsgBox, No
 				Return
@@ -1149,7 +1149,7 @@ Update(in=1)   {
 			File.Length := 0, File.Write(Text), File.Close()
 			Reload
 		}
-		SetTimer, Upd_Verifi, % (++att > 60) ? "Off" : -1000
+		SetTimer, Upd_Verifi, % (++att > 60 || Status != "") ? "Off" : -1000
 		Return
 }
 
