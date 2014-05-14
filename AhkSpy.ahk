@@ -5,7 +5,7 @@
 	;  Коллекция - http://forum.script-coding.com/viewtopic.php?pid=72459#p72459
 	;  GitHub - https://github.com/serzh82saratov/AhkSpy/blob/master/AhkSpy.ahk
 
-Global AhkSpyVersion := 1.132
+Global AhkSpyVersion := 1.133
 #NoTrayIcon
 #SingleInstance Force
 #NoEnv
@@ -1129,7 +1129,7 @@ Update(in=1)   {
 		, url1 := "https://raw.githubusercontent.com/serzh82saratov/AhkSpy/master/Readme.txt"
 		, url2 := "https://raw.githubusercontent.com/serzh82saratov/AhkSpy/master/AhkSpy.ahk"
 	If !req
-		Try req := ComObjCreate("WinHttp.WinHttpRequest.5.1"), req.Option(6)
+		Try req := ComObjCreate("WinHttp.WinHttpRequest.5.1"), req.Option(6) := 0 
 	Try req.open("GET", url%in%, 1), req.send(), att:=0
 	SetTimer, Upd_Verifi, -3000
 	Return
