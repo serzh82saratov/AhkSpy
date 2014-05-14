@@ -5,7 +5,7 @@
 	;  Коллекция - http://forum.script-coding.com/viewtopic.php?pid=72459#p72459
 	;  GitHub - https://github.com/serzh82saratov/AhkSpy/blob/master/AhkSpy.ahk
 
-Global AhkSpyVersion := 1.131
+Global AhkSpyVersion := 1.132
 #NoTrayIcon
 #SingleInstance Force
 #NoEnv
@@ -882,8 +882,8 @@ ShowSys:
 	Return
 
 Sys_Backlight:
-	Menu, Sys, Check, % A_ThisMenuItem
 	Menu, Sys, UnCheck, % ["Backlight allways","Backlight disable","Backlight hold shift button"][StateLight]
+	Menu, Sys, Check, % A_ThisMenuItem
 	IniWrite((StateLight:=A_ThisMenuItemPos), "StateLight")
 	Return
 
