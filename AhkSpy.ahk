@@ -2,10 +2,10 @@
 	;  Автор - serzh82saratov
 	;  Спасибо wisgest за помощь в создании HTML интерфейса этой версии скрипта
 	;  Тема - http://forum.script-coding.com/viewtopic.php?pid=72244#p72244
-	;  Коллекция - http://forum.script-coding.com/viewtopic.php?pid=72459#p72459
+	;  Коллекция - http://forum.script-coding.com/viewtopic.php?pid=72459#p72459  
 	;  GitHub - https://github.com/serzh82saratov/AhkSpy/blob/master/AhkSpy.ahk
 
-AhkSpyVersion=1.124
+AhkSpyVersion=1.125
 #NoTrayIcon
 #SingleInstance Force
 #NoEnv
@@ -1012,7 +1012,7 @@ AccInfoUnderMouse(x, y)   {
 	Try Acc:=ComObjEnwrap(9,pacc,1), child:=NumGet(varChild,8,"UInt")
 	If !IsObject(Acc)
 		Return
-	Type := child ? "Child" DP "<span id='param'>Id:  </span>" child
+	Try Type := child ? "Child" DP "<span id='param'>Id:  </span>" child
 		: "Parent" DP "<span id='param'>ChildCount:  </span>" ((C:=Acc.accChildCount)!=""?C:"N/A")
 	code = `n<span id='param'>Type:</span>  %Type%
 	code .= DP "<span id='param'>Pos:  </span>" GetAccLocation(Acc, child)
@@ -1136,7 +1136,7 @@ Class Update  {
 		Else If (url = ahk && InStr(Text, "AhkSpyVersion"))
 		{
 			Update.Release()
-			MsgBox, % 32+262144+8192+4, AhkSpy, Exist new version!`nUpdate v%AhkSpyVersion% to v%ver%?
+			MsgBox, % 32+262144+4, AhkSpy, Exist new version!`nUpdate v%AhkSpyVersion% to v%ver%?
 			IfMsgBox, No
 				Return
 			File := FileOpen(A_ScriptFullPath, "w", "UTF-8")
@@ -1214,4 +1214,4 @@ Class Events  {
 		(!isPaused ? (Hotkey_Hook := 1) : 0)
 	}
 }
-	; 
+	;  
