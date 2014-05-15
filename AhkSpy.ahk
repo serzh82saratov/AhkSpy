@@ -5,7 +5,7 @@
 	;  Коллекция - http://forum.script-coding.com/viewtopic.php?pid=72459#p72459
 	;  GitHub - https://github.com/serzh82saratov/AhkSpy/blob/master/AhkSpy.ahk
 
-Global AhkSpyVersion := 1.134
+Global AhkSpyVersion := 1.135
 #NoTrayIcon
 #SingleInstance Force
 #NoEnv
@@ -62,7 +62,7 @@ Gui, TB: Show, % "x0 y0 NA h" HeigtButton " w" widthTB := wKey*3+wColor
 
 OnExit, Exit
 OnMessage(0x201, "WM_LBUTTONDOWN")
-ComObjConnect(oDoc, Events)
+ComObjError(false), ComObjConnect(oDoc, Events)
 DllCall("RegisterShellHookWindow", "UInt", A_ScriptHwnd)
 OnMessage(DllCall("RegisterWindowMessage", "str", "SHELLHOOK"), "ShellProc")
 
@@ -269,13 +269,11 @@ Spot_Win(NotHTML=0)   {
 		SBText = %SBText%<span id='param'>(%A_Index%):</span> %SBFieldText%`n
 	}
 	If SBText !=
-		SBText = `n%D1% <a></a><span id="title">( StatusBarText )</span> %D2%`n%SBText%
+		SBText := "`n" D1 " <a></a><span id='title'>( StatusBarText )</span> " D2 "`n" RTrim(SBText, "`n")
 	WinGetText, WinText, ahk_id %WinID%
 	If WinText !=
-	{
 		WinText := TransformHTML( WinClass = "Notepad++" ? SubStr(WinText, 1, 5000) : WinText)
-		WinText = `n%D1% <a></a><span id="title">( Visible Window Text )</span> %DB% %copy_button% %D2%`n<span>%WinText%</span>
-	}
+		, WinText := "`n" D1 " <a></a><span id='title'>( Visible Window Text )</span> " DB " " copy_button " " D2 "`n<span>" WinText "</span>"
 	CoordMode, Mouse
 	CoordMode, Pixel
 	MouseGetPos, WinXS, WinYS
@@ -384,11 +382,11 @@ Spot_Mouse(NotHTML=0)   {
 		If CtrlText !=
 		{
 			CtrlText := TransformHTML(IsGetUTF8 ? StrGet(&CtrlText, "utf-8") : CtrlText)
-			CtrlText = `n%D1% <a></a><span id="title">( Control text )</span> %DB% %copy_button% %D2%`n<span>%CtrlText%</span>
+			CtrlText = `n%D1% <a></a><span id='title'>( Control text )</span> %DB% %copy_button% %D2%`n<span>%CtrlText%</span>
 		}
 		AccText := AccInfoUnderMouse(MXS, MYS)
 		If AccText !=
-			AccText = `n%D1% <a></a><span id="title">( AccInfo )</span> %D2%%AccText%
+			AccText = `n%D1% <a></a><span id='title'>( AccInfo )</span> %D2%%AccText%
 		ControlGet, CtrlStyle, Style,,, ahk_id %ControlID%
 		ControlGet, CtrlExStyle, ExStyle,,, ahk_id %ControlID%
 		ControlGetFocus, CtrlFocus, ahk_id %WinID%
@@ -401,7 +399,7 @@ Spot_Mouse(NotHTML=0)   {
 			{
 				CtrlInfo := GetInfo_%ControlNN_Sub%(ControlID, ClassNN)
 				If CtrlInfo !=
-					CtrlInfo = `n%D1% <a></a><span id="title">( Info - %ClassNN% )</span> %D2%%CtrlInfo%
+					CtrlInfo = `n%D1% <a></a><span id='title'>( Info - %ClassNN% )</span> %D2%%CtrlInfo%
 			}
 		}
 		WinGetClass, WinClass, ahk_id %WinID%
@@ -574,37 +572,35 @@ GetInfo_InternetExplorer_Server(hwnd, ByRef ClassNN)   {
 	isIE := 1, ClassNN := "Internet Explorer_Server", hwnd := HWND_3
 	If !(pwin := WBGet(hwnd))
 		Return
-	Try pelt := pwin.document.elementFromPoint(rmCtrlX, rmCtrlY)
-	Catch
-		Return ObjRelease(pwin)
-	Try If ((elHTML := pelt.outerHTML) != "")  {
+	pelt := pwin.document.elementFromPoint(rmCtrlX, rmCtrlY)
+	If ((elHTML := pelt.outerHTML) != "")  {
 		elHTML := TransformHTML(elHTML)
 		code = `n%D1% <a></a><span id='param'>( Outer HTML )</span> %DB% %copy_button% %D2%`n
 		elHTML = %code%<span>%elHTML%</span>
 	}
-	Try If ((elText := pelt.outerText) != "")  {
+	If ((elText := pelt.outerText) != "")  {
 		elText := TransformHTML(elText)
 		code = `n%D1% <a></a><span id='param'>( Outer Text )</span> %DB% %copy_button% %D2%`n
 		elText = %code%<span>%elText%</span>
 	}
-	Try WB2 := ComObject(9,ComObjQuery(pwin,IID_IWebBrowserApp,IID_IWebBrowserApp),1)
-	Try If ((Location := WB2.LocationName) != "")
+	WB2 := ComObject(9,ComObjQuery(pwin,IID_IWebBrowserApp,IID_IWebBrowserApp),1)
+	If ((Location := WB2.LocationName) != "")
 		Location = `n<span id='param'>Title:  </span>%Location%
-	Try If ((URL := WB2.LocationURL) != "")
+	If ((URL := WB2.LocationURL) != "")
 		URL = `n<span id='param'>URL:  </span>%URL%
-	Try If ((TagName := pelt.TagName) != "")
+	If ((TagName := pelt.TagName) != "")
 		TagName = `n%D1% <span id='param'>( Tag name: </span>%TagName%<span id='param'> )</span> %D2%
-	Try If ((id := pelt.id) != "")
+	If ((id := pelt.id) != "")
 		id = `n<span id='param'>ID:  </span>%id%
-	Try If ((Class := pelt.ClassName) != "")
+	If ((Class := pelt.ClassName) != "")
 		Class = `n<span id='param'>Class:  </span>%Class%
-	Try If ((name := pelt.name) != "")
+	If ((name := pelt.name) != "")
 		name = `n<span id='param'>Name:  </span>%name%
-	Try If ((Index := pelt.sourceIndex) != "")
+	If ((Index := pelt.sourceIndex) != "")
 		Index = `n<span id='param'>Index:  </span>%Index%
 	If (ThisMode = "Mouse") && (StateLight = 1 || (StateLight = 3 && GetKeyState("Shift", "P")))
 	{
-		Try pbrt := pelt.getBoundingClientRect(), x1 := pbrt.left, y1 := pbrt.top
+		pbrt := pelt.getBoundingClientRect(), x1 := pbrt.left, y1 := pbrt.top
 		WinGetPos, sX, sY, , , ahk_id %hwnd%
 		ShowMarker(sX+x1, sY+y1, pbrt.right-x1, pbrt.bottom-y1)
 		StateLightAcc ? ShowAccMarker(AccCoord[1], AccCoord[2], AccCoord[3], AccCoord[4]) : 0
@@ -619,7 +615,7 @@ WBGet(hwnd)   {
 		, IID := "{332C4427-26CB-11D0-B483-00C04FD90119}"		;  IID_IHTMLWindow2
 	SendMessage, msg,,,, ahk_id %hwnd%
 	DllCall("oleacc\ObjectFromLresult", "Ptr", ErrorLevel, "Ptr", 0, "Ptr", 0, PtrP, pdoc)
-	Try Return ComObj(9,ComObjQuery(pdoc,IID,IID),1), ObjRelease(pdoc)
+	Return ComObj(9,ComObjQuery(pdoc,IID,IID),1), ObjRelease(pdoc)
 }
 	; _________________________________________________ Mode_Hotkey _________________________________________________
 
@@ -700,8 +696,8 @@ Write_Hotkey(Mods, KeyName, Prefix, Hotkey, VkCode, SCCode, ThisKey)   {
 
 Write_HotkeyHTML() {
 	oDoc.body.innerHTML := HTML_Hotkey
-	Try ComObjConnect(o_edithotkey:=oDoc.getElementById("edithotkey"),Events)
-	Try ComObjConnect(o_editkeyname:=oDoc.getElementById("editkeyname"),Events)
+	ComObjConnect(o_edithotkey:=oDoc.getElementById("edithotkey"),Events)
+	ComObjConnect(o_editkeyname:=oDoc.getElementById("editkeyname"),Events)
 }
 
 	; _________________________________________________ Hotkey Rules _________________________________________________
@@ -834,9 +830,9 @@ GuiSize:
 Exit:
 GuiClose:
 GuiEscape:
-	Try Hotkey_Control(0), oDoc := ""
+	Hotkey_Control(0), oDoc := ""
 	DllCall("DeregisterShellHookWindow", "UInt", A_ScriptHwnd)
-	Try ExitApp
+	ExitApp
 
 TitleShow:
 	SendMessage, 0xC, 0, &TitleText, , ahk_id %hGui%
@@ -871,7 +867,7 @@ UpdateAhkSpy:
 	Return
 
 CheckUpdate:
-	Try StateUpdate := IniWrite(!StateUpdate, "StateUpdate")
+	StateUpdate := IniWrite(!StateUpdate, "StateUpdate")
 	Menu, Sys, % StateUpdate ? "Check" : "UnCheck", Check updates
 	If StateUpdate
 		GoSub, UpdateAhkSpy
@@ -924,6 +920,7 @@ LaunchLink(Link)   {
 
 ShowMarker(x, y, w, h, b:=4)   {
 	ShowMarker := 1
+	w < 8 || h < 8 ? b:=2
 	Try Gui, M: Show, NA x%x% y%y% w%w% h%h%
 	Catch
 		Return HideMarker()
@@ -968,7 +965,7 @@ ExistSelectedText(byref Copy)   {
 	MouseGetPos, , , , ControlID, 2
 	If (ControlID != hActiveX)
 		Return 0
-	Try Copy := oDoc.selection.createRange().text
+	Copy := oDoc.selection.createRange().text
 	If Copy is space
 		Return 0
 	Copy := RTrim(Trim(Copy), Chr(0x25aa))
@@ -1009,66 +1006,66 @@ AccInfoUnderMouse(x, y)   {
 	If DllCall("oleacc\AccessibleObjectFromPoint"
 		, "Int64", x&0xFFFFFFFF|y<<32, "Ptr*", pacc
 		, "Ptr", VarSetCapacity(varChild,8+2*A_PtrSize,0)*0+&varChild) = 0
-	Try Acc:=ComObjEnwrap(9,pacc,1), child:=NumGet(varChild,8,"UInt")
+	Acc:=ComObjEnwrap(9,pacc,1), child:=NumGet(varChild,8,"UInt")
 	If !IsObject(Acc)
 		Return
-	Try Type := child ? "Child" DP "<span id='param'>Id:  </span>" child
+	Type := child ? "Child" DP "<span id='param'>Id:  </span>" child
 		: "Parent" DP "<span id='param'>ChildCount:  </span>" ((C:=Acc.accChildCount)!=""?C:"N/A")
 	code = `n<span id='param'>Type:</span>  %Type%
 	code .= DP "<span id='param'>Pos:  </span>" GetAccLocation(Acc, child)
 
-	Try If ((Role := AccRole(Acc, child)) != "")  {
+	If ((Role := AccRole(Acc, child)) != "")  {
 		code = %code%`n%D1% <a></a><span id='param'>( Role )</span> %DB% %copy_button% %D2%`n
 		code .= "<span>" TransformHTML(Role) "</span>"
 	}
-	Try If (child &&(ObjRole := AccRole(Acc)) != "")  {
+	If (child &&(ObjRole := AccRole(Acc)) != "")  {
 		code = %code%`n%D1% <a></a><span id='param'>( Role - parent )</span> %DB% %copy_button% %D2%`n
 		code .= "<span>" TransformHTML(ObjRole) "</span>"
 	}
-	Try If ((Value := Acc.accValue(child)) != "")  {
+	If ((Value := Acc.accValue(child)) != "")  {
 		code = %code%`n%D1% <a></a><span id='param'>( Value )</span> %DB% %copy_button% %D2%`n
 		code .= "<span>" TransformHTML(Value) "</span>"
 	}
-	Try If ((Name := Acc.accName(child)) != "")  {
+	If ((Name := Acc.accName(child)) != "")  {
 		code = %code%`n%D1% <a></a><span id='param'>( Name )</span> %DB% %copy_button% %D2%`n
 		code .= "<span>" TransformHTML(Name) "</span>"
 	}
-	Try If ((State := AccGetStateText(Acc.accState(child))) != "")  {
+	If ((State := AccGetStateText(Acc.accState(child))) != "")  {
 		code = %code%`n%D1% <a></a><span id='param'>( State )</span> %DB% %copy_button% %D2%`n
 		code .= "<span>" TransformHTML(State) "</span>"
 	}
-	Try If ((Action := Acc.accDefaultAction(child)) != "")  {
+	If ((Action := Acc.accDefaultAction(child)) != "")  {
 		code = %code%`n%D1% <a></a><span id='param'>( Action )</span> %DB% %copy_button% %D2%`n
 		code .= "<span>" TransformHTML(Action) "</span>"
 	}
-	Try If ((Selection := Acc.accSelection) > 0)  {
+	If ((Selection := Acc.accSelection) > 0)  {
 		code = %code%`n%D1% <a></a><span id='param'>( Selection - parent )</span> %D2%`n
 		code .= "<span>" TransformHTML(Selection) "</span>"
 	}
-	Try If ((Focus := Acc.accFocus) > 0)  {
+	If ((Focus := Acc.accFocus) > 0)  {
 		code = %code%`n%D1% <a></a><span id='param'>( Focus - parent )</span> %D2%`n
 		code .= "<span>" TransformHTML(Focus) "</span>"
 	}
-	Try If ((Description := Acc.accDescription(child)) != "")  {
+	If ((Description := Acc.accDescription(child)) != "")  {
 		code = %code%`n%D1% <a></a><span id='param'>( Description )</span> %DB% %copy_button% %D2%`n
 		code .= "<span>" TransformHTML(Description) "</span>"
 	}
-	Try If ((ShortCut := Acc.accKeyboardShortCut(child)) != "")  {
+	If ((ShortCut := Acc.accKeyboardShortCut(child)) != "")  {
 		code = %code%`n%D1% <a></a><span id='param'>( ShortCut )</span> %DB% %copy_button% %D2%`n
 		code .= "<span>" TransformHTML(ShortCut) "</span>"
 	}
-	Try If ((Help := Acc.accHelp(child)) != "")  {
+	If ((Help := Acc.accHelp(child)) != "")  {
 		code = %code%`n%D1% <a></a><span id='param'>( Help )</span> %DB% %copy_button% %D2%`n
 		code .= "<span>" TransformHTML(Help) "</span>"
 	}
-	Try If ((HelpTopic := Acc.AccHelpTopic(child)))  {
+	If ((HelpTopic := Acc.AccHelpTopic(child)))  {
 		code = %code%`n%D1% <a></a><span id='param'>( HelpTopic )</span> %DB% %copy_button% %D2%`n
 		code .= "<span>" TransformHTML(HelpTopic) "</span>"
 	}
 	Return code
 }
 AccRole(Acc, ChildId=0)   {
-	Try Return ComObjType(Acc,"Name")="IAccessible"?AccGetRoleText(Acc.accRole(ChildId)):""
+	Return ComObjType(Acc,"Name")="IAccessible"?AccGetRoleText(Acc.accRole(ChildId)):""
 }
 AccGetRoleText(nRole)   {
 	nSize := DllCall("oleacc\GetRoleText", "UInt", nRole, "Ptr", 0, "UInt", 0)
@@ -1083,7 +1080,7 @@ AccGetStateText(nState)   {
 	Return sState
 }
 GetAccLocation(Acc, Child=0) {
-	Try Acc.accLocation(ComObj(0x4003,&x:=0), ComObj(0x4003,&y:=0), ComObj(0x4003,&w:=0), ComObj(0x4003,&h:=0), Child)
+	Acc.accLocation(ComObj(0x4003,&x:=0), ComObj(0x4003,&y:=0), ComObj(0x4003,&w:=0), ComObj(0x4003,&h:=0), Child)
 	Return "x" (AccCoord[1]:=NumGet(x,0,"int")) " y" (AccCoord[2]:=NumGet(y,0,"int"))
 			. " w" (AccCoord[3]:=NumGet(w,0,"int")) " h" (AccCoord[4]:=NumGet(h,0,"int"))
 }
@@ -1094,9 +1091,9 @@ SelectFilePath(FilePath)   {
 	SplitPath, FilePath, , FolderPath
 	For Window in ComObjCreate("Shell.Application").Windows
 	{
-		Try If (Window.Document.Folder.Self.Path = FolderPath)
+		If (Window.Document.Folder.Self.Path = FolderPath)
 		{
-			Try For item in Window.Document.Folder.Items
+			For item in Window.Document.Folder.Items
 			{
 				If (item.path = FilePath)
 				{
@@ -1129,16 +1126,16 @@ Update(in=1)   {
 		, url1 := "https://raw.githubusercontent.com/serzh82saratov/AhkSpy/master/Readme.txt"
 		, url2 := "https://raw.githubusercontent.com/serzh82saratov/AhkSpy/master/AhkSpy.ahk"
 	If !req
-		Try req := ComObjCreate("WinHttp.WinHttpRequest.5.1"), req.Option(6) := 0
-	Try req.open("GET", url%in%, 1), req.send(), att:=0
+		req := ComObjCreate("WinHttp.WinHttpRequest.5.1"), req.Option(6) := 0
+	req.open("GET", url%in%, 1), req.send(), att:=0
 	SetTimer, Upd_Verifi, -3000
 	Return
 
 	Upd_Verifi:
-		Try If (Status:=req.Status) = 200
+		If (Status:=req.Status) = 200
 		{
-			Try Text := req.responseText
-			Try If (req.Option(1) = url1)
+			Text := req.responseText
+			If (req.Option(1) = url1)
 				Return (ver:=RegExReplace(Text, "i).*?version\s*(.*?)\R.*", "$1")) > AhkSpyVersion ? Update(2) : 0
 			If (!InStr(Text, "AhkSpyVersion"))
 				Return
