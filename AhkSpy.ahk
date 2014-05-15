@@ -5,7 +5,7 @@
 	;  Коллекция - http://forum.script-coding.com/viewtopic.php?pid=72459#p72459
 	;  GitHub - https://github.com/serzh82saratov/AhkSpy/blob/master/AhkSpy.ahk
 
-Global AhkSpyVersion := 1.136
+Global AhkSpyVersion := 1.137
 #NoTrayIcon
 #SingleInstance Force
 #NoEnv
@@ -137,7 +137,7 @@ PausedScript:
 	oDoc.body.style.background := (ColorBg := isPaused ? ColorBgPaused : ColorBgOriginal)
 	Try SetTimer, Loop_%ThisMode%, % isPaused ? "Off" : "On"
 	If (ThisMode = "Hotkey" && WinActive("ahk_id" hGui))
-		Hotkey_Hook := isPaused ? 0 : 1
+		Hotkey_Hook := isPaused ? Hotkey_Reset() : 1
 	If !WinActive("ahk_id" hGui)
 		(ThisMode = "Mouse" ? Spot_Win() : ThisMode = "Win" ? Spot_Mouse() : 0)
 	HideMarker()
@@ -210,7 +210,7 @@ Mode_Win:
 		GuiControl, 1:Focus, oDoc
 	GuiControl, TB: -0x0001, But1
 	If (ThisMode = "Hotkey")
-		Hotkey_Hook := 0, Hotkey_IsOnlyMods()
+		Hotkey_Reset()
 	Try SetTimer, Loop_%ThisMode%, Off
 	ScrollPos[ThisMode,1] := oDoc.body.scrollLeft, ScrollPos[ThisMode,2] := oDoc.body.scrollTop
 	If ThisMode != Win
@@ -327,7 +327,7 @@ Mode_Mouse:
 		GuiControl, 1:Focus, oDoc
 	GuiControl, TB: -0x0001, But2
 	If (ThisMode = "Hotkey")
-		Hotkey_Hook := 0, Hotkey_IsOnlyMods()
+		Hotkey_Reset()
 	Try SetTimer, Loop_%ThisMode%, Off
 	ScrollPos[ThisMode,1] := oDoc.body.scrollLeft, ScrollPos[ThisMode,2] := oDoc.body.scrollTop
 	If ThisMode != Mouse
@@ -625,7 +625,7 @@ Mode_Hotkey:
 	ScrollPos[ThisMode,1] := oDoc.body.scrollLeft, ScrollPos[ThisMode,2] := oDoc.body.scrollTop
 	If ThisMode != Hotkey
 		HTML_%ThisMode% := oDoc.body.innerHTML
-	ThisMode := "Hotkey", Hotkey_Hook := (!isPaused ? 1 : 0), TitleText := "AhkSpy - Button" TitleTextP2
+	ThisMode := "Hotkey", Hotkey_Hook := (!isPaused ? 1 : Hotkey_Reset()), TitleText := "AhkSpy - Button" TitleTextP2
 	oDoc.body.scrollLeft := ScrollPos[ThisMode,1], oDoc.body.scrollTop := ScrollPos[ThisMode,2]
 	ShowMarker ? HideMarker() : ""
 	(HTML_Hotkey != "") ? Write_HotkeyHTML() : Write_Hotkey({"Name":"Wait press button..."}*)
@@ -709,7 +709,7 @@ Write_HotkeyHTML() {
 
 HotkeyRules:
 	Hotkey_Control(1)
-	Global Hotkey_TargetFunc := "Write_Hotkey", Hotkey_Hook := (ThisMode = "Hotkey" ? 1 : 0 )
+	Global Hotkey_TargetFunc := "Write_Hotkey", Hotkey_Hook := (ThisMode = "Hotkey" ? 1 : Hotkey_Reset() )
 	Return
 
 	; _________________________________________________ Hotkey Func _________________________________________________
@@ -725,12 +725,11 @@ Hotkey_Control(State)  {
 Hotkey_Main(VkCode, SCCode, StateMod = 0, IsMod = 0, OnlyMods = 0)  {
 	Static K:={}, ModsOnly, Prefix := {"Alt":"!","Ctrl":"^","Shift":"+","Win":"#"}
 		, VkMouse := {"MButton":"vk4","WheelDown":"vk9E","WheelUp":"vk9F","WheelRight":"vk9D"
-		,"WheelLeft":"vk9C","XButton1":"vk5","XButton2":"vk6"}
+				,"WheelLeft":"vk9C","XButton1":"vk5","XButton2":"vk6"}
 		, Symbols := "|vkBA|vkBB|vkBC|vkBD|vkBE|vkBF|vkC0|vkDB|vkDC|vkDD|vkDE|vk41|vk42|"
-			. "vk43|vk44|vk45|vk46|vk47|vk48|vk49|vk4A|vk4B|vk4C|vk4D|vk4E|"
-			. "vk4F|vk50|vk51|vk52|vk53|vk54|vk55|vk56|vk57|vk58|vk59|vk5A|"
+				. "vk43|vk44|vk45|vk46|vk47|vk48|vk49|vk4A|vk4B|vk4C|vk4D|vk4E|"
+				. "vk4F|vk50|vk51|vk52|vk53|vk54|vk55|vk56|vk57|vk58|vk59|vk5A|"
 
-	K.VK := VkCode, K.SC := SCCode
 	If (OnlyMods)
 	{
 		If !ModsOnly
@@ -740,6 +739,7 @@ Hotkey_Main(VkCode, SCCode, StateMod = 0, IsMod = 0, OnlyMods = 0)  {
 		%Hotkey_TargetFunc%(K*)
 		Return 1
 	}
+	K.VK := VkCode, K.SC := SCCode
 	If (StateMod = "Down")
 	{
 		If (K["M" IsMod] != "")
@@ -782,8 +782,9 @@ Hotkey_ExtKeyInit()   {
 	Hotkey, If
 }
 
-Hotkey_IsOnlyMods()  {
-	Return Hotkey_Main("", "", "", "", 1)
+Hotkey_Reset()   {
+	Hotkey_Hook := 0
+	Return 0, Hotkey_Main("", "", "", "", 1)
 }
 
 	;  http://forum.script-coding.com/viewtopic.php?id=6350
@@ -816,7 +817,7 @@ Hotkey_WindowsHookEx(State)   {
 				, "Ptr", DllCall("GetModuleHandle", "UInt", 0, "Ptr")
 				, "UInt", 0, "Ptr")
 	Else
-		DllCall("UnhookWindowsHookEx" , "Ptr", Hook), Hook := "", Hotkey_Hook := 0
+		DllCall("UnhookWindowsHookEx" , "Ptr", Hook), Hook := "", Hotkey_Reset()
 }
 
 	; _________________________________________________ Labels _________________________________________________
@@ -988,7 +989,7 @@ ShellProc(nCode, wParam)   {
 		If (wParam = hGui)
 			(ThisMode = "Hotkey" && !isPaused ? Hotkey_Hook := 1 : ""), HideMarker()
 		Else If Hotkey_Hook
-			Hotkey_Hook := 0, Hotkey_IsOnlyMods()
+			Hotkey_Reset()
 	}
 }
 
@@ -1200,7 +1201,7 @@ Class Events  {
 			Gosub PausedScript
 	}
 	onfocus()   {
-		Hotkey_Hook := 0
+		Hotkey_Reset()
 	}
 	onblur()   {
 		(!isPaused ? (Hotkey_Hook := 1) : 0)
