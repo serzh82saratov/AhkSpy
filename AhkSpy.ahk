@@ -5,7 +5,7 @@
 	;  Коллекция - http://forum.script-coding.com/viewtopic.php?pid=72459#p72459
 	;  GitHub - https://github.com/serzh82saratov/AhkSpy/blob/master/AhkSpy.ahk
 
-Global AhkSpyVersion := 1.135
+Global AhkSpyVersion := 1.136
 #NoTrayIcon
 #SingleInstance Force
 #NoEnv
@@ -612,11 +612,12 @@ GetInfo_InternetExplorer_Server(hwnd, ByRef ClassNN)   {
 
 WBGet(hwnd)   {
 	static msg := DllCall("RegisterWindowMessage", "str", "WM_HTML_GETOBJECT")
-		, IID := "{332C4427-26CB-11D0-B483-00C04FD90119}"		;  IID_IHTMLWindow2
+		, IID_IHTMLWindow2 := "{332C4427-26CB-11D0-B483-00C04FD90119}"
 	SendMessage, msg,,,, ahk_id %hwnd%
 	DllCall("oleacc\ObjectFromLresult", "Ptr", ErrorLevel, "Ptr", 0, "Ptr", 0, PtrP, pdoc)
-	Return ComObj(9,ComObjQuery(pdoc,IID,IID),1), ObjRelease(pdoc)
+	Return ComObj(9,ComObjQuery(pdoc,IID_IHTMLWindow2,IID_IHTMLWindow2),1), ObjRelease(pdoc)
 }
+
 	; _________________________________________________ Mode_Hotkey _________________________________________________
 
 Mode_Hotkey:
@@ -627,15 +628,19 @@ Mode_Hotkey:
 	ThisMode := "Hotkey", Hotkey_Hook := (!isPaused ? 1 : 0), TitleText := "AhkSpy - Button" TitleTextP2
 	oDoc.body.scrollLeft := ScrollPos[ThisMode,1], oDoc.body.scrollTop := ScrollPos[ThisMode,2]
 	ShowMarker ? HideMarker() : ""
-	(HTML_Hotkey != "") ? Write_HotkeyHTML() : Write_Hotkey("Wait press button...", "", "", "", "", "", "")
+	(HTML_Hotkey != "") ? Write_HotkeyHTML() : Write_Hotkey({"Name":"Wait press button..."}*)
 	SendMessage, 0xC, 0, &TitleText, , ahk_id %hGui%
 	GuiControl, TB: -0x0001, But3
 	WinActivate ahk_id %hGui%
 	GuiControl, 1:Focus, oDoc
 	Return
 
-Write_Hotkey(Mods, KeyName, Prefix, Hotkey, VkCode, SCCode, ThisKey)   {
+Write_Hotkey(K*)   {
 	Static PrHK1, PrHK2
+	Mods := K.Mods, KeyName := K.Name
+	Prefix := K.Pref, Hotkey := K.HK
+	ThisKey := K.TK, VkCode := K.VK, SCCode := K.SC
+
 	IsVk := Hotkey ~= "^vk" ? 1 : 0
 	HK1 := IsVk ? Hotkey : ThisKey
 	HK2 := HK1 = PrHK1 ? PrHK2 : PrHK1, PrHK1 := HK1, PrHK2 := HK2
@@ -718,49 +723,51 @@ Hotkey_Control(State)  {
 }
 
 Hotkey_Main(VkCode, SCCode, StateMod = 0, IsMod = 0, OnlyMods = 0)  {
-	Static Hotkey, ModsOnly, _KeyName, _Hotkey, _VkCode, _SCCode, _ThisKey
-		, MCtrl, MAlt, MShift, MWin, PCtrl, PAlt, PShift, PWin
+	Static K:={}, ModsOnly, Prefix := {"Alt":"!","Ctrl":"^","Shift":"+","Win":"#"}
 		, VkMouse := {"MButton":"vk4","WheelDown":"vk9E","WheelUp":"vk9F","WheelRight":"vk9D"
 		,"WheelLeft":"vk9C","XButton1":"vk5","XButton2":"vk6"}
-		, Pref := {"Alt":"!","Ctrl":"^","Shift":"+","Win":"#"}
 		, Symbols := "|vkBA|vkBB|vkBC|vkBD|vkBE|vkBF|vkC0|vkDB|vkDC|vkDD|vkDE|vk41|vk42|"
 			. "vk43|vk44|vk45|vk46|vk47|vk48|vk49|vk4A|vk4B|vk4C|vk4D|vk4E|"
 			. "vk4F|vk50|vk51|vk52|vk53|vk54|vk55|vk56|vk57|vk58|vk59|vk5A|"
+
+	K.VK := VkCode, K.SC := SCCode
 	If (OnlyMods)
 	{
 		If !ModsOnly
 			Return 0
-		MCtrl:=MAlt:=MShift:=MWin:=PCtrl:=PAlt:=PShift:=PWin:="", ModsOnly := 0
-		%Hotkey_TargetFunc%("", _KeyName, "", _Hotkey, _VkCode, _SCCode, _ThisKey)
+		ModsOnly := 0, K.MCtrl := K.MAlt := K.MShift := K.MWin := K.Mods := ""
+		K.PCtrl := K.PAlt := K.PShift := K.PWin := K.Pref := ""
+		%Hotkey_TargetFunc%(K*)
 		Return 1
 	}
 	If (StateMod = "Down")
 	{
-		If (M%IsMod% != "")
+		If (K["M" IsMod] != "")
 			Return 1
-		M%IsMod% := IsMod "+", P%IsMod% := Pref[IsMod]
+		K["M" IsMod] := IsMod "+", K["P" IsMod] := Prefix[IsMod]
 	}
 	Else If (StateMod = "Up")
 	{
-		M%IsMod% := P%IsMod% := ""
-		If (Hotkey != "")
-			Return 1
+		K["M" IsMod] := K["P" IsMod] := ""
+		If (K.HK != "")
+			return 1
 	}
-	ThisKey := GetKeyName(VkCode SCCode), ThisKey := ThisKey = "" ? VkCode SCCode : ThisKey
-	(IsMod) ? (Hotkey := "", ModsOnly := MCtrl MAlt MShift MWin = "" ? 0 : 1)
-	: (Hotkey := InStr(Symbols, "|" VkCode "|") ? VkCode : ThisKey
-	, KeyName := Hotkey = "vkBF" ? "/" : ThisKey
-	, Prefix := PCtrl PAlt PShift PWin, ModsOnly := 0)
-	_KeyName:=KeyName, _Hotkey:=Hotkey, _VkCode:=VkCode, _SCCode:=SCCode, _ThisKey:=ThisKey
-	%Hotkey_TargetFunc%(MCtrl MAlt MShift MWin, KeyName, Prefix, Hotkey, VkCode, SCCode, ThisKey)
+	K.Mods := K.MCtrl K.MAlt K.MShift K.MWin
+	K.TK := GetKeyName(VkCode SCCode), K.TK := K.TK = "" ? VkCode SCCode : K.TK
+	(IsMod) ? (K.HK := K.Pref := K.Name := "", ModsOnly := K.Mods = "" ? 0 : 1)
+	: (K.HK := InStr(Symbols, "|" VkCode "|") ? VkCode : K.TK
+	, K.Name := K.HK = "vkBF" ? "/" : K.TK
+	, K.Pref := K.PCtrl K.PAlt K.PShift K.PWin, ModsOnly := 0)
+	%Hotkey_TargetFunc%(K*)
 	Return 1
 
 Hotkey_PressName:
-	KeyName := Hotkey := ThisKey := _KeyName := _Hotkey := _ThisKey := A_ThisHotkey
-	ModsOnly := 0
-	VkCode := _VkCode := !InStr(A_ThisHotkey, "Joy") ? VkMouse[A_ThisHotkey] : ""
-	%Hotkey_TargetFunc%(MCtrl MAlt MShift MWin, KeyName, PCtrl PAlt PShift PWin, Hotkey, VkCode, SCCode, ThisKey)
-	Return
+	K.Mods := K.MCtrl K.MAlt K.MShift K.MWin
+	K.Pref := K.PCtrl K.PAlt K.PShift K.PWin
+	K.HK := K.Name := K.TK := A_ThisHotkey, ModsOnly := 0, K.SC := ""
+	K.VK := !InStr(A_ThisHotkey, "Joy") ? VkMouse[A_ThisHotkey] : ""
+	%Hotkey_TargetFunc%(K*)
+	Return 1
 }
 
 Hotkey_ExtKeyInit()   {
@@ -793,24 +800,23 @@ Hotkey_LowLevelKeyboardProc(nCode, wParam, lParam)   {
 	sc := NumGet(lParam+0, 8, "UInt") & 1, sc := sc << 8 | NumGet(lParam+0, 4, "UInt")
 	SCCode := "sc" SubStr(sc, 3), IsMod := Mods[VkCode]
 	SetFormat, IntegerFast, %SaveFormat%
-	If (wParam = 0x100 || wParam = 0x104)		;  WM_KEYDOWN := 0x100, WM_SYSKEYDOWN := 0x104
+	If (wParam = 0x100 || wParam = 0x104)   ;  WM_KEYDOWN := 0x100, WM_SYSKEYDOWN := 0x104
 		IsMod ? Hotkey_Main(VkCode, SCCode, "Down", IsMod) : Hotkey_Main(VkCode, SCCode)
-	Else If ((wParam = 0x101 || wParam = 0x105) && VkCode != "vk5D")	;  WM_KEYUP := 0x101, WM_SYSKEYUP := 0x105, AppsKey = "vk5D"
+	Else If ((wParam = 0x101 || wParam = 0x105) && VkCode != "vk5D")   ;  WM_KEYUP := 0x101, WM_SYSKEYUP := 0x105, AppsKey = "vk5D"
 		nCode := -1, IsMod ? Hotkey_Main(VkCode, SCCode, "Up", IsMod) : ""
 	Return nCode < 0 ? DllCall("CallNextHookEx", "Ptr", 0, "Int", nCode, "UInt", wParam, "UInt", lParam) : 1
 }
 
 Hotkey_WindowsHookEx(State)   {
 	Static Hook
-	DllCall("UnhookWindowsHookEx" , "Ptr", Hook)
 	If State
 		Hook := DllCall("SetWindowsHookEx" . (A_IsUnicode ? "W" : "A")
-				, "Int", 13	;  WH_KEYBOARD_LL := 13
+				, "Int", 13   ;  WH_KEYBOARD_LL
 				, "Ptr", RegisterCallback("Hotkey_LowLevelKeyboardProc", "Fast")
 				, "Ptr", DllCall("GetModuleHandle", "UInt", 0, "Ptr")
 				, "UInt", 0, "Ptr")
 	Else
-		Hook := "", Hotkey_Hook := 0
+		DllCall("UnhookWindowsHookEx" , "Ptr", Hook), Hook := "", Hotkey_Hook := 0
 }
 
 	; _________________________________________________ Labels _________________________________________________
