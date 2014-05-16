@@ -5,7 +5,7 @@
 	;  Коллекция - http://forum.script-coding.com/viewtopic.php?pid=72459#p72459
 	;  GitHub - https://github.com/serzh82saratov/AhkSpy/blob/master/AhkSpy.ahk
 
-Global AhkSpyVersion := 1.138
+Global AhkSpyVersion := 1.139
 #NoTrayIcon
 #SingleInstance Force
 #NoEnv
@@ -739,9 +739,11 @@ Write_Hotkey(K*)   {
 	HK1 := IsVk ? Hotkey : ThisKey
 	HK2 := HK1 = PrHK1 ? PrHK2 : PrHK1, PrHK1 := HK1, PrHK2 := HK2
 	HKComment := "    `;  """ GetKeyName(HK2) " & " GetKeyName(HK1) """"
+	(Hotkey != "") ? (LRComment := "    `;  """ LRMods KeyName """"
+		, FComment := "    `;  """ Mods KeyName """") : 0
 	Comment := IsVk ? "    `;  """ KeyName """" : ""
 	inp_hk := o_edithotkey.value, inp_kn := o_editkeyname.value
-
+	
 	HTML_Hotkey =
 	( Ltrim
 	<body id='body'> <pre id='pre'; contenteditable='true'>
@@ -753,13 +755,13 @@ Write_Hotkey(K*)   {
 
 	%D1% <span id='title'>( Command syntax )</span> %D2%
 
-	%Prefix%%Hotkey%::<span id='param'>%Comment%</span>
+	%Prefix%%Hotkey%::<span id='param'>%FComment%</span>
 
-	%LRPref%%Hotkey%::<span id='param'>%Comment%</span>
+	%LRPref%%Hotkey%::<span id='param'>%LRComment%</span>
 
 	%HK2% & %HK1%::<span id='param'>%HKComment%</span>
 
-	Send %Prefix%{%Hotkey%}<span id='param'>%Comment%</span>  %DP%  SendInput %Prefix%{%Hotkey%}<span id='param'>%Comment%</span>
+	Send, %Prefix%{%Hotkey%}<span id='param'>%Comment%</span>  %DP%  SendInput, %Prefix%{%Hotkey%}<span id='param'>%Comment%</span>
 
 	ControlSend, ahk_parent, %Prefix%{%Hotkey%}, WinTitle<span id='param'>%Comment%</span>
 
