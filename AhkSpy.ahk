@@ -5,7 +5,7 @@
 	;  Коллекция - http://forum.script-coding.com/viewtopic.php?pid=72459#p72459
 	;  GitHub - https://github.com/serzh82saratov/AhkSpy/blob/master/AhkSpy.ahk
 
-Global AhkSpyVersion := 1.140
+Global AhkSpyVersion := 1.141
 #NoTrayIcon
 #SingleInstance Force
 #NoEnv
@@ -87,6 +87,7 @@ Menu, Sys, Add
 Menu, Sys, Add, Pause AhkSpy, PausedScript
 Menu, Sys, Add, Default size, DefaultSize
 Menu, Sys, Add, Reload AhkSpy, Reload
+Menu, Sys, Add, Suspend Hotkeys, Suspend
 Menu, Sys, Add
 If !A_IsCompiled
 {
@@ -940,7 +941,7 @@ GuiSize:
 		Gui, TB: Show, % "NA y0 x" (A_GuiWidth - widthTB) // 2.5
 		WinMove, ahk_id %hActiveX%, , 0, HeigtButton, A_GuiWidth, A_GuiHeight - HeigtButton
 	}
-	Else If Sleep = 1
+	Else
 		HideMarker()
 	Try SetTimer, Loop_%ThisMode%, % Sleep = 1 || isPaused ? "Off" : "On"
 	Return
@@ -978,6 +979,10 @@ DefaultSize:
 
 Reload:
 	Reload
+	Return
+Suspend:
+	Suspend
+	Menu, Sys, % A_IsSuspended ? "Check" : "UnCheck", % A_ThisMenuItem
 	Return
 
 UpdateAhkSpy:
