@@ -5,7 +5,7 @@
 	;  Коллекция - http://forum.script-coding.com/viewtopic.php?pid=72459#p72459
 	;  GitHub - https://github.com/serzh82saratov/AhkSpy/blob/master/AhkSpy.ahk
 
-Global AhkSpyVersion := 1.139
+Global AhkSpyVersion := 1.140
 #NoTrayIcon
 #SingleInstance Force
 #NoEnv
@@ -739,11 +739,13 @@ Write_Hotkey(K*)   {
 	HK1 := IsVk ? Hotkey : ThisKey
 	HK2 := HK1 = PrHK1 ? PrHK2 : PrHK1, PrHK1 := HK1, PrHK2 := HK2
 	HKComment := "    `;  """ GetKeyName(HK2) " & " GetKeyName(HK1) """"
-	(Hotkey != "") ? (LRComment := "    `;  """ LRMods KeyName """"
-		, FComment := "    `;  """ Mods KeyName """") : 0
+	(Hotkey != "") ? (LRComment := "::    `;  """ LRMods KeyName """"
+		, FComment := "::    `;  """ Mods KeyName """") : 0
 	Comment := IsVk ? "    `;  """ KeyName """" : ""
 	inp_hk := o_edithotkey.value, inp_kn := o_editkeyname.value
-	
+	If LRMods !=
+		LRMStr := LRMods KeyName, LRPStr := LRPref Hotkey "<span id='param'>" LRComment "</span>"
+
 	HTML_Hotkey =
 	( Ltrim
 	<body id='body'> <pre id='pre'; contenteditable='true'>
@@ -751,13 +753,13 @@ Write_Hotkey(K*)   {
 
 	%Mods%%KeyName%
 
-	%LRMods%%KeyName%
+	%LRMStr%
 
 	%D1% <span id='title'>( Command syntax )</span> %D2%
 
-	%Prefix%%Hotkey%::<span id='param'>%FComment%</span>
+	%Prefix%%Hotkey%<span id='param'>%FComment%</span>
 
-	%LRPref%%Hotkey%::<span id='param'>%LRComment%</span>
+	%LRPStr%
 
 	%HK2% & %HK1%::<span id='param'>%HKComment%</span>
 
@@ -767,7 +769,7 @@ Write_Hotkey(K*)   {
 
 	%D1% <span id='title'>( Last pressed )</span> %D2%
 
-	%ThisKey%  %DP%  %VKCode%%SCCode%    %DP%    %VKCode%    %DP%    %SCCode%
+	%ThisKey%   %DP%   %VKCode%%SCCode%   %DP%   %VKCode%   %DP%   %SCCode%
 
 	%D1% <span id='title'>( GetKeyName )</span> %D2%
 
@@ -775,7 +777,7 @@ Write_Hotkey(K*)   {
 
 	%D1% <span id='title'>( Not detect buttons )</span> %D2%
 
-	<span id='param'>LButton - vk1  %DP%  RButton - vk2</span>
+	<span id='param'>LButton - vk1   %DP%   RButton - vk2</span>
 
 	%D2%</pre></body>
 
