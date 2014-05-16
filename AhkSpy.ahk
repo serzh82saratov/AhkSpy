@@ -5,7 +5,7 @@
 	;  Коллекция - http://forum.script-coding.com/viewtopic.php?pid=72459#p72459
 	;  GitHub - https://github.com/serzh82saratov/AhkSpy/blob/master/AhkSpy.ahk
 
-Global AhkSpyVersion := 1.141
+Global AhkSpyVersion := 1.142
 #NoTrayIcon
 #SingleInstance Force
 #NoEnv
@@ -15,7 +15,7 @@ ListLines, Off
 Gosub, RevAhkVersion
 Menu, Tray, Icon, Shell32.dll, % A_OSVersion = "WIN_7" ? 278 : 222
 
-# := "&#9642"									;  Символ разделителя заголовков
+# := "&#9642"									;  Символ разделителя заголовков - &#8226 | &#9642
 Color# := "E14B30"								;  Цвет шрифта разделителя заголовков и параметров
 Global ThisMode := "Mouse"						;  Стартовый режим - Win|Mouse|Hotkey
 , HeightStart := 550							;  Высота окна при старте
@@ -62,6 +62,7 @@ Gui, TB: Show, % "x0 y0 NA h" HeigtButton " w" widthTB := wKey*3+wColor
 
 OnExit, Exit
 OnMessage(0x201, "WM_LBUTTONDOWN")
+OnMessage(0x6, "WM_ACTIVATE")
 ComObjError(false), ComObjConnect(oDoc, Events)
 DllCall("RegisterShellHookWindow", "UInt", A_ScriptHwnd)
 OnMessage(DllCall("RegisterWindowMessage", "str", "SHELLHOOK"), "ShellProc")
@@ -740,12 +741,11 @@ Write_Hotkey(K*)   {
 	HK1 := IsVk ? Hotkey : ThisKey
 	HK2 := HK1 = PrHK1 ? PrHK2 : PrHK1, PrHK1 := HK1, PrHK2 := HK2
 	HKComment := "    `;  """ GetKeyName(HK2) " & " GetKeyName(HK1) """"
-	(Hotkey != "") ? (LRComment := "::    `;  """ LRMods KeyName """"
-		, FComment := "::    `;  """ Mods KeyName """") : 0
 	Comment := IsVk ? "    `;  """ KeyName """" : ""
+	(Hotkey != "") ? (LRComment := "::<span id='param'>    `;  """ LRMods KeyName """</span>"
+		, FComment := "::<span id='param'>    `;  """ Mods KeyName """</span>") : 0
+	(LRMods != "") ? (LRMStr := LRMods KeyName, LRPStr := LRPref Hotkey LRComment) : 0
 	inp_hk := o_edithotkey.value, inp_kn := o_editkeyname.value
-	If LRMods !=
-		LRMStr := LRMods KeyName, LRPStr := LRPref Hotkey "<span id='param'>" LRComment "</span>"
 
 	HTML_Hotkey =
 	( Ltrim
@@ -758,7 +758,7 @@ Write_Hotkey(K*)   {
 
 	%D1% <span id='title'>( Command syntax )</span> %D2%
 
-	%Prefix%%Hotkey%<span id='param'>%FComment%</span>
+	%Prefix%%Hotkey%%FComment%
 
 	%LRPStr%
 
@@ -839,9 +839,8 @@ Hotkey_Main(VKCode, SCCode, StateMod = 0, IsMod = 0, OnlyMods = 0)  {
 		K.MLCtrl := K.MLAlt := K.MLShift := K.MLWin := K.LRMods := ""
 		K.MRCtrl := K.MRAlt := K.MRShift := K.MRWin := ""
 		%Hotkey_TargetFunc%(K*)
-		Return 1
+		Return 0
 	}
-	K.VK := VKCode, K.SC := SCCode
 	If (StateMod = "Down")
 	{
 		If (K["M" IsMod] != "")
@@ -859,6 +858,7 @@ Hotkey_Main(VKCode, SCCode, StateMod = 0, IsMod = 0, OnlyMods = 0)  {
 		If (K.HK != "")
 			return 1
 	}
+	K.VK := VKCode, K.SC := SCCode
 	K.Mods := K.MCtrl K.MAlt K.MShift K.MWin
 	K.LRMods := K.MLCtrl K.MRCtrl K.MLAlt K.MRAlt K.MLShift K.MRShift K.MLWin K.MRWin
 	K.TK := GetKeyName(VKCode SCCode), K.TK := K.TK = "" ? VKCode SCCode : K.TK
@@ -938,7 +938,7 @@ GuiSize:
 	Sleep := A_EventInfo
 	If Sleep != 1
 	{
-		Gui, TB: Show, % "NA y0 x" (A_GuiWidth - widthTB) // 2.5
+		Gui, TB: Show, % "NA y0 x" (A_GuiWidth - widthTB) // 2.2
 		WinMove, ahk_id %hActiveX%, , 0, HeigtButton, A_GuiWidth, A_GuiHeight - HeigtButton
 	}
 	Else
@@ -980,6 +980,7 @@ DefaultSize:
 Reload:
 	Reload
 	Return
+
 Suspend:
 	Suspend
 	Menu, Sys, % A_IsSuspended ? "Check" : "UnCheck", % A_ThisMenuItem
@@ -1023,6 +1024,23 @@ Sys_Help:
 	; _________________________________________________ Functions _________________________________________________
 
 
+ShellProc(nCode, wParam)   {
+	If (nCode = 4)
+	{
+		If (wParam = hGui)
+			(ThisMode = "Hotkey" && !isPaused ? Hotkey_Hook := 1 : ""), HideMarker()
+		Else If Hotkey_Hook
+			Hotkey_Reset()
+	}
+}
+
+WM_ACTIVATE(wp,lp)   {
+	If (wp & 0xFFFF)
+		(ThisMode = "Hotkey" && !isPaused ? Hotkey_Hook := 1 : ""), HideMarker()
+	Else If (wp & 0xFFFF = 0 && Hotkey_Hook)
+		Hotkey_Reset()
+}
+
 WM_LBUTTONDOWN()   {
 	If (A_GuiControl = "ColorProgress" && ThisMode != "Hotkey")
 		SendInput !{Esc}
@@ -1043,7 +1061,7 @@ LaunchLink(Link)   {
 
 ShowMarker(x, y, w, h, b:=4)   {
 	ShowMarker := 1
-	w < 8 || h < 8 ? b:=2
+	w < 8 || h < 8 ? b := 2 : 0
 	Try Gui, M: Show, NA x%x% y%y% w%w% h%h%
 	Catch
 		Return HideMarker()
@@ -1091,22 +1109,12 @@ ExistSelectedText(byref Copy)   {
 	Copy := oDoc.selection.createRange().text
 	If Copy is space
 		Return 0
-	Copy := RTrim(Trim(Copy), Chr(0x25aa))
+	Copy := Trim(Copy)
 	Copy := RegExReplace(Copy, Chr(0x25aa) Chr(0x25aa) "+", "#!#")
 	StringReplace, Copy, Copy, % Chr(0x25aa), #, 1
 	StringReplace, Copy, Copy, #!#  copy  #!#, #!#, 1
 	StringReplace, Copy, Copy, #!#  pause  #!#, #!#
 	Return 1
-}
-
-ShellProc(nCode, wParam)   {
-	If (nCode = 4)
-	{
-		If (wParam = hGui)
-			(ThisMode = "Hotkey" && !isPaused ? Hotkey_Hook := 1 : ""), HideMarker()
-		Else If Hotkey_Hook
-			Hotkey_Reset()
-	}
 }
 
 	;  http://www.autohotkey.com/board/topic/69254-func-api-getwindowinfo-ahk-l/#entry438372
