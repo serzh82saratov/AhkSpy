@@ -5,7 +5,7 @@
 	;  Коллекция - http://forum.script-coding.com/viewtopic.php?pid=72459#p72459
 	;  GitHub - https://github.com/serzh82saratov/AhkSpy/blob/master/AhkSpy.ahk
 
-Global AhkSpyVersion := 1.137
+Global AhkSpyVersion := 1.138
 #NoTrayIcon
 #SingleInstance Force
 #NoEnv
@@ -561,6 +561,8 @@ GetInfo_SysTabControl(hwnd, ByRef ClassNN)   {
 			. "<span id='param'>Selected item:</span> " SelTab
 }
 
+	; _________________________________________________ Get Internet Explorer Info _________________________________________________
+
 	;  http://www.autohotkey.com/board/topic/84258-iwb2-learner-iwebbrowser2/
 
 GetInfo_AtlAxWin(hwnd, ByRef ClassNN)   {
@@ -618,6 +620,96 @@ WBGet(hwnd)   {
 	Return ComObj(9,ComObjQuery(pdoc,IID_IHTMLWindow2,IID_IHTMLWindow2),1), ObjRelease(pdoc)
 }
 
+	; _________________________________________________ Get Acc Info _________________________________________________
+
+	;  http://www.autohotkey.com/board/topic/77888-accessible-info-viewer-alpha-release-2012-09-20/
+
+AccInfoUnderMouse(x, y)   {
+	Static h
+	If Not h
+		h := DllCall("LoadLibrary","Str","oleacc","Ptr")
+	If DllCall("oleacc\AccessibleObjectFromPoint"
+		, "Int64", x&0xFFFFFFFF|y<<32, "Ptr*", pacc
+		, "Ptr", VarSetCapacity(varChild,8+2*A_PtrSize,0)*0+&varChild) = 0
+	Acc:=ComObjEnwrap(9,pacc,1), child:=NumGet(varChild,8,"UInt")
+	If !IsObject(Acc)
+		Return
+	Type := child ? "Child" DP "<span id='param'>Id:  </span>" child
+		: "Parent" DP "<span id='param'>ChildCount:  </span>" ((C:=Acc.accChildCount)!=""?C:"N/A")
+	code = `n<span id='param'>Type:</span>  %Type%
+	code .= DP "<span id='param'>Pos:  </span>" GetAccLocation(Acc, child)
+
+	If ((Role := AccRole(Acc, child)) != "")  {
+		code = %code%`n%D1% <a></a><span id='param'>( Role )</span> %DB% %copy_button% %D2%`n
+		code .= "<span>" TransformHTML(Role) "</span>"
+	}
+	If (child &&(ObjRole := AccRole(Acc)) != "")  {
+		code = %code%`n%D1% <a></a><span id='param'>( Role - parent )</span> %DB% %copy_button% %D2%`n
+		code .= "<span>" TransformHTML(ObjRole) "</span>"
+	}
+	If ((Value := Acc.accValue(child)) != "")  {
+		code = %code%`n%D1% <a></a><span id='param'>( Value )</span> %DB% %copy_button% %D2%`n
+		code .= "<span>" TransformHTML(Value) "</span>"
+	}
+	If ((Name := Acc.accName(child)) != "")  {
+		code = %code%`n%D1% <a></a><span id='param'>( Name )</span> %DB% %copy_button% %D2%`n
+		code .= "<span>" TransformHTML(Name) "</span>"
+	}
+	If ((State := AccGetStateText(Acc.accState(child))) != "")  {
+		code = %code%`n%D1% <a></a><span id='param'>( State )</span> %DB% %copy_button% %D2%`n
+		code .= "<span>" TransformHTML(State) "</span>"
+	}
+	If ((Action := Acc.accDefaultAction(child)) != "")  {
+		code = %code%`n%D1% <a></a><span id='param'>( Action )</span> %DB% %copy_button% %D2%`n
+		code .= "<span>" TransformHTML(Action) "</span>"
+	}
+	If ((Selection := Acc.accSelection) > 0)  {
+		code = %code%`n%D1% <a></a><span id='param'>( Selection - parent )</span> %D2%`n
+		code .= "<span>" TransformHTML(Selection) "</span>"
+	}
+	If ((Focus := Acc.accFocus) > 0)  {
+		code = %code%`n%D1% <a></a><span id='param'>( Focus - parent )</span> %D2%`n
+		code .= "<span>" TransformHTML(Focus) "</span>"
+	}
+	If ((Description := Acc.accDescription(child)) != "")  {
+		code = %code%`n%D1% <a></a><span id='param'>( Description )</span> %DB% %copy_button% %D2%`n
+		code .= "<span>" TransformHTML(Description) "</span>"
+	}
+	If ((ShortCut := Acc.accKeyboardShortCut(child)) != "")  {
+		code = %code%`n%D1% <a></a><span id='param'>( ShortCut )</span> %DB% %copy_button% %D2%`n
+		code .= "<span>" TransformHTML(ShortCut) "</span>"
+	}
+	If ((Help := Acc.accHelp(child)) != "")  {
+		code = %code%`n%D1% <a></a><span id='param'>( Help )</span> %DB% %copy_button% %D2%`n
+		code .= "<span>" TransformHTML(Help) "</span>"
+	}
+	If ((HelpTopic := Acc.AccHelpTopic(child)))  {
+		code = %code%`n%D1% <a></a><span id='param'>( HelpTopic )</span> %DB% %copy_button% %D2%`n
+		code .= "<span>" TransformHTML(HelpTopic) "</span>"
+	}
+	Return code
+}
+AccRole(Acc, ChildId=0)   {
+	Return ComObjType(Acc,"Name")="IAccessible"?AccGetRoleText(Acc.accRole(ChildId)):""
+}
+AccGetRoleText(nRole)   {
+	nSize := DllCall("oleacc\GetRoleText", "UInt", nRole, "Ptr", 0, "UInt", 0)
+	VarSetCapacity(sRole, (A_IsUnicode?2:1)*nSize)
+	DllCall("oleacc\GetRoleText", "UInt", nRole, "str", sRole, "UInt", nSize+1)
+	Return sRole
+}
+AccGetStateText(nState)   {
+	nSize := DllCall("oleacc\GetStateText", "UInt", nState, "Ptr", 0, "UInt", 0)
+	VarSetCapacity(sState, (A_IsUnicode?2:1)*nSize)
+	DllCall("oleacc\GetStateText", "UInt", nState, "str", sState, "UInt", nSize+1)
+	Return sState
+}
+GetAccLocation(Acc, Child=0) {
+	Acc.accLocation(ComObj(0x4003,&x:=0), ComObj(0x4003,&y:=0), ComObj(0x4003,&w:=0), ComObj(0x4003,&h:=0), Child)
+	Return "x" (AccCoord[1]:=NumGet(x,0,"int")) " y" (AccCoord[2]:=NumGet(y,0,"int"))
+			. " w" (AccCoord[3]:=NumGet(w,0,"int")) " h" (AccCoord[4]:=NumGet(h,0,"int"))
+}
+
 	; _________________________________________________ Mode_Hotkey _________________________________________________
 
 Mode_Hotkey:
@@ -628,7 +720,7 @@ Mode_Hotkey:
 	ThisMode := "Hotkey", Hotkey_Hook := (!isPaused ? 1 : Hotkey_Reset()), TitleText := "AhkSpy - Button" TitleTextP2
 	oDoc.body.scrollLeft := ScrollPos[ThisMode,1], oDoc.body.scrollTop := ScrollPos[ThisMode,2]
 	ShowMarker ? HideMarker() : ""
-	(HTML_Hotkey != "") ? Write_HotkeyHTML() : Write_Hotkey({"Name":"Wait press button..."}*)
+	(HTML_Hotkey != "") ? Write_HotkeyHTML() : Write_Hotkey({"Mods":"Wait press button..."}*)
 	SendMessage, 0xC, 0, &TitleText, , ahk_id %hGui%
 	GuiControl, TB: -0x0001, But3
 	WinActivate ahk_id %hGui%
@@ -637,9 +729,11 @@ Mode_Hotkey:
 
 Write_Hotkey(K*)   {
 	Static PrHK1, PrHK2
+
 	Mods := K.Mods, KeyName := K.Name
 	Prefix := K.Pref, Hotkey := K.HK
-	ThisKey := K.TK, VkCode := K.VK, SCCode := K.SC
+	LRMods := K.LRMods, LRPref := TransformHTML(K.LRPref)
+	ThisKey := K.TK, VKCode := K.VK, SCCode := K.SC
 
 	IsVk := Hotkey ~= "^vk" ? 1 : 0
 	HK1 := IsVk ? Hotkey : ThisKey
@@ -655,11 +749,13 @@ Write_Hotkey(K*)   {
 
 	%Mods%%KeyName%
 
+	%LRMods%%KeyName%
+
 	%D1% <span id='title'>( Command syntax )</span> %D2%
 
 	%Prefix%%Hotkey%::<span id='param'>%Comment%</span>
 
-	%Prefix%{%Hotkey%}  %DP%  %Prefix%%Hotkey%<span id='param'>%Comment%</span>
+	%LRPref%%Hotkey%::<span id='param'>%Comment%</span>
 
 	%HK2% & %HK1%::<span id='param'>%HKComment%</span>
 
@@ -669,11 +765,7 @@ Write_Hotkey(K*)   {
 
 	%D1% <span id='title'>( Last pressed )</span> %D2%
 
-	%ThisKey%
-
-	%VkCode%  %DP%  %SCCode%
-
-	%VkCode%%SCCode%
+	%ThisKey%  %DP%  %VKCode%%SCCode%    %DP%    %VKCode%    %DP%    %SCCode%
 
 	%D1% <span id='title'>( GetKeyName )</span> %D2%
 
@@ -719,11 +811,12 @@ Hotkey_Control(State)  {
 	If (!IsStart)
 		Hotkey_ExtKeyInit(), IsStart := 1
 	Hotkey_WindowsHookEx(State)
-	Return State
 }
 
-Hotkey_Main(VkCode, SCCode, StateMod = 0, IsMod = 0, OnlyMods = 0)  {
+Hotkey_Main(VKCode, SCCode, StateMod = 0, IsMod = 0, OnlyMods = 0)  {
 	Static K:={}, ModsOnly, Prefix := {"Alt":"!","Ctrl":"^","Shift":"+","Win":"#"}
+		, LRPrefix := {"LAlt":"<!","LCtrl":"<^","LShift":"<+","LWin":"<#"
+				,"RAlt":">!","RCtrl":">^","RShift":">+","RWin":">#"}
 		, VkMouse := {"MButton":"vk4","WheelDown":"vk9E","WheelUp":"vk9F","WheelRight":"vk9D"
 				,"WheelLeft":"vk9C","XButton1":"vk5","XButton2":"vk6"}
 		, Symbols := "|vkBA|vkBB|vkBC|vkBD|vkBE|vkBF|vkC0|vkDB|vkDC|vkDD|vkDE|vk41|vk42|"
@@ -736,34 +829,48 @@ Hotkey_Main(VkCode, SCCode, StateMod = 0, IsMod = 0, OnlyMods = 0)  {
 			Return 0
 		ModsOnly := 0, K.MCtrl := K.MAlt := K.MShift := K.MWin := K.Mods := ""
 		K.PCtrl := K.PAlt := K.PShift := K.PWin := K.Pref := ""
+		K.PLCtrl := K.PLAlt := K.PLShift := K.PLWin := K.LRPref := ""
+		K.PRCtrl := K.PRAlt := K.PRShift := K.PRWin := ""
+		K.MLCtrl := K.MLAlt := K.MLShift := K.MLWin := K.LRMods := ""
+		K.MRCtrl := K.MRAlt := K.MRShift := K.MRWin := ""
 		%Hotkey_TargetFunc%(K*)
 		Return 1
 	}
-	K.VK := VkCode, K.SC := SCCode
+	K.VK := VKCode, K.SC := SCCode
 	If (StateMod = "Down")
 	{
 		If (K["M" IsMod] != "")
 			Return 1
-		K["M" IsMod] := IsMod "+", K["P" IsMod] := Prefix[IsMod]
+		sIsMod := SubStr(IsMod, 2)
+		K["M" sIsMod] := sIsMod "+", K["P" sIsMod] := Prefix[sIsMod]
+		K["M" IsMod] := IsMod "+", K["P" IsMod] := LRPrefix[IsMod]
 	}
 	Else If (StateMod = "Up")
 	{
+		sIsMod := SubStr(IsMod, 2)
 		K["M" IsMod] := K["P" IsMod] := ""
+		If (K["ML" sIsMod] = "" && K["MR" sIsMod] = "")
+			K["M" sIsMod] := K["P" sIsMod] := ""
 		If (K.HK != "")
 			return 1
 	}
 	K.Mods := K.MCtrl K.MAlt K.MShift K.MWin
-	K.TK := GetKeyName(VkCode SCCode), K.TK := K.TK = "" ? VkCode SCCode : K.TK
-	(IsMod) ? (K.HK := K.Pref := K.Name := "", ModsOnly := K.Mods = "" ? 0 : 1)
-	: (K.HK := InStr(Symbols, "|" VkCode "|") ? VkCode : K.TK
+	K.LRMods := K.MLCtrl K.MRCtrl K.MLAlt K.MRAlt K.MLShift K.MRShift K.MLWin K.MRWin
+	K.TK := GetKeyName(VKCode SCCode), K.TK := K.TK = "" ? VKCode SCCode : K.TK
+	(IsMod) ? (K.HK := K.Pref := K.LRPref := K.Name := "", ModsOnly := K.Mods = "" ? 0 : 1)
+	: (K.HK := InStr(Symbols, "|" VKCode "|") ? VKCode : K.TK
 	, K.Name := K.HK = "vkBF" ? "/" : K.TK
-	, K.Pref := K.PCtrl K.PAlt K.PShift K.PWin, ModsOnly := 0)
+	, K.Pref := K.PCtrl K.PAlt K.PShift K.PWin
+	, K.LRPref := K.PLCtrl K.PRCtrl K.PLAlt K.PRAlt K.PLShift K.PRShift K.PLWin K.PRWin
+	, ModsOnly := 0)
 	%Hotkey_TargetFunc%(K*)
 	Return 1
 
 Hotkey_PressName:
 	K.Mods := K.MCtrl K.MAlt K.MShift K.MWin
+	K.LRMods := K.MLCtrl K.MRCtrl K.MLAlt K.MRAlt K.MLShift K.MRShift K.MLWin K.MRWin
 	K.Pref := K.PCtrl K.PAlt K.PShift K.PWin
+	K.LRPref := K.PLCtrl K.PRCtrl K.PLAlt K.PRAlt K.PLShift K.PRShift K.PLWin K.PRWin
 	K.HK := K.Name := K.TK := A_ThisHotkey, ModsOnly := 0, K.SC := ""
 	K.VK := !InStr(A_ThisHotkey, "Joy") ? VkMouse[A_ThisHotkey] : ""
 	%Hotkey_TargetFunc%(K*)
@@ -790,21 +897,21 @@ Hotkey_Reset()   {
 	;  http://forum.script-coding.com/viewtopic.php?id=6350
 
 Hotkey_LowLevelKeyboardProc(nCode, wParam, lParam)   {
-	Static Mods := {"vkA4":"Alt","vkA5":"Alt","vkA2":"Ctrl","vkA3":"Ctrl"
-		,"vkA0":"Shift","vkA1":"Shift","vk5B":"Win","vk5C":"Win"}, SaveFormat
+	Static Mods := {"vkA4":"LAlt","vkA5":"RAlt","vkA2":"LCtrl","vkA3":"RCtrl"
+		,"vkA0":"LShift","vkA1":"RShift","vk5B":"LWin","vk5C":"RWin"}, SaveFormat
 
 	If !Hotkey_Hook
 		Return DllCall("CallNextHookEx", "Ptr", 0, "Int", nCode, "UInt", wParam, "UInt", lParam)
 	SaveFormat := A_FormatInteger
 	SetFormat, IntegerFast, H
-	VkCode := "vk" SubStr(NumGet(lParam+0, 0, "UInt"), 3)
+	VKCode := "vk" SubStr(NumGet(lParam+0, 0, "UInt"), 3)
 	sc := NumGet(lParam+0, 8, "UInt") & 1, sc := sc << 8 | NumGet(lParam+0, 4, "UInt")
-	SCCode := "sc" SubStr(sc, 3), IsMod := Mods[VkCode]
+	SCCode := "sc" SubStr(sc, 3), IsMod := Mods[VKCode]
 	SetFormat, IntegerFast, %SaveFormat%
 	If (wParam = 0x100 || wParam = 0x104)   ;  WM_KEYDOWN := 0x100, WM_SYSKEYDOWN := 0x104
-		IsMod ? Hotkey_Main(VkCode, SCCode, "Down", IsMod) : Hotkey_Main(VkCode, SCCode)
-	Else If ((wParam = 0x101 || wParam = 0x105) && VkCode != "vk5D")   ;  WM_KEYUP := 0x101, WM_SYSKEYUP := 0x105, AppsKey = "vk5D"
-		nCode := -1, IsMod ? Hotkey_Main(VkCode, SCCode, "Up", IsMod) : ""
+		IsMod ? Hotkey_Main(VKCode, SCCode, "Down", IsMod) : Hotkey_Main(VKCode, SCCode)
+	Else If ((wParam = 0x101 || wParam = 0x105) && VKCode != "vk5D")   ;  WM_KEYUP := 0x101, WM_SYSKEYUP := 0x105, AppsKey = "vk5D"
+		nCode := -1, IsMod ? Hotkey_Main(VKCode, SCCode, "Up", IsMod) : ""
 	Return nCode < 0 ? DllCall("CallNextHookEx", "Ptr", 0, "Int", nCode, "UInt", wParam, "UInt", lParam) : 1
 }
 
@@ -1004,94 +1111,6 @@ GetClientPos(hwnd, ByRef left, ByRef top, ByRef w, ByRef h)   {
 	h:=NumGet(pwi,32,"int")-NumGet(pwi,24,"int")
 }
 
-	;  http://www.autohotkey.com/board/topic/77888-accessible-info-viewer-alpha-release-2012-09-20/
-
-AccInfoUnderMouse(x, y)   {
-	Static h
-	If Not h
-		h := DllCall("LoadLibrary","Str","oleacc","Ptr")
-	If DllCall("oleacc\AccessibleObjectFromPoint"
-		, "Int64", x&0xFFFFFFFF|y<<32, "Ptr*", pacc
-		, "Ptr", VarSetCapacity(varChild,8+2*A_PtrSize,0)*0+&varChild) = 0
-	Acc:=ComObjEnwrap(9,pacc,1), child:=NumGet(varChild,8,"UInt")
-	If !IsObject(Acc)
-		Return
-	Type := child ? "Child" DP "<span id='param'>Id:  </span>" child
-		: "Parent" DP "<span id='param'>ChildCount:  </span>" ((C:=Acc.accChildCount)!=""?C:"N/A")
-	code = `n<span id='param'>Type:</span>  %Type%
-	code .= DP "<span id='param'>Pos:  </span>" GetAccLocation(Acc, child)
-
-	If ((Role := AccRole(Acc, child)) != "")  {
-		code = %code%`n%D1% <a></a><span id='param'>( Role )</span> %DB% %copy_button% %D2%`n
-		code .= "<span>" TransformHTML(Role) "</span>"
-	}
-	If (child &&(ObjRole := AccRole(Acc)) != "")  {
-		code = %code%`n%D1% <a></a><span id='param'>( Role - parent )</span> %DB% %copy_button% %D2%`n
-		code .= "<span>" TransformHTML(ObjRole) "</span>"
-	}
-	If ((Value := Acc.accValue(child)) != "")  {
-		code = %code%`n%D1% <a></a><span id='param'>( Value )</span> %DB% %copy_button% %D2%`n
-		code .= "<span>" TransformHTML(Value) "</span>"
-	}
-	If ((Name := Acc.accName(child)) != "")  {
-		code = %code%`n%D1% <a></a><span id='param'>( Name )</span> %DB% %copy_button% %D2%`n
-		code .= "<span>" TransformHTML(Name) "</span>"
-	}
-	If ((State := AccGetStateText(Acc.accState(child))) != "")  {
-		code = %code%`n%D1% <a></a><span id='param'>( State )</span> %DB% %copy_button% %D2%`n
-		code .= "<span>" TransformHTML(State) "</span>"
-	}
-	If ((Action := Acc.accDefaultAction(child)) != "")  {
-		code = %code%`n%D1% <a></a><span id='param'>( Action )</span> %DB% %copy_button% %D2%`n
-		code .= "<span>" TransformHTML(Action) "</span>"
-	}
-	If ((Selection := Acc.accSelection) > 0)  {
-		code = %code%`n%D1% <a></a><span id='param'>( Selection - parent )</span> %D2%`n
-		code .= "<span>" TransformHTML(Selection) "</span>"
-	}
-	If ((Focus := Acc.accFocus) > 0)  {
-		code = %code%`n%D1% <a></a><span id='param'>( Focus - parent )</span> %D2%`n
-		code .= "<span>" TransformHTML(Focus) "</span>"
-	}
-	If ((Description := Acc.accDescription(child)) != "")  {
-		code = %code%`n%D1% <a></a><span id='param'>( Description )</span> %DB% %copy_button% %D2%`n
-		code .= "<span>" TransformHTML(Description) "</span>"
-	}
-	If ((ShortCut := Acc.accKeyboardShortCut(child)) != "")  {
-		code = %code%`n%D1% <a></a><span id='param'>( ShortCut )</span> %DB% %copy_button% %D2%`n
-		code .= "<span>" TransformHTML(ShortCut) "</span>"
-	}
-	If ((Help := Acc.accHelp(child)) != "")  {
-		code = %code%`n%D1% <a></a><span id='param'>( Help )</span> %DB% %copy_button% %D2%`n
-		code .= "<span>" TransformHTML(Help) "</span>"
-	}
-	If ((HelpTopic := Acc.AccHelpTopic(child)))  {
-		code = %code%`n%D1% <a></a><span id='param'>( HelpTopic )</span> %DB% %copy_button% %D2%`n
-		code .= "<span>" TransformHTML(HelpTopic) "</span>"
-	}
-	Return code
-}
-AccRole(Acc, ChildId=0)   {
-	Return ComObjType(Acc,"Name")="IAccessible"?AccGetRoleText(Acc.accRole(ChildId)):""
-}
-AccGetRoleText(nRole)   {
-	nSize := DllCall("oleacc\GetRoleText", "UInt", nRole, "Ptr", 0, "UInt", 0)
-	VarSetCapacity(sRole, (A_IsUnicode?2:1)*nSize)
-	DllCall("oleacc\GetRoleText", "UInt", nRole, "str", sRole, "UInt", nSize+1)
-	Return sRole
-}
-AccGetStateText(nState)   {
-	nSize := DllCall("oleacc\GetStateText", "UInt", nState, "Ptr", 0, "UInt", 0)
-	VarSetCapacity(sState, (A_IsUnicode?2:1)*nSize)
-	DllCall("oleacc\GetStateText", "UInt", nState, "str", sState, "UInt", nSize+1)
-	Return sState
-}
-GetAccLocation(Acc, Child=0) {
-	Acc.accLocation(ComObj(0x4003,&x:=0), ComObj(0x4003,&y:=0), ComObj(0x4003,&w:=0), ComObj(0x4003,&h:=0), Child)
-	Return "x" (AccCoord[1]:=NumGet(x,0,"int")) " y" (AccCoord[2]:=NumGet(y,0,"int"))
-			. " w" (AccCoord[3]:=NumGet(w,0,"int")) " h" (AccCoord[4]:=NumGet(h,0,"int"))
-}
-
 	;  http://forum.script-coding.com/viewtopic.php?pid=81833#p81833
 
 SelectFilePath(FilePath)   {
@@ -1134,7 +1153,7 @@ Update(in=1)   {
 		, url2 := "https://raw.githubusercontent.com/serzh82saratov/AhkSpy/master/AhkSpy.ahk"
 	If !req
 		req := ComObjCreate("WinHttp.WinHttpRequest.5.1"), req.Option(6) := 0
-	req.open("GET", url%in%, 1), req.send(), att:=0
+	req.open("GET", url%in%, 1), req.send(), att := 0
 	SetTimer, Upd_Verifi, -3000
 	Return
 
