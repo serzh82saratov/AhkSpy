@@ -5,7 +5,7 @@
 	;  Коллекция - http://forum.script-coding.com/viewtopic.php?pid=72459#p72459
 	;  GitHub - https://github.com/serzh82saratov/AhkSpy/blob/master/AhkSpy.ahk
 
-Global AhkSpyVersion := 1.142
+Global AhkSpyVersion := 1.143
 #NoTrayIcon
 #SingleInstance Force
 #NoEnv
@@ -768,7 +768,7 @@ Write_Hotkey(K*)   {
 
 	ControlSend, ahk_parent, %Prefix%{%Hotkey%}, WinTitle<span id='param'>%Comment%</span>
 
-	%D1% <span id='title'>( Last pressed )</span> %D2%
+	%D1% <span id='title'>( Last pressed )</span> %DB% <span contenteditable='false' unselectable='on'><button id='numlock'> numlock </button></span> %D2%
 
 	%ThisKey%   %DP%   %VKCode%%SCCode%   %DP%   %VKCode%   %DP%   %SCCode%
 
@@ -789,7 +789,7 @@ Write_Hotkey(K*)   {
 	#param {color: '%ColorParam%'}
 	#edithotkey {font-size: '1.18em'; text-align: center; border: 1px dashed black}
 	#keyname {font-size: '1.18em';   background-color: '%ColorParam%'; width: 65px; height: 90`%}
-	#pause_button {font-size: 0.9em; border: 1px dashed black}
+	#pause_button, #numlock {font-size: 0.9em; border: 1px dashed black}
 	#editkeyname {font-size: '1.18em'; text-align: center; border: 1px dashed black}
 	</style>
 	)
@@ -1034,7 +1034,7 @@ ShellProc(nCode, wParam)   {
 	}
 }
 
-WM_ACTIVATE(wp,lp)   {
+WM_ACTIVATE(wp)   {
 	If (wp & 0xFFFF)
 		(ThisMode = "Hotkey" && !isPaused ? Hotkey_Hook := 1 : ""), HideMarker()
 	Else If (wp & 0xFFFF = 0 && Hotkey_Hook)
@@ -1222,6 +1222,12 @@ Class Events  {
 				Gosub PausedScript
 			Else If (thisid = "folder" && FileExist(WinProcessPath))
 				SelectFilePath(WinProcessPath)
+			Else If thisid = numlock
+			{
+				(OnHook := Hotkey_Hook) ? (Hotkey_Hook := 0) : 0
+				SendInput, {Numlock}
+				(OnHook ? Hotkey_Hook := 1 : 0)
+			}
 		}
 	}
 	ondblclick()   {
@@ -1229,7 +1235,7 @@ Class Events  {
 		If thisid = winclose
 		{
 			WinGet, WinPID, PID, ahk_id %WinCloseID%
-			WinKill, ahk_id %WinCloseID%,, 0.4
+			WinKill, ahk_id %WinCloseID%,, 0.5
 			IfWinExist, ahk_id %WinCloseID%
 				Process, Close, %WinPID%
 		}
@@ -1237,6 +1243,7 @@ Class Events  {
 			Gosub PausedScript
 	}
 	onfocus()   {
+		Sleep 100
 		Hotkey_Reset()
 	}
 	onblur()   {
