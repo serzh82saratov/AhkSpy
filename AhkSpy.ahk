@@ -5,7 +5,7 @@
 	;  Коллекция - http://forum.script-coding.com/viewtopic.php?pid=72459#p72459
 	;  GitHub - https://github.com/serzh82saratov/AhkSpy/blob/master/AhkSpy.ahk
 
-Global AhkSpyVersion := 1.144
+Global AhkSpyVersion := 1.145
 #NoTrayIcon
 #SingleInstance Force
 #NoEnv
@@ -864,20 +864,22 @@ Hotkey_Main(VKCode, SCCode, StateMod = 0, IsMod = 0, OnlyMods = 0)  {
 	K.TK := GetKeyName(VKCode SCCode), K.TK := K.TK = "" ? VKCode SCCode : K.TK
 	(IsMod) ? (K.HK := K.Pref := K.LRPref := K.Name := "", ModsOnly := K.Mods = "" ? 0 : 1)
 	: (K.HK := InStr(Symbols, "|" VKCode "|") ? VKCode : K.TK
-		, K.Name := K.HK = "vkBF" ? "/" : K.TK
-		, K.Pref := K.PCtrl K.PAlt K.PShift K.PWin
-		, K.LRPref := K.PLCtrl K.PRCtrl K.PLAlt K.PRAlt K.PLShift K.PRShift K.PLWin K.PRWin
-		, ModsOnly := 0)
+	, K.Name := K.HK = "vkBF" ? "/" : K.TK
+	, K.Pref := K.PCtrl K.PAlt K.PShift K.PWin
+	, K.LRPref := K.PLCtrl K.PRCtrl K.PLAlt K.PRAlt K.PLShift K.PRShift K.PLWin K.PRWin
+	, ModsOnly := 0)
 	%Hotkey_TargetFunc%(K*)
 	Return 1
 
-	Hotkey_PressName:
-		K.Pref := K.PCtrl K.PAlt K.PShift K.PWin
-		K.LRPref := K.PLCtrl K.PRCtrl K.PLAlt K.PRAlt K.PLShift K.PRShift K.PLWin K.PRWin
-		K.HK := K.Name := K.TK := A_ThisHotkey, ModsOnly := 0, K.SC := ""
-		K.VK := !InStr(A_ThisHotkey, "Joy") ? VkMouse[A_ThisHotkey] : ""
-		%Hotkey_TargetFunc%(K*)
-		Return 1
+Hotkey_PressName:
+	K.Mods := K.MCtrl K.MAlt K.MShift K.MWin
+	K.LRMods := K.MLCtrl K.MRCtrl K.MLAlt K.MRAlt K.MLShift K.MRShift K.MLWin K.MRWin
+	K.Pref := K.PCtrl K.PAlt K.PShift K.PWin
+	K.LRPref := K.PLCtrl K.PRCtrl K.PLAlt K.PRAlt K.PLShift K.PRShift K.PLWin K.PRWin
+	K.HK := K.Name := K.TK := A_ThisHotkey, ModsOnly := 0, K.SC := ""
+	K.VK := !InStr(A_ThisHotkey, "Joy") ? VkMouse[A_ThisHotkey] : ""
+	%Hotkey_TargetFunc%(K*)
+	Return 1
 }
 
 Hotkey_ExtKeyInit()   {
