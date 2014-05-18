@@ -5,13 +5,14 @@
 	;  Коллекция - http://forum.script-coding.com/viewtopic.php?pid=72459#p72459
 	;  GitHub - https://github.com/serzh82saratov/AhkSpy/blob/master/AhkSpy.ahk
 
-Global AhkSpyVersion := 1.145
 #NoTrayIcon
 #SingleInstance Force
 #NoEnv
-DetectHiddenWindows, On
 SetBatchLines, -1
 ListLines, Off
+DetectHiddenWindows, On
+
+Global AhkSpyVersion := 1.146
 Gosub, RevAhkVersion
 Menu, Tray, Icon, Shell32.dll, % A_OSVersion = "WIN_7" ? 278 : 222
 
@@ -188,7 +189,7 @@ F5:: oDoc.body.innerHTML := HTML_%ThisMode%					;  Return HTML
 
 F6:: AppsKey
 
-!Space:: SetTimer ShowSys, -1
+!Space:: SetTimer, ShowSys, -1
 
 #If WinActive("ahk_id" hGui) && ExistSelectedText(CopyText)
 
@@ -275,7 +276,7 @@ Spot_Win(NotHTML=0)   {
 	WinGetText, WinText, ahk_id %WinID%
 	If WinText !=
 		WinText := TransformHTML( WinClass = "Notepad++" ? SubStr(WinText, 1, 5000) : WinText)
-		, WinText := "`n" D1 " <a></a><span id='title'>( Visible Window Text )</span> " DB " " copy_button " " D2 "`n<span>" WinText "</span>"
+		, WinText := "`n" D1 " <a></a><span id='title'>( Window Text )</span> " DB " " copy_button " " D2 "`n<span>" WinText "</span>"
 	CoordMode, Mouse
 	CoordMode, Pixel
 	MouseGetPos, WinXS, WinYS
@@ -1047,9 +1048,10 @@ WM_LBUTTONDOWN()   {
 }
 
 WM_CONTEXTMENU() {
-	MouseGetPos, , , , id, 2
-	If (id != hActiveX)   {
-		SetTimer ShowSys, -1
+	MouseGetPos, , , wid, cid, 2
+	If (cid != hActiveX && wid = hGui)
+	{
+		SetTimer, ShowSys, -1
 		Return 0
 	}
 }
@@ -1219,7 +1221,7 @@ Class Events  {
 				o.focus(), o2 := o.createTextRange(), o2.collapse(false), o2.select()
 			}
 			Else If thisid = pause_button
-				Gosub PausedScript
+				Gosub, PausedScript
 			Else If (thisid = "folder" && FileExist(WinProcessPath))
 				SelectFilePath(WinProcessPath)
 			Else If thisid = numlock
@@ -1240,14 +1242,16 @@ Class Events  {
 				Process, Close, %WinPID%
 		}
 		Else If thisid = pause_button
-			Gosub PausedScript
+			Gosub, PausedScript
 	}
 	onfocus()   {
-		Sleep 100
+		Sleep 200
 		Hotkey_Reset()
 	}
 	onblur()   {
-		(!isPaused ? (Hotkey_Hook := 1) : 0)
+		Sleep 200
+		If WinActive("ahk_id" hGui)
+			(!isPaused ? (Hotkey_Hook := 1) : 0)
 	}
 }
 	;)
