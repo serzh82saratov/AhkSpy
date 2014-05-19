@@ -1245,11 +1245,11 @@ Class Events  {
 			Gosub, PausedScript
 	}
 	onfocus()   {
-		Sleep 200
+		Sleep 100
 		Hotkey_Reset()
 	}
 	onblur()   {
-		Sleep 200
+		Sleep 100
 		If WinActive("ahk_id" hGui)
 			(!isPaused ? (Hotkey_Hook := 1) : 0)
 	}
