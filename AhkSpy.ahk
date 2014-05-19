@@ -12,7 +12,7 @@ SetBatchLines, -1
 ListLines, Off
 DetectHiddenWindows, On
 
-Global AhkSpyVersion := 1.146
+Global AhkSpyVersion := 1.147
 Gosub, RevAhkVersion
 Menu, Tray, Icon, Shell32.dll, % A_OSVersion = "WIN_7" ? 278 : 222
 
@@ -1184,6 +1184,11 @@ Update(in=1)   {
 				Return (ver:=RegExReplace(Text, "i).*?version\s*(.*?)\R.*", "$1")) > AhkSpyVersion ? Update(2) : 0
 			If (!InStr(Text, "AhkSpyVersion"))
 				Return
+			If InStr(FileExist(A_ScriptFullPath), "R")
+			{
+				MsgBox, % 262144+16, AhkSpy, Exist new version %ver%!`n`nBut the file has an attribute "READONLY".`nUpdate imposible.
+				Return
+			}
 			MsgBox, % 32+262144+4, AhkSpy, Exist new version!`nUpdate v%AhkSpyVersion% to v%ver%?
 			IfMsgBox, No
 				Return
@@ -1233,6 +1238,7 @@ Class Events  {
 		}
 	}
 	ondblclick()   {
+		oDoc.body.focus()
 		thisid := oDoc.parentWindow.event.srcElement.id
 		If thisid = winclose
 		{
