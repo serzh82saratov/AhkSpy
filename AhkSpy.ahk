@@ -12,7 +12,7 @@ SetBatchLines, -1
 ListLines, Off
 DetectHiddenWindows, On
 
-Global AhkSpyVersion := 1.147
+Global AhkSpyVersion := 1.148
 Gosub, RevAhkVersion
 Menu, Tray, Icon, Shell32.dll, % A_OSVersion = "WIN_7" ? 278 : 222
 
@@ -380,6 +380,8 @@ Spot_Mouse(NotHTML=0)   {
 		GuiControl, TB: +Redraw, ColorProgress
 		ControlGetPos, CtrlX, CtrlY, CtrlW, CtrlH,, ahk_id %ControlID%
 		CtrlCAX := CtrlX - caX, CtrlCAY := CtrlY - caY
+		CtrlX2 := CtrlX+CtrlW, CtrlY2 := CtrlY+CtrlH
+		CtrlCAX2 := CtrlX2-caX, CtrlCAY2 := CtrlY2-caY 
 		IsGetUTF8 := InStr(ControlNN, "Scintilla")
 		ControlGetText, CtrlText, , ahk_id %ControlID%
 		If CtrlText !=
@@ -430,8 +432,8 @@ HTML_Mouse:
 	<span id='param'>RGB: </span> %ColorRGB%%DP%%sColorRGB%%DP%<span id='param'>BGR: </span> %ColorBGR%%DP%%sColorBGR%
 	%D1% <span id='title'>( Control )</span> %D2%<a></a>
 	<span id='param'>Class NN:</span>  %ControlNN%%DP%<span id='param'>Win class:</span>  %CtrlClass%
-	<span id='param'>Pos:</span>  x%CtrlX% y%CtrlY%%DP%<span id='param'>Size:</span>  w%CtrlW% h%CtrlH%%DP%%CtrlX%, %CtrlY%, %CtrlW%, %CtrlH%
-	<span id='param'>Pos relative client area:</span>  x%CtrlCAX% y%CtrlCAY%%DP%<span id='param'>Client area pos:</span>  x%caX% y%caY%
+	<span id='param'>Pos:</span>  x%CtrlX% y%CtrlY%%DP%<span id='param'>Size:</span>  w%CtrlW% h%CtrlH%%DP%%CtrlX%, %CtrlY%, %CtrlW%, %CtrlH%%DP%<span id='param'>x<span style='font-size: 0.7em'>2</span></span>%CtrlX2% <span id='param'>y<span style='font-size: 0.7em'>2</span></span>%CtrlY2%
+	<span id='param'>Pos relative client area:</span>  x%CtrlCAX% y%CtrlCAY%%DP%<span id='param'>Client area pos:</span>  x%caX% y%caY%%DP%<span id='param'>x<span style='font-size: 0.7em'>2</span></span>%CtrlCAX2% <span id='param'>y<span style='font-size: 0.7em'>2</span></span>%CtrlCAY2%
 	<span id='param'>Mouse relative control:</span>  x%rmCtrlX% y%rmCtrlY%
 	<span id='param'>HWND:</span>  %ControlID%%DP%<span id='param'>Style:</span>  %CtrlStyle%%DP%<span id='param'>ExStyle:</span>  %CtrlExStyle%
 	<span id='param'>Focus control:</span>  %CtrlFocus%%DP%<span id='param'>Cursor type:</span>  %A_Cursor%%DP%<span id='param'>Caret pos:</span>  x%A_CaretX% y%A_CaretY%%CtrlInfo%%CtrlText%%AccText%
