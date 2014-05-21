@@ -12,7 +12,7 @@ SetBatchLines, -1
 ListLines, Off
 DetectHiddenWindows, On
 
-Global AhkSpyVersion := 1.148
+Global AhkSpyVersion := 1.149
 Gosub, RevAhkVersion
 Menu, Tray, Icon, Shell32.dll, % A_OSVersion = "WIN_7" ? 278 : 222
 
@@ -35,7 +35,7 @@ Global ThisMode := "Mouse"						;  Стартовый режим - Win|Mouse|Hot
 , copy_button := "<span contenteditable='false' unselectable='on'><button id='copy_button'> copy </button></span>"
 , pause_button := "<span contenteditable='false' unselectable='on'><button id='pause_button'> pause </button></span>"
 TitleTextP2 := "     ( Shift+Tab - Freeze | RButton - CopySelected | Shift - Backlight object | Break - Pause )     v" AhkSpyVersion
-
+BLGroup := ["Backlight allways","Backlight disable","Backlight hold shift button"]
 wKey := 140					;  Ширина кнопок
 wColor := wKey//2			;  Ширина цветного фрагмента
 HeigtButton := 32			;  Высота кнопок
@@ -81,7 +81,7 @@ ShowMarker(0, 0, 0, 0, 0), ShowAccMarker(0, 0, 0, 0, 0), HideMarker()
 Menu, Sys, Add, Backlight allways, Sys_Backlight
 Menu, Sys, Add, Backlight disable, Sys_Backlight
 Menu, Sys, Add, Backlight hold shift button, Sys_Backlight
-Menu, Sys, Check, % ["Backlight allways","Backlight disable","Backlight hold shift button"][StateLight]
+Menu, Sys, Check, % BLGroup[StateLight]
 Menu, Sys, Add
 Menu, Sys, Add, Acc object backlight, Sys_Acclight
 Menu, Sys, % StateLightAcc ? "Check" : "UnCheck", Acc object backlight
@@ -381,7 +381,7 @@ Spot_Mouse(NotHTML=0)   {
 		ControlGetPos, CtrlX, CtrlY, CtrlW, CtrlH,, ahk_id %ControlID%
 		CtrlCAX := CtrlX - caX, CtrlCAY := CtrlY - caY
 		CtrlX2 := CtrlX+CtrlW, CtrlY2 := CtrlY+CtrlH
-		CtrlCAX2 := CtrlX2-caX, CtrlCAY2 := CtrlY2-caY 
+		CtrlCAX2 := CtrlX2-caX, CtrlCAY2 := CtrlY2-caY
 		IsGetUTF8 := InStr(ControlNN, "Scintilla")
 		ControlGetText, CtrlText, , ahk_id %ControlID%
 		If CtrlText !=
@@ -1005,9 +1005,9 @@ ShowSys:
 	Return
 
 Sys_Backlight:
-	Menu, Sys, UnCheck, % ["Backlight allways","Backlight disable","Backlight hold shift button"][StateLight]
+	Menu, Sys, UnCheck, % BLGroup[StateLight]
 	Menu, Sys, Check, % A_ThisMenuItem
-	IniWrite((StateLight:=A_ThisMenuItemPos), "StateLight")
+	IniWrite((StateLight := InArr(A_ThisMenuItem, BLGroup*)), "StateLight")
 	Return
 
 Sys_Acclight:
@@ -1098,6 +1098,12 @@ IniRead(Key)   {
 IniWrite(Value, Key) {
 	IniWrite, %Value%, %A_AppData%\AhkSpy.ini, AhkSpy, %Key%
 	Return Value
+}
+
+InArr(Val, Arr*)   {
+	For k, v in Arr
+		If (v == Val)
+			Return k
 }
 
 TransformHTML(str)   {
@@ -1210,7 +1216,6 @@ Class Events  {
 		oevent := oDoc.parentWindow.event.srcElement
 		If (oevent.TagName = "BUTTON")
 		{
-			oDoc.body.focus()
 			thisid := oevent.id
 			If thisid = copy_button
 			{
@@ -1226,6 +1231,7 @@ Class Events  {
 				KeyName := GetKeyName(o_edithotkey.value), o_editkeyname.value := KeyName
 				o := KeyName = "" ? o_edithotkey : o_editkeyname
 				o.focus(), o2 := o.createTextRange(), o2.collapse(false), o2.select()
+				Return
 			}
 			Else If thisid = pause_button
 				Gosub, PausedScript
@@ -1237,10 +1243,10 @@ Class Events  {
 				SendInput, {Numlock}
 				(OnHook ? Hotkey_Hook := 1 : 0)
 			}
+			oDoc.body.focus()
 		}
 	}
 	ondblclick()   {
-		oDoc.body.focus()
 		thisid := oDoc.parentWindow.event.srcElement.id
 		If thisid = winclose
 		{
@@ -1249,8 +1255,16 @@ Class Events  {
 			IfWinExist, ahk_id %WinCloseID%
 				Process, Close, %WinPID%
 		}
+		Else If thisid = numlock
+		{
+			(OnHook := Hotkey_Hook) ? (Hotkey_Hook := 0) : 0
+			SendInput, {Numlock}
+			(OnHook ? Hotkey_Hook := 1 : 0)
+		}
 		Else If thisid = pause_button
 			Gosub, PausedScript
+		If (oDoc.parentWindow.event.srcElement.TagName = "BUTTON")
+			oDoc.body.focus()
 	}
 	onfocus()   {
 		Sleep 100
