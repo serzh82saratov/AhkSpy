@@ -12,7 +12,7 @@ SetBatchLines, -1
 ListLines, Off
 DetectHiddenWindows, On
 
-Global AhkSpyVersion := 1.149
+Global AhkSpyVersion := 1.150
 Gosub, RevAhkVersion
 Menu, Tray, Icon, Shell32.dll, % A_OSVersion = "WIN_7" ? 278 : 222
 
@@ -48,13 +48,12 @@ D1 := "<span style='color: " Color# "'>" D1 "</span>"
 D2 := "<span style='color: " Color# "'>" D2 "</span>"
 DB := "<span style='color: " Color# "'>" # # # # # # # # # # # # "</span>"
 
-Gui, +AlwaysOnTop +HWNDhGui +ReSize -DPIScale
-Gui, Font, % "s" A_ScreenDPI = 120 ? 7 : 9, Verdana
+Gui, +AlwaysOnTop +HWNDhGui +ReSize -DPIScale 
 Gui, Color, %ColorBgPaused%
 Gui, Add, ActiveX, Border voDoc HWNDhActiveX x0 y+0, HTMLFile
 
 Gui, TB: +HWNDhTBGui -Caption -DPIScale +Parent%hGui% +E0x08000000
-Gui, TB: Font, % "s" A_ScreenDPI = 120 ? 7 : 9, Verdana
+Gui, TB: Font, % " s" (A_ScreenDPI = 120 ? 8 : 10), Verdana
 Gui, TB: Add, Button, x0 y0 h%HeigtButton% w%wKey% vBut1 gMode_Win, Window
 Gui, TB: Add, Button, x+0 yp hp wp vBut2 gMode_Mouse, Mouse && Control
 Gui, TB: Add, Progress, x+0 yp hp w%wColor% vColorProgress cWhite, 100
