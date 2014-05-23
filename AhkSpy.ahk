@@ -12,7 +12,7 @@ SetBatchLines, -1
 ListLines, Off
 DetectHiddenWindows, On
 
-Global AhkSpyVersion := 1.150
+Global AhkSpyVersion := 1.151
 Gosub, RevAhkVersion
 Menu, Tray, Icon, Shell32.dll, % A_OSVersion = "WIN_7" ? 278 : 222
 
@@ -364,7 +364,7 @@ Spot_Mouse(NotHTML=0)   {
 	MouseGetPos, MXWA, MYWA, tWinID, tControlID, 2
 	WinGetPos, WinX, WinY, , , ahk_id %WinID%
 	RWinX := MXS - WinX, RWinY := MYS - WinY
-	GetClientPos(WinID, caX, caY, "", "")
+	GetClientPos(WinID, caX, caY, caW, caH)
 	MXC := RWinX - caX, MYC := RWinY - caY
 	If (tWinID != hGui)
 	{
@@ -431,9 +431,9 @@ HTML_Mouse:
 	<span id='param'>RGB: </span> %ColorRGB%%DP%%sColorRGB%%DP%<span id='param'>BGR: </span> %ColorBGR%%DP%%sColorBGR%
 	%D1% <span id='title'>( Control )</span> %D2%<a></a>
 	<span id='param'>Class NN:</span>  %ControlNN%%DP%<span id='param'>Win class:</span>  %CtrlClass%
-	<span id='param'>Pos:</span>  x%CtrlX% y%CtrlY%%DP%<span id='param'>Size:</span>  w%CtrlW% h%CtrlH%%DP%%CtrlX%, %CtrlY%, %CtrlW%, %CtrlH%%DP%<span id='param'>x<span style='font-size: 0.7em'>2</span></span>%CtrlX2% <span id='param'>y<span style='font-size: 0.7em'>2</span></span>%CtrlY2%
-	<span id='param'>Pos relative client area:</span>  x%CtrlCAX% y%CtrlCAY%%DP%<span id='param'>Client area pos:</span>  x%caX% y%caY%%DP%<span id='param'>x<span style='font-size: 0.7em'>2</span></span>%CtrlCAX2% <span id='param'>y<span style='font-size: 0.7em'>2</span></span>%CtrlCAY2%
-	<span id='param'>Mouse relative control:</span>  x%rmCtrlX% y%rmCtrlY%
+	<span id='param'>Pos:</span>  x%CtrlX% y%CtrlY%%DP%<span id='param'>Size:</span>  w%CtrlW% h%CtrlH%%DP%<span id='param'>x<span style='font-size: 0.7em'>2</span></span>%CtrlX2% <span id='param'>y<span style='font-size: 0.7em'>2</span></span>%CtrlY2%
+	<span id='param'>Pos relative client area:</span>  x%CtrlCAX% y%CtrlCAY%%DP%<span id='param'>x<span style='font-size: 0.7em'>2</span></span>%CtrlCAX2% <span id='param'>y<span style='font-size: 0.7em'>2</span></span>%CtrlCAY2%
+	<span id='param'>Mouse relative control:</span>  x%rmCtrlX% y%rmCtrlY%%DP%<span id='param'>Client area:</span>  x%caX% y%caY% w%caW% h%caH%
 	<span id='param'>HWND:</span>  %ControlID%%DP%<span id='param'>Style:</span>  %CtrlStyle%%DP%<span id='param'>ExStyle:</span>  %CtrlExStyle%
 	<span id='param'>Focus control:</span>  %CtrlFocus%%DP%<span id='param'>Cursor type:</span>  %A_Cursor%%DP%<span id='param'>Caret pos:</span>  x%A_CaretX% y%A_CaretY%%CtrlInfo%%CtrlText%%AccText%
 	<a></a>%D2%</pre></body>
@@ -1174,7 +1174,7 @@ NextLink(s = "")   {
 }
 
 Update(in=1)   {
-	Static att, ver, req
+	Static att, Ver, req
 		, url1 := "https://raw.githubusercontent.com/serzh82saratov/AhkSpy/master/Readme.txt"
 		, url2 := "https://raw.githubusercontent.com/serzh82saratov/AhkSpy/master/AhkSpy.ahk"
 	If !req
@@ -1184,19 +1184,19 @@ Update(in=1)   {
 	Return
 
 	Upd_Verifi:
-		If (Status:=req.Status) = 200
+		If (Status := req.Status) = 200
 		{
 			Text := req.responseText
 			If (req.Option(1) = url1)
-				Return (ver:=RegExReplace(Text, "i).*?version\s*(.*?)\R.*", "$1")) > AhkSpyVersion ? Update(2) : 0
+				Return (Ver := RegExReplace(Text, "i).*?version\s*(.*?)\R.*", "$1")) > AhkSpyVersion ? Update(2) : 0
 			If (!InStr(Text, "AhkSpyVersion"))
 				Return
 			If InStr(FileExist(A_ScriptFullPath), "R")
 			{
-				MsgBox, % 262144+16, AhkSpy, Exist new version %ver%!`n`nBut the file has an attribute "READONLY".`nUpdate imposible.
+				MsgBox, % 16+262144, AhkSpy, Exist new version %Ver%!`n`nBut the file has an attribute "READONLY".`nUpdate imposible.
 				Return
 			}
-			MsgBox, % 32+262144+4, AhkSpy, Exist new version!`nUpdate v%AhkSpyVersion% to v%ver%?
+			MsgBox, % 4+32+262144, AhkSpy, Exist new version!`nUpdate v%AhkSpyVersion% to v%Ver%?
 			IfMsgBox, No
 				Return
 			File := FileOpen(A_ScriptFullPath, "w", "UTF-8")
