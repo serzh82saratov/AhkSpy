@@ -12,7 +12,7 @@ SetBatchLines, -1
 ListLines, Off
 DetectHiddenWindows, On
 
-Global AhkSpyVersion := 1.151
+Global AhkSpyVersion := 1.152
 Gosub, RevAhkVersion
 Menu, Tray, Icon, Shell32.dll, % A_OSVersion = "WIN_7" ? 278 : 222
 
@@ -48,7 +48,7 @@ D1 := "<span style='color: " Color# "'>" D1 "</span>"
 D2 := "<span style='color: " Color# "'>" D2 "</span>"
 DB := "<span style='color: " Color# "'>" # # # # # # # # # # # # "</span>"
 
-Gui, +AlwaysOnTop +HWNDhGui +ReSize -DPIScale 
+Gui, +AlwaysOnTop +HWNDhGui +ReSize -DPIScale
 Gui, Color, %ColorBgPaused%
 Gui, Add, ActiveX, Border voDoc HWNDhActiveX x0 y+0, HTMLFile
 
@@ -461,8 +461,12 @@ GetInfo_SysListView(hwnd, ByRef ClassNN)   {
 	ControlGet, ListText, List,,, ahk_id %hwnd%
 	ControlGet, RowCount, List, Count,, ahk_id %hwnd%
 	ControlGet, ColCount, List, Count Col,, ahk_id %hwnd%
+	ControlGet, SelectedCount, List, Count Selected,, ahk_id %hwnd%
+	ControlGet, FocusedCount, List, Count Focused,, ahk_id %hwnd%
 	Return	"`n<span id='param'>Row count:</span> " RowCount DP
-			. "<span id='param'>Column count:</span> " ColCount
+			. "<span id='param'>Column count:</span> " ColCount "`n"
+			. "<span id='param'>Selected count:</span> " SelectedCount DP
+			. "<span id='param'>Focused row:</span> " FocusedCount
 			. "`n" D1 " <span id='param'>( Content )</span> " DB
 			. " " copy_button " " D2 "`n<span>" TransformHTML(ListText) "</span>"
 }
@@ -808,7 +812,7 @@ Write_HotkeyHTML() {
 
 HotkeyRules:
 	Hotkey_Control(1)
-	Global Hotkey_TargetFunc := "Write_Hotkey", Hotkey_Hook := (ThisMode = "Hotkey" ? 1 : Hotkey_Reset() )
+	Global Hotkey_TargetFunc := "Write_Hotkey", Hotkey_Hook := (ThisMode = "Hotkey" ? 1 : Hotkey_Reset())
 	Return
 
 	; _________________________________________________ Hotkey Func _________________________________________________
@@ -897,8 +901,7 @@ Hotkey_ExtKeyInit()   {
 }
 
 Hotkey_Reset()   {
-	Hotkey_Hook := 0
-	Return 0, Hotkey_Main("", "", "", "", 1)
+	Return Hotkey_Hook := 0, Hotkey_Main("", "", "", "", 1)
 }
 
 	;  http://forum.script-coding.com/viewtopic.php?id=6350
