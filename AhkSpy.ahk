@@ -12,7 +12,7 @@ SetBatchLines, -1
 ListLines, Off
 DetectHiddenWindows, On
 
-Global AhkSpyVersion := 1.152
+Global AhkSpyVersion := 1.153
 Gosub, RevAhkVersion
 Menu, Tray, Icon, Shell32.dll, % A_OSVersion = "WIN_7" ? 278 : 222
 
@@ -235,6 +235,7 @@ Repeat_Loop_Win:
 	Return
 
 Spot_Win(NotHTML=0)   {
+	Static PrWinPID, CommandLine
 	If NotHTML
 		GoTo HTML_Win
 	MouseGetPos,,,WinID
@@ -249,6 +250,8 @@ Spot_Win(NotHTML=0)   {
 		WinProcessPath = %A_LoopFileLongPath%
 	SplitPath, WinProcessPath, WinProcessName
 	WinGet, WinPID, PID, ahk_id %WinID%
+	If (PrWinPID != WinPID && PrWinPID := WinPID)
+		CommandLine := TransformHTML(GetCommandLineProc(WinPID))
 	WinGet, WinCountProcess, Count, ahk_pid %WinPID%
 	WinGet, WinStyle, Style, ahk_id %WinID%
 	WinGet, WinExStyle, ExStyle, ahk_id %WinID%
@@ -296,6 +299,8 @@ HTML_Win:
 	<span id='param'>ahk_exe</span> %WinProcessName%
 	%D1% <span id='title'>( ProcessPath )</span> %D2%
 	%WinProcessPath%%DP%<span contenteditable='false' unselectable='on'><button id='folder'>folder view</button></span>
+	%D1% <span id='title'>( CommandLine )</span> %D2%
+	%CommandLine%
 	%D1% <span id='title'>( Position`s )</span> %D2%
 	<span id='param'>Pos:</span>  x%WinX% y%WinY%%DP%<span id='param'>Size:</span>  w%WinWidth% h%WinHeight%%DP%%WinX%, %WinY%, %WinWidth%, %WinHeight%
 	<span id='param'>Client area size:</span>  w%caW% h%caH%%DP%<span id='param'>top</span> %caY% <span id='param'>left</span> %caX% <span id='param'>bottom</span> %caWinBottom% <span id='param'>right</span> %caWinRight%
@@ -958,6 +963,10 @@ GuiEscape:
 	DllCall("DeregisterShellHookWindow", "UInt", A_ScriptHwnd)
 	ExitApp
 
+HideMarker:
+	HideMarker(0)
+	Return
+
 TitleShow:
 	SendMessage, 0xC, 0, &TitleText, , ahk_id %hGui%
 	Return
@@ -1074,9 +1083,12 @@ ShowMarker(x, y, w, h, b:=4)   {
 	WinSet, Region, % "0-0 " w "-0 " w "-" h " 0-" h " 0-0 " b "-" b
 		. " " w-b "-" b " " w-b "-" h-b " " b "-" h-b " " b "-" b, ahk_id %hMarkerGui%
 }
-HideMarker()   {
+
+HideMarker(test=1)   {
 	Gui, M: Show, Hide
 	ShowMarker := 0, HideAccMarker()
+	If test
+		SetTimer, HideMarker, -250
 	Return 1
 }
 
@@ -1127,6 +1139,13 @@ ExistSelectedText(byref Copy)   {
 	StringReplace, Copy, Copy, #!#  copy  #!#, #!#, 1
 	StringReplace, Copy, Copy, #!#  pause  #!#, #!#
 	Return 1
+}
+
+	;  http://forum.script-coding.com/viewtopic.php?pid=53516#p53516
+
+GetCommandLineProc(pid)   {
+	ComObjGet("winmgmts:").ExecQuery("Select * from Win32_Process WHERE ProcessId = " pid)._NewEnum.next(X)
+	Return X.CommandLine
 }
 
 	;  http://www.autohotkey.com/board/topic/69254-func-api-getwindowinfo-ahk-l/#entry438372
