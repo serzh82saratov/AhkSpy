@@ -12,7 +12,7 @@ SetBatchLines, -1
 ListLines, Off
 DetectHiddenWindows, On
 
-Global AhkSpyVersion := 1.157
+Global AhkSpyVersion := 1.158
 Gosub, RevAhkVersion
 Menu, Tray, Icon, Shell32.dll, % A_OSVersion = "WIN_7" ? 278 : 222
 
@@ -1189,8 +1189,8 @@ SelectFilePath(FilePath)   {
 
 GetCLSIDExplorer(hwnd)   {
 	for window in ComObjCreate("Shell.Application").Windows
-		If (window.hwnd = hwnd && (CLSID := window.Document.Folder.Self.Path) ~= "^::\{")
-			Return "`n<span id='param'>CLSID: </span>" CLSID
+		If (window.hwnd = hwnd)
+			Return (CLSID := window.Document.Folder.Self.Path) ~= "^::\{" ? "`n<span id='param'>CLSID: </span>" CLSID : ""
 }
 
 NextLink(s = "")   {
