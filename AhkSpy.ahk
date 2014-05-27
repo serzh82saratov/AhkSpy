@@ -12,7 +12,7 @@ SetBatchLines, -1
 ListLines, Off
 DetectHiddenWindows, On
 
-Global AhkSpyVersion := 1.155
+Global AhkSpyVersion := 1.156
 Gosub, RevAhkVersion
 Menu, Tray, Icon, Shell32.dll, % A_OSVersion = "WIN_7" ? 278 : 222
 
@@ -253,7 +253,7 @@ Spot_Win(NotHTML=0)   {
 	If (WinPID != PrWinPID)
 		CommandLine := TransformHTML(GetCommandLineProc(WinPID)), PrWinPID := WinPID
 	If (WinClass ~= "(Cabinet|Explore)WClass")
-		GUID := GetGUIDExplorer(WinID) 
+		GUID := GetGUIDExplorer(WinID)
 	WinGet, WinCountProcess, Count, ahk_pid %WinPID%
 	WinGet, WinStyle, Style, ahk_id %WinID%
 	WinGet, WinExStyle, ExStyle, ahk_id %WinID%
@@ -1170,15 +1170,15 @@ SelectFilePath(FilePath)
    {
       ShellFolderView := window.Document
 
-      try if ((Folder := ShellFolderView.Folder).Self.Path != Dir)
-         continue
-      catch
-         continue
+      Try If ((Folder := ShellFolderView.Folder).Self.Path != Dir)
+         Continue
+      Catch
+         Continue
 
       for item in Folder.Items
       {
-         if (item.Path != FilePath)
-            continue
+         If (item.Path != FilePath)
+            Continue
 
          ShellFolderView.SelectItem(item, 1|4|8|16)
          WinActivate, % "ahk_id" window.hwnd
@@ -1189,16 +1189,14 @@ SelectFilePath(FilePath)
 }
 
 GetGUIDExplorer(hwnd)
-{ 
-   for window in ComObjCreate("Shell.Application").Windows
-   {   
-      try if (window.hwnd != hwnd)
-         continue
-      catch
-         continue  
-	 If InStr(GUID := window.Document.Folder.Self.Path, "::{")
-		Return "`n<span id='param'>GUID: </span>" GUID
-   } 
+{
+	for window in ComObjCreate("Shell.Application").Windows
+	{
+		If (window.hwnd != hwnd)
+			Continue
+		If (GUID := window.Document.Folder.Self.Path) ~= "^::\{"
+			Return "`n<span id='param'>GUID: </span>" GUID
+	}
 }
 
 NextLink(s = "")   {
