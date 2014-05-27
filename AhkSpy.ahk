@@ -12,7 +12,7 @@ SetBatchLines, -1
 ListLines, Off
 DetectHiddenWindows, On
 
-Global AhkSpyVersion := 1.156
+Global AhkSpyVersion := 1.157
 Gosub, RevAhkVersion
 Menu, Tray, Icon, Shell32.dll, % A_OSVersion = "WIN_7" ? 278 : 222
 
@@ -253,7 +253,7 @@ Spot_Win(NotHTML=0)   {
 	If (WinPID != PrWinPID)
 		CommandLine := TransformHTML(GetCommandLineProc(WinPID)), PrWinPID := WinPID
 	If (WinClass ~= "(Cabinet|Explore)WClass")
-		GUID := GetGUIDExplorer(WinID)
+		CLSID := GetCLSIDExplorer(WinID)
 	WinGet, WinCountProcess, Count, ahk_pid %WinPID%
 	WinGet, WinStyle, Style, ahk_id %WinID%
 	WinGet, WinExStyle, ExStyle, ahk_id %WinID%
@@ -308,7 +308,7 @@ HTML_Win:
 	<span id='param'>Client area size:</span>  w%caW% h%caH%%DP%<span id='param'>top</span> %caY% <span id='param'>left</span> %caX% <span id='param'>bottom</span> %caWinBottom% <span id='param'>right</span> %caWinRight%
 	%D1% <span id='title'>( Other )</span> %D2%
 	<span id='param'>PID:</span>  %WinPID%%DP%<span id='param'>Count window this PID:</span> %WinCountProcess%%DP%<span id='param'>Control count:</span> %CountControl%
-	<span id='param'>HWND:</span>  %WinID%%DP%<span contenteditable='false' unselectable='on'><button id='winclose'>win kill</button></span>%DP%<span id='param'>Style:</span>  %WinStyle%%DP%<span id='param'>ExStyle:</span>  %WinExStyle%%WinTransparent%%WinTransColor%%GUID%%SBText%%WinText%
+	<span id='param'>HWND:</span>  %WinID%%DP%<span contenteditable='false' unselectable='on'><button id='winclose'>win kill</button></span>%DP%<span id='param'>Style:</span>  %WinStyle%%DP%<span id='param'>ExStyle:</span>  %WinExStyle%%WinTransparent%%WinTransColor%%CLSID%%SBText%%WinText%
 	<a></a>%D2%</pre></body>
 
 	<style>
@@ -1163,8 +1163,7 @@ GetClientPos(hwnd, ByRef left, ByRef top, ByRef w, ByRef h)   {
 
 	;  http://forum.script-coding.com/viewtopic.php?pid=81833#p81833
 
-SelectFilePath(FilePath)
-{
+SelectFilePath(FilePath)   {
    SplitPath, FilePath,, Dir
    for window in ComObjCreate("Shell.Application").Windows
    {
@@ -1188,15 +1187,10 @@ SelectFilePath(FilePath)
    Run, %A_WinDir%\explorer.exe /select`, "%FilePath%", , UseErrorLevel
 }
 
-GetGUIDExplorer(hwnd)
-{
+GetCLSIDExplorer(hwnd)   {
 	for window in ComObjCreate("Shell.Application").Windows
-	{
-		If (window.hwnd != hwnd)
-			Continue
-		If (GUID := window.Document.Folder.Self.Path) ~= "^::\{"
-			Return "`n<span id='param'>GUID: </span>" GUID
-	}
+		If (window.hwnd = hwnd && (CLSID := window.Document.Folder.Self.Path) ~= "^::\{")
+			Return "`n<span id='param'>CLSID: </span>" CLSID
 }
 
 NextLink(s = "")   {
