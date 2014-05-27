@@ -12,7 +12,7 @@ SetBatchLines, -1
 ListLines, Off
 DetectHiddenWindows, On
 
-Global AhkSpyVersion := 1.153
+Global AhkSpyVersion := 1.154
 Gosub, RevAhkVersion
 Menu, Tray, Icon, Shell32.dll, % A_OSVersion = "WIN_7" ? 278 : 222
 
@@ -250,8 +250,8 @@ Spot_Win(NotHTML=0)   {
 		WinProcessPath = %A_LoopFileLongPath%
 	SplitPath, WinProcessPath, WinProcessName
 	WinGet, WinPID, PID, ahk_id %WinID%
-	If (PrWinPID != WinPID && PrWinPID := WinPID)
-		CommandLine := TransformHTML(GetCommandLineProc(WinPID))
+	If (WinPID != PrWinPID)
+		CommandLine := TransformHTML(GetCommandLineProc(WinPID)), PrWinPID := WinPID
 	WinGet, WinCountProcess, Count, ahk_pid %WinPID%
 	WinGet, WinStyle, Style, ahk_id %WinID%
 	WinGet, WinExStyle, ExStyle, ahk_id %WinID%
@@ -300,7 +300,7 @@ HTML_Win:
 	%D1% <span id='title'>( ProcessPath )</span> %D2%
 	%WinProcessPath%%DP%<span contenteditable='false' unselectable='on'><button id='folder'>folder view</button></span>
 	%D1% <span id='title'>( CommandLine )</span> %D2%
-	%CommandLine%
+	<span>%CommandLine%</span>
 	%D1% <span id='title'>( Position`s )</span> %D2%
 	<span id='param'>Pos:</span>  x%WinX% y%WinY%%DP%<span id='param'>Size:</span>  w%WinWidth% h%WinHeight%%DP%%WinX%, %WinY%, %WinWidth%, %WinHeight%
 	<span id='param'>Client area size:</span>  w%caW% h%caH%%DP%<span id='param'>top</span> %caY% <span id='param'>left</span> %caX% <span id='param'>bottom</span> %caWinBottom% <span id='param'>right</span> %caWinRight%
@@ -1161,24 +1161,29 @@ GetClientPos(hwnd, ByRef left, ByRef top, ByRef w, ByRef h)   {
 
 	;  http://forum.script-coding.com/viewtopic.php?pid=81833#p81833
 
-SelectFilePath(FilePath)   {
-	SplitPath, FilePath, , FolderPath
-	For Window in ComObjCreate("Shell.Application").Windows
-	{
-		If (Window.Document.Folder.Self.Path = FolderPath)
-		{
-			For item in Window.Document.Folder.Items
-			{
-				If (item.path = FilePath)
-				{
-					Window.Document.SelectItem(item, 1|4|8|16)
-					WinActivate, % "ahk_id" Window.hwnd
-					Return
-				}
-			}
-		}
-	}
-	Run, explorer /select`, "%FilePath%"
+SelectFilePath(FilePath)
+{
+   SplitPath, FilePath,, Dir
+   for window in ComObjCreate("Shell.Application").Windows
+   {
+      ShellFolderView := window.Document
+
+      try if ((Folder := ShellFolderView.Folder).Self.Path != Dir)
+         continue
+      catch
+         continue
+
+      for item in Folder.Items
+      {
+         if (item.Path != FilePath)
+            continue
+
+         ShellFolderView.SelectItem(item, 1|4|8|16)
+         WinActivate, % "ahk_id" window.hwnd
+         Return
+      }
+   }
+   Run, %A_WinDir%\explorer.exe /select`, "%FilePath%", , UseErrorLevel
 }
 
 NextLink(s = "")   {
@@ -1256,7 +1261,7 @@ Class Events  {
 			}
 			Else If thisid = pause_button
 				Gosub, PausedScript
-			Else If (thisid = "folder" && FileExist(WinProcessPath))
+			Else If (thisid = "folder" && WinProcessPath != "")
 				SelectFilePath(WinProcessPath)
 			Else If thisid = numlock
 			{
