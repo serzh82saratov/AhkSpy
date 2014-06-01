@@ -12,7 +12,7 @@ SetBatchLines, -1
 ListLines, Off
 DetectHiddenWindows, On
 
-Global AhkSpyVersion := 1.158
+Global AhkSpyVersion := 1.159
 Gosub, RevAhkVersion
 Menu, Tray, Icon, Shell32.dll, % A_OSVersion = "WIN_7" ? 278 : 222
 
@@ -31,7 +31,7 @@ Global ThisMode := "Mouse"						;  Стартовый режим - Win|Mouse|Hot
 , DP := "  <span style='color: " Color# "'>" # "</span>  ", D1, D2, DB
 , StateLight:=((t:=IniRead("StateLight"))=""||t>3?3:t), StateLightAcc:=IniRead("StateLightAcc"), StateUpdate:=IniRead("StateUpdate")
 , hGui, hActiveX, hMarkerGui, hMarkerAccGui, oDoc, ShowMarker, isIE, isPaused, ScrollPos:={}, AccCoord:=[]
-, HWND_3, WinCloseID, WinProcessPath, CtrlStyle, HTML_Win, HTML_Mouse, HTML_Hotkey, o_edithotkey, o_editkeyname, rmCtrlX, rmCtrlY
+, HTML_Win, HTML_Mouse, HTML_Hotkey, o_edithotkey, o_editkeyname, rmCtrlX, rmCtrlY, HWND_3
 , copy_button := "<span contenteditable='false' unselectable='on'><button id='copy_button'> copy </button></span>"
 , pause_button := "<span contenteditable='false' unselectable='on'><button id='pause_button'> pause </button></span>"
 TitleTextP2 := "     ( Shift+Tab - Freeze | RButton - CopySelected | Shift - Backlight object | Break - Pause )     v" AhkSpyVersion
@@ -242,7 +242,7 @@ Spot_Win(NotHTML=0)   {
 	If (WinID = hGui && HideMarker())
 		Return 0
 	WinGetTitle, WinTitle, ahk_id %WinID%
-	WinCloseID:=WinID, WinTitle:=TransformHTML(WinTitle)
+	WinTitle:=TransformHTML(WinTitle)
 	WinGetPos, WinX, WinY, WinWidth, WinHeight, ahk_id %WinID%
 	WinGetClass, WinClass, ahk_id %WinID%
 	WinGet, WinProcessPath, ProcessPath, ahk_id %WinID%
@@ -300,15 +300,15 @@ HTML_Win:
 	%D1% <span id='title'>( ProcessName )</span> %D2%
 	<span id='param'>ahk_exe</span> %WinProcessName%
 	%D1% <span id='title'>( ProcessPath )</span> %D2%
-	%WinProcessPath%%DP%<span contenteditable='false' unselectable='on'><button id='folder'>folder view</button></span>
+	%WinProcessPath%%DP%<span contenteditable='false' unselectable='on'><button id='folder' name='%WinProcessPath%'>folder view</button></span>
 	%D1% <span id='title'>( CommandLine )</span> %D2%
 	<span>%CommandLine%</span>
 	%D1% <span id='title'>( Position`s )</span> %D2%
 	<span id='param'>Pos:</span>  x%WinX% y%WinY%%DP%<span id='param'>Size:</span>  w%WinWidth% h%WinHeight%%DP%%WinX%, %WinY%, %WinWidth%, %WinHeight%
 	<span id='param'>Client area size:</span>  w%caW% h%caH%%DP%<span id='param'>top</span> %caY% <span id='param'>left</span> %caX% <span id='param'>bottom</span> %caWinBottom% <span id='param'>right</span> %caWinRight%
 	%D1% <span id='title'>( Other )</span> %D2%
-	<span id='param'>PID:</span>  %WinPID%%DP%<span id='param'>Count window this PID:</span> %WinCountProcess%%DP%<span id='param'>Control count:</span> %CountControl%
-	<span id='param'>HWND:</span>  %WinID%%DP%<span contenteditable='false' unselectable='on'><button id='winclose'>win kill</button></span>%DP%<span id='param'>Style:</span>  %WinStyle%%DP%<span id='param'>ExStyle:</span>  %WinExStyle%%WinTransparent%%WinTransColor%%CLSID%%SBText%%WinText%
+	<span id='param'>PID:</span>  %WinPID%%DP%<span id='param'>Count window this PID:</span> %WinCountProcess%%DP%<span id='param'>Control count:</span> %CountControl%%DP%<span contenteditable='false' unselectable='on'><button id='process_close' name='%WinPID%'>process close</button></span>
+	<span id='param'>HWND:</span>  %WinID%%DP%<span contenteditable='false' unselectable='on'><button id='win_close' name='%WinID%'>win close</button></span>%DP%<span id='param'>Style:</span>  %WinStyle%%DP%<span id='param'>ExStyle:</span>  %WinExStyle%%WinTransparent%%WinTransColor%%CLSID%%SBText%%WinText%
 	<a></a>%D2%</pre></body>
 
 	<style>
@@ -545,6 +545,7 @@ GetInfo_msctls_trackbar(hwnd, ByRef ClassNN)   {
 	SendMessage, 0x0400+2,,,, ahk_id %hwnd%			;  TBM_GETRANGEMAX
 	TBM_GETRANGEMAX := ErrorLevel
 	SendMessage, 0x0400,,,, ahk_id %hwnd%			;  TBM_GETPOS
+	ControlGet, CtrlStyle, Style,,, ahk_id %hwnd%
 	(!(CtrlStyle & 0x0200)) ? (TBM_GETPOS := ErrorLevel, TBS_REVERSED := "No")
 	: (TBM_GETPOS := TBM_GETRANGEMAX - (ErrorLevel - TBM_GETRANGEMIN), TBS_REVERSED := "Yes")
 	Return	"`n<span id='param'>Level:</span> " TBM_GETPOS DP
@@ -646,7 +647,7 @@ AccInfoUnderMouse(x, y)   {
 	If DllCall("oleacc\AccessibleObjectFromPoint"
 		, "Int64", x&0xFFFFFFFF|y<<32, "Ptr*", pacc
 		, "Ptr", VarSetCapacity(varChild,8+2*A_PtrSize,0)*0+&varChild) = 0
-	Acc:=ComObjEnwrap(9,pacc,1), child:=NumGet(varChild,8,"UInt")
+	Acc := ComObjEnwrap(9,pacc,1), child := NumGet(varChild,8,"UInt")
 	If !IsObject(Acc)
 		Return
 	Type := child ? "Child" DP "<span id='param'>Id:  </span>" child
@@ -735,7 +736,7 @@ Mode_Hotkey:
 	ThisMode := "Hotkey", Hotkey_Hook := (!isPaused ? 1 : Hotkey_Reset()), TitleText := "AhkSpy - Button" TitleTextP2
 	oDoc.body.scrollLeft := ScrollPos[ThisMode,1], oDoc.body.scrollTop := ScrollPos[ThisMode,2]
 	ShowMarker ? HideMarker() : ""
-	(HTML_Hotkey != "") ? Write_HotkeyHTML() : Write_Hotkey({"Mods":"Wait press button..."}*)
+	(HTML_Hotkey != "") ? Write_HotkeyHTML() : Write_Hotkey({Mods:"Wait press button..."}*)
 	SendMessage, 0xC, 0, &TitleText, , ahk_id %hGui%
 	GuiControl, TB: -0x0001, But3
 	WinActivate ahk_id %hGui%
@@ -1247,7 +1248,8 @@ Update(in=1)   {
 Class Events  {
 	onclick()   {
 		oevent := oDoc.parentWindow.event.srcElement
-		If (oevent.TagName = "BUTTON")
+		tagname := oevent.tagname
+		If (tagname = "BUTTON")
 		{
 			thisid := oevent.id
 			If thisid = copy_button
@@ -1268,8 +1270,8 @@ Class Events  {
 			}
 			Else If thisid = pause_button
 				Gosub, PausedScript
-			Else If (thisid = "folder" && WinProcessPath != "")
-				SelectFilePath(WinProcessPath)
+			Else If (thisid = "folder" && oevent.name != "")
+				SelectFilePath(oevent.name)
 			Else If thisid = numlock
 			{
 				(OnHook := Hotkey_Hook) ? (Hotkey_Hook := 0) : 0
@@ -1278,26 +1280,29 @@ Class Events  {
 			}
 			oDoc.body.focus()
 		}
+		Else If (ThisMode = "Hotkey" && !Hotkey_Hook && !isPaused && tagname ~= "PRE|SPAN")
+			Hotkey_Hook := 1
+
 	}
 	ondblclick()   {
-		thisid := oDoc.parentWindow.event.srcElement.id
-		If thisid = winclose
+		oevent := oDoc.parentWindow.event.srcElement
+		If (oevent.TagName = "BUTTON")
 		{
-			WinGet, WinPID, PID, ahk_id %WinCloseID%
-			WinKill, ahk_id %WinCloseID%,, 0.5
-			IfWinExist, ahk_id %WinCloseID%
-				Process, Close, %WinPID%
-		}
-		Else If thisid = numlock
-		{
-			(OnHook := Hotkey_Hook) ? (Hotkey_Hook := 0) : 0
-			SendInput, {Numlock}
-			(OnHook ? Hotkey_Hook := 1 : 0)
-		}
-		Else If thisid = pause_button
-			Gosub, PausedScript
-		If (oDoc.parentWindow.event.srcElement.TagName = "BUTTON")
+			thisid := oevent.id
+			If thisid = numlock
+			{
+				(OnHook := Hotkey_Hook) ? (Hotkey_Hook := 0) : 0
+				SendInput, {Numlock}
+				(OnHook ? Hotkey_Hook := 1 : 0)
+			}
+			Else If thisid = pause_button
+				Gosub, PausedScript
+			Else If thisid = process_close
+				Process, Close, % oevent.name
+			Else If thisid = win_close
+				WinClose, % "ahk_id" oevent.name
 			oDoc.body.focus()
+		}
 	}
 	onfocus()   {
 		Sleep 100
@@ -1305,8 +1310,8 @@ Class Events  {
 	}
 	onblur()   {
 		Sleep 100
-		If WinActive("ahk_id" hGui)
-			(!isPaused ? (Hotkey_Hook := 1) : 0)
+		If (WinActive("ahk_id" hGui) && !isPaused)
+			Hotkey_Hook := 1
 	}
 }
 	;)
