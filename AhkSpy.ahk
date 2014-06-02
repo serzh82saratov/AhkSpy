@@ -12,7 +12,7 @@ SetBatchLines, -1
 ListLines, Off
 DetectHiddenWindows, On
 
-Global AhkSpyVersion := 1.159
+Global AhkSpyVersion := 1.160
 Gosub, RevAhkVersion
 Menu, Tray, Icon, Shell32.dll, % A_OSVersion = "WIN_7" ? 278 : 222
 
@@ -653,7 +653,7 @@ AccInfoUnderMouse(x, y)   {
 	Type := child ? "Child" DP "<span id='param'>Id:  </span>" child
 		: "Parent" DP "<span id='param'>ChildCount:  </span>" ((C:=Acc.accChildCount)!=""?C:"N/A")
 	code = `n<span id='param'>Type:</span>  %Type%
-	code .= DP "<span id='param'>Pos:  </span>" GetAccLocation(Acc, child)
+	code .= DP "<span id='param'>Pos:  </span>" AccGetLocation(Acc, child)
 
 	If ((Role := AccRole(Acc, child)) != "")  {
 		code = %code%`n%D1% <a></a><span id='param'>( Role )</span> %DB% %copy_button% %D2%`n
@@ -720,7 +720,7 @@ AccGetStateText(nState)   {
 	DllCall("oleacc\GetStateText", "UInt", nState, "str", sState, "UInt", nSize+1)
 	Return sState
 }
-GetAccLocation(Acc, Child=0) {
+AccGetLocation(Acc, Child=0) {
 	Acc.accLocation(ComObj(0x4003,&x:=0), ComObj(0x4003,&y:=0), ComObj(0x4003,&w:=0), ComObj(0x4003,&h:=0), Child)
 	Return "x" (AccCoord[1]:=NumGet(x,0,"int")) " y" (AccCoord[2]:=NumGet(y,0,"int"))
 			. " w" (AccCoord[3]:=NumGet(w,0,"int")) " h" (AccCoord[4]:=NumGet(h,0,"int"))
@@ -1239,7 +1239,7 @@ Update(in=1)   {
 			Reload
 		}
 		Error := (++att = 20 || Status != "")
-		SetTimer,  % Error ? "UpdateAhkSpy" : "Upd_Verifi", % Error ? -60000 : -3000
+		SetTimer, % Error ? "UpdateAhkSpy" : "Upd_Verifi", % Error ? -60000 : -3000
 		Return
 }
 
@@ -1252,6 +1252,7 @@ Class Events  {
 		If (tagname = "BUTTON")
 		{
 			thisid := oevent.id
+			oDoc.body.focus()
 			If thisid = copy_button
 			{
 				o := oDoc.all.item(oevent.sourceIndex+2)
@@ -1278,17 +1279,16 @@ Class Events  {
 				SendInput, {Numlock}
 				(OnHook ? Hotkey_Hook := 1 : 0)
 			}
-			oDoc.body.focus()
 		}
 		Else If (ThisMode = "Hotkey" && !Hotkey_Hook && !isPaused && tagname ~= "PRE|SPAN")
 			Hotkey_Hook := 1
-
 	}
 	ondblclick()   {
 		oevent := oDoc.parentWindow.event.srcElement
-		If (oevent.TagName = "BUTTON")
+		If (oevent.tagname = "BUTTON")
 		{
 			thisid := oevent.id
+			oDoc.body.focus()
 			If thisid = numlock
 			{
 				(OnHook := Hotkey_Hook) ? (Hotkey_Hook := 0) : 0
@@ -1301,7 +1301,6 @@ Class Events  {
 				Process, Close, % oevent.name
 			Else If thisid = win_close
 				WinClose, % "ahk_id" oevent.name
-			oDoc.body.focus()
 		}
 	}
 	onfocus()   {
