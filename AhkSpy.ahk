@@ -12,12 +12,13 @@ SetBatchLines, -1
 ListLines, Off
 DetectHiddenWindows, On
 
-Global AhkSpyVersion := 1.160
+Global AhkSpyVersion := 1.161
 Gosub, RevAhkVersion
-Menu, Tray, Icon, Shell32.dll, % A_OSVersion = "WIN_7" ? 278 : 222
+Menu, Tray, Icon, Shell32.dll, % A_OSVersion = "WIN_XP" ? 222 : 278
 
 # := "&#9642"									;  Символ разделителя заголовков - &#8226 | &#9642
 Color# := "E14B30"								;  Цвет шрифта разделителя заголовков и параметров
+
 Global ThisMode := "Mouse"						;  Стартовый режим - Win|Mouse|Hotkey
 , HeightStart := 550							;  Высота окна при старте
 , FontSize := 15								;  Размер шрифта
@@ -34,6 +35,7 @@ Global ThisMode := "Mouse"						;  Стартовый режим - Win|Mouse|Hot
 , HTML_Win, HTML_Mouse, HTML_Hotkey, o_edithotkey, o_editkeyname, rmCtrlX, rmCtrlY, HWND_3
 , copy_button := "<span contenteditable='false' unselectable='on'><button id='copy_button'> copy </button></span>"
 , pause_button := "<span contenteditable='false' unselectable='on'><button id='pause_button'> pause </button></span>"
+
 TitleTextP2 := "     ( Shift+Tab - Freeze | RButton - CopySelected | Shift - Backlight object | Break - Pause )     v" AhkSpyVersion
 BLGroup := ["Backlight allways","Backlight disable","Backlight hold shift button"]
 wKey := 140					;  Ширина кнопок
@@ -52,6 +54,14 @@ Gui, +AlwaysOnTop +HWNDhGui +ReSize -DPIScale
 Gui, Color, %ColorBgPaused%
 Gui, Add, ActiveX, Border voDoc HWNDhActiveX x0 y+0, HTMLFile
 
+ComObjError(false), ComObjConnect(oDoc, Events)
+OnMessage(0x201, "WM_LBUTTONDOWN")
+OnMessage(0x7B, "WM_CONTEXTMENU")
+OnMessage(0x6, "WM_ACTIVATE")
+OnExit, Exit
+DllCall("RegisterShellHookWindow", "UInt", A_ScriptHwnd)
+OnMessage(DllCall("RegisterWindowMessage", "str", "SHELLHOOK"), "ShellProc")
+
 Gui, TB: +HWNDhTBGui -Caption -DPIScale +Parent%hGui% +E0x08000000
 Gui, TB: Font, % " s" (A_ScreenDPI = 120 ? 8 : 10), Verdana
 Gui, TB: Add, Button, x0 y0 h%HeigtButton% w%wKey% vBut1 gMode_Win, Window
@@ -59,13 +69,6 @@ Gui, TB: Add, Button, x+0 yp hp wp vBut2 gMode_Mouse, Mouse && Control
 Gui, TB: Add, Progress, x+0 yp hp w%wColor% vColorProgress cWhite, 100
 Gui, TB: Add, Button, x+0 yp hp w%wKey% vBut3 gMode_Hotkey, Button
 Gui, TB: Show, % "x0 y0 NA h" HeigtButton " w" widthTB := wKey*3+wColor
-
-OnExit, Exit
-OnMessage(0x201, "WM_LBUTTONDOWN")
-OnMessage(0x6, "WM_ACTIVATE")
-ComObjError(false), ComObjConnect(oDoc, Events)
-DllCall("RegisterShellHookWindow", "UInt", A_ScriptHwnd)
-OnMessage(DllCall("RegisterWindowMessage", "str", "SHELLHOOK"), "ShellProc")
 
 Gui, M: Margin, 0, 0
 Gui, M: -DPIScale +AlwaysOnTop +HWNDhMarkerGui +E0x08000000 +E0x20 -Caption
@@ -108,7 +111,6 @@ Menu, Help, Add, AutoHotKey official help online, Sys_Help
 Menu, Help, Add, AutoHotKey russian help online, Sys_Help
 Menu, Sys, Add, Help, :Help
 Menu, Sys, Color, % ColorBgOriginal
-OnMessage(0x7B, "WM_CONTEXTMENU")
 
 Gui, Show, NA h%HeightStart% w%widthTB%
 Gui, +MinSize%widthTB%x%HeigtButton%
@@ -302,7 +304,7 @@ HTML_Win:
 	%D1% <span id='title'>( ProcessPath )</span> %D2%
 	%WinProcessPath%%DP%<span contenteditable='false' unselectable='on'><button id='folder' name='%WinProcessPath%'>folder view</button></span>
 	%D1% <span id='title'>( CommandLine )</span> %D2%
-	<span>%CommandLine%</span>
+	<span>%CommandLine%</span>%DP%<span contenteditable='false' unselectable='on'><button id='command_line' name='%CommandLine%'>run cmd</button></span>
 	%D1% <span id='title'>( Position`s )</span> %D2%
 	<span id='param'>Pos:</span>  x%WinX% y%WinY%%DP%<span id='param'>Size:</span>  w%WinWidth% h%WinHeight%%DP%%WinX%, %WinY%, %WinWidth%, %WinHeight%
 	<span id='param'>Client area size:</span>  w%caW% h%caH%%DP%<span id='param'>top</span> %caY% <span id='param'>left</span> %caX% <span id='param'>bottom</span> %caWinBottom% <span id='param'>right</span> %caWinRight%
@@ -1273,6 +1275,8 @@ Class Events  {
 				Gosub, PausedScript
 			Else If (thisid = "folder" && oevent.name != "")
 				SelectFilePath(oevent.name)
+			Else If (thisid = "command_line" && oevent.name != "")
+				Run % comspec " /c """ oevent.name """", , hide
 			Else If thisid = numlock
 			{
 				(OnHook := Hotkey_Hook) ? (Hotkey_Hook := 0) : 0
