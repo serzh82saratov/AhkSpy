@@ -12,7 +12,7 @@ SetBatchLines, -1
 ListLines, Off
 DetectHiddenWindows, On
 
-Global AhkSpyVersion := 1.161
+Global AhkSpyVersion := 1.162
 Gosub, RevAhkVersion
 Menu, Tray, Icon, Shell32.dll, % A_OSVersion = "WIN_XP" ? 222 : 278
 
@@ -309,8 +309,8 @@ HTML_Win:
 	<span id='param'>Pos:</span>  x%WinX% y%WinY%%DP%<span id='param'>Size:</span>  w%WinWidth% h%WinHeight%%DP%%WinX%, %WinY%, %WinWidth%, %WinHeight%
 	<span id='param'>Client area size:</span>  w%caW% h%caH%%DP%<span id='param'>top</span> %caY% <span id='param'>left</span> %caX% <span id='param'>bottom</span> %caWinBottom% <span id='param'>right</span> %caWinRight%
 	%D1% <span id='title'>( Other )</span> %D2%
-	<span id='param'>PID:</span>  %WinPID%%DP%<span id='param'>Count window this PID:</span> %WinCountProcess%%DP%<span id='param'>Control count:</span> %CountControl%%DP%<span contenteditable='false' unselectable='on'><button id='process_close' name='%WinPID%'>process close</button></span>
-	<span id='param'>HWND:</span>  %WinID%%DP%<span contenteditable='false' unselectable='on'><button id='win_close' name='%WinID%'>win close</button></span>%DP%<span id='param'>Style:</span>  %WinStyle%%DP%<span id='param'>ExStyle:</span>  %WinExStyle%%WinTransparent%%WinTransColor%%CLSID%%SBText%%WinText%
+	<span id='param'>PID:</span>  %WinPID%%DP%<span id='param'>Count window this PID:</span> %WinCountProcess%%DP%<span contenteditable='false' unselectable='on'><button id='process_close' name='%WinPID%'>process close</button></span>
+	<span id='param'>HWND:</span>  %WinID%%DP%<span contenteditable='false' unselectable='on'><button id='win_close' name='%WinID%'>win close</button></span>%DP%<span id='param'>Control count:</span> %CountControl%%DP%<span id='param'>Style:</span>  %WinStyle%%DP%<span id='param'>ExStyle:</span>  %WinExStyle%%WinTransparent%%WinTransColor%%CLSID%%SBText%%WinText%
 	<a></a>%D2%</pre></body>
 
 	<style>
@@ -825,7 +825,9 @@ HotkeyRules:
 	Global Hotkey_TargetFunc := "Write_Hotkey", Hotkey_Hook := (ThisMode = "Hotkey" ? 1 : Hotkey_Reset())
 	Return
 
-	; _________________________________________________ Hotkey Func _________________________________________________
+	; _________________________________________________ Hotkey Functions _________________________________________________
+
+	;  http://forum.script-coding.com/viewtopic.php?pid=69765#p69765
 
 Hotkey_Control(State)  {
 	Static IsStart
@@ -848,14 +850,14 @@ Hotkey_Main(VKCode, SCCode, StateMod = 0, IsMod = 0, OnlyMods = 0)  {
 	{
 		If !ModsOnly
 			Return 0
-		ModsOnly := 0, K.MCtrl := K.MAlt := K.MShift := K.MWin := K.Mods := ""
+		K.MCtrl := K.MAlt := K.MShift := K.MWin := K.Mods := ""
 		K.PCtrl := K.PAlt := K.PShift := K.PWin := K.Pref := ""
 		K.PLCtrl := K.PLAlt := K.PLShift := K.PLWin := K.LRPref := ""
 		K.PRCtrl := K.PRAlt := K.PRShift := K.PRWin := ""
 		K.MLCtrl := K.MLAlt := K.MLShift := K.MLWin := K.LRMods := ""
 		K.MRCtrl := K.MRAlt := K.MRShift := K.MRWin := ""
 		%Hotkey_TargetFunc%(K*)
-		Return 0
+		Return ModsOnly := 0
 	}
 	If (StateMod = "Down")
 	{
@@ -1042,7 +1044,6 @@ Sys_Help:
 
 	; _________________________________________________ Functions _________________________________________________
 
-
 ShellProc(nCode, wParam)   {
 	If (nCode = 4)
 	{
@@ -1150,7 +1151,7 @@ ExistSelectedText(byref Copy)   {
 
 GetCommandLineProc(pid)   {
 	ComObjGet("winmgmts:").ExecQuery("Select * from Win32_Process WHERE ProcessId = " pid)._NewEnum.next(X)
-	Return X.CommandLine
+	Return Trim(X.CommandLine)
 }
 
 	;  http://www.autohotkey.com/board/topic/69254-func-api-getwindowinfo-ahk-l/#entry438372
