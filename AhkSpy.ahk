@@ -13,7 +13,7 @@ SetBatchLines, -1
 ListLines, Off
 DetectHiddenWindows, On
 
-Global AhkSpyVersion := 1.163
+Global AhkSpyVersion := 1.164
 Gosub, RevAhkVersion
 Menu, Tray, Icon, Shell32.dll, % A_OSVersion = "WIN_XP" ? 222 : 278
 
@@ -31,7 +31,7 @@ Global ThisMode := "Mouse"						;  Стартовый режим - Win|Mouse|Hot
 , ColorParam := "189200"						;  Цвет шрифта параметров
 
 , DP := "  <span style='color: " Color# "'>" # "</span>  ", D1, D2, DB
-, StateLight:=((t:=IniRead("StateLight"))=""||t>3?3:t), StateLightAcc:=IniRead("StateLightAcc"), StateUpdate:=IniRead("StateUpdate")
+, StateLight:=((t:=IniRead("StateLight"))=""||t>3?1:t), StateLightAcc:=((t:=IniRead("StateLightAcc"))=""?1:t), StateUpdate:=((t:=IniRead("StateUpdate"))=""?1:t)
 , hGui, hActiveX, hMarkerGui, hMarkerAccGui, oDoc, ShowMarker, isIE, isPaused, ScrollPos:={}, AccCoord:=[]
 , HTML_Win, HTML_Mouse, HTML_Hotkey, o_edithotkey, o_editkeyname, rmCtrlX, rmCtrlY, HWND_3
 , copy_button := "<span contenteditable='false' unselectable='on'><button id='copy_button'> copy </button></span>"
