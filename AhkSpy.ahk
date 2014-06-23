@@ -8,11 +8,12 @@
 #NoTrayIcon
 #SingleInstance Force
 #NoEnv
+#HotkeyInterval 0
 SetBatchLines, -1
 ListLines, Off
 DetectHiddenWindows, On
 
-Global AhkSpyVersion := 1.162
+Global AhkSpyVersion := 1.163
 Gosub, RevAhkVersion
 Menu, Tray, Icon, Shell32.dll, % A_OSVersion = "WIN_XP" ? 222 : 278
 
@@ -784,7 +785,7 @@ Write_Hotkey(K*)   {
 
 	ControlSend, ahk_parent, %Prefix%{%Hotkey%}, WinTitle<span id='param'>%Comment%</span>
 
-	%D1% <span id='title'>( Last pressed )</span> %DB% <span contenteditable='false' unselectable='on'><button id='numlock'> numlock </button></span> %D2%
+	%D1% <span id='title'>( Last pressed )</span> %DB% <span contenteditable='false' unselectable='on'><button id='numlock'> num </button></span><span contenteditable='false' unselectable='on'><button id='scrolllock'> scroll </button></span> %D2%
 
 	%ThisKey%   %DP%   %VKCode%%SCCode%   %DP%   %VKCode%   %DP%   %SCCode%
 
@@ -805,7 +806,7 @@ Write_Hotkey(K*)   {
 	#param {color: '%ColorParam%'}
 	#edithotkey {font-size: '1.18em'; text-align: center; border: 1px dashed black}
 	#keyname {font-size: '1.18em';   background-color: '%ColorParam%'; width: 65px; height: 90`%}
-	#pause_button, #numlock {font-size: 0.9em; border: 1px dashed black}
+	#pause_button, #numlock, #scrolllock {font-size: 0.9em; border: 1px dashed black}
 	#editkeyname {font-size: '1.18em'; text-align: center; border: 1px dashed black}
 	</style>
 	)
@@ -1168,27 +1169,27 @@ GetClientPos(hwnd, ByRef left, ByRef top, ByRef w, ByRef h)   {
 	;  http://forum.script-coding.com/viewtopic.php?pid=81833#p81833
 
 SelectFilePath(FilePath)   {
-   SplitPath, FilePath,, Dir
-   for window in ComObjCreate("Shell.Application").Windows
-   {
-      ShellFolderView := window.Document
+	SplitPath, FilePath,, Dir
+	for window in ComObjCreate("Shell.Application").Windows
+	{
+		ShellFolderView := window.Document
 
-      Try If ((Folder := ShellFolderView.Folder).Self.Path != Dir)
-         Continue
-      Catch
-         Continue
+		Try If ((Folder := ShellFolderView.Folder).Self.Path != Dir)
+			Continue
+		Catch
+			Continue
 
-      for item in Folder.Items
-      {
-         If (item.Path != FilePath)
-            Continue
+		for item in Folder.Items
+		{
+			If (item.Path != FilePath)
+				Continue
 
-         ShellFolderView.SelectItem(item, 1|4|8|16)
-         WinActivate, % "ahk_id" window.hwnd
-         Return
-      }
-   }
-   Run, %A_WinDir%\explorer.exe /select`, "%FilePath%", , UseErrorLevel
+			ShellFolderView.SelectItem(item, 1|4|8|16)
+			WinActivate, % "ahk_id" window.hwnd
+			Return
+		}
+	}
+	Run, %A_WinDir%\explorer.exe /select`, "%FilePath%", , UseErrorLevel
 }
 
 GetCLSIDExplorer(hwnd)   {
@@ -1278,10 +1279,10 @@ Class Events  {
 				SelectFilePath(oevent.name)
 			Else If (thisid = "command_line" && oevent.name != "")
 				Run % comspec " /c """ oevent.name """", , hide
-			Else If thisid = numlock
+			Else If (thisid = "numlock" || thisid = "scrolllock")
 			{
 				(OnHook := Hotkey_Hook) ? (Hotkey_Hook := 0) : 0
-				SendInput, {Numlock}
+				SendInput, {%thisid%}
 				(OnHook ? Hotkey_Hook := 1 : 0)
 			}
 		}
@@ -1294,10 +1295,10 @@ Class Events  {
 		{
 			thisid := oevent.id
 			oDoc.body.focus()
-			If thisid = numlock
+			If (thisid = "numlock" || thisid = "scrolllock")
 			{
 				(OnHook := Hotkey_Hook) ? (Hotkey_Hook := 0) : 0
-				SendInput, {Numlock}
+				SendInput, {%thisid%}
 				(OnHook ? Hotkey_Hook := 1 : 0)
 			}
 			Else If thisid = pause_button
