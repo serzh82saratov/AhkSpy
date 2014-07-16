@@ -13,7 +13,7 @@ SetBatchLines, -1
 ListLines, Off
 DetectHiddenWindows, On
 
-Global AhkSpyVersion := 1.165
+Global AhkSpyVersion := 1.166
 Gosub, RevAhkVersion
 Menu, Tray, Icon, Shell32.dll, % A_OSVersion = "WIN_XP" ? 222 : 278
 
@@ -548,9 +548,10 @@ GetInfo_msctls_trackbar(hwnd, ByRef ClassNN)   {
 	SendMessage, 0x0400+2,,,, ahk_id %hwnd%			;  TBM_GETRANGEMAX
 	TBM_GETRANGEMAX := ErrorLevel
 	SendMessage, 0x0400,,,, ahk_id %hwnd%			;  TBM_GETPOS
+	TBM_GETPOS := ErrorLevel
 	ControlGet, CtrlStyle, Style,,, ahk_id %hwnd%
-	(!(CtrlStyle & 0x0200)) ? (TBM_GETPOS := ErrorLevel, TBS_REVERSED := "No")
-	: (TBM_GETPOS := TBM_GETRANGEMAX - (ErrorLevel - TBM_GETRANGEMIN), TBS_REVERSED := "Yes")
+	(!(CtrlStyle & 0x0200)) ? (TBS_REVERSED := "No")
+	: (TBM_GETPOS := TBM_GETRANGEMAX - (TBM_GETPOS - TBM_GETRANGEMIN), TBS_REVERSED := "Yes")
 	Return	"`n<span id='param'>Level:</span> " TBM_GETPOS DP
 			. "<span id='param'>Invert style:</span> " TBS_REVERSED
 			. "`n<span id='param'>Range:   Min:</span> " TBM_GETRANGEMIN DP
@@ -738,7 +739,7 @@ Mode_Hotkey:
 		HTML_%ThisMode% := oDoc.body.innerHTML
 	ThisMode := "Hotkey", Hotkey_Hook := (!isPaused ? 1 : Hotkey_Reset()), TitleText := "AhkSpy - Button" TitleTextP2
 	oDoc.body.scrollLeft := ScrollPos[ThisMode,1], oDoc.body.scrollTop := ScrollPos[ThisMode,2]
-	ShowMarker ? HideMarker() : ""
+	ShowMarker ? HideMarker() : 0
 	(HTML_Hotkey != "") ? Write_HotkeyHTML() : Write_Hotkey({Mods:"Wait press button..."}*)
 	SendMessage, 0xC, 0, &TitleText, , ahk_id %hGui%
 	GuiControl, TB: -0x0001, But3
@@ -823,7 +824,7 @@ Write_HotkeyHTML() {
 
 HotkeyRules:
 	Hotkey_Control(1)
-	Global Hotkey_TargetFunc := "Write_Hotkey", Hotkey_Hook := (ThisMode = "Hotkey" ? 1 : Hotkey_Reset())
+	Global Hotkey_TargetFunc := "Write_Hotkey", Hotkey_Hook := (ThisMode = "Hotkey" ? 1 : 0)
 	Return
 
 	; _________________________________________________ Hotkey Functions _________________________________________________
