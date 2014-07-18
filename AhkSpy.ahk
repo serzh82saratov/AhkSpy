@@ -13,7 +13,7 @@ SetBatchLines, -1
 ListLines, Off
 DetectHiddenWindows, On
 
-Global AhkSpyVersion := 1.166
+Global AhkSpyVersion := 1.167
 Gosub, RevAhkVersion
 Menu, Tray, Icon, Shell32.dll, % A_OSVersion = "WIN_XP" ? 222 : 278
 
@@ -748,7 +748,7 @@ Mode_Hotkey:
 	Return
 
 Write_Hotkey(K*)   {
-	Static PrHK1, PrHK2
+	Static PrHK1, PrHK2, PrKeys1, PrKeys2
 
 	Mods := K.Mods, KeyName := K.Name
 	Prefix := K.Pref, Hotkey := K.HK
@@ -756,9 +756,15 @@ Write_Hotkey(K*)   {
 	ThisKey := K.TK, VKCode := K.VK, SCCode := K.SC
 
 	IsVk := Hotkey ~= "^vk" ? 1 : 0
+
 	HK1 := IsVk ? Hotkey : ThisKey
 	HK2 := HK1 = PrHK1 ? PrHK2 : PrHK1, PrHK1 := HK1, PrHK2 := HK2
 	HKComment := "    `;  """ GetKeyName(HK2) " & " GetKeyName(HK1) """"
+
+	Keys1 := Prefix Hotkey
+	Keys2 := Keys1 != "" && Keys1 = PrKeys1 ? PrKeys2 : PrKeys1
+	PrKeys1 := Keys1 != "" ? Keys1 : PrKeys1, PrKeys2 := Keys2
+
 	Comment := IsVk ? "    `;  """ KeyName """" : ""
 	(Hotkey != "") ? (LRComment := "::<span id='param'>    `;  """ LRMods KeyName """</span>"
 		, FComment := "::<span id='param'>    `;  """ Mods KeyName """</span>") : 0
@@ -780,11 +786,9 @@ Write_Hotkey(K*)   {
 
 	%LRPStr%
 
-	%HK2% & %HK1%::<span id='param'>%HKComment%</span>
+	%HK2% & %HK1%::<span id='param'>%HKComment%</span>   %DP%   %Keys2%::%Keys1%
 
-	Send, %Prefix%{%Hotkey%}<span id='param'>%Comment%</span>  %DP%  SendInput, %Prefix%{%Hotkey%}<span id='param'>%Comment%</span>
-
-	ControlSend, ahk_parent, %Prefix%{%Hotkey%}, WinTitle<span id='param'>%Comment%</span>
+	Send %Prefix%{%Hotkey%}<span id='param'>%Comment%</span>  %DP%  SendInput %Prefix%{%Hotkey%}<span id='param'>%Comment%</span>  %DP%  ControlSend, ahk_parent, %Prefix%{%Hotkey%}, WinTitle<span id='param'>%Comment%</span>
 
 	%D1% <span id='title'>( Last pressed )</span> %DB% <span contenteditable='false' unselectable='on'><button id='numlock'> num </button></span><span contenteditable='false' unselectable='on'><button id='scrolllock'> scroll </button></span> %D2%
 
