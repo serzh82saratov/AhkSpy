@@ -13,7 +13,7 @@ SetBatchLines, -1
 ListLines, Off
 DetectHiddenWindows, On
 
-Global AhkSpyVersion := 1.167
+Global AhkSpyVersion := 1.168
 Gosub, RevAhkVersion
 Menu, Tray, Icon, Shell32.dll, % A_OSVersion = "WIN_XP" ? 222 : 278
 
@@ -154,15 +154,13 @@ PausedScript:
 ~^WheelUp::
 ~^WheelDown:: SetTimer, ScrollLeft, -300
 ScrollLeft:
-	oDoc.body.ScrollLeft := 1
+	oDoc.body.ScrollLeft := 0
 	Return
 
 ^vk5A:: oDoc.execCommand("Undo")							;  Ctrl+Z
 
-Volume_Up::
 ^vk43:: Clipboard := oDoc.selection.createRange().text		;  Ctrl+C
 
-Volume_Down::
 ^vk56:: oDoc.execCommand("Paste")							;  Ctrl+V
 
 ^vk41:: oDoc.execCommand("SelectAll")						;  Ctrl+A
@@ -748,7 +746,7 @@ Mode_Hotkey:
 	Return
 
 Write_Hotkey(K*)   {
-	Static PrHK1, PrHK2, PrKeys1, PrKeys2
+	Static PrHK1, PrHK2, PrKeys1, PrKeys2, PrKeysComm, KeysComm
 
 	Mods := K.Mods, KeyName := K.Name
 	Prefix := K.Pref, Hotkey := K.HK
@@ -761,15 +759,19 @@ Write_Hotkey(K*)   {
 	HK2 := HK1 = PrHK1 ? PrHK2 : PrHK1, PrHK1 := HK1, PrHK2 := HK2
 	HKComment := "    `;  """ GetKeyName(HK2) " & " GetKeyName(HK1) """"
 
-	Keys1 := Prefix Hotkey
-	Keys2 := Keys1 != "" && Keys1 = PrKeys1 ? PrKeys2 : PrKeys1
-	PrKeys1 := Keys1 != "" ? Keys1 : PrKeys1, PrKeys2 := Keys2
+	If ((Keys1 := Prefix Hotkey) != "" && Keys1 != PrKeys1)
+		Keys2 := PrKeys1, PrKeys1 := Keys1
+		, KeysComm := "    `;  """ PrKeysComm " >> " Mods KeyName     """"
+		, PrKeysComm := Mods KeyName, PrKeys2 := Keys2
+	Else
+		Keys1 := PrKeys1, Keys2 := PrKeys2
 
 	Comment := IsVk ? "    `;  """ KeyName """" : ""
 	(Hotkey != "") ? (LRComment := "::<span id='param'>    `;  """ LRMods KeyName """</span>"
 		, FComment := "::<span id='param'>    `;  """ Mods KeyName """</span>") : 0
 	(LRMods != "") ? (LRMStr := LRMods KeyName, LRPStr := LRPref Hotkey LRComment) : 0
 	inp_hk := o_edithotkey.value, inp_kn := o_editkeyname.value
+
 
 	HTML_Hotkey =
 	( Ltrim
@@ -786,7 +788,9 @@ Write_Hotkey(K*)   {
 
 	%LRPStr%
 
-	%HK2% & %HK1%::<span id='param'>%HKComment%</span>   %DP%   %Keys2%::%Keys1%
+	%HK2% & %HK1%::<span id='param'>%HKComment%</span>   %DP%   <span id='param'>Double hotkey</span>
+
+	%Keys2%:: %Keys1%<span id='param'>%KeysComm%</span>   %DP%   <span id='param'>Remapping keys</span>
 
 	Send %Prefix%{%Hotkey%}<span id='param'>%Comment%</span>  %DP%  SendInput %Prefix%{%Hotkey%}<span id='param'>%Comment%</span>  %DP%  ControlSend, ahk_parent, %Prefix%{%Hotkey%}, WinTitle<span id='param'>%Comment%</span>
 
@@ -932,7 +936,7 @@ Hotkey_LowLevelKeyboardProc(nCode, wParam, lParam)   {
 	SaveFormat := A_FormatInteger
 	SetFormat, IntegerFast, H
 	VKCode := "vk" SubStr(NumGet(lParam+0, 0, "UInt"), 3)
-	sc := NumGet(lParam+0, 8, "UInt") & 1, sc := sc << 8 | NumGet(lParam+0, 4, "UInt")
+	ext := NumGet(lParam+0, 8, "UInt") & 1, sc := ext << 8 | NumGet(lParam+0, 4, "UInt")
 	SCCode := "sc" SubStr(sc, 3), IsMod := Mods[VKCode]
 	SetFormat, IntegerFast, %SaveFormat%
 	If (wParam = 0x100 || wParam = 0x104)   ;  WM_KEYDOWN := 0x100, WM_SYSKEYDOWN := 0x104
