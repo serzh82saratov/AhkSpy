@@ -13,7 +13,7 @@ SetBatchLines, -1
 ListLines, Off
 DetectHiddenWindows, On
 
-Global AhkSpyVersion := 1.168
+Global AhkSpyVersion := 1.17
 Gosub, RevAhkVersion
 Menu, Tray, Icon, Shell32.dll, % A_OSVersion = "WIN_XP" ? 222 : 278
 
@@ -32,12 +32,12 @@ Global ThisMode := "Mouse"						;  Стартовый режим - Win|Mouse|Hot
 
 , DP := "  <span style='color: " Color# "'>" # "</span>  ", D1, D2, DB
 , StateLight:=((t:=IniRead("StateLight"))=""||t>3?1:t), StateLightAcc:=((t:=IniRead("StateLightAcc"))=""?1:t), StateUpdate:=((t:=IniRead("StateUpdate"))=""?1:t)
-, hGui, hActiveX, hMarkerGui, hMarkerAccGui, oDoc, ShowMarker, isIE, isPaused, ScrollPos:={}, AccCoord:=[]
+, hGui, hActiveX, hMarkerGui, hMarkerAccGui, oDoc, ShowMarker, isIE, isPaused, ShowWinStyles, ScrollPos:={}, AccCoord:=[]
 , HTML_Win, HTML_Mouse, HTML_Hotkey, o_edithotkey, o_editkeyname, rmCtrlX, rmCtrlY, HWND_3
 , copy_button := "<span contenteditable='false' unselectable='on'><button id='copy_button'> copy </button></span>"
 , pause_button := "<span contenteditable='false' unselectable='on'><button id='pause_button'> pause </button></span>"
 
-TitleTextP2 := "     ( Shift+Tab - Freeze | RButton - CopySelected | Shift - Backlight object | Break - Pause )     v" AhkSpyVersion
+TitleTextP2 := "     ( Shift+Tab - Freeze | RButton - CopySelected | Pause - Pause )     v" AhkSpyVersion
 BLGroup := ["Backlight allways","Backlight disable","Backlight hold shift button"]
 wKey := 140					;  Ширина кнопок
 wColor := wKey//2			;  Ширина цветного фрагмента
@@ -289,8 +289,11 @@ Spot_Win(NotHTML=0)   {
 	GuiControl, TB: -Redraw, ColorProgress
 	GuiControl, % "TB: +c" SubStr(ColorRGB, 3), ColorProgress
 	GuiControl, TB: +Redraw, ColorProgress
+	If ShowWinStyles
+		WinStyles := GetStyles(WinStyle, WinExStyle), ButStyleTip := "hide styles"
 
 HTML_Win:
+	ButStyleTip := !ShowWinStyles ? "show styles" : ButStyleTip
 	HTML_Win =
 ( Ltrim
 	<body id='body'><pre id='pre'; contenteditable='true'>
@@ -307,9 +310,10 @@ HTML_Win:
 	%D1% <span id='title'>( Position`s )</span> %D2%
 	<span id='param'>Pos:</span>  x%WinX% y%WinY%%DP%<span id='param'>Size:</span>  w%WinWidth% h%WinHeight%%DP%%WinX%, %WinY%, %WinWidth%, %WinHeight%
 	<span id='param'>Client area size:</span>  w%caW% h%caH%%DP%<span id='param'>top</span> %caY% <span id='param'>left</span> %caX% <span id='param'>bottom</span> %caWinBottom% <span id='param'>right</span> %caWinRight%
-	%D1% <span id='title'>( Other )</span> %D2%
+	<a></a>%D1% <span id='title'>( Other )</span> %D2%
 	<span id='param'>PID:</span>  %WinPID%%DP%<span id='param'>Count window this PID:</span> %WinCountProcess%%DP%<span contenteditable='false' unselectable='on'><button id='process_close' name='%WinPID%'>process close</button></span>
-	<span id='param'>HWND:</span>  %WinID%%DP%<span contenteditable='false' unselectable='on'><button id='win_close' name='%WinID%'>win close</button></span>%DP%<span id='param'>Control count:</span> %CountControl%%DP%<span id='param'>Style:</span>  %WinStyle%%DP%<span id='param'>ExStyle:</span>  %WinExStyle%%WinTransparent%%WinTransColor%%CLSID%%SBText%%WinText%
+	<span id='param'>HWND:</span>  %WinID%%DP%<span contenteditable='false' unselectable='on'><button id='win_close' name='%WinID%'>win close</button></span>%DP%<span id='param'>Control count:</span>  %CountControl%
+	<span id='param'>Style:</span>  %WinStyle%%DP%<span id='param'>ExStyle:</span>  %WinExStyle%%DP%<span contenteditable='false' unselectable='on'><button id='get_styles' name='%WinStyle%|%WinExStyle%'>%ButStyleTip%</button></span>%WinTransparent%%WinTransColor%%CLSID%<span id='AllWinStyles'>%WinStyles%</span>%SBText%%WinText%
 	<a></a>%D2%</pre></body>
 
 	<style>
@@ -1206,6 +1210,37 @@ GetCLSIDExplorer(hwnd)   {
 			Return (CLSID := window.Document.Folder.Self.Path) ~= "^::\{" ? "`n<span id='param'>CLSID: </span>" CLSID : ""
 }
 
+	;  http://msdn.microsoft.com/en-us/library/windows/desktop/ms632600(v=vs.85).aspx
+	;  http://msdn.microsoft.com/en-us/library/windows/desktop/ff700543(v=vs.85).aspx
+
+GetStyles(Style, ExStyle)   {
+	Static Styles := {"WS_BORDER":"0x00800000", "WS_CAPTION":"0x00C00000", "WS_CHILD":"0x40000000", "WS_CHILDWINDOW":"0x40000000"
+		, "WS_CLIPCHILDREN":"0x02000000", "WS_CLIPSIBLINGS":"0x04000000", "WS_DISABLED":"0x08000000", "WS_DLGFRAME":"0x00400000"
+		, "WS_GROUP":"0x00020000", "WS_HSCROLL":"0x00100000", "WS_ICONIC":"0x20000000", "WS_MAXIMIZE":"0x01000000"
+		, "WS_MAXIMIZEBOX":"0x00010000", "WS_MINIMIZE":"0x20000000", "WS_MINIMIZEBOX":"0x00020000", "WS_OVERLAPPED":"0x00000000"
+		, "WS_SIZEBOX":"0x00040000", "WS_SYSMENU":"0x00080000", "WS_TABSTOP":"0x00010000", "WS_THICKFRAME":"0x00040000"
+		, "WS_TILED":"0x00000000", "WS_VISIBLE":"0x10000000", "WS_VSCROLL":"0x00200000", "WS_POPUP":"0x80000000"}
+
+		, ExStyles := {"WS_EX_ACCEPTFILES":"0x00000010", "WS_EX_APPWINDOW":"0x00040000", "WS_EX_CLIENTEDGE":"0x00000200"
+		, "WS_EX_COMPOSITED":"0x02000000", "WS_EX_CONTEXTHELP":"0x00000400", "WS_EX_CONTROLPARENT":"0x00010000"
+		, "WS_EX_DLGMODALFRAME":"0x00000001", "WS_EX_LAYERED":"0x00080000", "WS_EX_LAYOUTRTL":"0x00400000"
+		, "WS_EX_LEFT":"0x00000000", "WS_EX_LEFTSCROLLBAR":"0x00004000", "WS_EX_LTRREADING":"0x00000000"
+		, "WS_EX_MDICHILD":"0x00000040", "WS_EX_NOACTIVATE":"0x08000000", "WS_EX_NOINHERITLAYOUT":"0x00100000"
+		, "WS_EX_NOPARENTNOTIFY":"0x00000004", "WS_EX_RIGHT":"0x00001000", "WS_EX_RIGHTSCROLLBAR":"0x00000000"
+		, "WS_EX_RTLREADING":"0x00002000", "WS_EX_STATICEDGE":"0x00020000", "WS_EX_TOOLWINDOW":"0x00000080"
+		, "WS_EX_TOPMOST":"0x00000008", "WS_EX_TRANSPARENT":"0x00000020", "WS_EX_WINDOWEDGE":"0x00000100"}
+
+	For K, V In Styles
+		Ret .= Style & V ? K "<span id='param'> := " V "</span>`n" : ""
+	For K, V In ExStyles
+		RetEx .= ExStyle & V ? K "<span id='param'> := " V "</span>`n" : ""
+	If Ret !=
+		Res .= D1 " <span id='title'>( Styles )</span> " D2 "`n" Ret
+	If RetEx !=
+		Res .= D1 " <span id='title'>( ExStyles )</span> " D2 "`n" RetEx
+	Return "`n" RTrim(Res, "`n") "</span>"
+}
+
 NextLink(s = "")   {
 	curpos := oDoc.body.scrollTop, oDoc.body.scrollLeft := 0
 	If (!curpos && s = "-")
@@ -1293,6 +1328,10 @@ Class Events  {
 				SendInput, {%thisid%}
 				(OnHook ? Hotkey_Hook := 1 : 0)
 			}
+			Else If (thisid = "get_styles")
+				ShowWinStyles := !ShowWinStyles
+				, oDoc.getElementById("AllWinStyles").innerHTML := ""
+				, oevent.innerText := ShowWinStyles ? "hide styles" : "show styles"
 		}
 		Else If (ThisMode = "Hotkey" && !Hotkey_Hook && !isPaused && tagname ~= "PRE|SPAN")
 			Hotkey_Hook := 1
