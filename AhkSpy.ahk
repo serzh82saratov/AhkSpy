@@ -13,7 +13,7 @@ SetBatchLines, -1
 ListLines, Off
 DetectHiddenWindows, On
 
-Global AhkSpyVersion := 1.17
+Global AhkSpyVersion := 1.18
 Gosub, RevAhkVersion
 Menu, Tray, Icon, Shell32.dll, % A_OSVersion = "WIN_XP" ? 222 : 278
 
@@ -313,7 +313,7 @@ HTML_Win:
 	<a></a>%D1% <span id='title'>( Other )</span> %D2%
 	<span id='param'>PID:</span>  %WinPID%%DP%<span id='param'>Count window this PID:</span> %WinCountProcess%%DP%<span contenteditable='false' unselectable='on'><button id='process_close' name='%WinPID%'>process close</button></span>
 	<span id='param'>HWND:</span>  %WinID%%DP%<span contenteditable='false' unselectable='on'><button id='win_close' name='%WinID%'>win close</button></span>%DP%<span id='param'>Control count:</span>  %CountControl%
-	<span id='param'>Style:</span>  %WinStyle%%DP%<span id='param'>ExStyle:</span>  %WinExStyle%%DP%<span contenteditable='false' unselectable='on'><button id='get_styles' name='%WinStyle%|%WinExStyle%'>%ButStyleTip%</button></span>%WinTransparent%%WinTransColor%%CLSID%<span id='AllWinStyles'>%WinStyles%</span>%SBText%%WinText%
+	<span id='param'>Style:</span>  %WinStyle%%DP%<span id='param'>ExStyle:</span>  %WinExStyle%%DP%<span contenteditable='false' unselectable='on'><button id='get_styles'>%ButStyleTip%</button></span>%WinTransparent%%WinTransColor%%CLSID%<span id='AllWinStyles'>%WinStyles%</span>%SBText%%WinText%
 	<a></a>%D2%</pre></body>
 
 	<style>
@@ -369,6 +369,7 @@ Spot_Mouse(NotHTML=0)   {
 	If NotHTML
 		GoTo HTML_Mouse
 	WinGet, ProcessName_A, ProcessName, A
+	WinGetClass, WinClass_A, A
 	CoordMode, Mouse
 	MouseGetPos, , , , HWND_3, 3
 	MouseGetPos, MXS, MYS,, tControlNN
@@ -436,7 +437,7 @@ HTML_Mouse:
 	<body id='body'><pre id='pre' contenteditable='true'>
 	%D1% <span id='title'>( Mouse pos )</span> %DB% %pause_button% %D2%
 	<span id='param'>Screen:</span>  x%MXS% y%MYS%%DP%<span id='param'>Window:</span>  x%RWinX% y%RWinY%%DP%<span id='param'>Client:</span>  x%MXC% y%MYC%
-	<span id='param'>Relative active window:</span>  x%MXWA% y%MYWA%%DP%%ProcessName_A%
+	<span id='param'>Relative active window:</span>  x%MXWA% y%MYWA%%DP%%ProcessName_A% <span id='param'>class</span> %WinClass_A%
 	%D1% <span id='title'>( Class & ProcessName & HWND )</span> %D2%
 	<span id='param'>ahk_class</span> %WinClass% <span id='param'>ahk_exe</span> %ProcessName% <span id='param'>ahk_id</span> %WinID%
 	%D1% <span id='title'>( PixelGetColor )</span> %D2%
@@ -1330,7 +1331,7 @@ Class Events  {
 			}
 			Else If (thisid = "get_styles")
 				ShowWinStyles := !ShowWinStyles
-				, oDoc.getElementById("AllWinStyles").innerHTML := ""
+				, oDoc.getElementById("AllWinStyles").innerHTML := ShowWinStyles ? "<br>" D2 "<br>Wait new data styles..." : ""
 				, oevent.innerText := ShowWinStyles ? "hide styles" : "show styles"
 		}
 		Else If (ThisMode = "Hotkey" && !Hotkey_Hook && !isPaused && tagname ~= "PRE|SPAN")
