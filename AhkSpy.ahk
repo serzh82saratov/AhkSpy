@@ -13,7 +13,7 @@ SetBatchLines, -1
 ListLines, Off
 DetectHiddenWindows, On
 
-Global AhkSpyVersion := 1.19
+Global AhkSpyVersion := 1.20
 Gosub, RevAhkVersion
 Menu, Tray, Icon, Shell32.dll, % A_OSVersion = "WIN_XP" ? 222 : 278
 
@@ -143,7 +143,7 @@ PausedScript:
 	Try SetTimer, Loop_%ThisMode%, % isPaused ? "Off" : "On"
 	If (ThisMode = "Hotkey" && WinActive("ahk_id" hGui))
 		Hotkey_Hook := isPaused ? Hotkey_Reset() : 1
-	If !WinActive("ahk_id" hGui)
+	If (isPaused && !WinActive("ahk_id" hGui))
 		(ThisMode = "Mouse" ? Spot_Win() : ThisMode = "Win" ? Spot_Mouse() : 0)
 	HideMarker()
 	Menu, Sys, % isPaused ? "Check" : "UnCheck", Pause AhkSpy
