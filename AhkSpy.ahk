@@ -14,7 +14,7 @@ SetBatchLines, -1
 ListLines, Off
 DetectHiddenWindows, On
 
-Global AhkSpyVersion := 1.21
+Global AhkSpyVersion := 1.22
 Gosub, RevAhkVersion
 Menu, Tray, Icon, Shell32.dll, % A_OSVersion = "WIN_XP" ? 222 : 278
 
@@ -366,7 +366,7 @@ Repeat_Loop_Mouse:
 
 Spot_Mouse(NotHTML=0)   {
 	Static
-	rmCtrlX := rmCtrlY := "", isIE:=0
+	rmCtrlX := rmCtrlY := WithRespectWin := "", isIE:=0
 	If NotHTML
 		GoTo HTML_Mouse
 	WinGet, ProcessName_A, ProcessName, A
@@ -380,6 +380,7 @@ Spot_Mouse(NotHTML=0)   {
 	RWinX := MXS - WinX, RWinY := MYS - WinY
 	GetClientPos(WinID, caX, caY, caW, caH)
 	MXC := RWinX - caX, MYC := RWinY - caY
+
 	If (tWinID != hGui)
 	{
 		WinID := tWinID, CtrlInfo := ""
@@ -391,6 +392,9 @@ Spot_Mouse(NotHTML=0)   {
 		GuiControl, TB: -Redraw, ColorProgress
 		GuiControl, % "TB:+c" sColorRGB := SubStr(ColorRGB, 3), ColorProgress
 		GuiControl, TB: +Redraw, ColorProgress
+		WinGetPos, , , WinW, WinH, ahk_id %WinID%
+		WithRespectWin := "`n<span id='param'>With respect to the window:</span>  x" RWinX / WinW "  y" RWinY / WinH
+			. "  <span id='param'>for</span>  w" WinW "  h" WinH
 		ControlGetPos, CtrlX, CtrlY, CtrlW, CtrlH,, ahk_id %ControlID%
 		CtrlCAX := CtrlX - caX, CtrlCAY := CtrlY - caY
 		CtrlX2 := CtrlX+CtrlW, CtrlY2 := CtrlY+CtrlH
@@ -437,7 +441,7 @@ HTML_Mouse:
 	( Ltrim
 	<body id='body'><pre id='pre' contenteditable='true'>
 	%D1% <span id='title'>( Mouse pos )</span> %DB% %pause_button% %D2%
-	<span id='param'>Screen:</span>  x%MXS% y%MYS%%DP%<span id='param'>Window:</span>  x%RWinX% y%RWinY%%DP%<span id='param'>Client:</span>  x%MXC% y%MYC%
+	<span id='param'>Screen:</span>  x%MXS% y%MYS%%DP%<span id='param'>Window:</span>  x%RWinX% y%RWinY%%DP%<span id='param'>Client:</span>  x%MXC% y%MYC%%WithRespectWin%
 	<span id='param'>Relative active window:</span>  x%MXWA% y%MYWA%%DP%%ProcessName_A% <span id='param'>class</span> %WinClass_A%
 	%D1% <span id='title'>( Class & ProcessName & HWND )</span> %D2%
 	<span id='param'>ahk_class</span> %WinClass% <span id='param'>ahk_exe</span> %ProcessName% <span id='param'>ahk_id</span> %WinID%
