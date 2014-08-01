@@ -1,6 +1,7 @@
 	;  AhkSpy
 	;  Автор - serzh82saratov
 	;  Спасибо wisgest за помощь в создании HTML интерфейса этой версии скрипта
+	;  Также благодарность teadrinker, YMP и Irbis за их решения
 	;  Тема - http://forum.script-coding.com/viewtopic.php?pid=72244#p72244
 	;  Коллекция - http://forum.script-coding.com/viewtopic.php?pid=72459#p72459
 	;  GitHub - https://github.com/serzh82saratov/AhkSpy/blob/master/AhkSpy.ahk
@@ -13,7 +14,7 @@ SetBatchLines, -1
 ListLines, Off
 DetectHiddenWindows, On
 
-Global AhkSpyVersion := 1.20
+Global AhkSpyVersion := 1.21
 Gosub, RevAhkVersion
 Menu, Tray, Icon, Shell32.dll, % A_OSVersion = "WIN_XP" ? 222 : 278
 
@@ -304,7 +305,7 @@ HTML_Win:
 	%D1% <span id='title'>( ProcessName )</span> %D2%
 	<span id='param'>ahk_exe</span> %WinProcessName%
 	%D1% <span id='title'>( ProcessPath )</span> %D2%
-	%WinProcessPath%%DP%<span contenteditable='false' unselectable='on'><button id='folder' name='%WinProcessPath%'>folder view</button></span>
+	<span id='param'>ahk_exe</span> %WinProcessPath%%DP%<span contenteditable='false' unselectable='on'><button id='folder' name='%WinProcessPath%'>folder view</button></span>
 	%D1% <span id='title'>( CommandLine )</span> %D2%
 	<span>%CommandLine%</span>%DP%<span contenteditable='false' unselectable='on'><button id='command_line' name='%CommandLine%'>run cmd</button></span>
 	%D1% <span id='title'>( Position`s )</span> %D2%
@@ -799,7 +800,7 @@ Write_Hotkey(K*)   {
 
 	Send %Prefix%{%Hotkey%}<span id='param'>%Comment%</span>  %DP%  SendInput %Prefix%{%Hotkey%}<span id='param'>%Comment%</span>  %DP%  ControlSend, ahk_parent, %Prefix%{%Hotkey%}, WinTitle<span id='param'>%Comment%</span>
 
-	%D1% <span id='title'>( Last pressed )</span> %DB% <span contenteditable='false' unselectable='on'><button id='numlock'> num </button></span><span contenteditable='false' unselectable='on'><button id='scrolllock'> scroll </button></span> %D2%
+	%D1% <span id='title'>( Last pressed )</span> %DB% <span contenteditable='false' unselectable='on'><button id='numlock'> num </button><button id='scrolllock'> scroll </button><button id='rus_eng'> rus/eng </button></span> %D2%
 
 	%ThisKey%   %DP%   %VKCode%%SCCode%   %DP%   %VKCode%   %DP%   %SCCode%
 
@@ -820,7 +821,7 @@ Write_Hotkey(K*)   {
 	#param {color: '%ColorParam%'}
 	#edithotkey {font-size: '1.18em'; text-align: center; border: 1px dashed black}
 	#keyname {font-size: '1.18em';   background-color: '%ColorParam%'; width: 65px; height: 90`%}
-	#pause_button, #numlock, #scrolllock {font-size: 0.9em; border: 1px dashed black}
+	#pause_button, #numlock, #scrolllock, #rus_eng {font-size: 0.9em; border: 1px dashed black}
 	#editkeyname {font-size: '1.18em'; text-align: center; border: 1px dashed black}
 	</style>
 	)
@@ -1229,7 +1230,8 @@ GetStyles(Style, ExStyle)   {
 		, "WS_EX_MDICHILD":"0x00000040", "WS_EX_NOACTIVATE":"0x08000000", "WS_EX_NOINHERITLAYOUT":"0x00100000"
 		, "WS_EX_NOPARENTNOTIFY":"0x00000004", "WS_EX_NOREDIRECTIONBITMAP":"0x00200000", "WS_EX_RIGHT":"0x00001000"
 		, "WS_EX_RIGHTSCROLLBAR":"0x00000000", "WS_EX_RTLREADING":"0x00002000", "WS_EX_STATICEDGE":"0x00020000"
-		, "WS_EX_TOOLWINDOW":"0x00000080", "WS_EX_TOPMOST":"0x00000008", "WS_EX_TRANSPARENT":"0x00000020", "WS_EX_WINDOWEDGE":"0x00000100"}
+		, "WS_EX_TOOLWINDOW":"0x00000080", "WS_EX_TOPMOST":"0x00000008", "WS_EX_TRANSPARENT":"0x00000020"
+		, "WS_EX_WINDOWEDGE":"0x00000100"}
 
 	For K, V In Styles
 		Ret .= Style & V ? K "<span id='param'> := " V "</span>`n" : ""
@@ -1240,6 +1242,13 @@ GetStyles(Style, ExStyle)   {
 	If RetEx !=
 		Res .= D1 " <span id='title'>( ExStyles )</span> " D2 "`n" RetEx
 	Return "`n" RTrim(Res, "`n") "</span>"
+}
+
+ToggleLocale()  {
+	InputLocaleID := DllCall("GetKeyboardLayout", "Int"
+	, DllCall("GetWindowThreadProcessId", "Int", WinExist("A"), "Int", "0"))
+	ControlGetFocus, CtrlFocus
+	PostMessage, 0x50, 0, InputLocaleID = 0x4090409 ? 0x4190419 : 0x4090409, %CtrlFocus%
 }
 
 NextLink(s = "")   {
@@ -1323,16 +1332,21 @@ Class Events  {
 				SelectFilePath(oevent.name)
 			Else If (thisid = "command_line" && oevent.name != "")
 				Run % comspec " /c """ oevent.name """", , hide
+			Else If thisid = process_close
+				Process, Close, % oevent.name
+			Else If thisid = win_close
+				WinClose, % "ahk_id" oevent.name
 			Else If (thisid = "numlock" || thisid = "scrolllock")
 			{
 				(OnHook := Hotkey_Hook) ? (Hotkey_Hook := 0) : 0
 				SendInput, {%thisid%}
 				(OnHook ? Hotkey_Hook := 1 : 0)
 			}
-			Else If (thisid = "get_styles")
-				ShowWinStyles := !ShowWinStyles
-				, oDoc.getElementById("AllWinStyles").innerHTML := ShowWinStyles ? "<br>" D2 "<br>Wait new data styles..." : ""
-				, oevent.innerText := ShowWinStyles ? "hide styles" : "show styles"
+			Else If thisid = rus_eng
+				ToggleLocale()
+			Else If thisid = get_styles
+				oevent.innerText := (ShowWinStyles := !ShowWinStyles) ? "hide styles" : "show styles"
+				, oDoc.getElementById("AllWinStyles").innerHTML := ShowWinStyles ? "<br>" D2 "<br>Waiting for new styles data..." : ""
 		}
 		Else If (ThisMode = "Hotkey" && !Hotkey_Hook && !isPaused && tagname ~= "PRE|SPAN")
 			Hotkey_Hook := 1
@@ -1351,10 +1365,6 @@ Class Events  {
 			}
 			Else If thisid = pause_button
 				Gosub, PausedScript
-			Else If thisid = process_close
-				Process, Close, % oevent.name
-			Else If thisid = win_close
-				WinClose, % "ahk_id" oevent.name
 		}
 	}
 	onfocus()   {
