@@ -14,7 +14,7 @@ SetBatchLines, -1
 ListLines, Off
 DetectHiddenWindows, On
 
-Global AhkSpyVersion := 1.22
+Global AhkSpyVersion := 1.23
 Gosub, RevAhkVersion
 Menu, Tray, Icon, Shell32.dll, % A_OSVersion = "WIN_XP" ? 222 : 278
 
@@ -244,8 +244,9 @@ Spot_Win(NotHTML=0)   {
 	If (WinID = hGui && HideMarker())
 		Return 0
 	WinGetTitle, WinTitle, ahk_id %WinID%
-	WinTitle:=TransformHTML(WinTitle)
+	WinTitle := TransformHTML(WinTitle)
 	WinGetPos, WinX, WinY, WinWidth, WinHeight, ahk_id %WinID%
+	WinX2 := WinX + WinWidth, WinY2 := WinY + WinHeight
 	WinGetClass, WinClass, ahk_id %WinID%
 	WinGet, WinProcessPath, ProcessPath, ahk_id %WinID%
 	Loop, %WinProcessPath%
@@ -309,7 +310,7 @@ HTML_Win:
 	%D1% <span id='title'>( CommandLine )</span> %D2%
 	<span>%CommandLine%</span>%DP%<span contenteditable='false' unselectable='on'><button id='command_line' name='%CommandLine%'>run cmd</button></span>
 	%D1% <span id='title'>( Position`s )</span> %D2%
-	<span id='param'>Pos:</span>  x%WinX% y%WinY%%DP%<span id='param'>Size:</span>  w%WinWidth% h%WinHeight%%DP%%WinX%, %WinY%, %WinWidth%, %WinHeight%
+	<span id='param'>Pos:</span>  x%WinX% y%WinY%%DP%<span id='param'>Size:</span>  w%WinWidth% h%WinHeight%%DP%%WinX%, %WinY%, %WinWidth%, %WinHeight%%DP%<span id='param'>x<span style='font-size: 0.7em'>2</span></span>%WinX2% <span id='param'>y<span style='font-size: 0.7em'>2</span></span>%WinY2%
 	<span id='param'>Client area size:</span>  w%caW% h%caH%%DP%<span id='param'>top</span> %caY% <span id='param'>left</span> %caX% <span id='param'>bottom</span> %caWinBottom% <span id='param'>right</span> %caWinRight%
 	<a></a>%D1% <span id='title'>( Other )</span> %D2%
 	<span id='param'>PID:</span>  %WinPID%%DP%<span id='param'>Count window this PID:</span> %WinCountProcess%%DP%<span contenteditable='false' unselectable='on'><button id='process_close' name='%WinPID%'>process close</button></span>
@@ -392,27 +393,22 @@ Spot_Mouse(NotHTML=0)   {
 		GuiControl, TB: -Redraw, ColorProgress
 		GuiControl, % "TB:+c" sColorRGB := SubStr(ColorRGB, 3), ColorProgress
 		GuiControl, TB: +Redraw, ColorProgress
-		WinGetPos, , , WinW, WinH, ahk_id %WinID%
+		WinGetPos, WinX2, WinY2, WinW, WinH, ahk_id %WinID%
 		WithRespectWin := "`n<span id='param'>With respect to the window:</span>  x" RWinX / WinW "  y" RWinY / WinH
 			. "  <span id='param'>for</span>  w" WinW "  h" WinH
 		ControlGetPos, CtrlX, CtrlY, CtrlW, CtrlH,, ahk_id %ControlID%
 		CtrlCAX := CtrlX - caX, CtrlCAY := CtrlY - caY
 		CtrlX2 := CtrlX+CtrlW, CtrlY2 := CtrlY+CtrlH
 		CtrlCAX2 := CtrlX2-caX, CtrlCAY2 := CtrlY2-caY
-		IsGetUTF8 := InStr(ControlNN, "Scintilla")
 		ControlGetText, CtrlText, , ahk_id %ControlID%
 		If CtrlText !=
 		{
-			CtrlText := TransformHTML(IsGetUTF8 ? StrGet(&CtrlText, "utf-8") : CtrlText)
+			CtrlText := TransformHTML(InStr(ControlNN, "Scintilla") ? StrGet(&CtrlText, "utf-8") : CtrlText)
 			CtrlText = `n%D1% <a></a><span id='title'>( Control text )</span> %DB% %copy_button% %D2%`n<span>%CtrlText%</span>
 		}
 		AccText := AccInfoUnderMouse(MXS, MYS)
 		If AccText !=
 			AccText = `n%D1% <a></a><span id='title'>( AccInfo )</span> %D2%%AccText%
-		ControlGet, CtrlStyle, Style,,, ahk_id %ControlID%
-		ControlGet, CtrlExStyle, ExStyle,,, ahk_id %ControlID%
-		ControlGetFocus, CtrlFocus, ahk_id %WinID%
-		WinGetClass, CtrlClass, ahk_id %ControlID%
 		If ControlNN !=
 		{
 			rmCtrlX := MXS - WinX - CtrlX, rmCtrlY := MYS - WinY - CtrlY
@@ -424,14 +420,17 @@ Spot_Mouse(NotHTML=0)   {
 					CtrlInfo = `n%D1% <a></a><span id='title'>( Info - %ClassNN% )</span> %D2%%CtrlInfo%
 			}
 		}
-		WinGetClass, WinClass, ahk_id %WinID%
-		WinGet, ProcessName, ProcessName, ahk_id %WinID%
 		If (!isIE && ThisMode = "Mouse" && (StateLight = 1 || (StateLight = 3 && GetKeyState("Shift", "P"))))
 		{
-			WinGetPos, X, Y, , , ahk_id %WinID%
-			ShowMarker(X+CtrlX, Y+CtrlY, CtrlW, CtrlH)
+			ShowMarker(WinX2+CtrlX, WinY2+CtrlY, CtrlW, CtrlH)
 			StateLightAcc ? ShowAccMarker(AccCoord[1], AccCoord[2], AccCoord[3], AccCoord[4]) : 0
 		}
+		ControlGet, CtrlStyle, Style,,, ahk_id %ControlID%
+		ControlGet, CtrlExStyle, ExStyle,,, ahk_id %ControlID%
+		WinGetClass, CtrlClass, ahk_id %ControlID%
+		ControlGetFocus, CtrlFocus, ahk_id %WinID%
+		WinGet, ProcessName, ProcessName, ahk_id %WinID%
+		WinGetClass, WinClass, ahk_id %WinID%
 	}
 	Else If ShowMarker
 		HideMarker()
