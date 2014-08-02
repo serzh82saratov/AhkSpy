@@ -14,7 +14,7 @@ SetBatchLines, -1
 ListLines, Off
 DetectHiddenWindows, On
 
-Global AhkSpyVersion := 1.23
+Global AhkSpyVersion := 1.24
 Gosub, RevAhkVersion
 Menu, Tray, Icon, Shell32.dll, % A_OSVersion = "WIN_XP" ? 222 : 278
 
@@ -288,7 +288,6 @@ Spot_Win(NotHTML=0)   {
 	CoordMode, Pixel
 	MouseGetPos, WinXS, WinYS
 	PixelGetColor, ColorRGB, %WinXS%, %WinYS%, RGB
-	GuiControl, TB: -Redraw, ColorProgress
 	GuiControl, % "TB: +c" SubStr(ColorRGB, 3), ColorProgress
 	GuiControl, TB: +Redraw, ColorProgress
 	If ShowWinStyles
@@ -307,10 +306,10 @@ HTML_Win:
 	<span id='param'>ahk_exe</span> %WinProcessName%
 	%D1% <span id='title'>( ProcessPath )</span> %D2%
 	<span id='param'>ahk_exe</span> %WinProcessPath%%DP%<span contenteditable='false' unselectable='on'><button id='folder' name='%WinProcessPath%'>folder view</button></span>
-	%D1% <span id='title'>( CommandLine )</span> %D2%
+	%D1% <span id='title'>( CommandLine )</span> %DB% %copy_button% %D2%
 	<span>%CommandLine%</span>%DP%<span contenteditable='false' unselectable='on'><button id='command_line' name='%CommandLine%'>run cmd</button></span>
 	%D1% <span id='title'>( Position`s )</span> %D2%
-	<span id='param'>Pos:</span>  x%WinX% y%WinY%%DP%<span id='param'>Size:</span>  w%WinWidth% h%WinHeight%%DP%%WinX%, %WinY%, %WinWidth%, %WinHeight%%DP%<span id='param'>x<span style='font-size: 0.7em'>2</span></span>%WinX2% <span id='param'>y<span style='font-size: 0.7em'>2</span></span>%WinY2%
+	<span id='param'>Pos:</span>  x%WinX% y%WinY%%DP%<span id='param'>Size:</span>  w%WinWidth% h%WinHeight%%DP%<span id='param'>x<span style='font-size: 0.7em'>2</span></span>%WinX2% <span id='param'>y<span style='font-size: 0.7em'>2</span></span>%WinY2%%DP%%WinX%, %WinY%, %WinWidth%, %WinHeight%
 	<span id='param'>Client area size:</span>  w%caW% h%caH%%DP%<span id='param'>top</span> %caY% <span id='param'>left</span> %caX% <span id='param'>bottom</span> %caWinBottom% <span id='param'>right</span> %caWinRight%
 	<a></a>%D1% <span id='title'>( Other )</span> %D2%
 	<span id='param'>PID:</span>  %WinPID%%DP%<span id='param'>Count window this PID:</span> %WinCountProcess%%DP%<span contenteditable='false' unselectable='on'><button id='process_close' name='%WinPID%'>process close</button></span>
@@ -367,34 +366,32 @@ Repeat_Loop_Mouse:
 
 Spot_Mouse(NotHTML=0)   {
 	Static
-	rmCtrlX := rmCtrlY := WithRespectWin := "", isIE:=0
 	If NotHTML
 		GoTo HTML_Mouse
 	WinGet, ProcessName_A, ProcessName, A
 	WinGetClass, WinClass_A, A
 	CoordMode, Mouse
+	MouseGetPos, MXS, MYS, tWinID, tControlNN
 	MouseGetPos, , , , HWND_3, 3
-	MouseGetPos, MXS, MYS,, tControlNN
 	CoordMode, Mouse, Window
-	MouseGetPos, MXWA, MYWA, tWinID, tControlID, 2
-	WinGetPos, WinX, WinY, , , ahk_id %WinID%
-	RWinX := MXS - WinX, RWinY := MYS - WinY
-	GetClientPos(WinID, caX, caY, caW, caH)
-	MXC := RWinX - caX, MYC := RWinY - caY
+	MouseGetPos, MXWA, MYWA, , tControlID, 2
 
 	If (tWinID != hGui)
 	{
-		WinID := tWinID, CtrlInfo := ""
+		WinID := tWinID, CtrlInfo := "", isIE := 0
 		ControlNN := tControlNN, ControlID := tControlID
+		WinGetPos, WinX, WinY, , , ahk_id %tWinID%
+		RWinX := MXS - WinX, RWinY := MYS - WinY
+		GetClientPos(tWinID, caX, caY, caW, caH)
+		MXC := RWinX - caX, MYC := RWinY - caY
 		CoordMode, Pixel
 		PixelGetColor, ColorRGB, %MXS%, %MYS%, RGB
 		PixelGetColor, ColorBGR, %MXS%, %MYS%
 		sColorBGR := SubStr(ColorBGR, 3)
-		GuiControl, TB: -Redraw, ColorProgress
-		GuiControl, % "TB:+c" sColorRGB := SubStr(ColorRGB, 3), ColorProgress
+		GuiControl, % "TB: +c" sColorRGB := SubStr(ColorRGB, 3), ColorProgress
 		GuiControl, TB: +Redraw, ColorProgress
 		WinGetPos, WinX2, WinY2, WinW, WinH, ahk_id %WinID%
-		WithRespectWin := "`n<span id='param'>With respect to the window:</span>  x" RWinX / WinW "  y" RWinY / WinH
+		WithRespectWin := "`n<span id='param'>Relative pos to a window:</span>  x/w " RWinX / WinW "  y/h " RWinY / WinH
 			. "  <span id='param'>for</span>  w" WinW "  h" WinH
 		ControlGetPos, CtrlX, CtrlY, CtrlW, CtrlH,, ahk_id %ControlID%
 		CtrlCAX := CtrlX - caX, CtrlCAY := CtrlY - caY
@@ -432,8 +429,13 @@ Spot_Mouse(NotHTML=0)   {
 		WinGet, ProcessName, ProcessName, ahk_id %WinID%
 		WinGetClass, WinClass, ahk_id %WinID%
 	}
-	Else If ShowMarker
-		HideMarker()
+	Else
+	{
+		WinX := WinY := RWinX := RWinY := MXC := MYC := ""
+		rmCtrlX := rmCtrlY := caX := caY := WithRespectWin := ""
+		If ShowMarker
+			HideMarker()
+	}
 
 HTML_Mouse:
 	HTML_Mouse =
