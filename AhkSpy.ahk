@@ -14,7 +14,7 @@ SetBatchLines, -1
 ListLines, Off
 DetectHiddenWindows, On
 
-Global AhkSpyVersion := 1.24
+Global AhkSpyVersion := 1.25
 Gosub, RevAhkVersion
 Menu, Tray, Icon, Shell32.dll, % A_OSVersion = "WIN_XP" ? 222 : 278
 
@@ -432,7 +432,7 @@ Spot_Mouse(NotHTML=0)   {
 	Else
 	{
 		WinX := WinY := RWinX := RWinY := MXC := MYC := ""
-		rmCtrlX := rmCtrlY := caX := caY := WithRespectWin := ""
+		rmCtrlX := rmCtrlY := WithRespectWin := ""
 		If ShowMarker
 			HideMarker()
 	}
