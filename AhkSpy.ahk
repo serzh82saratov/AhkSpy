@@ -14,7 +14,7 @@ SetBatchLines, -1
 ListLines, Off
 DetectHiddenWindows, On
 
-Global AhkSpyVersion := 1.25
+Global AhkSpyVersion := 1.26
 Gosub, RevAhkVersion
 Menu, Tray, Icon, Shell32.dll, % A_OSVersion = "WIN_XP" ? 222 : 278
 
@@ -117,7 +117,7 @@ Menu, Sys, Color, % ColorBgOriginal
 Gui, Show, NA h%HeightStart% w%widthTB%
 Gui, +MinSize%widthTB%x%HeigtButton%
 
-Gosub, HotkeyRules
+Gosub, HotkeyInit
 Gosub, Mode_%ThisMode%
 Return
 
@@ -230,7 +230,7 @@ Loop_Win:
 	If (WinActive("ahk_id" hGui) || Sleep = 1)
 		GoTo Repeat_Loop_Win
 	If Spot_Win()
-		Write_Win()
+		Spot_Mouse(), Write_Win()
 Repeat_Loop_Win:
 	If !isPaused
 		SetTimer, Loop_Win, -%RangeTimer%
@@ -358,7 +358,7 @@ Loop_Mouse:
 	If WinActive("ahk_id" hGui) || Sleep = 1
 		GoTo Repeat_Loop_Mouse
 	If Spot_Mouse()
-		Write_Mouse()
+		Spot_Win(), Write_Mouse()
 Repeat_Loop_Mouse:
 	If !isPaused
 		SetTimer, Loop_Mouse, -%RangeTimer%
@@ -841,7 +841,7 @@ Write_HotkeyHTML() {
 
 	; _________________________________________________ Hotkey Rules _________________________________________________
 
-HotkeyRules:
+HotkeyInit:
 	Hotkey_Control(1)
 	Global Hotkey_TargetFunc := "Write_Hotkey", Hotkey_Hook := (ThisMode = "Hotkey" ? 1 : 0)
 	Return
