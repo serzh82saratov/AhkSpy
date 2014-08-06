@@ -14,7 +14,7 @@ SetBatchLines, -1
 ListLines, Off
 DetectHiddenWindows, On
 
-Global AhkSpyVersion := 1.26
+Global AhkSpyVersion := 1.27
 Gosub, RevAhkVersion
 Menu, Tray, Icon, Shell32.dll, % A_OSVersion = "WIN_XP" ? 222 : 278
 
@@ -230,7 +230,7 @@ Loop_Win:
 	If (WinActive("ahk_id" hGui) || Sleep = 1)
 		GoTo Repeat_Loop_Win
 	If Spot_Win()
-		Spot_Mouse(), Write_Win()
+		Write_Win()
 Repeat_Loop_Win:
 	If !isPaused
 		SetTimer, Loop_Win, -%RangeTimer%
@@ -288,6 +288,7 @@ Spot_Win(NotHTML=0)   {
 	CoordMode, Pixel
 	MouseGetPos, WinXS, WinYS
 	PixelGetColor, ColorRGB, %WinXS%, %WinYS%, RGB
+	GuiControl, TB: -Redraw, ColorProgress
 	GuiControl, % "TB: +c" SubStr(ColorRGB, 3), ColorProgress
 	GuiControl, TB: +Redraw, ColorProgress
 	If ShowWinStyles
@@ -358,7 +359,7 @@ Loop_Mouse:
 	If WinActive("ahk_id" hGui) || Sleep = 1
 		GoTo Repeat_Loop_Mouse
 	If Spot_Mouse()
-		Spot_Win(), Write_Mouse()
+		Write_Mouse()
 Repeat_Loop_Mouse:
 	If !isPaused
 		SetTimer, Loop_Mouse, -%RangeTimer%
@@ -388,6 +389,7 @@ Spot_Mouse(NotHTML=0)   {
 		PixelGetColor, ColorRGB, %MXS%, %MYS%, RGB
 		PixelGetColor, ColorBGR, %MXS%, %MYS%
 		sColorBGR := SubStr(ColorBGR, 3)
+		GuiControl, TB: -Redraw, ColorProgress
 		GuiControl, % "TB: +c" sColorRGB := SubStr(ColorRGB, 3), ColorProgress
 		GuiControl, TB: +Redraw, ColorProgress
 		WinGetPos, WinX2, WinY2, WinW, WinH, ahk_id %WinID%
