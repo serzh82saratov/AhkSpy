@@ -14,7 +14,7 @@ SetBatchLines, -1
 ListLines, Off
 DetectHiddenWindows, On
 
-Global AhkSpyVersion := 1.28
+Global AhkSpyVersion := 1.29
 Gosub, RevAhkVersion
 Menu, Tray, Icon, Shell32.dll, % A_OSVersion = "WIN_XP" ? 222 : 278
 
@@ -1256,6 +1256,17 @@ ToggleLocale()  {
 	, DllCall("GetWindowThreadProcessId", "Int", WinExist("A"), "Int", "0"))
 	ControlGetFocus, CtrlFocus
 	PostMessage, 0x50, 0, InputLocaleID = 0x4090409 ? 0x4190419 : 0x4090409, %CtrlFocus%
+	Return InputLocaleID = 0x4090409 ? "Rus" : "Eng"
+}
+
+ToolTip(text, time)  {
+	ToolTip %text%
+	SetTimer, HideToolTip, -%time%
+	Return 1
+
+	HideToolTip:
+		ToolTip
+		Return
 }
 
 NextLink(s = "")   {
@@ -1349,10 +1360,11 @@ Class Events  {
 				(OnHook := Hotkey_Hook) ? (Hotkey_Hook := 0) : 0
 				SendInput, {%thisid%}
 				(OnHook ? Hotkey_Hook := 1 : 0)
+				ToolTip(thisid " " (GetKeyState(thisid, "T") ? "On" : "Off"), 500)
 			}
 			Else If thisid = rus_eng
-				ToggleLocale()
-			Else If (thisid = "copy_selected" && ExistSelectedText(CopyText))
+				ToolTip(ToggleLocale(), 500)
+			Else If (thisid = "copy_selected" && ExistSelectedText(CopyText) && ToolTip("copy", 500))
 				GoSub RButton
 			Else If thisid = get_styles
 				oevent.innerText := (ShowWinStyles := !ShowWinStyles) ? "hide styles" : "show styles"
@@ -1372,6 +1384,7 @@ Class Events  {
 				(OnHook := Hotkey_Hook) ? (Hotkey_Hook := 0) : 0
 				SendInput, {%thisid%}
 				(OnHook ? Hotkey_Hook := 1 : 0)
+				ToolTip(thisid " " (GetKeyState(thisid, "T") ? "On" : "Off"), 500)
 			}
 			Else If thisid = pause_button
 				Gosub, PausedScript
