@@ -14,7 +14,7 @@ SetBatchLines, -1
 ListLines, Off
 DetectHiddenWindows, On
 
-Global AhkSpyVersion := 1.27
+Global AhkSpyVersion := 1.28
 Gosub, RevAhkVersion
 Menu, Tray, Icon, Shell32.dll, % A_OSVersion = "WIN_XP" ? 222 : 278
 
@@ -795,19 +795,19 @@ Write_Hotkey(K*)   {
 
 	%LRMStr%
 
-	%D1% <span id='title'>( Command syntax )</span> %D2%
+	%D1% <span id='title'>( Command syntax )</span> %DB% <span contenteditable='false' unselectable='on'><button id='copy_selected'>copy selected</button></span> %D2%
 
 	%Prefix%%Hotkey%%FComment%
 
 	%LRPStr%
 
+	Send %Prefix%{%Hotkey%}<span id='param'>%Comment%</span>  %DP%  SendInput %Prefix%{%Hotkey%}<span id='param'>%Comment%</span>  %DP%  ControlSend, ahk_parent, %Prefix%{%Hotkey%}, WinTitle<span id='param'>%Comment%</span>
+
 	%HK2% & %HK1%::<span id='param'>%HKComment%</span>   %DP%   <span id='param'>Double hotkey</span>
 
 	%Keys2%:: %Keys1%<span id='param'>%KeysComm%</span>   %DP%   <span id='param'>Remapping keys</span>
 
-	Send %Prefix%{%Hotkey%}<span id='param'>%Comment%</span>  %DP%  SendInput %Prefix%{%Hotkey%}<span id='param'>%Comment%</span>  %DP%  ControlSend, ahk_parent, %Prefix%{%Hotkey%}, WinTitle<span id='param'>%Comment%</span>
-
-	%D1% <span id='title'>( Last pressed )</span> %DB% <span contenteditable='false' unselectable='on'><button id='numlock'> num </button><button id='scrolllock'> scroll </button><button id='rus_eng'> rus/eng </button></span> %D2%
+	%D1% <span id='title'>( Last pressed )</span> %DB% <span contenteditable='false' unselectable='on'><button id='numlock'> num </button> <button id='scrolllock'> scroll </button> <button id='rus_eng'> rus/eng </button></span> %D2%
 
 	%ThisKey%   %DP%   %VKCode%%SCCode%   %DP%   %VKCode%   %DP%   %SCCode%
 
@@ -828,7 +828,7 @@ Write_Hotkey(K*)   {
 	#param {color: '%ColorParam%'}
 	#edithotkey {font-size: '1.18em'; text-align: center; border: 1px dashed black}
 	#keyname {font-size: '1.18em';   background-color: '%ColorParam%'; width: 65px; height: 90`%}
-	#pause_button, #numlock, #scrolllock, #rus_eng {font-size: 0.9em; border: 1px dashed black}
+	#pause_button, #numlock, #scrolllock, #rus_eng, #copy_selected {font-size: 0.9em; border: 1px dashed black}
 	#editkeyname {font-size: '1.18em'; text-align: center; border: 1px dashed black}
 	</style>
 	)
@@ -1116,7 +1116,7 @@ HideMarker(test=1)   {
 	Gui, M: Show, Hide
 	ShowMarker := 0, HideAccMarker()
 	If test
-		SetTimer, HideMarker, -250
+		SetTimer, HideMarker, -150
 	Return 1
 }
 
@@ -1311,6 +1311,7 @@ Update(in=1)   {
 
 Class Events  {
 	onclick()   {
+	Global CopyText
 		oevent := oDoc.parentWindow.event.srcElement
 		tagname := oevent.tagname
 		If (tagname = "BUTTON")
@@ -1351,6 +1352,8 @@ Class Events  {
 			}
 			Else If thisid = rus_eng
 				ToggleLocale()
+			Else If (thisid = "copy_selected" && ExistSelectedText(CopyText))
+				GoSub RButton
 			Else If thisid = get_styles
 				oevent.innerText := (ShowWinStyles := !ShowWinStyles) ? "hide styles" : "show styles"
 				, oDoc.getElementById("AllWinStyles").innerHTML := ShowWinStyles ? "<br>" D2 "<br>Waiting for new styles data..." : ""
