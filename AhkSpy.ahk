@@ -14,7 +14,7 @@ SetBatchLines, -1
 ListLines, Off
 DetectHiddenWindows, On
 
-Global AhkSpyVersion := 1.29
+Global AhkSpyVersion := 1.30
 Gosub, RevAhkVersion
 Menu, Tray, Icon, Shell32.dll, % A_OSVersion = "WIN_XP" ? 222 : 278
 
@@ -668,15 +668,18 @@ AccInfoUnderMouse(x, y)   {
 	Type := child ? "Child" DP "<span id='param'>Id:  </span>" child
 		: "Parent" DP "<span id='param'>ChildCount:  </span>" ((C:=Acc.accChildCount)!=""?C:"N/A")
 	code = `n<span id='param'>Type:</span>  %Type%
-	code .= DP "<span id='param'>Pos:  </span>" AccGetLocation(Acc, child)
+	code .= DP "<span id='param'>Pos: </span>" AccGetLocation(Acc, child)
+		. DP "<span id='param'>Mouse relative: </span>x" x - AccCoord[1] " y" y - AccCoord[2]
 
 	If ((Role := AccRole(Acc, child)) != "")  {
 		code = %code%`n%D1% <a></a><span id='param'>( Role )</span> %DB% %copy_button% %D2%`n
 		code .= "<span>" TransformHTML(Role) "</span>"
+			. DP "<span id='param'>code: </span>" Acc.accRole(child)
 	}
 	If (child &&(ObjRole := AccRole(Acc)) != "")  {
 		code = %code%`n%D1% <a></a><span id='param'>( Role - parent )</span> %DB% %copy_button% %D2%`n
 		code .= "<span>" TransformHTML(ObjRole) "</span>"
+			. DP "<span id='param'>code: </span>" Acc.accRole(0)
 	}
 	If ((Value := Acc.accValue(child)) != "")  {
 		code = %code%`n%D1% <a></a><span id='param'>( Value )</span> %DB% %copy_button% %D2%`n
@@ -686,9 +689,10 @@ AccInfoUnderMouse(x, y)   {
 		code = %code%`n%D1% <a></a><span id='param'>( Name )</span> %DB% %copy_button% %D2%`n
 		code .= "<span>" TransformHTML(Name) "</span>"
 	}
-	If ((State := AccGetStateText(Acc.accState(child))) != "")  {
+	If ((State := AccGetStateText(StateCode := Acc.accState(child))) != "")  {
 		code = %code%`n%D1% <a></a><span id='param'>( State )</span> %DB% %copy_button% %D2%`n
 		code .= "<span>" TransformHTML(State) "</span>"
+			. DP "<span id='param'>code: </span>" StateCode
 	}
 	If ((Action := Acc.accDefaultAction(child)) != "")  {
 		code = %code%`n%D1% <a></a><span id='param'>( Action )</span> %DB% %copy_button% %D2%`n
