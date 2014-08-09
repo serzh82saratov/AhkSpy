@@ -14,7 +14,7 @@ SetBatchLines, -1
 ListLines, Off
 DetectHiddenWindows, On
 
-Global AhkSpyVersion := 1.30
+Global AhkSpyVersion := 1.31
 Gosub, RevAhkVersion
 Menu, Tray, Icon, Shell32.dll, % A_OSVersion = "WIN_XP" ? 222 : 278
 
@@ -195,6 +195,7 @@ F6:: AppsKey
 #If WinActive("ahk_id" hGui) && ExistSelectedText(CopyText)
 
 RButton::
+CopyText:
 	Clipboard := CopyText
 	StringReplace, toTitle, CopyText, `r`n, , 1
 	SendMessage, 0xC, 0, &toTitle, , ahk_id %hGui%
@@ -727,7 +728,7 @@ AccInfoUnderMouse(x, y)   {
 	Return code
 }
 AccRole(Acc, ChildId=0)   {
-	Return ComObjType(Acc,"Name")="IAccessible"?AccGetRoleText(Acc.accRole(ChildId)):""
+	Return ComObjType(Acc, "Name") = "IAccessible" ? AccGetRoleText(Acc.accRole(ChildId)) : ""
 }
 AccGetRoleText(nRole)   {
 	nSize := DllCall("oleacc\GetRoleText", "UInt", nRole, "Ptr", 0, "UInt", 0)
@@ -1090,8 +1091,16 @@ WM_ACTIVATE(wp)   {
 }
 
 WM_LBUTTONDOWN()   {
-	If (A_GuiControl = "ColorProgress" && ThisMode != "Hotkey")
-		SendInput !{Esc}
+	If A_GuiControl = ColorProgress
+	{
+		If ThisMode = Hotkey
+			oDoc.execCommand("Paste"), ToolTip("Paste", 300)
+		Else
+		{
+			SendInput !{Esc}
+			ToolTip("Alt+Escape", 300)
+		}
+	}
 }
 
 WM_CONTEXTMENU() {
@@ -1371,7 +1380,7 @@ Class Events  {
 			Else If thisid = rus_eng
 				ToolTip(ToggleLocale(), 500)
 			Else If (thisid = "copy_selected" && ExistSelectedText(CopyText) && ToolTip("copy", 500))
-				GoSub RButton
+				GoSub CopyText
 			Else If thisid = get_styles
 				oevent.innerText := (ShowWinStyles := !ShowWinStyles) ? "hide styles" : "show styles"
 				, oDoc.getElementById("AllWinStyles").innerHTML := ShowWinStyles ? "<br>" D2 "<br>Waiting for new styles data..." : ""
