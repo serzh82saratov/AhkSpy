@@ -419,6 +419,8 @@ Spot_Mouse(NotHTML=0)   {
 					CtrlInfo = `n%D1% <a></a><span id='title'>( Info - %ClassNN% )</span> %D2%%CtrlInfo%
 			}
 		}
+		Else
+			rmCtrlX := rmCtrlY := ""
 		If (!isIE && ThisMode = "Mouse" && (StateLight = 1 || (StateLight = 3 && GetKeyState("Shift", "P"))))
 		{
 			ShowMarker(WinX2+CtrlX, WinY2+CtrlY, CtrlW, CtrlH)
