@@ -14,7 +14,7 @@ SetBatchLines, -1
 ListLines, Off
 DetectHiddenWindows, On
 
-Global AhkSpyVersion := 1.31
+Global AhkSpyVersion := 1.32
 Gosub, RevAhkVersion
 Menu, Tray, Icon, Shell32.dll, % A_OSVersion = "WIN_XP" ? 222 : 278
 
@@ -32,7 +32,8 @@ Global ThisMode := "Mouse"						;  Стартовый режим - Win|Mouse|Hot
 , ColorParam := "189200"						;  Цвет шрифта параметров
 
 , DP := "  <span style='color: " Color# "'>" # "</span>  ", D1, D2, DB
-, StateLight:=((t:=IniRead("StateLight"))=""||t>3?1:t), StateLightAcc:=((t:=IniRead("StateLightAcc"))=""?1:t), StateUpdate:=((t:=IniRead("StateUpdate"))=""?1:t)
+, ThisMode:=((t:=IniRead("StartMode"))=""?"Mouse":t), StateLight:=((t:=IniRead("StateLight"))=""||t>3?1:t)
+, StateLightAcc:=((t:=IniRead("StateLightAcc"))=""?1:t), StateUpdate:=((t:=IniRead("StateUpdate"))=""?1:t)
 , hGui, hActiveX, hMarkerGui, hMarkerAccGui, oDoc, ShowMarker, isIE, isPaused, ShowWinStyles, ScrollPos:={}, AccCoord:=[]
 , HTML_Win, HTML_Mouse, HTML_Hotkey, o_edithotkey, o_editkeyname, rmCtrlX, rmCtrlY, HWND_3
 , copy_button := "<span contenteditable='false' unselectable='on'><button id='copy_button'> copy </button></span>"
@@ -105,6 +106,12 @@ If !A_IsCompiled
 }
 Else
 	StateUpdate := IniWrite(0, "StateUpdate")
+Menu, Startmode, Add, Window, SelStartMode
+Menu, Startmode, Add, Mouse && Control, SelStartMode
+Menu, Startmode, Add, Button, SelStartMode
+Menu, Sys, Add, Start mode, :Startmode
+Menu, Startmode, Check, % {"Win":"Window","Mouse":"Mouse && Control","Hotkey":"Button"}[ThisMode]
+Menu, Sys, Add
 Menu, Help, Add, About AhkSpy, Sys_Help
 Menu, Help, Add
 If FileExist(SubStr(A_AhkPath,1,InStr(A_AhkPath,"\",,0,1)) "AutoHotkey.chm")
@@ -214,6 +221,8 @@ Mode_Win:
 	If A_GuiControl
 		GuiControl, 1:Focus, oDoc
 	GuiControl, TB: -0x0001, But1
+	If ThisMode = Win
+		oDoc.body.scrollLeft := 0
 	If (ThisMode = "Hotkey")
 		Hotkey_Reset()
 	Try SetTimer, Loop_%ThisMode%, Off
@@ -345,6 +354,8 @@ Mode_Mouse:
 	GuiControl, TB: -0x0001, But2
 	If (ThisMode = "Hotkey")
 		Hotkey_Reset()
+	If ThisMode = Mouse
+		oDoc.body.scrollLeft := 0
 	Try SetTimer, Loop_%ThisMode%, Off
 	ScrollPos[ThisMode,1] := oDoc.body.scrollLeft, ScrollPos[ThisMode,2] := oDoc.body.scrollTop
 	If ThisMode != Mouse
@@ -752,6 +763,8 @@ AccGetLocation(Acc, Child=0) {
 
 Mode_Hotkey:
 	Try SetTimer, Loop_%ThisMode%, Off
+	If ThisMode = Hotkey
+		oDoc.body.scrollLeft := 0
 	ScrollPos[ThisMode,1] := oDoc.body.scrollLeft, ScrollPos[ThisMode,2] := oDoc.body.scrollTop
 	If ThisMode != Hotkey
 		HTML_%ThisMode% := oDoc.body.innerHTML
@@ -1045,6 +1058,14 @@ CheckUpdate:
 	Menu, Sys, % StateUpdate ? "Check" : "UnCheck", Check updates
 	If StateUpdate
 		GoSub, UpdateAhkSpy
+	Return
+
+SelStartMode:
+	Menu, Startmode, UnCheck, Window
+	Menu, Startmode, UnCheck, Mouse && Control
+	Menu, Startmode, UnCheck, Button
+	IniWrite({"Window":"Win","Mouse && Control":"Mouse","Button":"Hotkey"}[A_ThisMenuItem], "StartMode")
+	Menu, Startmode, Check, % A_ThisMenuItem
 	Return
 
 ShowSys:
