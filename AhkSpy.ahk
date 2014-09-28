@@ -2,8 +2,8 @@
 	;  Автор - serzh82saratov
 	;  Спасибо wisgest за помощь в создании HTML интерфейса этой версии скрипта
 	;  Также благодарность teadrinker, YMP и Irbis за их решения
-	;  Тема - http://forum.script-coding.com/viewtopic.php?pid=72244#p72244
-	;  Коллекция - http://forum.script-coding.com/viewtopic.php?pid=72459#p72459
+	;  Тема - http://forum.script-coding.com/viewtopic.php?pid=72459#p72459
+	;  Обсуждение - http://forum.script-coding.com/viewtopic.php?pid=72244#p72244
 	;  GitHub - https://github.com/serzh82saratov/AhkSpy/blob/master/AhkSpy.ahk
 
 #NoTrayIcon
@@ -14,7 +14,7 @@ SetBatchLines, -1
 ListLines, Off
 DetectHiddenWindows, On
 
-Global AhkSpyVersion := 1.32
+Global AhkSpyVersion := 1.33
 Gosub, RevAhkVersion
 Menu, Tray, Icon, Shell32.dll, % A_OSVersion = "WIN_XP" ? 222 : 278
 
@@ -805,6 +805,12 @@ Write_Hotkey(K*)   {
 	(LRMods != "") ? (LRMStr := LRMods KeyName, LRPStr := LRPref Hotkey LRComment) : 0
 	inp_hk := o_edithotkey.value, inp_kn := o_editkeyname.value
 
+	If (Hotkey != "" && Mods)
+		DUMods := "SendInput " (K.MCtrl ? "{Ctrl Down}" : "") (K.MAlt ? "{Alt Down}" : "")
+			. (K.MShift ? "{Shift Down}" : "") (K.MWin ? "{Win Down}" : "")
+			. "{" Hotkey "}"
+			. (K.MCtrl ? "{Ctrl Up}" : "") (K.MAlt ? "{Alt Up}" : "")
+			. (K.MShift ? "{Shift Up}" : "") (K.MWin ? "{Win Up}" : "") "<span id='param'>    `;  """ Mods KeyName """</span>"
 
 	HTML_Hotkey =
 	( Ltrim
@@ -822,6 +828,8 @@ Write_Hotkey(K*)   {
 	%LRPStr%
 
 	Send %Prefix%{%Hotkey%}<span id='param'>%Comment%</span>  %DP%  SendInput %Prefix%{%Hotkey%}<span id='param'>%Comment%</span>  %DP%  ControlSend, ahk_parent, %Prefix%{%Hotkey%}, WinTitle<span id='param'>%Comment%</span>
+
+	%DUMods%
 
 	%HK2% & %HK1%::<span id='param'>%HKComment%</span>   %DP%   <span id='param'>Double hotkey</span>
 
@@ -855,7 +863,7 @@ Write_Hotkey(K*)   {
 	Write_HotkeyHTML()
 }
 
-Write_HotkeyHTML() {
+Write_HotkeyHTML()  {
 	oDoc.body.innerHTML := HTML_Hotkey
 	ComObjConnect(o_edithotkey:=oDoc.getElementById("edithotkey"),Events)
 	ComObjConnect(o_editkeyname:=oDoc.getElementById("editkeyname"),Events)
