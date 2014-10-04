@@ -14,7 +14,7 @@ SetBatchLines, -1
 ListLines, Off
 DetectHiddenWindows, On
 
-Global AhkSpyVersion := 1.34
+Global AhkSpyVersion := 1.35
 Gosub, RevAhkVersion
 Menu, Tray, Icon, Shell32.dll, % A_OSVersion = "WIN_XP" ? 222 : 278
 
@@ -1410,7 +1410,7 @@ Class Events  {
 			Else If thisid = rus_eng
 				ToolTip(ToggleLocale(), 500)
 			Else If thisid = paste_button
-				o_edithotkey.focus(), oDoc.execCommand("Paste")
+				o_edithotkey.value := "", o_edithotkey.focus(), oDoc.execCommand("Paste")
 			Else If (thisid = "copy_selected" && ExistSelectedText(CopyText) && ToolTip("copy", 500))
 				GoSub CopyText
 			Else If thisid = get_styles
