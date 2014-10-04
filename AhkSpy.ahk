@@ -14,7 +14,7 @@ SetBatchLines, -1
 ListLines, Off
 DetectHiddenWindows, On
 
-Global AhkSpyVersion := 1.33
+Global AhkSpyVersion := 1.34
 Gosub, RevAhkVersion
 Menu, Tray, Icon, Shell32.dll, % A_OSVersion = "WIN_XP" ? 222 : 278
 
@@ -203,6 +203,7 @@ F6:: AppsKey
 
 RButton::
 CopyText:
+	ToolTip("copy", 300)
 	Clipboard := CopyText
 	StringReplace, toTitle, CopyText, `r`n, , 1
 	SendMessage, 0xC, 0, &toTitle, , ahk_id %hGui%
@@ -805,12 +806,12 @@ Write_Hotkey(K*)   {
 	(LRMods != "") ? (LRMStr := LRMods KeyName, LRPStr := LRPref Hotkey LRComment) : 0
 	inp_hk := o_edithotkey.value, inp_kn := o_editkeyname.value
 
-	If (Hotkey != "" && Mods)
+	If Prefix !=
 		DUMods := "SendInput " (K.MCtrl ? "{Ctrl Down}" : "") (K.MAlt ? "{Alt Down}" : "")
-			. (K.MShift ? "{Shift Down}" : "") (K.MWin ? "{Win Down}" : "")
-			. "{" Hotkey "}"
+			. (K.MShift ? "{Shift Down}" : "") (K.MWin ? "{Win Down}" : "") "{" Hotkey "}"
 			. (K.MCtrl ? "{Ctrl Up}" : "") (K.MAlt ? "{Alt Up}" : "")
-			. (K.MShift ? "{Shift Up}" : "") (K.MWin ? "{Win Up}" : "") "<span id='param'>    `;  """ Mods KeyName """</span>"
+			. (K.MShift ? "{Shift Up}" : "") (K.MWin ? "{Win Up}" : "")
+			. "<span id='param'>    `;  """ Mods KeyName """</span>"
 
 	HTML_Hotkey =
 	( Ltrim
@@ -839,7 +840,7 @@ Write_Hotkey(K*)   {
 
 	%ThisKey%   %DP%   %VKCode%%SCCode%   %DP%   %VKCode%   %DP%   %SCCode%
 
-	%D1% <span id='title'>( GetKeyName )</span> %D2%
+	%D1% <span id='title'>( GetKeyName )</span> %DB% <span contenteditable='false' unselectable='on'><button id='paste_button'>paste</button></span> %D2%
 
 	<span contenteditable='false' unselectable='on'><input id='edithotkey' value='%inp_hk%'><button id='keyname'> &#8250 &#8250 &#8250 </button><input id='editkeyname' value='%inp_kn%'></input></span>
 
@@ -856,7 +857,7 @@ Write_Hotkey(K*)   {
 	#param {color: '%ColorParam%'}
 	#edithotkey {font-size: '1.18em'; text-align: center; border: 1px dashed black}
 	#keyname {font-size: '1.18em';   background-color: '%ColorParam%'; width: 65px; height: 90`%}
-	#pause_button, #numlock, #scrolllock, #rus_eng, #copy_selected {font-size: 0.9em; border: 1px dashed black}
+	#pause_button, #numlock, #paste_button, #scrolllock, #rus_eng, #copy_selected {font-size: 0.9em; border: 1px dashed black}
 	#editkeyname {font-size: '1.18em'; text-align: center; border: 1px dashed black}
 	</style>
 	)
@@ -1132,7 +1133,7 @@ WM_LBUTTONDOWN()   {
 	}
 }
 
-WM_CONTEXTMENU() {
+WM_CONTEXTMENU()  {
 	MouseGetPos, , , wid, cid, 2
 	If (cid != hActiveX && wid = hGui)
 	{
@@ -1408,6 +1409,8 @@ Class Events  {
 			}
 			Else If thisid = rus_eng
 				ToolTip(ToggleLocale(), 500)
+			Else If thisid = paste_button
+				o_edithotkey.focus(), oDoc.execCommand("Paste")
 			Else If (thisid = "copy_selected" && ExistSelectedText(CopyText) && ToolTip("copy", 500))
 				GoSub CopyText
 			Else If thisid = get_styles
