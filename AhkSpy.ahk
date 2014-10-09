@@ -14,7 +14,7 @@ SetBatchLines, -1
 ListLines, Off
 DetectHiddenWindows, On
 
-Global AhkSpyVersion := 1.36
+Global AhkSpyVersion := 1.37
 Gosub, RevAhkVersion
 Menu, Tray, Icon, Shell32.dll, % A_OSVersion = "WIN_XP" ? 222 : 278
 
@@ -311,13 +311,13 @@ HTML_Win:
 ( Ltrim
 	<body id='body'><pre id='pre'; contenteditable='true'>
 	%D1% <span id='title'>( Title )</span> %DB% %pause_button% %D2%
-	%WinTitle%
+	<span id='wintitle1'>%WinTitle%</span>
 	%D1% <span id='title'>( Class )</span> %D2%
-	<span id='param'>ahk_class</span> %WinClass%
-	%D1% <span id='title'>( ProcessName )</span> %D2%
-	<span id='param'>ahk_exe</span> %WinProcessName%
-	%D1% <span id='title'>( ProcessPath )</span> %D2%
-	<span id='param'>ahk_exe</span> %WinProcessPath%%DP%<span contenteditable='false' unselectable='on'><button id='folder' name='%WinProcessPath%'>folder view</button></span>
+	<span id='wintitle2'><span id='param'>ahk_class</span> %WinClass%</span>
+	%D1% <span id='title'>( ProcessName )</span> %DB% <span contenteditable='false' unselectable='on'><button id='copy_alltitle'>copy all titles</button></span> %D2%
+	<span id='wintitle3'><span id='param'>ahk_exe</span> %WinProcessName%</span>
+	%D1% <span id='title'>( ProcessPath )</span> %DB% <span contenteditable='false' unselectable='on'><button id='copy_button_ProcessPath'> copy path</button></span> %D2%
+	<span id='param'>ahk_exe</span> <span id='copy_ProcessPath'>%WinProcessPath%</span>%DP%<span contenteditable='false' unselectable='on'><button id='folder' name='%WinProcessPath%'>folder view</button></span>
 	%D1% <span id='title'>( CommandLine )</span> %DB% %copy_button% %D2%
 	<span>%CommandLine%</span>%DP%<span contenteditable='false' unselectable='on'><button id='command_line' name='%CommandLine%'>run cmd</button></span>
 	%D1% <span id='title'>( Position`s )</span> %D2%
@@ -1382,6 +1382,29 @@ Class Events  {
 				o.style.backgroundColor := "A3C5E9"
 				Sleep 400
 				o.style.backgroundColor := ColorBg
+			}
+			Else If thisid = copy_button_ProcessPath
+			{
+				o := oDoc.getElementById("copy_ProcessPath")
+				Clipboard := o.OuterText
+				oDoc.selection.createRange().execCommand("Unselect")
+				o.style.backgroundColor := "A3C5E9"
+				Sleep 400
+				o.style.backgroundColor := ColorBg
+			}
+			Else If thisid = copy_alltitle
+			{
+				Clipboard := oDoc.getElementById("wintitle1").OuterText " "
+					.  oDoc.getElementById("wintitle2").OuterText " "
+					.  oDoc.getElementById("wintitle3").OuterText
+				oDoc.selection.createRange().execCommand("Unselect")
+				oDoc.getElementById("wintitle1").style.backgroundColor := "A3C5E9"
+				oDoc.getElementById("wintitle2").style.backgroundColor := "A3C5E9"
+				oDoc.getElementById("wintitle3").style.backgroundColor := "A3C5E9"
+				Sleep 400
+				oDoc.getElementById("wintitle1").style.backgroundColor := ColorBg
+				oDoc.getElementById("wintitle2").style.backgroundColor := ColorBg
+				oDoc.getElementById("wintitle3").style.backgroundColor := ColorBg
 			}
 			Else If thisid = keyname
 			{
