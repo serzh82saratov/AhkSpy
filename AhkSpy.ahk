@@ -14,11 +14,11 @@ SetBatchLines, -1
 ListLines, Off
 DetectHiddenWindows, On
 
-Global AhkSpyVersion := 1.38
+Global AhkSpyVersion := 1.39
 Gosub, RevAhkVersion
 Menu, Tray, Icon, Shell32.dll, % A_OSVersion = "WIN_XP" ? 222 : 278
 
-# := "&#9642"									;  Символ разделителя заголовков - &#8226 | &#9642 
+# := "&#9642"									;  Символ разделителя заголовков - &#8226 | &#9642
 Global ThisMode := "Mouse"						;  Стартовый режим - Win|Mouse|Hotkey
 , HeightStart := 550							;  Высота окна при старте
 , FontSize := 15								;  Размер шрифта
@@ -813,7 +813,7 @@ Write_Hotkey(K*)   {
 			. (K.MCtrl ? "{Ctrl Up}" : "") (K.MAlt ? "{Alt Up}" : "")
 			. (K.MShift ? "{Shift Up}" : "") (K.MWin ? "{Win Up}" : "")
 			. "<span id='param'>    `;  """ Mods KeyName """</span>"
-	
+
 	HTML_Hotkey =
 	( Ltrim
 	<body id='body'> <pre id='pre'; contenteditable='true'>
@@ -1468,7 +1468,7 @@ Class Events  {
 	}
 	onblur()   {
 		Sleep 100
-		If (WinActive("ahk_id" hGui) && !isPaused)
+		If (WinActive("ahk_id" hGui) && !isPaused && ThisMode = "Hotkey")
 			Hotkey_Hook := 1
 	}
 }
