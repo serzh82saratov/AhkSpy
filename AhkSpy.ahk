@@ -14,13 +14,11 @@ SetBatchLines, -1
 ListLines, Off
 DetectHiddenWindows, On
 
-Global AhkSpyVersion := 1.37
+Global AhkSpyVersion := 1.38
 Gosub, RevAhkVersion
 Menu, Tray, Icon, Shell32.dll, % A_OSVersion = "WIN_XP" ? 222 : 278
 
-# := "&#9642"									;  Символ разделителя заголовков - &#8226 | &#9642
-Color# := "E14B30"								;  Цвет шрифта разделителя заголовков и параметров
-
+# := "&#9642"									;  Символ разделителя заголовков - &#8226 | &#9642 
 Global ThisMode := "Mouse"						;  Стартовый режим - Win|Mouse|Hotkey
 , HeightStart := 550							;  Высота окна при старте
 , FontSize := 15								;  Размер шрифта
@@ -28,14 +26,15 @@ Global ThisMode := "Mouse"						;  Стартовый режим - Win|Mouse|Hot
 , ColorFont := ""								;  Цвет шрифта
 , ColorBg := ColorBgOriginal := "F0F0F0"		;  Цвет фона
 , ColorBgPaused := "E4E4E4"						;  Цвет фона при паузе
+, ColorDelimiter := "E14B30"					;  Цвет шрифта разделителя заголовков и параметров
 , ColorTitle := "27419B"						;  Цвет шрифта заголовка
 , ColorParam := "189200"						;  Цвет шрифта параметров
 
-, DP := "  <span style='color: " Color# "'>" # "</span>  ", D1, D2, DB
+, DP := "  <span style='color: " ColorDelimiter "'>" # "</span>  ", D1, D2, DB
 , ThisMode:=((t:=IniRead("StartMode"))=""?"Mouse":t), StateLight:=((t:=IniRead("StateLight"))=""||t>3?1:t)
 , StateLightAcc:=((t:=IniRead("StateLightAcc"))=""?1:t), StateUpdate:=((t:=IniRead("StateUpdate"))=""?1:t)
 , hGui, hActiveX, hMarkerGui, hMarkerAccGui, oDoc, ShowMarker, isIE, isPaused, ShowWinStyles, ScrollPos:={}, AccCoord:=[]
-, HTML_Win, HTML_Mouse, HTML_Hotkey, o_edithotkey, o_editkeyname, rmCtrlX, rmCtrlY, HWND_3
+, HTML_Win, HTML_Mouse, HTML_Hotkey, o_edithotkey, o_editkeyname, rmCtrlX, rmCtrlY, HWND_3, ButNotPhysical
 , copy_button := "<span contenteditable='false' unselectable='on'><button id='copy_button'> copy </button></span>"
 , pause_button := "<span contenteditable='false' unselectable='on'><button id='pause_button'> pause </button></span>"
 
@@ -49,9 +48,9 @@ Loop 24
 	D1 .= #
 Loop 20
 	D2 .= D1
-D1 := "<span style='color: " Color# "'>" D1 "</span>"
-D2 := "<span style='color: " Color# "'>" D2 "</span>"
-DB := "<span style='color: " Color# "'>" # # # # # # # # # # # # "</span>"
+D1 := "<span style='color: " ColorDelimiter "'>" D1 "</span>"
+D2 := "<span style='color: " ColorDelimiter "'>" D2 "</span>"
+DB := "<span style='color: " ColorDelimiter "'>" # # # # # # # # # # # # "</span>"
 
 Gui, +AlwaysOnTop +HWNDhGui +ReSize -DPIScale
 Gui, Color, %ColorBgPaused%
@@ -314,7 +313,7 @@ HTML_Win:
 	<span id='wintitle1'>%WinTitle%</span>
 	%D1% <span id='title'>( Class )</span> %D2%
 	<span id='wintitle2'><span id='param'>ahk_class</span> %WinClass%</span>
-	%D1% <span id='title'>( ProcessName )</span> %DB% <span contenteditable='false' unselectable='on'><button id='copy_alltitle'>copy all titles</button></span> %D2%
+	%D1% <span id='title'>( ProcessName )</span> %DB% <span contenteditable='false' unselectable='on'><button id='copy_alltitle'>copy all params</button></span> %D2%
 	<span id='wintitle3'><span id='param'>ahk_exe</span> %WinProcessName%</span>
 	%D1% <span id='title'>( ProcessPath )</span> %DB% <span contenteditable='false' unselectable='on'><button id='copy_button_ProcessPath'> copy path</button></span> %D2%
 	<span id='param'>ahk_exe</span> <span id='copy_ProcessPath'>%WinProcessPath%</span>%DP%<span contenteditable='false' unselectable='on'><button id='folder' name='%WinProcessPath%'>folder view</button></span>
@@ -461,10 +460,10 @@ HTML_Mouse:
 	%D1% <span id='title'>( Mouse pos )</span> %DB% %pause_button% %D2%
 	<span id='param'>Screen:</span>  x%MXS% y%MYS%%DP%<span id='param'>Window:</span>  x%RWinX% y%RWinY%%DP%<span id='param'>Client:</span>  x%MXC% y%MYC%%WithRespectWin%
 	<span id='param'>Relative active window:</span>  x%MXWA% y%MYWA%%DP%%ProcessName_A% <span id='param'>class</span> %WinClass_A%
-	%D1% <span id='title'>( Class & ProcessName & HWND )</span> %D2%
-	<span id='param'>ahk_class</span> %WinClass% <span id='param'>ahk_exe</span> %ProcessName% <span id='param'>ahk_id</span> %WinID%
 	%D1% <span id='title'>( PixelGetColor )</span> %D2%
 	<span id='param'>RGB: </span> %ColorRGB%%DP%%sColorRGB%%DP%<span id='param'>BGR: </span> %ColorBGR%%DP%%sColorBGR%
+	%D1% <span id='title'>( Window: Class & ProcessName & HWND )</span> %D2%
+	<span id='param'>ahk_class</span> %WinClass% <span id='param'>ahk_exe</span> %ProcessName% <span id='param'>ahk_id</span> %WinID%
 	%D1% <span id='title'>( Control )</span> %D2%<a></a>
 	<span id='param'>Class NN:</span>  %ControlNN%%DP%<span id='param'>Win class:</span>  %CtrlClass%
 	<span id='param'>Pos:</span>  x%CtrlX% y%CtrlY%%DP%<span id='param'>Size:</span>  w%CtrlW% h%CtrlH%%DP%<span id='param'>x<span style='font-size: 0.7em'>2</span></span>%CtrlX2% <span id='param'>y<span style='font-size: 0.7em'>2</span></span>%CtrlY2%
@@ -787,6 +786,8 @@ Write_Hotkey(K*)   {
 	LRMods := K.LRMods, LRPref := TransformHTML(K.LRPref)
 	ThisKey := K.TK, VKCode := K.VK, SCCode := K.SC
 
+	If (ButNotPhysical && Mods KeyName != "")
+		NotPhysical	:= " " DP "<span style='color:" ColorDelimiter "'> Not a physical press </span>"
 	IsVk := Hotkey ~= "^vk" ? 1 : 0
 
 	HK1 := IsVk ? Hotkey : ThisKey
@@ -812,13 +813,13 @@ Write_Hotkey(K*)   {
 			. (K.MCtrl ? "{Ctrl Up}" : "") (K.MAlt ? "{Alt Up}" : "")
 			. (K.MShift ? "{Shift Up}" : "") (K.MWin ? "{Win Up}" : "")
 			. "<span id='param'>    `;  """ Mods KeyName """</span>"
-
+	
 	HTML_Hotkey =
 	( Ltrim
 	<body id='body'> <pre id='pre'; contenteditable='true'>
 	%D1% <span id='title'>( Pressed buttons )</span> %DB% %pause_button% %D2%
 
-	%Mods%%KeyName%
+	%Mods%%KeyName%%NotPhysical%
 
 	%LRMStr%
 
@@ -980,6 +981,7 @@ Hotkey_LowLevelKeyboardProc(nCode, wParam, lParam)   {
 	VKCode := "vk" SubStr(NumGet(lParam+0, 0, "UInt"), 3)
 	ext := NumGet(lParam+0, 8, "UInt") & 1, sc := ext << 8 | NumGet(lParam+0, 4, "UInt")
 	SCCode := "sc" SubStr(sc, 3), IsMod := Mods[VKCode]
+	ButNotPhysical := (NumGet(lParam|0, 8, "uint")&16)
 	SetFormat, IntegerFast, %SaveFormat%
 	If (wParam = 0x100 || wParam = 0x104)   ;  WM_KEYDOWN := 0x100, WM_SYSKEYDOWN := 0x104
 		IsMod ? Hotkey_Main(VKCode, SCCode, "Down", IsMod) : Hotkey_Main(VKCode, SCCode)
