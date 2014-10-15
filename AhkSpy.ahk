@@ -14,7 +14,7 @@ SetBatchLines, -1
 ListLines, Off
 DetectHiddenWindows, On
 
-Global AhkSpyVersion := 1.42
+Global AhkSpyVersion := 1.43
 Gosub, RevAhkVersion
 Menu, Tray, Icon, Shell32.dll, % A_OSVersion = "WIN_XP" ? 222 : 278
 
@@ -33,7 +33,7 @@ Global ThisMode := "Mouse"						;  Стартовый режим - Win|Mouse|Hot
 , ThisMode:=((t:=IniRead("StartMode"))=""?"Mouse":t), StateLight:=((t:=IniRead("StateLight"))=""||t>3?1:t)
 , StateLightAcc:=((t:=IniRead("StateLightAcc"))=""?1:t), StateUpdate:=((t:=IniRead("StateUpdate"))=""?1:t)
 , hGui, hActiveX, hMarkerGui, hMarkerAccGui, oDoc, ShowMarker, isIE, isPaused, w_ShowStyles, ScrollPos:={}, AccCoord:=[]
-, HTML_Win, HTML_Mouse, HTML_Hotkey, o_edithotkey, o_editkeyname, rmCtrlX, rmCtrlY, m_hwnd_3, b_NotPhysical
+, HTML_Win, HTML_Mouse, HTML_Hotkey, o_edithotkey, o_editkeyname, rmCtrlX, rmCtrlY, m_hwnd_3, Hotkey_NFP
 , copy_button := "<span contenteditable='false' unselectable='on'><button id='copy_button'> copy </button></span>"
 , pause_button := "<span contenteditable='false' unselectable='on'><button id='pause_button'> pause </button></span>"
 
@@ -786,7 +786,7 @@ Write_Hotkey(K*)  {
 	LRMods := K.LRMods, LRPref := TransformHTML(K.LRPref)
 	ThisKey := K.TK, VKCode := K.VK, SCCode := K.SC
 
-	If (b_NotPhysical && Mods KeyName != "")
+	If (Hotkey_NFP && Mods KeyName != "")
 		NotPhysical	:= " " DP "<span style='color:" ColorDelimiter "'> Not a physical press </span>"
 	IsVk := Hotkey ~= "^vk" ? 1 : 0
 
@@ -875,7 +875,7 @@ Write_HotkeyHTML()  {
 
 HotkeyInit:
 	Hotkey_Control(1)
-	Global Hotkey_TargetFunc := "Write_Hotkey", Hotkey_Hook := (ThisMode = "Hotkey" ? 1 : 0)
+	Global Hotkey_TargetFunc := "Write_Hotkey", Hotkey_Hook := (ThisMode = "Hotkey" ? 1 : 0), Hotkey_NFP
 	Return
 
 	; _________________________________________________ Hotkey Functions _________________________________________________
@@ -946,7 +946,7 @@ Hotkey_PressName:
 	K.LRMods := K.MLCtrl K.MRCtrl K.MLAlt K.MRAlt K.MLShift K.MRShift K.MLWin K.MRWin
 	K.Pref := K.PCtrl K.PAlt K.PShift K.PWin
 	K.LRPref := K.PLCtrl K.PRCtrl K.PLAlt K.PRAlt K.PLShift K.PRShift K.PLWin K.PRWin
-	K.HK := K.Name := K.TK := A_ThisHotkey, ModsOnly := 0, K.SC := ""
+	K.HK := K.Name := K.TK := A_ThisHotkey, ModsOnly := Hotkey_NFP := 0, K.SC := ""
 	K.VK := !InStr(A_ThisHotkey, "Joy") ? VkMouse[A_ThisHotkey] : ""
 	%Hotkey_TargetFunc%(K*)
 	Return 1
@@ -981,7 +981,7 @@ Hotkey_LowLevelKeyboardProc(nCode, wParam, lParam)  {
 	VKCode := "vk" SubStr(NumGet(lParam+0, 0, "UInt"), 3)
 	SCCode := "sc" SubStr((Ext & 1) << 8 | NumGet(lParam+0, 4, "UInt"), 3)
 	SetFormat, IntegerFast, %SaveFormat%
-	IsMod := Mods[VKCode], b_NotPhysical := Ext & 16
+	IsMod := Mods[VKCode], Hotkey_NFP := Ext & 16   ;  Hotkey_NFP := Not a physical press
 	If (wParam = 0x100 || wParam = 0x104)   ;  WM_KEYDOWN := 0x100, WM_SYSKEYDOWN := 0x104
 		IsMod ? Hotkey_Main(VKCode, SCCode, "Down", IsMod) : Hotkey_Main(VKCode, SCCode)
 	Else If ((wParam = 0x101 || wParam = 0x105) && VKCode != "vk5D")   ;  WM_KEYUP := 0x101, WM_SYSKEYUP := 0x105, AppsKey = "vk5D"
