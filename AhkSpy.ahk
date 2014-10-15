@@ -14,7 +14,7 @@ SetBatchLines, -1
 ListLines, Off
 DetectHiddenWindows, On
 
-Global AhkSpyVersion := 1.39
+Global AhkSpyVersion := 1.40
 Gosub, RevAhkVersion
 Menu, Tray, Icon, Shell32.dll, % A_OSVersion = "WIN_XP" ? 222 : 278
 
@@ -33,8 +33,8 @@ Global ThisMode := "Mouse"						;  Стартовый режим - Win|Mouse|Hot
 , DP := "  <span style='color: " ColorDelimiter "'>" # "</span>  ", D1, D2, DB
 , ThisMode:=((t:=IniRead("StartMode"))=""?"Mouse":t), StateLight:=((t:=IniRead("StateLight"))=""||t>3?1:t)
 , StateLightAcc:=((t:=IniRead("StateLightAcc"))=""?1:t), StateUpdate:=((t:=IniRead("StateUpdate"))=""?1:t)
-, hGui, hActiveX, hMarkerGui, hMarkerAccGui, oDoc, ShowMarker, isIE, isPaused, ShowWinStyles, ScrollPos:={}, AccCoord:=[]
-, HTML_Win, HTML_Mouse, HTML_Hotkey, o_edithotkey, o_editkeyname, rmCtrlX, rmCtrlY, HWND_3, ButNotPhysical
+, hGui, hActiveX, hMarkerGui, hMarkerAccGui, oDoc, ShowMarker, isIE, isPaused, w_ShowStyles, ScrollPos:={}, AccCoord:=[]
+, HTML_Win, HTML_Mouse, HTML_Hotkey, o_edithotkey, o_editkeyname, rmCtrlX, rmCtrlY, m_hwnd_3, b_NotPhysical
 , copy_button := "<span contenteditable='false' unselectable='on'><button id='copy_button'> copy </button></span>"
 , pause_button := "<span contenteditable='false' unselectable='on'><button id='pause_button'> pause </button></span>"
 
@@ -301,11 +301,11 @@ Spot_Win(NotHTML=0)   {
 	GuiControl, TB: -Redraw, ColorProgress
 	GuiControl, % "TB: +c" SubStr(ColorRGB, 3), ColorProgress
 	GuiControl, TB: +Redraw, ColorProgress
-	If ShowWinStyles
+	If w_ShowStyles
 		WinStyles := GetStyles(WinStyle, WinExStyle), ButStyleTip := "hide styles"
 
 HTML_Win:
-	ButStyleTip := !ShowWinStyles ? "show styles" : ButStyleTip
+	ButStyleTip := !w_ShowStyles ? "show styles" : ButStyleTip
 	HTML_Win =
 ( Ltrim
 	<body id='body'><pre id='pre'; contenteditable='true'>
@@ -385,7 +385,7 @@ Spot_Mouse(NotHTML=0)   {
 	WinGetClass, WinClass_A, A
 	CoordMode, Mouse
 	MouseGetPos, MXS, MYS, tWinID, tControlNN
-	MouseGetPos, , , , HWND_3, 3
+	MouseGetPos, , , , m_hwnd_3, 3
 	CoordMode, Mouse, Window
 	MouseGetPos, MXWA, MYWA, , tControlID, 2
 
@@ -616,7 +616,7 @@ GetInfo_AtlAxWin(hwnd, ByRef ClassNN)   {
 }
 GetInfo_InternetExplorer_Server(hwnd, ByRef ClassNN)   {
 	Static IID_IWebBrowserApp := "{0002DF05-0000-0000-C000-000000000046}"
-	isIE := 1, ClassNN := "Internet Explorer_Server", hwnd := HWND_3
+	isIE := 1, ClassNN := "Internet Explorer_Server", hwnd := m_hwnd_3
 	If !(pwin := WBGet(hwnd))
 		Return
 	pelt := pwin.document.elementFromPoint(rmCtrlX, rmCtrlY)
@@ -786,7 +786,7 @@ Write_Hotkey(K*)   {
 	LRMods := K.LRMods, LRPref := TransformHTML(K.LRPref)
 	ThisKey := K.TK, VKCode := K.VK, SCCode := K.SC
 
-	If (ButNotPhysical && Mods KeyName != "")
+	If (b_NotPhysical && Mods KeyName != "")
 		NotPhysical	:= " " DP "<span style='color:" ColorDelimiter "'> Not a physical press </span>"
 	IsVk := Hotkey ~= "^vk" ? 1 : 0
 
@@ -913,7 +913,7 @@ Hotkey_Main(VKCode, SCCode, Option = 0, IsMod = 0)  {
 		If (K["ML" sIsMod] = "" && K["MR" sIsMod] = "")
 			K["M" sIsMod] := K["P" sIsMod] := ""
 		If (K.HK != "")
-			return 1
+			Return 1
 	}
 	Else If (Option = "OnlyMods")
 	{
@@ -921,10 +921,10 @@ Hotkey_Main(VKCode, SCCode, Option = 0, IsMod = 0)  {
 			Return 0
 		K.MCtrl := K.MAlt := K.MShift := K.MWin := K.Mods := ""
 		K.PCtrl := K.PAlt := K.PShift := K.PWin := K.Pref := ""
-		K.PLCtrl := K.PLAlt := K.PLShift := K.PLWin := K.LRPref := ""
 		K.PRCtrl := K.PRAlt := K.PRShift := K.PRWin := ""
-		K.MLCtrl := K.MLAlt := K.MLShift := K.MLWin := K.LRMods := ""
+		K.PLCtrl := K.PLAlt := K.PLShift := K.PLWin := K.LRPref := ""
 		K.MRCtrl := K.MRAlt := K.MRShift := K.MRWin := ""
+		K.MLCtrl := K.MLAlt := K.MLShift := K.MLWin := K.LRMods := ""
 		%Hotkey_TargetFunc%(K*)
 		Return ModsOnly := 0
 	}
@@ -979,10 +979,10 @@ Hotkey_LowLevelKeyboardProc(nCode, wParam, lParam)   {
 	SaveFormat := A_FormatInteger
 	SetFormat, IntegerFast, H
 	VKCode := "vk" SubStr(NumGet(lParam+0, 0, "UInt"), 3)
-	ext := NumGet(lParam+0, 8, "UInt") & 1, sc := ext << 8 | NumGet(lParam+0, 4, "UInt")
-	SCCode := "sc" SubStr(sc, 3), IsMod := Mods[VKCode]
-	ButNotPhysical := (NumGet(lParam|0, 8, "uint")&16)
+	Ext := NumGet(lParam+0, 8, "UInt")
+	SCCode := "sc" SubStr((Ext & 1) << 8 | NumGet(lParam+0, 4, "UInt"), 3)
 	SetFormat, IntegerFast, %SaveFormat%
+	b_NotPhysical := Ext & 16, IsMod := Mods[VKCode]
 	If (wParam = 0x100 || wParam = 0x104)   ;  WM_KEYDOWN := 0x100, WM_SYSKEYDOWN := 0x104
 		IsMod ? Hotkey_Main(VKCode, SCCode, "Down", IsMod) : Hotkey_Main(VKCode, SCCode)
 	Else If ((wParam = 0x101 || wParam = 0x105) && VKCode != "vk5D")   ;  WM_KEYUP := 0x101, WM_SYSKEYUP := 0x105, AppsKey = "vk5D"
@@ -1439,8 +1439,8 @@ Class Events  {
 			Else If (thisid = "copy_selected" && ExistSelectedText(CopyText) && ToolTip("copy", 500))
 				GoSub CopyText
 			Else If thisid = get_styles
-				oevent.innerText := (ShowWinStyles := !ShowWinStyles) ? "hide styles" : "show styles"
-				, oDoc.getElementById("AllWinStyles").innerHTML := ShowWinStyles ? "<br>" D2 "<br>Waiting for new styles data..." : ""
+				oevent.innerText := (w_ShowStyles := !w_ShowStyles) ? "hide styles" : "show styles"
+				, oDoc.getElementById("AllWinStyles").innerHTML := w_ShowStyles ? "<br>" D2 "<br>Waiting for new styles data..." : ""
 		}
 		Else If (ThisMode = "Hotkey" && !Hotkey_Hook && !isPaused && tagname ~= "PRE|SPAN")
 			Hotkey_Hook := 1
