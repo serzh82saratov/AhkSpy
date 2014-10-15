@@ -14,13 +14,11 @@ SetBatchLines, -1
 ListLines, Off
 DetectHiddenWindows, On
 
-Global AhkSpyVersion := 1.40
+Global AhkSpyVersion := 1.41
 Gosub, RevAhkVersion
 Menu, Tray, Icon, Shell32.dll, % A_OSVersion = "WIN_XP" ? 222 : 278
 
-# := "&#9642"									;  Символ разделителя заголовков - &#8226 | &#9642
 Global ThisMode := "Mouse"						;  Стартовый режим - Win|Mouse|Hotkey
-, HeightStart := 550							;  Высота окна при старте
 , FontSize := 15								;  Размер шрифта
 , FontFamily :=  "Arial"						;  Шрифт - Times New Roman | Georgia | Myriad Pro | Arial
 , ColorFont := ""								;  Цвет шрифта
@@ -40,10 +38,12 @@ Global ThisMode := "Mouse"						;  Стартовый режим - Win|Mouse|Hot
 
 TitleTextP2 := "     ( Shift+Tab - Freeze | RButton - CopySelected | Pause - Pause )     v" AhkSpyVersion
 BLGroup := ["Backlight allways","Backlight disable","Backlight hold shift button"]
+HeightStart := 550			;  Высота окна при старте
+HeigtButton := 32			;  Высота кнопок
 wKey := 140					;  Ширина кнопок
 wColor := wKey//2			;  Ширина цветного фрагмента
-HeigtButton := 32			;  Высота кнопок
 RangeTimer := 100			;  Период опроса данных, увеличьте на слабом ПК
+# := "&#9642"				;  Символ разделителя заголовков - &#8226 | &#9642
 Loop 24
 	D1 .= #
 Loop 20
@@ -973,16 +973,15 @@ Hotkey_Reset()   {
 Hotkey_LowLevelKeyboardProc(nCode, wParam, lParam)   {
 	Static Mods := {"vkA4":"LAlt","vkA5":"RAlt","vkA2":"LCtrl","vkA3":"RCtrl"
 		,"vkA0":"LShift","vkA1":"RShift","vk5B":"LWin","vk5C":"RWin"}, SaveFormat
-
 	If !Hotkey_Hook
 		Return DllCall("CallNextHookEx", "Ptr", 0, "Int", nCode, "UInt", wParam, "UInt", lParam)
+	Ext := NumGet(lParam+0, 8, "UInt")
 	SaveFormat := A_FormatInteger
 	SetFormat, IntegerFast, H
 	VKCode := "vk" SubStr(NumGet(lParam+0, 0, "UInt"), 3)
-	Ext := NumGet(lParam+0, 8, "UInt")
 	SCCode := "sc" SubStr((Ext & 1) << 8 | NumGet(lParam+0, 4, "UInt"), 3)
 	SetFormat, IntegerFast, %SaveFormat%
-	b_NotPhysical := Ext & 16, IsMod := Mods[VKCode]
+	IsMod := Mods[VKCode], b_NotPhysical := Ext & 16
 	If (wParam = 0x100 || wParam = 0x104)   ;  WM_KEYDOWN := 0x100, WM_SYSKEYDOWN := 0x104
 		IsMod ? Hotkey_Main(VKCode, SCCode, "Down", IsMod) : Hotkey_Main(VKCode, SCCode)
 	Else If ((wParam = 0x101 || wParam = 0x105) && VKCode != "vk5D")   ;  WM_KEYUP := 0x101, WM_SYSKEYUP := 0x105, AppsKey = "vk5D"
