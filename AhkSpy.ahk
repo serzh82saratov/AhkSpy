@@ -14,7 +14,7 @@ SetBatchLines, -1
 ListLines, Off
 DetectHiddenWindows, On
 
-Global AhkSpyVersion := 1.41
+Global AhkSpyVersion := 1.42
 Gosub, RevAhkVersion
 Menu, Tray, Icon, Shell32.dll, % A_OSVersion = "WIN_XP" ? 222 : 278
 
@@ -27,6 +27,7 @@ Global ThisMode := "Mouse"						;  Стартовый режим - Win|Mouse|Hot
 , ColorDelimiter := "E14B30"					;  Цвет шрифта разделителя заголовков и параметров
 , ColorTitle := "27419B"						;  Цвет шрифта заголовка
 , ColorParam := "189200"						;  Цвет шрифта параметров
+, # := "&#9642"									;  Символ разделителя заголовков - &#8226 | &#9642
 
 , DP := "  <span style='color: " ColorDelimiter "'>" # "</span>  ", D1, D2, DB
 , ThisMode:=((t:=IniRead("StartMode"))=""?"Mouse":t), StateLight:=((t:=IniRead("StateLight"))=""||t>3?1:t)
@@ -43,7 +44,6 @@ HeigtButton := 32			;  Высота кнопок
 wKey := 140					;  Ширина кнопок
 wColor := wKey//2			;  Ширина цветного фрагмента
 RangeTimer := 100			;  Период опроса данных, увеличьте на слабом ПК
-# := "&#9642"				;  Символ разделителя заголовков - &#8226 | &#9642
 Loop 24
 	D1 .= #
 Loop 20
@@ -246,7 +246,7 @@ Repeat_Loop_Win:
 		SetTimer, Loop_Win, -%RangeTimer%
 	Return
 
-Spot_Win(NotHTML=0)   {
+Spot_Win(NotHTML=0)  {
 	Static PrWinPID, CommandLine
 	If NotHTML
 		GoTo HTML_Win
@@ -341,7 +341,7 @@ HTML_Win:
 	Return 1
 }
 
-Write_Win()   {
+Write_Win()  {
 	oDoc.body.innerHTML := HTML_Win
 	Return 1
 }
@@ -377,7 +377,7 @@ Repeat_Loop_Mouse:
 		SetTimer, Loop_Mouse, -%RangeTimer%
 	Return
 
-Spot_Mouse(NotHTML=0)   {
+Spot_Mouse(NotHTML=0)  {
 	Static
 	If NotHTML
 		GoTo HTML_Mouse
@@ -484,14 +484,14 @@ HTML_Mouse:
 	Return 1
 }
 
-Write_Mouse()   {
+Write_Mouse()  {
 	oDoc.body.innerHTML := HTML_Mouse
 	Return 1
 }
 
 	; _________________________________________________ Get Info Control _________________________________________________
 
-GetInfo_SysListView(hwnd, ByRef ClassNN)   {
+GetInfo_SysListView(hwnd, ByRef ClassNN)  {
 	ClassNN := "SysListView32"
 	ControlGet, ListText, List,,, ahk_id %hwnd%
 	ControlGet, RowCount, List, Count,, ahk_id %hwnd%
@@ -506,19 +506,19 @@ GetInfo_SysListView(hwnd, ByRef ClassNN)   {
 			. " " copy_button " " D2 "`n<span>" TransformHTML(ListText) "</span>"
 }
 
-GetInfo_ListBox(hwnd, ByRef ClassNN)   {
+GetInfo_ListBox(hwnd, ByRef ClassNN)  {
 	ClassNN = ListBox
 	Return GetInfo_ComboBox(hwnd, "")
 }
-GetInfo_TListBox(hwnd, ByRef ClassNN)   {
+GetInfo_TListBox(hwnd, ByRef ClassNN)  {
 	ClassNN = TListBox
 	Return GetInfo_ComboBox(hwnd, "")
 }
-GetInfo_TComboBox(hwnd, ByRef ClassNN)   {
+GetInfo_TComboBox(hwnd, ByRef ClassNN)  {
 	ClassNN = TComboBox
 	Return GetInfo_ComboBox(hwnd, "")
 }
-GetInfo_ComboBox(hwnd, ByRef ClassNN)   {
+GetInfo_ComboBox(hwnd, ByRef ClassNN)  {
 	ClassNN = ComboBox
 	ControlGet, ListText, List,,, ahk_id %hwnd%
 	RegExReplace(ListText, "m`a)$", "", RowCount)
@@ -527,15 +527,15 @@ GetInfo_ComboBox(hwnd, ByRef ClassNN)   {
 			. copy_button " " D2 "`n<span>" TransformHTML(ListText) "</span>"
 }
 
-GetInfo_CtrlNotifySink(hwnd, ByRef ClassNN)   {
+GetInfo_CtrlNotifySink(hwnd, ByRef ClassNN)  {
 	ClassNN = CtrlNotifySink
 	Return GetInfo_Scintilla(hwnd, "")
 }
-GetInfo_Edit(hwnd, ByRef ClassNN)   {
+GetInfo_Edit(hwnd, ByRef ClassNN)  {
 	ClassNN = Edit
 	Return GetInfo_Scintilla(hwnd, "")
 }
-GetInfo_Scintilla(hwnd, ByRef ClassNN)   {
+GetInfo_Scintilla(hwnd, ByRef ClassNN)  {
 	ClassNN = Scintilla
 	ControlGet, LineCount, LineCount,,, ahk_id %hwnd%
 	ControlGet, CurrentCol, CurrentCol,,, ahk_id %hwnd%
@@ -553,7 +553,7 @@ GetInfo_Scintilla(hwnd, ByRef ClassNN)   {
 			. "<span id='param'>First visible line:</span> " EM_GETFIRSTVISIBLELINE
 }
 
-GetInfo_msctls_progress(hwnd, ByRef ClassNN)   {
+GetInfo_msctls_progress(hwnd, ByRef ClassNN)  {
 	ClassNN := "msctls_progress32"
 	SendMessage, 0x0400+7,"TRUE",,, ahk_id %hwnd%	;  PBM_GETRANGE
 	PBM_GETRANGEMIN := ErrorLevel
@@ -566,7 +566,7 @@ GetInfo_msctls_progress(hwnd, ByRef ClassNN)   {
 			. "  <span id='param'>max:</span> " PBM_GETRANGEMAX
 }
 
-GetInfo_msctls_trackbar(hwnd, ByRef ClassNN)   {
+GetInfo_msctls_trackbar(hwnd, ByRef ClassNN)  {
 	ClassNN := "msctls_trackbar32"
 	SendMessage, 0x0400+1,,,, ahk_id %hwnd%			;  TBM_GETRANGEMIN
 	TBM_GETRANGEMIN := ErrorLevel
@@ -583,7 +583,7 @@ GetInfo_msctls_trackbar(hwnd, ByRef ClassNN)   {
 			. "<span id='param'>Max:</span> " TBM_GETRANGEMAX
 }
 
-GetInfo_msctls_updown(hwnd, ByRef ClassNN)   {
+GetInfo_msctls_updown(hwnd, ByRef ClassNN)  {
 	ClassNN := "msctls_updown32"
 	SendMessage, 0x0400+102,,,, ahk_id %hwnd%		;  UDM_GETRANGE
 	UDM_GETRANGE := ErrorLevel
@@ -594,7 +594,7 @@ GetInfo_msctls_updown(hwnd, ByRef ClassNN)   {
 			. "  <span id='param'>max: </span>" UDM_GETRANGE & 0xFFFF
 }
 
-GetInfo_SysTabControl(hwnd, ByRef ClassNN)   {
+GetInfo_SysTabControl(hwnd, ByRef ClassNN)  {
 	ClassNN := "SysTabControl32"
 	ControlGet, SelTab, Tab,,, ahk_id %hwnd%
 	SendMessage, 0x1300+44,,,, ahk_id %hwnd%		;  TCM_GETROWCOUNT
@@ -610,11 +610,11 @@ GetInfo_SysTabControl(hwnd, ByRef ClassNN)   {
 
 	;  http://www.autohotkey.com/board/topic/84258-iwb2-learner-iwebbrowser2/
 
-GetInfo_AtlAxWin(hwnd, ByRef ClassNN)   {
+GetInfo_AtlAxWin(hwnd, ByRef ClassNN)  {
 	ClassNN = AtlAxWin
 	Return GetInfo_InternetExplorer_Server(hwnd, "")
 }
-GetInfo_InternetExplorer_Server(hwnd, ByRef ClassNN)   {
+GetInfo_InternetExplorer_Server(hwnd, ByRef ClassNN)  {
 	Static IID_IWebBrowserApp := "{0002DF05-0000-0000-C000-000000000046}"
 	isIE := 1, ClassNN := "Internet Explorer_Server", hwnd := m_hwnd_3
 	If !(pwin := WBGet(hwnd))
@@ -657,7 +657,7 @@ GetInfo_InternetExplorer_Server(hwnd, ByRef ClassNN)   {
 	Return Location URL TagName id Class name Index elHTML elText
 }
 
-WBGet(hwnd)   {
+WBGet(hwnd)  {
 	static msg := DllCall("RegisterWindowMessage", "str", "WM_HTML_GETOBJECT")
 		, IID_IHTMLWindow2 := "{332C4427-26CB-11D0-B483-00C04FD90119}"
 	SendMessage, msg,,,, ahk_id %hwnd%
@@ -669,7 +669,7 @@ WBGet(hwnd)   {
 
 	;  http://www.autohotkey.com/board/topic/77888-accessible-info-viewer-alpha-release-2012-09-20/
 
-AccInfoUnderMouse(x, y)   {
+AccInfoUnderMouse(x, y)  {
 	Static h
 	If Not h
 		h := DllCall("LoadLibrary","Str","oleacc","Ptr")
@@ -738,16 +738,16 @@ AccInfoUnderMouse(x, y)   {
 	}
 	Return code
 }
-AccRole(Acc, ChildId=0)   {
+AccRole(Acc, ChildId=0)  {
 	Return ComObjType(Acc, "Name") = "IAccessible" ? AccGetRoleText(Acc.accRole(ChildId)) : ""
 }
-AccGetRoleText(nRole)   {
+AccGetRoleText(nRole)  {
 	nSize := DllCall("oleacc\GetRoleText", "UInt", nRole, "Ptr", 0, "UInt", 0)
 	VarSetCapacity(sRole, (A_IsUnicode?2:1)*nSize)
 	DllCall("oleacc\GetRoleText", "UInt", nRole, "str", sRole, "UInt", nSize+1)
 	Return sRole
 }
-AccGetStateText(nState)   {
+AccGetStateText(nState)  {
 	nSize := DllCall("oleacc\GetStateText", "UInt", nState, "Ptr", 0, "UInt", 0)
 	VarSetCapacity(sState, (A_IsUnicode?2:1)*nSize)
 	DllCall("oleacc\GetStateText", "UInt", nState, "str", sState, "UInt", nSize+1)
@@ -778,7 +778,7 @@ Mode_Hotkey:
 	GuiControl, 1:Focus, oDoc
 	Return
 
-Write_Hotkey(K*)   {
+Write_Hotkey(K*)  {
 	Static PrHK1, PrHK2, PrKeys1, PrKeys2, PrKeysComm, KeysComm
 
 	Mods := K.Mods, KeyName := K.Name
@@ -952,7 +952,7 @@ Hotkey_PressName:
 	Return 1
 }
 
-Hotkey_ExtKeyInit()   {
+Hotkey_ExtKeyInit()  {
 	MouseKey := "MButton|WheelDown|WheelUp|WheelRight|WheelLeft|XButton1|XButton2"
 	#If Hotkey_Hook
 	#If
@@ -964,13 +964,13 @@ Hotkey_ExtKeyInit()   {
 	Hotkey, If
 }
 
-Hotkey_Reset()   {
+Hotkey_Reset()  {
 	Return Hotkey_Hook := 0, Hotkey_Main(0, 0, "OnlyMods")
 }
 
 	;  http://forum.script-coding.com/viewtopic.php?id=6350
 
-Hotkey_LowLevelKeyboardProc(nCode, wParam, lParam)   {
+Hotkey_LowLevelKeyboardProc(nCode, wParam, lParam)  {
 	Static Mods := {"vkA4":"LAlt","vkA5":"RAlt","vkA2":"LCtrl","vkA3":"RCtrl"
 		,"vkA0":"LShift","vkA1":"RShift","vk5B":"LWin","vk5C":"RWin"}, SaveFormat
 	If !Hotkey_Hook
@@ -989,7 +989,7 @@ Hotkey_LowLevelKeyboardProc(nCode, wParam, lParam)   {
 	Return nCode < 0 ? DllCall("CallNextHookEx", "Ptr", 0, "Int", nCode, "UInt", wParam, "UInt", lParam) : 1
 }
 
-Hotkey_WindowsHookEx(State)   {
+Hotkey_WindowsHookEx(State)  {
 	Static Hook
 	If State
 		Hook := DllCall("SetWindowsHookEx" . (A_IsUnicode ? "W" : "A")
@@ -1104,7 +1104,7 @@ Sys_Help:
 
 	; _________________________________________________ Functions _________________________________________________
 
-ShellProc(nCode, wParam)   {
+ShellProc(nCode, wParam)  {
 	If (nCode = 4)
 	{
 		If (wParam = hGui)
@@ -1114,14 +1114,14 @@ ShellProc(nCode, wParam)   {
 	}
 }
 
-WM_ACTIVATE(wp)   {
+WM_ACTIVATE(wp)  {
 	If (wp & 0xFFFF)
 		(ThisMode = "Hotkey" && !isPaused ? Hotkey_Hook := 1 : ""), HideMarker()
 	Else If (wp & 0xFFFF = 0 && Hotkey_Hook)
 		Hotkey_Reset()
 }
 
-WM_LBUTTONDOWN()   {
+WM_LBUTTONDOWN()  {
 	If A_GuiControl = ColorProgress
 	{
 		If ThisMode = Hotkey
@@ -1143,12 +1143,12 @@ WM_CONTEXTMENU()  {
 	}
 }
 
-LaunchLink(Link)   {
+LaunchLink(Link)  {
 	Run %Link%
 	Gui, 1: Minimize
 }
 
-ShowMarker(x, y, w, h, b:=4)   {
+ShowMarker(x, y, w, h, b:=4)  {
 	ShowMarker := 1
 	w < 8 || h < 8 ? b := 2 : 0
 	Try Gui, M: Show, NA x%x% y%y% w%w% h%h%
@@ -1158,7 +1158,7 @@ ShowMarker(x, y, w, h, b:=4)   {
 		. " " w-b "-" b " " w-b "-" h-b " " b "-" h-b " " b "-" b, ahk_id %hMarkerGui%
 }
 
-HideMarker(test=1)   {
+HideMarker(test=1)  {
 	Gui, M: Show, Hide
 	ShowMarker := 0, HideAccMarker()
 	If test
@@ -1166,7 +1166,7 @@ HideMarker(test=1)   {
 	Return 1
 }
 
-ShowAccMarker(x, y, w, h, b:=2)   {
+ShowAccMarker(x, y, w, h, b:=2)  {
 	ShowMarker := 1
 	Try Gui, AcM: Show, NA x%x% y%y% w%w% h%h%
 	Catch
@@ -1174,12 +1174,12 @@ ShowAccMarker(x, y, w, h, b:=2)   {
 	WinSet, Region, % "0-0 " w "-0 " w "-" h " 0-" h " 0-0 " b "-" b
 		. " " w-b "-" b " " w-b "-" h-b " " b "-" h-b " " b "-" b, ahk_id %hMarkerAccGui%
 }
-HideAccMarker()   {
+HideAccMarker()  {
 	Gui, AcM: Show, Hide
 	Return 1
 }
 
-IniRead(Key)   {
+IniRead(Key)  {
 	IniRead, Value, %A_AppData%\AhkSpy.ini, AhkSpy, %Key%, %A_Space%
 	Return Value
 }
@@ -1188,19 +1188,19 @@ IniWrite(Value, Key) {
 	Return Value
 }
 
-InArr(Val, Arr*)   {
+InArr(Val, Arr*)  {
 	For k, v in Arr
 		If (v == Val)
 			Return k
 }
 
-TransformHTML(str)   {
+TransformHTML(str)  {
 	Transform, str, HTML, %str%, 3
 	StringReplace, str, str,`n,, 1
 	Return str
 }
 
-ExistSelectedText(byref Copy)   {
+ExistSelectedText(byref Copy)  {
 	MouseGetPos, , , , ControlID, 2
 	If (ControlID != hActiveX)
 		Return 0
@@ -1217,14 +1217,14 @@ ExistSelectedText(byref Copy)   {
 
 	;  http://forum.script-coding.com/viewtopic.php?pid=53516#p53516
 
-GetCommandLineProc(pid)   {
+GetCommandLineProc(pid)  {
 	ComObjGet("winmgmts:").ExecQuery("Select * from Win32_Process WHERE ProcessId = " pid)._NewEnum.next(X)
 	Return Trim(X.CommandLine)
 }
 
 	;  http://www.autohotkey.com/board/topic/69254-func-api-getwindowinfo-ahk-l/#entry438372
 
-GetClientPos(hwnd, ByRef left, ByRef top, ByRef w, ByRef h)   {
+GetClientPos(hwnd, ByRef left, ByRef top, ByRef w, ByRef h)  {
 	VarSetCapacity(pwi, 60, 0), NumPut(60, pwi, 0, "UInt")
 	DllCall("GetWindowInfo", "Ptr", hwnd, "UInt", &pwi)
 	top:=NumGet(pwi,24,"int")-NumGet(pwi,8,"int")
@@ -1235,7 +1235,7 @@ GetClientPos(hwnd, ByRef left, ByRef top, ByRef w, ByRef h)   {
 
 	;  http://forum.script-coding.com/viewtopic.php?pid=81833#p81833
 
-SelectFilePath(FilePath)   {
+SelectFilePath(FilePath)  {
 	SplitPath, FilePath,, Dir
 	for window in ComObjCreate("Shell.Application").Windows
 	{
@@ -1259,7 +1259,7 @@ SelectFilePath(FilePath)   {
 	Run, %A_WinDir%\explorer.exe /select`, "%FilePath%", , UseErrorLevel
 }
 
-GetCLSIDExplorer(hwnd)   {
+GetCLSIDExplorer(hwnd)  {
 	for window in ComObjCreate("Shell.Application").Windows
 		If (window.hwnd = hwnd)
 			Return (CLSID := window.Document.Folder.Self.Path) ~= "^::\{" ? "`n<span id='param'>CLSID: </span>" CLSID : ""
@@ -1268,7 +1268,7 @@ GetCLSIDExplorer(hwnd)   {
 	;  http://msdn.microsoft.com/en-us/library/windows/desktop/ms632600(v=vs.85).aspx
 	;  http://msdn.microsoft.com/en-us/library/windows/desktop/ff700543(v=vs.85).aspx
 
-GetStyles(Style, ExStyle)   {
+GetStyles(Style, ExStyle)  {
 	Static Styles := {"WS_BORDER":"0x00800000", "WS_CAPTION":"0x00C00000", "WS_CHILD":"0x40000000", "WS_CHILDWINDOW":"0x40000000"
 		, "WS_CLIPCHILDREN":"0x02000000", "WS_CLIPSIBLINGS":"0x04000000", "WS_DISABLED":"0x08000000", "WS_DLGFRAME":"0x00400000"
 		, "WS_GROUP":"0x00020000", "WS_HSCROLL":"0x00100000", "WS_ICONIC":"0x20000000", "WS_MAXIMIZE":"0x01000000"
@@ -1315,7 +1315,7 @@ ToolTip(text, time)  {
 		Return
 }
 
-NextLink(s = "")   {
+NextLink(s = "")  {
 	curpos := oDoc.body.scrollTop, oDoc.body.scrollLeft := 0
 	If (!curpos && s = "-")
 		Return
@@ -1329,7 +1329,7 @@ NextLink(s = "")   {
 	oDoc.body.scrollTop := curpos + res
 }
 
-Update(in=1)   {
+Update(in=1)  {
 	Static att, Ver, req
 		, url1 := "https://raw.githubusercontent.com/serzh82saratov/AhkSpy/master/Readme.txt"
 		, url2 := "https://raw.githubusercontent.com/serzh82saratov/AhkSpy/master/AhkSpy.ahk"
@@ -1367,7 +1367,7 @@ Update(in=1)   {
 	;  http://forum.script-coding.com/viewtopic.php?pid=82283#p82283
 
 Class Events  {
-	onclick()   {
+	onclick()  {
 	Global CopyText
 		oevent := oDoc.parentWindow.event.srcElement
 		tagname := oevent.tagname
@@ -1444,7 +1444,7 @@ Class Events  {
 		Else If (ThisMode = "Hotkey" && !Hotkey_Hook && !isPaused && tagname ~= "PRE|SPAN")
 			Hotkey_Hook := 1
 	}
-	ondblclick()   {
+	ondblclick()  {
 		oevent := oDoc.parentWindow.event.srcElement
 		If (oevent.tagname = "BUTTON")
 		{
@@ -1461,11 +1461,11 @@ Class Events  {
 				Gosub, PausedScript
 		}
 	}
-	onfocus()   {
+	onfocus()  {
 		Sleep 100
 		Hotkey_Reset()
 	}
-	onblur()   {
+	onblur()  {
 		Sleep 100
 		If (WinActive("ahk_id" hGui) && !isPaused && ThisMode = "Hotkey")
 			Hotkey_Hook := 1
