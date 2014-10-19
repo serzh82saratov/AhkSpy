@@ -14,7 +14,7 @@ SetBatchLines, -1
 ListLines, Off
 DetectHiddenWindows, On
 
-Global AhkSpyVersion := 1.43
+Global AhkSpyVersion := 1.44
 Gosub, RevAhkVersion
 Menu, Tray, Icon, Shell32.dll, % A_OSVersion = "WIN_XP" ? 222 : 278
 
@@ -27,6 +27,7 @@ Global ThisMode := "Mouse"						;  Стартовый режим - Win|Mouse|Hot
 , ColorDelimiter := "E14B30"					;  Цвет шрифта разделителя заголовков и параметров
 , ColorTitle := "27419B"						;  Цвет шрифта заголовка
 , ColorParam := "189200"						;  Цвет шрифта параметров
+, ColorSelected := "A3C5E9"						;  Цвет шрифта при копировании кнопкой
 , # := "&#9642"									;  Символ разделителя заголовков - &#8226 | &#9642
 
 , DP := "  <span style='color: " ColorDelimiter "'>" # "</span>  ", D1, D2, DB
@@ -41,7 +42,7 @@ TitleTextP2 := "     ( Shift+Tab - Freeze | RButton - CopySelected | Pause - Pau
 BLGroup := ["Backlight allways","Backlight disable","Backlight hold shift button"]
 HeightStart := 550			;  Высота окна при старте
 HeigtButton := 32			;  Высота кнопок
-wKey := 140					;  Ширина кнопок
+wKey := 142					;  Ширина кнопок
 wColor := wKey//2			;  Ширина цветного фрагмента
 RangeTimer := 100			;  Период опроса данных, увеличьте на слабом ПК
 Loop 24
@@ -133,8 +134,7 @@ Return
 
 +Tab::
 	(ThisMode = "Mouse" ? Spot_Mouse() Spot_Win() Write_Mouse() : Spot_Win() Spot_Mouse() Write_Win())
-	If !WinActive("ahk_id" hGui)
-	{
+	If !WinActive("ahk_id" hGui)  {
 		WinActivate ahk_id %hGui%
 		GuiControl, 1:Focus, oDoc
 	}
@@ -168,6 +168,7 @@ ScrollLeft:
 
 ^vk43:: Clipboard := oDoc.selection.createRange().text		;  Ctrl+C
 
++RButton::
 ^vk56:: oDoc.execCommand("Paste")							;  Ctrl+V
 
 ^vk41:: oDoc.execCommand("SelectAll")						;  Ctrl+A
@@ -247,7 +248,7 @@ Repeat_Loop_Win:
 	Return
 
 Spot_Win(NotHTML=0)  {
-	Static PrWinPID, CommandLine
+	Static PrWinPID, ComLine
 	If NotHTML
 		GoTo HTML_Win
 	MouseGetPos,,,WinID
@@ -264,7 +265,7 @@ Spot_Win(NotHTML=0)  {
 	SplitPath, WinProcessPath, WinProcessName
 	WinGet, WinPID, PID, ahk_id %WinID%
 	If (WinPID != PrWinPID)
-		CommandLine := TransformHTML(GetCommandLineProc(WinPID)), PrWinPID := WinPID
+		ComLine := TransformHTML(GetCommandLineProc(WinPID)), PrWinPID := WinPID
 	If (WinClass ~= "(Cabinet|Explore)WClass")
 		CLSID := GetCLSIDExplorer(WinID)
 	WinGet, WinCountProcess, Count, ahk_pid %WinPID%
@@ -315,17 +316,17 @@ HTML_Win:
 	<span id='wintitle2'><span id='param'>ahk_class</span> %WinClass%</span>
 	%D1% <span id='title'>( ProcessName )</span> %DB% <span contenteditable='false' unselectable='on'><button id='copy_alltitle'>copy all params</button></span> %D2%
 	<span id='wintitle3'><span id='param'>ahk_exe</span> %WinProcessName%</span>
-	%D1% <span id='title'>( ProcessPath )</span> %DB% <span contenteditable='false' unselectable='on'><button id='copy_button_ProcessPath'> copy path</button></span> %D2%
-	<span id='param'>ahk_exe</span> <span id='copy_ProcessPath'>%WinProcessPath%</span>%DP%<span contenteditable='false' unselectable='on'><button id='folder' name='%WinProcessPath%'>folder view</button></span>
-	%D1% <span id='title'>( CommandLine )</span> %DB% %copy_button% %D2%
-	<span>%CommandLine%</span>%DP%<span contenteditable='false' unselectable='on'><button id='command_line' name='%CommandLine%'>run cmd</button></span>
+	%D1% <span id='title'>( ProcessPath )</span> %DB% <span contenteditable='false' unselectable='on'><button id='w_copy_path'> copy </button> <button id='w_folder'> in folder </button></span> %D2%
+	<span id='param'>ahk_exe</span> <span id='copy_processpath'>%WinProcessPath%</span>
+	%D1% <span id='title'>( CommandLine )</span> %DB% <span contenteditable='false' unselectable='on'><button id='w_command_line'>launch</button> <button id='paste_command_line'>paste</button></span> %copy_button% %D2%
+	<span id='c_command_line'>%ComLine%</span>
 	%D1% <span id='title'>( Position`s )</span> %D2%
 	<span id='param'>Pos:</span>  x%WinX% y%WinY%%DP%<span id='param'>Size:</span>  w%WinWidth% h%WinHeight%%DP%<span id='param'>x<span style='font-size: 0.7em'>2</span></span>%WinX2% <span id='param'>y<span style='font-size: 0.7em'>2</span></span>%WinY2%%DP%%WinX%, %WinY%, %WinWidth%, %WinHeight%
 	<span id='param'>Client area size:</span>  w%caW% h%caH%%DP%<span id='param'>top</span> %caY% <span id='param'>left</span> %caX% <span id='param'>bottom</span> %caWinBottom% <span id='param'>right</span> %caWinRight%
 	<a></a>%D1% <span id='title'>( Other )</span> %D2%
 	<span id='param'>PID:</span>  %WinPID%%DP%<span id='param'>Count window this PID:</span> %WinCountProcess%%DP%<span contenteditable='false' unselectable='on'><button id='process_close' name='%WinPID%'>process close</button></span>
 	<span id='param'>HWND:</span>  %WinID%%DP%<span contenteditable='false' unselectable='on'><button id='win_close' name='%WinID%'>win close</button></span>%DP%<span id='param'>Control count:</span>  %CountControl%
-	<span id='param'>Style:</span>  %WinStyle%%DP%<span id='param'>ExStyle:</span>  %WinExStyle%%DP%<span contenteditable='false' unselectable='on'><button id='get_styles'>%ButStyleTip%</button></span>%WinTransparent%%WinTransColor%%CLSID%<span id='AllWinStyles'>%WinStyles%</span>%SBText%%WinText%
+	<span id='param'>Style:  </span><span id='c_Style'>%WinStyle%</span>%DP%<span id='param'>ExStyle:  </span><span id='c_ExStyle'>%WinExStyle%</span>%DP%<span contenteditable='false' unselectable='on'><button id='get_styles'>%ButStyleTip%</button></span>%WinTransparent%%WinTransColor%%CLSID%<span id='AllWinStyles'>%WinStyles%</span>%SBText%%WinText%
 	<a></a>%D2%</pre></body>
 
 	<style>
@@ -841,7 +842,7 @@ Write_Hotkey(K*)  {
 
 	%ThisKey%   %DP%   %VKCode%%SCCode%   %DP%   %VKCode%   %DP%   %SCCode%
 
-	%D1% <span id='title'>( GetKeyName )</span> %DB% <span contenteditable='false' unselectable='on'><button id='paste_button'>paste</button></span> %D2%
+	%D1% <span id='title'>( GetKeyName )</span> %DB% <span contenteditable='false' unselectable='on'><button id='paste_keyname'>paste</button></span> %D2%
 
 	<span contenteditable='false' unselectable='on'><input id='edithotkey' value='%inp_hk%'><button id='keyname'> &#8250 &#8250 &#8250 </button><input id='editkeyname' value='%inp_kn%'></input></span>
 
@@ -858,7 +859,7 @@ Write_Hotkey(K*)  {
 	#param {color: '%ColorParam%'}
 	#edithotkey {font-size: '1.18em'; text-align: center; border: 1px dashed black}
 	#keyname {font-size: '1.18em';   background-color: '%ColorParam%'; width: 65px; height: 90`%}
-	#pause_button, #numlock, #paste_button, #scrolllock, #rus_eng, #copy_selected {font-size: 0.9em; border: 1px dashed black}
+	#pause_button, #numlock, #paste_keyname, #scrolllock, #rus_eng, #copy_selected {font-size: 0.9em; border: 1px dashed black}
 	#editkeyname {font-size: '1.18em'; text-align: center; border: 1px dashed black}
 	</style>
 	)
@@ -1236,21 +1237,18 @@ GetClientPos(hwnd, ByRef left, ByRef top, ByRef w, ByRef h)  {
 	;  http://forum.script-coding.com/viewtopic.php?pid=81833#p81833
 
 SelectFilePath(FilePath)  {
+	If !FileExist(FilePath)
+		Return
 	SplitPath, FilePath,, Dir
-	for window in ComObjCreate("Shell.Application").Windows
-	{
+	for window in ComObjCreate("Shell.Application").Windows  {
 		ShellFolderView := window.Document
-
 		Try If ((Folder := ShellFolderView.Folder).Self.Path != Dir)
 			Continue
 		Catch
 			Continue
-
-		for item in Folder.Items
-		{
+		for item in Folder.Items  {
 			If (item.Path != FilePath)
 				Continue
-
 			ShellFolderView.SelectItem(item, 1|4|8|16)
 			WinActivate, % "ahk_id" window.hwnd
 			Return
@@ -1294,15 +1292,15 @@ GetStyles(Style, ExStyle)  {
 		Res .= D1 " <span id='title'>( Styles )</span> " D2 "`n" Ret
 	If RetEx !=
 		Res .= D1 " <span id='title'>( ExStyles )</span> " D2 "`n" RetEx
-	Return "`n" RTrim(Res, "`n") "</span>"
+	Return "`n" RTrim(Res, "`n")
 }
 
 ToggleLocale()  {
-	InputLocaleID := DllCall("GetKeyboardLayout", "Int"
+	LocaleID := DllCall("GetKeyboardLayout", "Int"
 	, DllCall("GetWindowThreadProcessId", "Int", WinExist("A"), "Int", "0"))
 	ControlGetFocus, CtrlFocus
-	PostMessage, 0x50, 0, InputLocaleID = 0x4090409 ? 0x4190419 : 0x4090409, %CtrlFocus%
-	Return InputLocaleID = 0x4090409 ? "Rus" : "Eng"
+	PostMessage, 0x50, 0, LocaleID = 0x4090409 ? 0x4190419 : 0x4090409, %CtrlFocus%
+	Return LocaleID = 0x4090409 ? "Rus" : "Eng"
 }
 
 ToolTip(text, time)  {
@@ -1375,21 +1373,12 @@ Class Events  {
 		{
 			thisid := oevent.id
 			oDoc.body.focus()
-			If thisid = copy_button
+			If (thisid = "copy_button" || thisid = "w_copy_path")
 			{
-				o := oDoc.all.item(oevent.sourceIndex+2)
+				o := oDoc.all.item(oevent.sourceIndex+(thisid = "copy_button" ? 2 : 4))
 				Clipboard := o.OuterText
 				oDoc.selection.createRange().execCommand("Unselect")
-				o.style.backgroundColor := "A3C5E9"
-				Sleep 400
-				o.style.backgroundColor := ColorBg
-			}
-			Else If thisid = copy_button_ProcessPath
-			{
-				o := oDoc.getElementById("copy_ProcessPath")
-				Clipboard := o.OuterText
-				oDoc.selection.createRange().execCommand("Unselect")
-				o.style.backgroundColor := "A3C5E9"
+				o.style.backgroundColor := ColorSelected
 				Sleep 400
 				o.style.backgroundColor := ColorBg
 			}
@@ -1399,9 +1388,9 @@ Class Events  {
 					.  oDoc.getElementById("wintitle2").OuterText " "
 					.  oDoc.getElementById("wintitle3").OuterText
 				oDoc.selection.createRange().execCommand("Unselect")
-				oDoc.getElementById("wintitle1").style.backgroundColor := "A3C5E9"
-				oDoc.getElementById("wintitle2").style.backgroundColor := "A3C5E9"
-				oDoc.getElementById("wintitle3").style.backgroundColor := "A3C5E9"
+				oDoc.getElementById("wintitle1").style.backgroundColor := ColorSelected
+				oDoc.getElementById("wintitle2").style.backgroundColor := ColorSelected
+				oDoc.getElementById("wintitle3").style.backgroundColor := ColorSelected
 				Sleep 400
 				oDoc.getElementById("wintitle1").style.backgroundColor := ColorBg
 				oDoc.getElementById("wintitle2").style.backgroundColor := ColorBg
@@ -1416,30 +1405,28 @@ Class Events  {
 			}
 			Else If thisid = pause_button
 				Gosub, PausedScript
-			Else If (thisid = "folder" && oevent.name != "")
-				SelectFilePath(oevent.name)
-			Else If (thisid = "command_line" && oevent.name != "")
-				Run % comspec " /c """ oevent.name """", , hide
+			Else If thisid = w_folder
+				SelectFilePath(oDoc.getElementById("copy_processpath").OuterText)
+			Else If thisid = w_command_line
+				Run % comspec " /c """ oDoc.getElementById("c_command_line").OuterText """", , Hide
+			Else If thisid = paste_command_line
+				oDoc.getElementById("c_command_line").innerHTML := TransformHTML(Clipboard)
 			Else If thisid = process_close
 				Process, Close, % oevent.name
 			Else If thisid = win_close
 				WinClose, % "ahk_id" oevent.name
 			Else If (thisid = "numlock" || thisid = "scrolllock")
-			{
-				(OnHook := Hotkey_Hook) ? (Hotkey_Hook := 0) : 0
-				SendInput, {%thisid%}
-				(OnHook ? Hotkey_Hook := 1 : 0)
-				ToolTip(thisid " " (GetKeyState(thisid, "T") ? "On" : "Off"), 500)
-			}
+				Events.num_scroll(thisid)
 			Else If thisid = rus_eng
 				ToolTip(ToggleLocale(), 500)
-			Else If thisid = paste_button
+			Else If thisid = paste_keyname
 				o_edithotkey.value := "", o_edithotkey.focus(), oDoc.execCommand("Paste"), oDoc.getElementById("keyname").click()
 			Else If (thisid = "copy_selected" && ExistSelectedText(CopyText) && ToolTip("copy", 500))
 				GoSub CopyText
 			Else If thisid = get_styles
 				oevent.innerText := (w_ShowStyles := !w_ShowStyles) ? "hide styles" : "show styles"
 				, oDoc.getElementById("AllWinStyles").innerHTML := w_ShowStyles ? "<br>" D2 "<br>Waiting for new styles data..." : ""
+				, HTML_Win := oDoc.body.innerHTML
 		}
 		Else If (ThisMode = "Hotkey" && !Hotkey_Hook && !isPaused && tagname ~= "PRE|SPAN")
 			Hotkey_Hook := 1
@@ -1451,12 +1438,7 @@ Class Events  {
 			thisid := oevent.id
 			oDoc.body.focus()
 			If (thisid = "numlock" || thisid = "scrolllock")
-			{
-				(OnHook := Hotkey_Hook) ? (Hotkey_Hook := 0) : 0
-				SendInput, {%thisid%}
-				(OnHook ? Hotkey_Hook := 1 : 0)
-				ToolTip(thisid " " (GetKeyState(thisid, "T") ? "On" : "Off"), 500)
-			}
+				Events.num_scroll(thisid)
 			Else If thisid = pause_button
 				Gosub, PausedScript
 		}
@@ -1469,6 +1451,12 @@ Class Events  {
 		Sleep 100
 		If (WinActive("ahk_id" hGui) && !isPaused && ThisMode = "Hotkey")
 			Hotkey_Hook := 1
+	}
+	num_scroll(thisid)  {
+		(OnHook := Hotkey_Hook) ? (Hotkey_Hook := 0) : 0
+		SendInput, {%thisid%}
+		(OnHook ? Hotkey_Hook := 1 : 0)
+		ToolTip(thisid " " (GetKeyState(thisid, "T") ? "On" : "Off"), 500)
 	}
 }
 	;)
