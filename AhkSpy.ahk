@@ -14,7 +14,7 @@ SetBatchLines, -1
 ListLines, Off
 DetectHiddenWindows, On
 
-Global AhkSpyVersion := 1.44
+Global AhkSpyVersion := 1.45
 Gosub, RevAhkVersion
 Menu, Tray, Icon, Shell32.dll, % A_OSVersion = "WIN_XP" ? 222 : 278
 
@@ -27,7 +27,6 @@ Global ThisMode := "Mouse"						;  Стартовый режим - Win|Mouse|Hot
 , ColorDelimiter := "E14B30"					;  Цвет шрифта разделителя заголовков и параметров
 , ColorTitle := "27419B"						;  Цвет шрифта заголовка
 , ColorParam := "189200"						;  Цвет шрифта параметров
-, ColorSelected := "A3C5E9"						;  Цвет шрифта при копировании кнопкой
 , # := "&#9642"									;  Символ разделителя заголовков - &#8226 | &#9642
 
 , DP := "  <span style='color: " ColorDelimiter "'>" # "</span>  ", D1, D2, DB
@@ -1362,6 +1361,20 @@ Update(in=1)  {
 		Return
 }
 
+HighLight(elem, time="")  {
+	oDoc.selection.createRange().execCommand("Unselect")
+	R := oDoc.body.createTextRange()
+	R.moveToElementText(elem)
+	R.execCommand("BackColor", 0, "3399FF")
+	R.execCommand("ForeColor", 0, "FFEEFF")
+	Try SetTimer, UnHighLight, % "-" time
+	Return
+
+	UnHighLight:
+		oDoc.body.createTextRange().execCommand("RemoveFormat")
+		Return
+}
+
 	;  http://forum.script-coding.com/viewtopic.php?pid=82283#p82283
 
 Class Events  {
@@ -1374,27 +1387,15 @@ Class Events  {
 			thisid := oevent.id
 			oDoc.body.focus()
 			If (thisid = "copy_button" || thisid = "w_copy_path")
-			{
 				o := oDoc.all.item(oevent.sourceIndex+(thisid = "copy_button" ? 2 : 4))
-				Clipboard := o.OuterText
-				oDoc.selection.createRange().execCommand("Unselect")
-				o.style.backgroundColor := ColorSelected
-				Sleep 400
-				o.style.backgroundColor := ColorBg
-			}
+				, Clipboard := o.OuterText, HighLight(o, 500)
 			Else If thisid = copy_alltitle
 			{
 				Clipboard := oDoc.getElementById("wintitle1").OuterText " "
-					.  oDoc.getElementById("wintitle2").OuterText " "
-					.  oDoc.getElementById("wintitle3").OuterText
-				oDoc.selection.createRange().execCommand("Unselect")
-				oDoc.getElementById("wintitle1").style.backgroundColor := ColorSelected
-				oDoc.getElementById("wintitle2").style.backgroundColor := ColorSelected
-				oDoc.getElementById("wintitle3").style.backgroundColor := ColorSelected
-				Sleep 400
-				oDoc.getElementById("wintitle1").style.backgroundColor := ColorBg
-				oDoc.getElementById("wintitle2").style.backgroundColor := ColorBg
-				oDoc.getElementById("wintitle3").style.backgroundColor := ColorBg
+					. oDoc.getElementById("wintitle2").OuterText " "
+					. oDoc.getElementById("wintitle3").OuterText
+				Loop 3
+					HighLight(oDoc.getElementById("wintitle" A_Index), 500)
 			}
 			Else If thisid = keyname
 			{
