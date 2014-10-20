@@ -14,7 +14,7 @@ SetBatchLines, -1
 ListLines, Off
 DetectHiddenWindows, On
 
-Global AhkSpyVersion := 1.45
+Global AhkSpyVersion := 1.46
 Gosub, RevAhkVersion
 Menu, Tray, Icon, Shell32.dll, % A_OSVersion = "WIN_XP" ? 222 : 278
 
@@ -32,7 +32,8 @@ Global ThisMode := "Mouse"						;  Стартовый режим - Win|Mouse|Hot
 , DP := "  <span style='color: " ColorDelimiter "'>" # "</span>  ", D1, D2, DB
 , ThisMode:=((t:=IniRead("StartMode"))=""?"Mouse":t), StateLight:=((t:=IniRead("StateLight"))=""||t>3?1:t)
 , StateLightAcc:=((t:=IniRead("StateLightAcc"))=""?1:t), StateUpdate:=((t:=IniRead("StateUpdate"))=""?1:t)
-, hGui, hActiveX, hMarkerGui, hMarkerAccGui, oDoc, ShowMarker, isIE, isPaused, w_ShowStyles, ScrollPos:={}, AccCoord:=[]
+, StateAllwaysSpot := IniRead("AllwaysSpot"), ScrollPos:={}, AccCoord:=[]
+, hGui, hActiveX, hMarkerGui, hMarkerAccGui, oDoc, ShowMarker, isIE, isPaused, w_ShowStyles
 , HTML_Win, HTML_Mouse, HTML_Hotkey, o_edithotkey, o_editkeyname, rmCtrlX, rmCtrlY, m_hwnd_3, Hotkey_NFP
 , copy_button := "<span contenteditable='false' unselectable='on'><button id='copy_button'> copy </button></span>"
 , pause_button := "<span contenteditable='false' unselectable='on'><button id='pause_button'> pause </button></span>"
@@ -90,6 +91,9 @@ Menu, Sys, Add
 Menu, Sys, Add, Acc object backlight, Sys_Acclight
 Menu, Sys, % StateLightAcc ? "Check" : "UnCheck", Acc object backlight
 Menu, Sys, Add
+Menu, Sys, Add, Spot together (low speed), Spot_together
+Menu, Sys, % StateAllwaysSpot ? "Check" : "UnCheck", Spot together (low speed)
+Menu, Sys, Add
 Menu, Sys, Add, Pause AhkSpy, PausedScript
 Menu, Sys, Add, Default size, DefaultSize
 Menu, Sys, Add, Reload AhkSpy, Reload
@@ -125,6 +129,7 @@ Gui, +MinSize%widthTB%x%HeigtButton%
 
 Gosub, HotkeyInit
 Gosub, Mode_%ThisMode%
+#Include *i %A_ScriptDir%\SpecialOptions.ahk
 Return
 
 	; _________________________________________________ Hotkey`s _________________________________________________
@@ -240,7 +245,7 @@ Loop_Win:
 	If (WinActive("ahk_id" hGui) || Sleep = 1)
 		GoTo Repeat_Loop_Win
 	If Spot_Win()
-		Write_Win()
+		Write_Win(), StateAllwaysSpot ? Spot_Mouse() : 0
 Repeat_Loop_Win:
 	If !isPaused
 		SetTimer, Loop_Win, -%RangeTimer%
@@ -371,7 +376,7 @@ Loop_Mouse:
 	If WinActive("ahk_id" hGui) || Sleep = 1
 		GoTo Repeat_Loop_Mouse
 	If Spot_Mouse()
-		Write_Mouse()
+		Write_Mouse(), StateAllwaysSpot ? Spot_Win() : 0
 Repeat_Loop_Mouse:
 	If !isPaused
 		SetTimer, Loop_Mouse, -%RangeTimer%
@@ -1102,6 +1107,11 @@ Sys_Help:
 		LaunchLink("http://forum.script-coding.com/viewtopic.php?pid=72459#p72459")
 	Return
 
+Spot_together:
+	StateAllwaysSpot := IniWrite(!StateAllwaysSpot, "AllwaysSpot")
+	Menu, Sys, % StateAllwaysSpot ? "Check" : "UnCheck", Spot together (low speed)
+	Return
+
 	; _________________________________________________ Functions _________________________________________________
 
 ShellProc(nCode, wParam)  {
@@ -1291,7 +1301,7 @@ GetStyles(Style, ExStyle)  {
 		Res .= D1 " <span id='title'>( Styles )</span> " D2 "`n" Ret
 	If RetEx !=
 		Res .= D1 " <span id='title'>( ExStyles )</span> " D2 "`n" RetEx
-	Return "`n" RTrim(Res, "`n")
+	Return (Res = "" ? "" : "`n") . RTrim(Res, "`n")
 }
 
 ToggleLocale()  {
@@ -1361,6 +1371,14 @@ Update(in=1)  {
 		Return
 }
 
+ViewStyles(elem)  {
+	elem.innerText := (w_ShowStyles := !w_ShowStyles) ? "hide styles" : "show styles"
+	, oDoc.getElementById("AllWinStyles").innerHTML := w_ShowStyles
+	? RegExReplace(GetStyles(oDoc.getElementById("c_Style").innerText
+	, oDoc.getElementById("c_ExStyle").innerText), "\n", "<br>")
+	: "", HTML_Win := oDoc.body.innerHTML
+}
+
 HighLight(elem, time="")  {
 	oDoc.selection.createRange().execCommand("Unselect")
 	R := oDoc.body.createTextRange()
@@ -1368,6 +1386,7 @@ HighLight(elem, time="")  {
 	R.execCommand("BackColor", 0, "3399FF")
 	R.execCommand("ForeColor", 0, "FFEEFF")
 	Try SetTimer, UnHighLight, % "-" time
+	elem.focus()
 	Return
 
 	UnHighLight:
@@ -1401,7 +1420,7 @@ Class Events  {
 			{
 				KeyName := GetKeyName(o_edithotkey.value), o_editkeyname.value := KeyName
 				o := KeyName = "" ? o_edithotkey : o_editkeyname
-				o.focus(), o2 := o.createTextRange(), o2.collapse(false), o2.select()
+				o.focus(), o.createTextRange().select()
 				Return
 			}
 			Else If thisid = pause_button
@@ -1425,15 +1444,15 @@ Class Events  {
 			Else If (thisid = "copy_selected" && ExistSelectedText(CopyText) && ToolTip("copy", 500))
 				GoSub CopyText
 			Else If thisid = get_styles
-				oevent.innerText := (w_ShowStyles := !w_ShowStyles) ? "hide styles" : "show styles"
-				, oDoc.getElementById("AllWinStyles").innerHTML := w_ShowStyles ? "<br>" D2 "<br>Waiting for new styles data..." : ""
-				, HTML_Win := oDoc.body.innerHTML
+				ViewStyles(oevent)
 		}
 		Else If (ThisMode = "Hotkey" && !Hotkey_Hook && !isPaused && tagname ~= "PRE|SPAN")
 			Hotkey_Hook := 1
 	}
 	ondblclick()  {
 		oevent := oDoc.parentWindow.event.srcElement
+		If (oevent.isContentEditable && (sel := (rng := oDoc.selection.createRange()).text) != "")
+			rng.moveEnd("character", StrLen(RTrim(sel)) - StrLen(sel)), rng.select()
 		If (oevent.tagname = "BUTTON")
 		{
 			thisid := oevent.id
@@ -1442,6 +1461,8 @@ Class Events  {
 				Events.num_scroll(thisid)
 			Else If thisid = pause_button
 				Gosub, PausedScript
+			Else If thisid = get_styles
+				ViewStyles(oevent)
 		}
 	}
 	onfocus()  {
