@@ -14,7 +14,7 @@ SetBatchLines, -1
 ListLines, Off
 DetectHiddenWindows, On
 
-Global AhkSpyVersion := 1.50
+Global AhkSpyVersion := 1.51
 Gosub, RevAhkVersion
 Menu, Tray, Icon, Shell32.dll, % A_OSVersion = "WIN_XP" ? 222 : 278
 
@@ -1380,6 +1380,7 @@ ViewStyles(elem)  {
 }
 
 HighLight(elem, time="")  {
+	GuiControl, 1:Focus, oDoc
 	oDoc.selection.createRange().execCommand("Unselect")
 	R := oDoc.body.createTextRange(), R.collapse(true)
 	R.moveToElementText(elem)
