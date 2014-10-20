@@ -14,7 +14,7 @@ SetBatchLines, -1
 ListLines, Off
 DetectHiddenWindows, On
 
-Global AhkSpyVersion := 1.49
+Global AhkSpyVersion := 1.50
 Gosub, RevAhkVersion
 Menu, Tray, Icon, Shell32.dll, % A_OSVersion = "WIN_XP" ? 222 : 278
 
@@ -1381,12 +1381,11 @@ ViewStyles(elem)  {
 
 HighLight(elem, time="")  {
 	oDoc.selection.createRange().execCommand("Unselect")
-	R := oDoc.body.createTextRange()
+	R := oDoc.body.createTextRange(), R.collapse(true)
 	R.moveToElementText(elem)
 	R.execCommand("BackColor", 0, "3399FF")
 	R.execCommand("ForeColor", 0, "FFEEFF")
 	Try SetTimer, UnHighLight, % "-" time
-	R.focusNode()
 	Return
 
 	UnHighLight:
