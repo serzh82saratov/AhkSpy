@@ -14,7 +14,7 @@ SetBatchLines, -1
 ListLines, Off
 DetectHiddenWindows, On
 
-Global AhkSpyVersion := 1.48
+Global AhkSpyVersion := 1.49
 Gosub, RevAhkVersion
 Menu, Tray, Icon, Shell32.dll, % A_OSVersion = "WIN_XP" ? 222 : 278
 
@@ -1386,7 +1386,7 @@ HighLight(elem, time="")  {
 	R.execCommand("BackColor", 0, "3399FF")
 	R.execCommand("ForeColor", 0, "FFEEFF")
 	Try SetTimer, UnHighLight, % "-" time
-	elem.focus()
+	R.focusNode()
 	Return
 
 	UnHighLight:
