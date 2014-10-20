@@ -14,7 +14,7 @@ SetBatchLines, -1
 ListLines, Off
 DetectHiddenWindows, On
 
-Global AhkSpyVersion := 1.46
+Global AhkSpyVersion := 1.47
 Gosub, RevAhkVersion
 Menu, Tray, Icon, Shell32.dll, % A_OSVersion = "WIN_XP" ? 222 : 278
 
@@ -129,7 +129,7 @@ Gui, +MinSize%widthTB%x%HeigtButton%
 
 Gosub, HotkeyInit
 Gosub, Mode_%ThisMode%
-#Include *i %A_ScriptDir%\SpecialOptions.ahk
+#Include *i %A_ScriptDir%\AHKInclude.ahk
 Return
 
 	; _________________________________________________ Hotkey`s _________________________________________________
