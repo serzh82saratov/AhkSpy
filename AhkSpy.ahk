@@ -14,7 +14,7 @@ SetBatchLines, -1
 ListLines, Off
 DetectHiddenWindows, On
 
-Global AhkSpyVersion := 1.51
+Global AhkSpyVersion := 1.52
 Gosub, RevAhkVersion
 Menu, Tray, Icon, Shell32.dll, % A_OSVersion = "WIN_XP" ? 222 : 278
 
@@ -212,6 +212,7 @@ CopyText:
 	StringReplace, toTitle, CopyText, `r`n, , 1
 	SendMessage, 0xC, 0, &toTitle, , ahk_id %hGui%
 	SetTimer, TitleShow, -1000
+	oDoc.selection.createRange().select()
 	Return
 
 #If ShowMarker
@@ -225,6 +226,7 @@ CopyText:
 Mode_Win:
 	If A_GuiControl
 		GuiControl, 1:Focus, oDoc
+	oDoc.body.createTextRange().execCommand("RemoveFormat")
 	GuiControl, TB: -0x0001, But1
 	If ThisMode = Win
 		oDoc.body.scrollLeft := 0
@@ -356,6 +358,7 @@ Write_Win()  {
 Mode_Mouse:
 	If A_GuiControl
 		GuiControl, 1:Focus, oDoc
+	oDoc.body.createTextRange().execCommand("RemoveFormat")
 	GuiControl, TB: -0x0001, But2
 	If (ThisMode = "Hotkey")
 		Hotkey_Reset()
@@ -770,6 +773,7 @@ Mode_Hotkey:
 	Try SetTimer, Loop_%ThisMode%, Off
 	If ThisMode = Hotkey
 		oDoc.body.scrollLeft := 0
+	oDoc.body.createTextRange().execCommand("RemoveFormat")
 	ScrollPos[ThisMode,1] := oDoc.body.scrollLeft, ScrollPos[ThisMode,2] := oDoc.body.scrollTop
 	If ThisMode != Hotkey
 		HTML_%ThisMode% := oDoc.body.innerHTML
@@ -1373,16 +1377,17 @@ Update(in=1)  {
 
 ViewStyles(elem)  {
 	elem.innerText := (w_ShowStyles := !w_ShowStyles) ? "hide styles" : "show styles"
-	, oDoc.getElementById("AllWinStyles").innerHTML := w_ShowStyles
+	oDoc.getElementById("AllWinStyles").innerHTML := w_ShowStyles
 	? RegExReplace(GetStyles(oDoc.getElementById("c_Style").innerText
-	, oDoc.getElementById("c_ExStyle").innerText), "\n", "<br>")
-	: "", HTML_Win := oDoc.body.innerHTML
+	, oDoc.getElementById("c_ExStyle").innerText), "\n", "<br>"): ""
+	HTML_Win := oDoc.body.innerHTML
 }
 
 HighLight(elem, time="")  {
-	GuiControl, 1:Focus, oDoc
 	oDoc.selection.createRange().execCommand("Unselect")
-	R := oDoc.body.createTextRange(), R.collapse(true)
+	R := oDoc.body.createTextRange()
+	R.moveToElementText(elem)
+	R.collapse(1), R.select()
 	R.moveToElementText(elem)
 	R.execCommand("BackColor", 0, "3399FF")
 	R.execCommand("ForeColor", 0, "FFEEFF")
@@ -1410,7 +1415,7 @@ Class Events  {
 				, Clipboard := o.OuterText, HighLight(o, 500)
 			Else If thisid = copy_alltitle
 			{
-				Clipboard := oDoc.getElementById("wintitle1").OuterText " "
+				Clipboard := (t:=oDoc.getElementById("wintitle1").OuterText) (t = "" ? "" : " ")
 					. oDoc.getElementById("wintitle2").OuterText " "
 					. oDoc.getElementById("wintitle3").OuterText
 				Loop 3
