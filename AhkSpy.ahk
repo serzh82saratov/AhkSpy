@@ -14,7 +14,7 @@ SetBatchLines, -1
 ListLines, Off
 DetectHiddenWindows, On
 
-Global AhkSpyVersion := 1.52
+Global AhkSpyVersion := 1.53
 Gosub, RevAhkVersion
 Menu, Tray, Icon, Shell32.dll, % A_OSVersion = "WIN_XP" ? 222 : 278
 
@@ -801,7 +801,7 @@ Write_Hotkey(K*)  {
 
 	HK1 := IsVk ? Hotkey : ThisKey
 	HK2 := HK1 = PrHK1 ? PrHK2 : PrHK1, PrHK1 := HK1, PrHK2 := HK2
-	HKComment := "    `;  """ GetKeyName(HK2) " & " GetKeyName(HK1) """"
+	HKComm1 := "    `;  """ GetKeyName(HK2), HKComm2 := GetKeyName(HK1) """"
 
 	If ((Keys1 := Prefix Hotkey) != "" && Keys1 != PrKeys1)
 		Keys2 := PrKeys1, PrKeys1 := Keys1
@@ -842,9 +842,9 @@ Write_Hotkey(K*)  {
 
 	%DUMods%
 
-	%HK2% & %HK1%::<span id='param'>%HKComment%</span>   %DP%   <span id='param'>Double hotkey</span>
+	%HK2% & %HK1%::<span id='param'>%HKComm1% & %HKComm2%</span>   %DP%   <span id='param'>Double hotkey</span>
 
-	%Keys2%:: %Keys1%<span id='param'>%KeysComm%</span>   %DP%   <span id='param'>Remapping keys</span>
+	%Keys2%:: %Keys1%<span id='param'>%KeysComm%</span>   %DP%   %HK2%::%HK1%<span id='param'>%HKComm1% >> %HKComm2%</span>   %DP%   <span id='param'>Remapping keys</span>
 
 	%D1% <span id='title'>( Last pressed )</span> %DB% <span contenteditable='false' unselectable='on'><button id='numlock'> num </button> <button id='scrolllock'> scroll </button> <button id='rus_eng'> rus/eng </button></span> %D2%
 
