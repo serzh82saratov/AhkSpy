@@ -14,7 +14,7 @@ SetBatchLines, -1
 ListLines, Off
 DetectHiddenWindows, On
 
-Global AhkSpyVersion := 1.54
+Global AhkSpyVersion := 1.55
 Gosub, RevAhkVersion
 Menu, Tray, Icon, Shell32.dll, % A_OSVersion = "WIN_XP" ? 222 : 278
 
@@ -1360,10 +1360,10 @@ Update(in=1)  {
 				Return
 			If InStr(FileExist(A_ScriptFullPath), "R")
 			{
-				MsgBox, % 16+262144, AhkSpy, Exist new version %Ver%!`n`nBut the file has an attribute "READONLY".`nUpdate imposible.
+				MsgBox, % 16+262144+8192, AhkSpy, Exist new version %Ver%!`n`nBut the file has an attribute "READONLY".`nUpdate imposible.
 				Return
 			}
-			MsgBox, % 4+32+262144, AhkSpy, Exist new version!`nUpdate v%AhkSpyVersion% to v%Ver%?
+			MsgBox, % 4+32+262144+8192, AhkSpy, Exist new version!`nUpdate v%AhkSpyVersion% to v%Ver%?
 			IfMsgBox, No
 				Return
 			File := FileOpen(A_ScriptFullPath, "w", "UTF-8")
@@ -1421,12 +1421,9 @@ Class Events  {
 					HighLight(oDoc.getElementById("wintitle" A_Index), 500)
 			}
 			Else If thisid = keyname
-			{
 				KeyName := GetKeyName(o_edithotkey.value), o_editkeyname.value := KeyName
-				o := KeyName = "" ? o_edithotkey : o_editkeyname
-				o.focus(), o.createTextRange().select()
-				Return
-			}
+				, o := KeyName = "" ? o_edithotkey : o_editkeyname
+				, o.focus(), o.createTextRange().select()
 			Else If thisid = pause_button
 				Gosub, PausedScript
 			Else If thisid = w_folder
