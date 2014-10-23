@@ -14,7 +14,7 @@ SetBatchLines, -1
 ListLines, Off
 DetectHiddenWindows, On
 
-Global AhkSpyVersion := 1.53
+Global AhkSpyVersion := 1.54
 Gosub, RevAhkVersion
 Menu, Tray, Icon, Shell32.dll, % A_OSVersion = "WIN_XP" ? 222 : 278
 
@@ -94,11 +94,6 @@ Menu, Sys, Add
 Menu, Sys, Add, Spot together (low speed), Spot_together
 Menu, Sys, % StateAllwaysSpot ? "Check" : "UnCheck", Spot together (low speed)
 Menu, Sys, Add
-Menu, Sys, Add, Pause AhkSpy, PausedScript
-Menu, Sys, Add, Default size, DefaultSize
-Menu, Sys, Add, Reload AhkSpy, Reload
-Menu, Sys, Add, Suspend Hotkeys, Suspend
-Menu, Sys, Add
 If !A_IsCompiled
 {
 	Menu, Sys, Add, Check updates, CheckUpdate
@@ -123,6 +118,11 @@ Menu, Help, Add, AutoHotKey official help online, Sys_Help
 Menu, Help, Add, AutoHotKey russian help online, Sys_Help
 Menu, Sys, Add, Help, :Help
 Menu, Sys, Color, % ColorBgOriginal
+Menu, Sys, Add
+Menu, Sys, Add, Default size, DefaultSize
+Menu, Sys, Add, Reload AhkSpy, Reload
+Menu, Sys, Add, Suspend Hotkeys, Suspend
+Menu, Sys, Add, Pause AhkSpy, PausedScript
 
 Gui, Show, NA h%HeightStart% w%widthTB%
 Gui, +MinSize%widthTB%x%HeigtButton%
@@ -1384,7 +1384,6 @@ ViewStyles(elem)  {
 }
 
 HighLight(elem, time="")  {
-	oDoc.selection.createRange().execCommand("Unselect")
 	R := oDoc.body.createTextRange()
 	R.moveToElementText(elem)
 	R.collapse(1), R.select()
