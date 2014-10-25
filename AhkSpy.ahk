@@ -14,7 +14,7 @@ SetBatchLines, -1
 ListLines, Off
 DetectHiddenWindows, On
 
-Global AhkSpyVersion := 1.56
+Global AhkSpyVersion := 1.57
 Gosub, RevAhkVersion
 Menu, Tray, Icon, Shell32.dll, % A_OSVersion = "WIN_XP" ? 222 : 278
 
@@ -332,7 +332,7 @@ HTML_Win:
 	<a></a>%D1% <span id='title'>( Other )</span> %D2%
 	<span id='param'>PID:</span>  %WinPID%%DP%<span id='param'>Count window this PID:</span> %WinCountProcess%%DP%<span contenteditable='false' unselectable='on'><button id='process_close' name='%WinPID%'>process close</button></span>
 	<span id='param'>HWND:</span>  %WinID%%DP%<span contenteditable='false' unselectable='on'><button id='win_close' name='%WinID%'>win close</button></span>%DP%<span id='param'>Control count:</span>  %CountControl%
-	<span id='param'>Style:  </span><span id='c_Style'>%WinStyle%</span>%DP%<span id='param'>ExStyle:  </span><span id='c_ExStyle'>%WinExStyle%</span>%DP%<span contenteditable='false' unselectable='on'><button id='get_styles'>%ButStyleTip%</button></span>%WinTransparent%%WinTransColor%%CLSID%<span id='AllWinStyles'>%WinStyles%</span>%SBText%%WinText%
+	<span id='param'>Style:</span><span id='c_Style'>  %WinStyle%</span>%DP%<span id='param'>ExStyle:</span><span id='c_ExStyle'>  %WinExStyle%</span>%DP%<span contenteditable='false' unselectable='on'><button id='get_styles'>%ButStyleTip%</button></span>%WinTransparent%%WinTransColor%%CLSID%<span id='AllWinStyles'>%WinStyles%</span>%SBText%%WinText%
 	<a></a>%D2%</pre></body>
 
 	<style>
@@ -1317,6 +1317,8 @@ ToggleLocale()  {
 }
 
 ToolTip(text, time)  {
+	CoordMode, Mouse
+	CoordMode, ToolTip
 	MouseGetPos, X, Y
 	ToolTip, %text%, X-10, Y-45
 	SetTimer, HideToolTip, -%time%
@@ -1380,7 +1382,7 @@ ViewStyles(elem)  {
 	elem.innerText := (w_ShowStyles := !w_ShowStyles) ? "hide styles" : "show styles"
 	oDoc.getElementById("AllWinStyles").innerHTML := w_ShowStyles
 	? RegExReplace(GetStyles(oDoc.getElementById("c_Style").innerText
-	, oDoc.getElementById("c_ExStyle").innerText), "\n", "<br>"): ""
+	, oDoc.getElementById("c_ExStyle").innerText), "\n", "<br>") : ""
 	HTML_Win := oDoc.body.innerHTML
 }
 
@@ -1453,8 +1455,16 @@ Class Events  {
 	}
 	ondblclick()  {
 		oevent := oDoc.parentWindow.event.srcElement
-		If (oevent.isContentEditable && (sel := (rng := oDoc.selection.createRange()).text) != "")
-			rng.moveEnd("character", StrLen(RTrim(sel)) - StrLen(sel)), rng.select()
+		If (oevent.isContentEditable && (rng := oDoc.selection.createRange()).text != "")
+		{
+			While !t
+				rng.moveEnd("character", 1), (SubStr(rng.text, 0) = "_" ? rng.moveEnd("word", 1)
+					: (rng.moveEnd("character", -1), t := 1))
+			While t
+				rng.moveStart("character", -1), (SubStr(rng.text, 1, 1) = "_" ? rng.moveStart("word", -1)
+					: (rng.moveStart("character", 1), t := 0))
+			sel := rng.text, rng.moveEnd("character", StrLen(RTrim(sel)) - StrLen(sel)), rng.select()
+		}
 		If (oevent.tagname = "BUTTON")
 		{
 			thisid := oevent.id
