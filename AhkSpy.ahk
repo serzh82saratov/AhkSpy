@@ -14,7 +14,7 @@ SetBatchLines, -1
 ListLines, Off
 DetectHiddenWindows, On
 
-Global AhkSpyVersion := 1.55
+Global AhkSpyVersion := 1.56
 Gosub, RevAhkVersion
 Menu, Tray, Icon, Shell32.dll, % A_OSVersion = "WIN_XP" ? 222 : 278
 
@@ -467,7 +467,7 @@ HTML_Mouse:
 	<body id='body'><pre id='pre' contenteditable='true'>
 	%D1% <span id='title'>( Mouse pos )</span> %DB% %pause_button% %D2%
 	<span id='param'>Screen:</span>  x%MXS% y%MYS%%DP%<span id='param'>Window:</span>  x%RWinX% y%RWinY%%DP%<span id='param'>Client:</span>  x%MXC% y%MYC%%WithRespectWin%
-	<span id='param'>Relative active window:</span>  x%MXWA% y%MYWA%%DP%%ProcessName_A% <span id='param'>class</span> %WinClass_A%
+	<span id='param'>Relative active window:</span>  x%MXWA% y%MYWA%%DP%<span id='param'>exe</span> %ProcessName_A% <span id='param'>class</span> %WinClass_A%
 	%D1% <span id='title'>( PixelGetColor )</span> %D2%
 	<span id='param'>RGB: </span> %ColorRGB%%DP%%sColorRGB%%DP%<span id='param'>BGR: </span> %ColorBGR%%DP%%sColorBGR%
 	%D1% <span id='title'>( Window: Class & ProcessName & HWND )</span> %D2%
@@ -1317,7 +1317,8 @@ ToggleLocale()  {
 }
 
 ToolTip(text, time)  {
-	ToolTip %text%
+	MouseGetPos, X, Y
+	ToolTip, %text%, X-10, Y-45
 	SetTimer, HideToolTip, -%time%
 	Return 1
 
