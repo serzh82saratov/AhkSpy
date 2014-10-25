@@ -14,8 +14,9 @@ SetBatchLines, -1
 ListLines, Off
 DetectHiddenWindows, On
 
-Global AhkSpyVersion := 1.57
+Global AhkSpyVersion := 1.58
 Gosub, RevAhkVersion
+Menu, Tray, UseErrorLevel
 Menu, Tray, Icon, Shell32.dll, % A_OSVersion = "WIN_XP" ? 222 : 278
 
 Global ThisMode := "Mouse"						;  Стартовый режим - Win|Mouse|Hotkey
