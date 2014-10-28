@@ -14,7 +14,7 @@ SetBatchLines, -1
 ListLines, Off
 DetectHiddenWindows, On
 
-Global AhkSpyVersion := 1.58
+Global AhkSpyVersion := 1.59
 Gosub, RevAhkVersion
 Menu, Tray, UseErrorLevel
 Menu, Tray, Icon, Shell32.dll, % A_OSVersion = "WIN_XP" ? 222 : 278
@@ -53,6 +53,8 @@ Loop 20
 D1 := "<span style='color: " ColorDelimiter "'>" D1 "</span>"
 D2 := "<span style='color: " ColorDelimiter "'>" D2 "</span>"
 DB := "<span style='color: " ColorDelimiter "'>" # # # # # # # # # # # # "</span>"
+
+FixIE(0)
 
 Gui, +AlwaysOnTop +HWNDhGui +ReSize -DPIScale
 Gui, Color, %ColorBgPaused%
@@ -1156,6 +1158,21 @@ WM_CONTEXTMENU()  {
 		SetTimer, ShowSys, -1
 		Return 0
 	}
+}
+
+	;  http://forum.script-coding.com/viewtopic.php?pid=87817#p87817
+	;  http://www.autohotkey.com/board/topic/93660-embedded-ie-shellexplorer-render-issues-fix-force-it-to-use-a-newer-render-engine/
+
+FixIE(Fix)  {
+	Static Key := "Software\Microsoft\Internet Explorer\MAIN\FeatureControl\FEATURE_BROWSER_EMULATION"
+	If A_IsCompiled
+		ExeName := A_ScriptName
+	Else
+		SplitPath, A_AhkPath, ExeName
+	If Fix
+		RegWrite, REG_DWORD, HKCU, %Key%, %ExeName%, 0
+	Else
+		RegDelete, HKCU, %Key%, %ExeName%
 }
 
 LaunchLink(Link)  {
