@@ -14,7 +14,7 @@ SetBatchLines, -1
 ListLines, Off
 DetectHiddenWindows, On
 
-Global AhkSpyVersion := 1.59
+Global AhkSpyVersion := 1.60
 Gosub, RevAhkVersion
 Menu, Tray, UseErrorLevel
 Menu, Tray, Icon, Shell32.dll, % A_OSVersion = "WIN_XP" ? 222 : 278
@@ -30,7 +30,7 @@ Global ThisMode := "Mouse"						;  Стартовый режим - Win|Mouse|Hot
 , ColorParam := "189200"						;  Цвет шрифта параметров
 , # := "&#9642"									;  Символ разделителя заголовков - &#8226 | &#9642
 
-, DP := "  <span style='color: " ColorDelimiter "'>" # "</span>  ", D1, D2, DB
+, DP := "  <span style='color: " ColorDelimiter "'>" # "</span>  ", D1, D2, DB, m_run_AccViewer
 , ThisMode:=((t:=IniRead("StartMode"))=""?"Mouse":t), StateLight:=((t:=IniRead("StateLight"))=""||t>3?1:t)
 , StateLightAcc:=((t:=IniRead("StateLightAcc"))=""?1:t), StateUpdate:=((t:=IniRead("StateUpdate"))=""?1:t)
 , StateAllwaysSpot := IniRead("AllwaysSpot"), ScrollPos:={}, AccCoord:=[]
@@ -53,6 +53,7 @@ Loop 20
 D1 := "<span style='color: " ColorDelimiter "'>" D1 "</span>"
 D2 := "<span style='color: " ColorDelimiter "'>" D2 "</span>"
 DB := "<span style='color: " ColorDelimiter "'>" # # # # # # # # # # # # "</span>"
+m_run_AccViewer := FileExist(A_ScriptDir "\AccViewer Source.ahk") ? DB " <span contenteditable='false' unselectable='on'><button id='run_AccViewer'> run accviewer </button></span> " : ""
 
 FixIE(0)
 
@@ -430,7 +431,7 @@ Spot_Mouse(NotHTML=0)  {
 		}
 		AccText := AccInfoUnderMouse(MXS, MYS)
 		If AccText !=
-			AccText = `n%D1% <a></a><span id='title'>( AccInfo )</span> %D2%%AccText%
+			AccText = `n%D1% <a></a><span id='title'>( AccInfo )</span> %m_run_AccViewer%%D2%%AccText%
 		If ControlNN !=
 		{
 			rmCtrlX := MXS - WinX - CtrlX, rmCtrlY := MYS - WinY - CtrlY
@@ -1467,6 +1468,11 @@ Class Events  {
 				GoSub CopyText
 			Else If thisid = get_styles
 				ViewStyles(oevent)
+			Else If thisid = run_AccViewer
+			{
+				Run % comspec " /c """ A_ScriptDir "\AccViewer Source.ahk""", , Hide
+				Gui, 1: Minimize
+			}
 		}
 		Else If (ThisMode = "Hotkey" && !Hotkey_Hook && !isPaused && tagname ~= "PRE|SPAN")
 			Hotkey_Hook := 1
