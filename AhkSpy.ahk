@@ -14,7 +14,7 @@ SetBatchLines, -1
 ListLines, Off
 DetectHiddenWindows, On
 
-Global AhkSpyVersion := 1.60
+Global AhkSpyVersion := 1.61
 Gosub, RevAhkVersion
 Menu, Tray, UseErrorLevel
 Menu, Tray, Icon, Shell32.dll, % A_OSVersion = "WIN_XP" ? 222 : 278
@@ -85,7 +85,7 @@ Gui, AcM: Margin, 0, 0
 Gui, AcM: -DPIScale +AlwaysOnTop +HWNDhMarkerAccGui +E0x08000000 +E0x20 -Caption
 Gui, AcM: Color, 26419F
 WinSet, TransParent, 250, ahk_id %hMarkerAccGui%
-ShowMarker(0, 0, 0, 0, 0), ShowAccMarker(0, 0, 0, 0, 0), HideMarker()
+ShowMarker(0, 0, 0, 0, 0), ShowAccMarker(0, 0, 0, 0, 0), HideMarker(), HideAccMarker()
 
 Menu, Sys, Add, Backlight allways, Sys_Backlight
 Menu, Sys, Add, Backlight disable, Sys_Backlight
@@ -160,7 +160,7 @@ PausedScript:
 		Hotkey_Hook := isPaused ? Hotkey_Reset() : 1
 	If (isPaused && !WinActive("ahk_id" hGui))
 		(ThisMode = "Mouse" ? Spot_Win() : ThisMode = "Win" ? Spot_Mouse() : 0)
-	HideMarker()
+	HideMarker(), HideAccMarker()
 	Menu, Sys, % isPaused ? "Check" : "UnCheck", Pause AhkSpy
 	Return
 
@@ -219,9 +219,9 @@ CopyText:
 	oDoc.selection.createRange().select()
 	Return
 
-#If ShowMarker
+#If ShowMarker && (StateLight = 3 || WinActive("ahk_id" hGui))
 
-~Shift Up:: HideMarker()
+~Shift Up:: HideMarker(), HideAccMarker()
 
 #If
 
@@ -262,8 +262,8 @@ Spot_Win(NotHTML=0)  {
 	If NotHTML
 		GoTo HTML_Win
 	MouseGetPos,,,WinID
-	If (WinID = hGui && HideMarker())
-		Return 0
+	If (WinID = hGui)
+		Return HideMarker(), HideAccMarker()
 	WinGetTitle, WinTitle, ahk_id %WinID%
 	WinTitle := TransformHTML(WinTitle)
 	WinGetPos, WinX, WinY, WinWidth, WinHeight, ahk_id %WinID%
@@ -461,8 +461,7 @@ Spot_Mouse(NotHTML=0)  {
 	{
 		WinX := WinY := RWinX := RWinY := MXC := MYC := ""
 		rmCtrlX := rmCtrlY := WithRespectWin := ""
-		If ShowMarker
-			HideMarker()
+		ShowMarker ? (HideMarker(), HideAccMarker()) : 0
 	}
 
 HTML_Mouse:
@@ -783,7 +782,7 @@ Mode_Hotkey:
 		HTML_%ThisMode% := oDoc.body.innerHTML
 	ThisMode := "Hotkey", Hotkey_Hook := (!isPaused ? 1 : Hotkey_Reset()), TitleText := "AhkSpy - Button" TitleTextP2
 	oDoc.body.scrollLeft := ScrollPos[ThisMode,1], oDoc.body.scrollTop := ScrollPos[ThisMode,2]
-	ShowMarker ? HideMarker() : 0
+	ShowMarker ? (HideMarker(), HideAccMarker()) : 0
 	(HTML_Hotkey != "") ? Write_HotkeyHTML() : Write_Hotkey({Mods:"Wait press button..."}*)
 	SendMessage, 0xC, 0, &TitleText, , ahk_id %hGui%
 	GuiControl, TB: -0x0001, But3
@@ -1024,7 +1023,7 @@ GuiSize:
 		WinMove, ahk_id %hActiveX%, , 0, HeigtButton, A_GuiWidth, A_GuiHeight - HeigtButton
 	}
 	Else
-		HideMarker()
+		HideMarker(), HideAccMarker()
 	Try SetTimer, Loop_%ThisMode%, % Sleep = 1 || isPaused ? "Off" : "On"
 	Return
 
@@ -1034,10 +1033,6 @@ GuiEscape:
 	Hotkey_Control(0), oDoc := ""
 	DllCall("DeregisterShellHookWindow", "UInt", A_ScriptHwnd)
 	ExitApp
-
-HideMarker:
-	HideMarker(0)
-	Return
 
 TitleShow:
 	SendMessage, 0xC, 0, &TitleText, , ahk_id %hGui%
@@ -1126,7 +1121,7 @@ ShellProc(nCode, wParam)  {
 	If (nCode = 4)
 	{
 		If (wParam = hGui)
-			(ThisMode = "Hotkey" && !isPaused ? Hotkey_Hook := 1 : ""), HideMarker()
+			(ThisMode = "Hotkey" && !isPaused ? Hotkey_Hook := 1 : ""), HideMarker(), HideAccMarker()
 		Else If Hotkey_Hook
 			Hotkey_Reset()
 	}
@@ -1134,7 +1129,7 @@ ShellProc(nCode, wParam)  {
 
 WM_ACTIVATE(wp)  {
 	If (wp & 0xFFFF)
-		(ThisMode = "Hotkey" && !isPaused ? Hotkey_Hook := 1 : ""), HideMarker()
+		(ThisMode = "Hotkey" && !isPaused ? Hotkey_Hook := 1 : ""), HideMarker(), HideAccMarker()
 	Else If (wp & 0xFFFF = 0 && Hotkey_Hook)
 		Hotkey_Reset()
 }
@@ -1182,34 +1177,29 @@ LaunchLink(Link)  {
 }
 
 ShowMarker(x, y, w, h, b:=4)  {
-	ShowMarker := 1
 	w < 8 || h < 8 ? b := 2 : 0
 	Try Gui, M: Show, NA x%x% y%y% w%w% h%h%
 	Catch
-		Return HideMarker()
+		Return HideMarker(), ShowMarker := 0
+	ShowMarker := 1
 	WinSet, Region, % "0-0 " w "-0 " w "-" h " 0-" h " 0-0 " b "-" b
 		. " " w-b "-" b " " w-b "-" h-b " " b "-" h-b " " b "-" b, ahk_id %hMarkerGui%
 }
 
-HideMarker(test=1)  {
+HideMarker()  {
 	Gui, M: Show, Hide
-	ShowMarker := 0, HideAccMarker()
-	If test
-		SetTimer, HideMarker, -150
-	Return 1
 }
 
 ShowAccMarker(x, y, w, h, b:=2)  {
-	ShowMarker := 1
 	Try Gui, AcM: Show, NA x%x% y%y% w%w% h%h%
 	Catch
-		Return HideAccMarker()
+		Return HideAccMarker(), (ShowMarker := ShowMarker ? 1 : 0)
+	ShowMarker := 1
 	WinSet, Region, % "0-0 " w "-0 " w "-" h " 0-" h " 0-0 " b "-" b
 		. " " w-b "-" b " " w-b "-" h-b " " b "-" h-b " " b "-" b, ahk_id %hMarkerAccGui%
 }
 HideAccMarker()  {
 	Gui, AcM: Show, Hide
-	Return 1
 }
 
 IniRead(Key)  {
