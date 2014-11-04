@@ -14,7 +14,7 @@ SetBatchLines, -1
 ListLines, Off
 DetectHiddenWindows, On
 
-Global AhkSpyVersion := 1.63
+Global AhkSpyVersion := 1.64
 Gosub, RevAhkVersion
 Menu, Tray, UseErrorLevel
 Menu, Tray, Icon, Shell32.dll, % A_OSVersion = "WIN_XP" ? 222 : 278
@@ -327,7 +327,7 @@ HTML_Win:
 	<span id='wintitle2'><span id='param'>ahk_class</span> %WinClass%</span>
 	%D1% <span id='title'>( ProcessName )</span> %DB% <span contenteditable='false' unselectable='on'><button id='copy_alltitle'>copy all params</button></span> %D2%
 	<span id='wintitle3'><span id='param'>ahk_exe</span> %WinProcessName%</span>
-	%D1% <span id='title'>( ProcessPath )</span> %DB% <span contenteditable='false' unselectable='on'> <button id='w_folder'> in folder </button> <button id='paste_process_path'>paste</button> <button id='w_copy_path'> copy </button></span> %D2%
+	%D1% <span id='title'>( ProcessPath )</span> %DB% <span contenteditable='false' unselectable='on'> <button id='w_folder'> in folder </button> <button id='paste_process_path'>paste</button> <button id='copy_button_1'> copy </button></span> %D2%
 	<span id='param'>ahk_exe</span> <span id='copy_processpath'>%WinProcessPath%</span>
 	%D1% <span id='title'>( CommandLine )</span> %DB% <span contenteditable='false' unselectable='on'><button id='w_command_line'>launch</button> <button id='paste_command_line'>paste</button></span> %copy_button% %D2%
 	<span id='c_command_line'>%ComLine%</span>
@@ -1438,8 +1438,8 @@ Class Events  {
 		{
 			thisid := oevent.id
 			oDoc.body.focus()
-			If (thisid = "copy_button" || thisid = "w_copy_path")
-				o := oDoc.all.item(oevent.sourceIndex+(thisid = "copy_button" ? 2 : 3))
+			If (thisid = "copy_button" || thisid = "copy_button_1")
+				o := oDoc.all.item(oevent.sourceIndex + 2 + (thisid = "copy_button_1"))
 				, Clipboard := o.OuterText, HighLight(o, 500)
 			Else If thisid = copy_alltitle
 			{
@@ -1458,7 +1458,7 @@ Class Events  {
 			Else If thisid = w_folder
 				SelectFilePath(oDoc.getElementById("copy_processpath").OuterText)
 			Else If thisid = paste_process_path
-				oDoc.getElementById("copy_processpath").innerHTML := TransformHTML(TRim(Clipboard, """"))
+				oDoc.getElementById("copy_processpath").innerHTML := TransformHTML(Trim(Trim(Clipboard), """"))
 			Else If thisid = w_command_line
 				Run % comspec " /c """ oDoc.getElementById("c_command_line").OuterText """", , Hide
 			Else If thisid = paste_command_line
