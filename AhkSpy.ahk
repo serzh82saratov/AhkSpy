@@ -14,7 +14,7 @@ SetBatchLines, -1
 ListLines, Off
 DetectHiddenWindows, On
 
-Global AhkSpyVersion := 1.62
+Global AhkSpyVersion := 1.63
 Gosub, RevAhkVersion
 Menu, Tray, UseErrorLevel
 Menu, Tray, Icon, Shell32.dll, % A_OSVersion = "WIN_XP" ? 222 : 278
@@ -327,7 +327,7 @@ HTML_Win:
 	<span id='wintitle2'><span id='param'>ahk_class</span> %WinClass%</span>
 	%D1% <span id='title'>( ProcessName )</span> %DB% <span contenteditable='false' unselectable='on'><button id='copy_alltitle'>copy all params</button></span> %D2%
 	<span id='wintitle3'><span id='param'>ahk_exe</span> %WinProcessName%</span>
-	%D1% <span id='title'>( ProcessPath )</span> %DB% <span contenteditable='false' unselectable='on'><button id='w_copy_path'> copy </button> <button id='w_folder'> in folder </button></span> %D2%
+	%D1% <span id='title'>( ProcessPath )</span> %DB% <span contenteditable='false' unselectable='on'> <button id='w_folder'> in folder </button> <button id='paste_process_path'>paste</button> <button id='w_copy_path'> copy </button></span> %D2%
 	<span id='param'>ahk_exe</span> <span id='copy_processpath'>%WinProcessPath%</span>
 	%D1% <span id='title'>( CommandLine )</span> %DB% <span contenteditable='false' unselectable='on'><button id='w_command_line'>launch</button> <button id='paste_command_line'>paste</button></span> %copy_button% %D2%
 	<span id='c_command_line'>%ComLine%</span>
@@ -1129,7 +1129,7 @@ ShellProc(nCode, wParam)  {
 	If (nCode = 4)
 	{
 		If (wParam = hGui)
-			(ThisMode = "Hotkey" && !isPaused ? Hotkey_Hook := 1 : ""), HideMarker(), HideAccMarker()
+			(ThisMode = "Hotkey" && !isPaused ? Hotkey_Hook := 1 : ""), HideMarker(), HideAccMarker(), CheckHideMarker()
 		Else If Hotkey_Hook
 			Hotkey_Reset()
 	}
@@ -1137,9 +1137,18 @@ ShellProc(nCode, wParam)  {
 
 WM_ACTIVATE(wp)  {
 	If (wp & 0xFFFF)
-		(ThisMode = "Hotkey" && !isPaused ? Hotkey_Hook := 1 : ""), HideMarker(), HideAccMarker()
+		(ThisMode = "Hotkey" && !isPaused ? Hotkey_Hook := 1 : ""), HideMarker(), HideAccMarker(), CheckHideMarker()
 	Else If (wp & 0xFFFF = 0 && Hotkey_Hook)
 		Hotkey_Reset()
+}
+
+CheckHideMarker()  {
+	SetTimer, CheckHideMarker, -150
+	Return
+	
+	CheckHideMarker:
+		WinActive("ahk_id" hGui) ? (HideMarker(), HideAccMarker()) : 0
+		Return
 }
 
 WM_LBUTTONDOWN()  {
@@ -1430,7 +1439,7 @@ Class Events  {
 			thisid := oevent.id
 			oDoc.body.focus()
 			If (thisid = "copy_button" || thisid = "w_copy_path")
-				o := oDoc.all.item(oevent.sourceIndex+(thisid = "copy_button" ? 2 : 4))
+				o := oDoc.all.item(oevent.sourceIndex+(thisid = "copy_button" ? 2 : 3))
 				, Clipboard := o.OuterText, HighLight(o, 500)
 			Else If thisid = copy_alltitle
 			{
@@ -1448,6 +1457,8 @@ Class Events  {
 				Gosub, PausedScript
 			Else If thisid = w_folder
 				SelectFilePath(oDoc.getElementById("copy_processpath").OuterText)
+			Else If thisid = paste_process_path
+				oDoc.getElementById("copy_processpath").innerHTML := TransformHTML(TRim(Clipboard, """"))
 			Else If thisid = w_command_line
 				Run % comspec " /c """ oDoc.getElementById("c_command_line").OuterText """", , Hide
 			Else If thisid = paste_command_line
