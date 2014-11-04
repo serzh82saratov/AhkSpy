@@ -14,7 +14,7 @@ SetBatchLines, -1
 ListLines, Off
 DetectHiddenWindows, On
 
-Global AhkSpyVersion := 1.64
+Global AhkSpyVersion := 1.65
 Gosub, RevAhkVersion
 Menu, Tray, UseErrorLevel
 Menu, Tray, Icon, Shell32.dll, % A_OSVersion = "WIN_XP" ? 222 : 278
@@ -30,7 +30,7 @@ Global ThisMode := "Mouse"						;  Стартовый режим - Win|Mouse|Hot
 , ColorParam := "189200"						;  Цвет шрифта параметров
 , # := "&#9642"									;  Символ разделителя заголовков - &#8226 | &#9642
 
-, DP := "  <span style='color: " ColorDelimiter "'>" # "</span>  ", D1, D2, DB, m_run_AccViewer
+, DP := "  <span style='color: " ColorDelimiter "'>" # "</span>  ", D1, D2, DB
 , ThisMode:=((t:=IniRead("StartMode"))=""?"Mouse":t), StateLight:=((t:=IniRead("StateLight"))=""||t>3?1:t)
 , StateLightAcc:=((t:=IniRead("StateLightAcc"))=""?1:t), StateUpdate:=((t:=IniRead("StateUpdate"))=""?1:t)
 , StateAllwaysSpot := IniRead("AllwaysSpot"), ScrollPos:={}, AccCoord:=[]
@@ -53,8 +53,12 @@ Loop 20
 D1 := "<span style='color: " ColorDelimiter "'>" D1 "</span>"
 D2 := "<span style='color: " ColorDelimiter "'>" D2 "</span>"
 DB := "<span style='color: " ColorDelimiter "'>" # # # # # # # # # # # # "</span>"
-m_run_AccViewer := FileExist(A_ScriptDir "\AccViewer Source.ahk") ? DB " <span contenteditable='false' unselectable='on'><button id='run_AccViewer'> run accviewer </button></span> " : ""
 
+Global m_run_AccViewer := FileExist(A_ScriptDir "\AccViewer Source.ahk")
+	? DB " <span contenteditable='false' unselectable='on'><button id='run_AccViewer'> run accviewer </button></span> " : ""
+	, m_run_iWB2Learner := FileExist(A_ScriptDir "\iWB2 Learner.ahk")
+	? "`n    " D1 "    <span contenteditable='false' unselectable='on'><button id='run_iWB2Learner'> run iwb2 learner </button></span>   " D1 : ""
+    
 FixIE(0)
 
 Gui, +AlwaysOnTop +HWNDhGui +ReSize -DPIScale
@@ -666,7 +670,7 @@ GetInfo_InternetExplorer_Server(hwnd, ByRef ClassNN)  {
 		ObjRelease(pbrt)
 	}
 	ObjRelease(pwin), ObjRelease(pelt), ObjRelease(WB2)
-	Return Location URL TagName id Class name Index elHTML elText
+	Return m_run_iWB2Learner Location URL TagName id Class name Index elHTML elText
 }
 
 WBGet(hwnd)  {
@@ -1045,7 +1049,7 @@ RevAhkVersion:
 	If A_AhkVersion < 1.1.11.00
 	{
 		MsgBox Requires AutoHotkey_L version 1.1.12.00+
-		LaunchLink("http://ahkscript.org/download/")
+		RunPath("http://ahkscript.org/download/")
 		ExitApp
 	}
 	Return
@@ -1106,11 +1110,11 @@ Sys_Acclight:
 
 Sys_Help:
 	If A_ThisMenuItem = AutoHotKey official help online
-		LaunchLink("http://ahkscript.org/docs/AutoHotkey.htm")
+		RunPath("http://ahkscript.org/docs/AutoHotkey.htm")
 	Else If A_ThisMenuItem = AutoHotKey russian help online
-		LaunchLink("http://www.script-coding.com/AutoHotkeyTranslation.html")
+		RunPath("http://www.script-coding.com/AutoHotkeyTranslation.html")
 	Else If A_ThisMenuItem = About AhkSpy
-		LaunchLink("http://forum.script-coding.com/viewtopic.php?pid=72459#p72459")
+		RunPath("http://forum.script-coding.com/viewtopic.php?pid=72459#p72459")
 	Return
 	
 Sys_OpenScriptDir:
@@ -1188,8 +1192,8 @@ FixIE(Fix)  {
 		RegDelete, HKCU, %Key%, %ExeName%
 }
 
-LaunchLink(Link)  {
-	Run %Link%
+RunPath(Link, WorkingDir="", Option="")  {
+	Run %Link%, %WorkingDir%, %Option%
 	Gui, 1: Minimize
 }
 
@@ -1478,10 +1482,9 @@ Class Events  {
 			Else If thisid = get_styles
 				ViewStyles(oevent)
 			Else If thisid = run_AccViewer
-			{
-				Run % comspec " /c """ A_ScriptDir "\AccViewer Source.ahk""", , Hide
-				Gui, 1: Minimize
-			}
+				RunPath(comspec " /c """ A_ScriptDir "\AccViewer Source.ahk""", "", "Hide")
+			Else If thisid = run_iWB2Learner
+				RunPath(comspec " /c """ A_ScriptDir "\iWB2 Learner.ahk""", "", "Hide")
 		}
 		Else If (ThisMode = "Hotkey" && !Hotkey_Hook && !isPaused && tagname ~= "PRE|SPAN")
 			Hotkey_Hook := 1
