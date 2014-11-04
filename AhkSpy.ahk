@@ -14,7 +14,7 @@ SetBatchLines, -1
 ListLines, Off
 DetectHiddenWindows, On
 
-Global AhkSpyVersion := 1.61
+Global AhkSpyVersion := 1.62
 Gosub, RevAhkVersion
 Menu, Tray, UseErrorLevel
 Menu, Tray, Icon, Shell32.dll, % A_OSVersion = "WIN_XP" ? 222 : 278
@@ -124,6 +124,7 @@ Menu, Sys, Add, Help, :Help
 Menu, Sys, Color, % ColorBgOriginal
 Menu, Sys, Add
 Menu, Sys, Add, Default size, DefaultSize
+Menu, Sys, Add, Open script dir, Sys_OpenScriptDir
 Menu, Sys, Add, Reload AhkSpy, Reload
 Menu, Sys, Add, Suspend Hotkeys, Suspend
 Menu, Sys, Add, Pause AhkSpy, PausedScript
@@ -825,7 +826,9 @@ Write_Hotkey(K*)  {
 			. (K.MCtrl ? "{Ctrl Up}" : "") (K.MAlt ? "{Alt Up}" : "")
 			. (K.MShift ? "{Shift Up}" : "") (K.MWin ? "{Win Up}" : "")
 			. "<span id='param'>    `;  """ Mods KeyName """</span>"
-
+			
+	SendHotkey := Hotkey = "" ? ThisKey : Hotkey
+	
 	HTML_Hotkey =
 	( Ltrim
 	<body id='body'> <pre id='pre'; contenteditable='true'>
@@ -841,7 +844,7 @@ Write_Hotkey(K*)  {
 
 	%LRPStr%
 
-	Send %Prefix%{%Hotkey%}<span id='param'>%Comment%</span>  %DP%  SendInput %Prefix%{%Hotkey%}<span id='param'>%Comment%</span>  %DP%  ControlSend, ahk_parent, %Prefix%{%Hotkey%}, WinTitle<span id='param'>%Comment%</span>
+	Send %Prefix%{%SendHotkey%}<span id='param'>%Comment%</span>  %DP%  SendInput %Prefix%{%SendHotkey%}<span id='param'>%Comment%</span>  %DP%  ControlSend, ahk_parent, %Prefix%{%SendHotkey%}, WinTitle<span id='param'>%Comment%</span>
 
 	%DUMods%
 
@@ -1109,7 +1112,12 @@ Sys_Help:
 	Else If A_ThisMenuItem = About AhkSpy
 		LaunchLink("http://forum.script-coding.com/viewtopic.php?pid=72459#p72459")
 	Return
-
+	
+Sys_OpenScriptDir:
+	SelectFilePath(A_ScriptFullPath)
+	Gui, 1: Minimize
+	Return
+	
 Spot_together:
 	StateAllwaysSpot := IniWrite(!StateAllwaysSpot, "AllwaysSpot")
 	Menu, Sys, % StateAllwaysSpot ? "Check" : "UnCheck", Spot together (low speed)
