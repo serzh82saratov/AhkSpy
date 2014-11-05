@@ -14,7 +14,7 @@ SetBatchLines, -1
 ListLines, Off
 DetectHiddenWindows, On
 
-Global AhkSpyVersion := 1.65
+Global AhkSpyVersion := 1.66
 Gosub, RevAhkVersion
 Menu, Tray, UseErrorLevel
 Menu, Tray, Icon, Shell32.dll, % A_OSVersion = "WIN_XP" ? 222 : 278
@@ -1414,16 +1414,17 @@ ViewStyles(elem)  {
 	? RegExReplace(GetStyles(oDoc.getElementById("c_Style").innerText
 	, oDoc.getElementById("c_ExStyle").innerText), "\n", "<br>") : ""
 	HTML_Win := oDoc.body.innerHTML
-}
+} 
 
-HighLight(elem, time="")  {
+HighLight(elem, time="", RemoveFormat=1)  {
+	Try SetTimer, UnHighLight, % "-" time
 	R := oDoc.body.createTextRange()
+	RemoveFormat ? R.execCommand("RemoveFormat") : 0
 	R.moveToElementText(elem)
 	R.collapse(1), R.select()
 	R.moveToElementText(elem)
 	R.execCommand("BackColor", 0, "3399FF")
 	R.execCommand("ForeColor", 0, "FFEEFF")
-	Try SetTimer, UnHighLight, % "-" time
 	Return
 
 	UnHighLight:
@@ -1447,11 +1448,12 @@ Class Events  {
 				, Clipboard := o.OuterText, HighLight(o, 500)
 			Else If thisid = copy_alltitle
 			{
-				Clipboard := (t:=oDoc.getElementById("wintitle1").OuterText) (t = "" ? "" : " ")
+				Clipboard := (t:=oDoc.getElementById("wintitle1").OuterText) . (t = "" ? "" : " ")
 					. oDoc.getElementById("wintitle2").OuterText " "
 					. oDoc.getElementById("wintitle3").OuterText
-				Loop 3
-					HighLight(oDoc.getElementById("wintitle" A_Index), 500)
+					HighLight(oDoc.getElementById("wintitle1"), 500)
+					HighLight(oDoc.getElementById("wintitle2"), 500, 0)
+					HighLight(oDoc.getElementById("wintitle3"), 500, 0)
 			}
 			Else If thisid = keyname
 				KeyName := GetKeyName(o_edithotkey.value), o_editkeyname.value := KeyName
