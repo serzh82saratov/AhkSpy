@@ -14,7 +14,7 @@ SetBatchLines, -1
 ListLines, Off
 DetectHiddenWindows, On
 
-Global AhkSpyVersion := 1.66
+Global AhkSpyVersion := 1.67
 Gosub, RevAhkVersion
 Menu, Tray, UseErrorLevel
 Menu, Tray, Icon, Shell32.dll, % A_OSVersion = "WIN_XP" ? 222 : 278
@@ -57,7 +57,7 @@ DB := "<span style='color: " ColorDelimiter "'>" # # # # # # # # # # # # "</span
 Global m_run_AccViewer := FileExist(A_ScriptDir "\AccViewer Source.ahk")
 	? DB " <span contenteditable='false' unselectable='on'><button id='run_AccViewer'> run accviewer </button></span> " : ""
 	, m_run_iWB2Learner := FileExist(A_ScriptDir "\iWB2 Learner.ahk")
-	? "`n    " D1 "    <span contenteditable='false' unselectable='on'><button id='run_iWB2Learner'> run iwb2 learner </button></span>   " D1 : ""
+	? DB " <span contenteditable='false' unselectable='on'><button id='run_iWB2Learner'> run iwb2 learner </button></span> " : ""
     
 FixIE(0)
 
@@ -82,11 +82,11 @@ Gui, TB: Add, Button, x+0 yp hp w%wKey% vBut3 gMode_Hotkey, Button
 Gui, TB: Show, % "x0 y0 NA h" HeigtButton " w" widthTB := wKey*3+wColor
 
 Gui, M: Margin, 0, 0
-Gui, M: -DPIScale +AlwaysOnTop +HWNDhMarkerGui +E0x08000000 +E0x20 -Caption
+Gui, M: -DPIScale +AlwaysOnTop +HWNDhMarkerGui +E0x08000000 +E0x20 -Caption +Owner
 Gui, M: Color, E14B30
 WinSet, TransParent, 250, ahk_id %hMarkerGui%
 Gui, AcM: Margin, 0, 0
-Gui, AcM: -DPIScale +AlwaysOnTop +HWNDhMarkerAccGui +E0x08000000 +E0x20 -Caption
+Gui, AcM: -DPIScale +AlwaysOnTop +HWNDhMarkerAccGui +E0x08000000 +E0x20 -Caption +Owner
 Gui, AcM: Color, 26419F
 WinSet, TransParent, 250, ahk_id %hMarkerAccGui%
 ShowMarker(0, 0, 0, 0, 0), ShowAccMarker(0, 0, 0, 0, 0), HideMarker(), HideAccMarker()
@@ -129,6 +129,7 @@ Menu, Sys, Color, % ColorBgOriginal
 Menu, Sys, Add
 Menu, Sys, Add, Default size, DefaultSize
 Menu, Sys, Add, Open script dir, Sys_OpenScriptDir
+Menu, Sys, Add
 Menu, Sys, Add, Reload AhkSpy, Reload
 Menu, Sys, Add, Suspend Hotkeys, Suspend
 Menu, Sys, Add, Pause AhkSpy, PausedScript
@@ -443,9 +444,9 @@ Spot_Mouse(NotHTML=0)  {
 			ControlNN_Sub := RegExReplace(ControlNN, "S)\d+| ")
 			If IsFunc("GetInfo_" ControlNN_Sub)
 			{
-				CtrlInfo := GetInfo_%ControlNN_Sub%(ControlID, ClassNN)
+				CtrlInfo := GetInfo_%ControlNN_Sub%(ControlID, ClassNN), ml_run_iWB2Learner := isIE ? m_run_iWB2Learner : ""
 				If CtrlInfo !=
-					CtrlInfo = `n%D1% <a></a><span id='title'>( Info - %ClassNN% )</span> %D2%%CtrlInfo%
+					CtrlInfo = `n%D1% <a></a><span id='title'>( Info - %ClassNN% )</span> %ml_run_iWB2Learner%%D2%%CtrlInfo%
 			}
 		}
 		Else
@@ -670,7 +671,7 @@ GetInfo_InternetExplorer_Server(hwnd, ByRef ClassNN)  {
 		ObjRelease(pbrt)
 	}
 	ObjRelease(pwin), ObjRelease(pelt), ObjRelease(WB2)
-	Return m_run_iWB2Learner Location URL TagName id Class name Index elHTML elText
+	Return Location URL TagName id Class name Index elHTML elText
 }
 
 WBGet(hwnd)  {
@@ -1251,8 +1252,7 @@ ExistSelectedText(byref Copy)  {
 	Copy := oDoc.selection.createRange().text
 	If Copy is space
 		Return 0
-	Copy := Trim(Copy)
-	Copy := RegExReplace(Copy, Chr(0x25aa) Chr(0x25aa) "+", "#!#")
+	Copy := RegExReplace(Trim(Copy), Chr(0x25aa) Chr(0x25aa) "+", "#!#")
 	StringReplace, Copy, Copy, % Chr(0x25aa), #, 1
 	StringReplace, Copy, Copy, #!#  copy  #!#, #!#, 1
 	StringReplace, Copy, Copy, #!#  pause  #!#, #!#
