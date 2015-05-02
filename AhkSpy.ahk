@@ -14,7 +14,7 @@ SetBatchLines, -1
 ListLines, Off
 DetectHiddenWindows, On
 
-Global AhkSpyVersion := 1.67
+Global AhkSpyVersion := 1.68
 Gosub, RevAhkVersion
 Menu, Tray, UseErrorLevel
 Menu, Tray, Icon, Shell32.dll, % A_OSVersion = "WIN_XP" ? 222 : 278
@@ -702,6 +702,19 @@ AccInfoUnderMouse(x, y)  {
 	code .= DP "<span id='param'>Pos: </span>" AccGetLocation(Acc, child)
 		. DP "<span id='param'>Mouse relative: </span>x" x - AccCoord[1] " y" y - AccCoord[2]
 
+	If ((Name := Acc.accName(child)) != "")  {
+		code = %code%`n%D1% <a></a><span id='param'>( Name )</span> %DB% %copy_button% %D2%`n
+		code .= "<span>" TransformHTML(Name) "</span>"
+	}
+	If ((Value := Acc.accValue(child)) != "")  {
+		code = %code%`n%D1% <a></a><span id='param'>( Value )</span> %DB% %copy_button% %D2%`n
+		code .= "<span>" TransformHTML(Value) "</span>"
+	}
+	If ((State := AccGetStateText(StateCode := Acc.accState(child))) != "")  {
+		code = %code%`n%D1% <a></a><span id='param'>( State )</span> %DB% %copy_button% %D2%`n
+		code .= "<span>" TransformHTML(State) "</span>"
+			. DP "<span id='param'>code: </span>" StateCode
+	}
 	If ((Role := AccRole(Acc, child)) != "")  {
 		code = %code%`n%D1% <a></a><span id='param'>( Role )</span> %DB% %copy_button% %D2%`n
 		code .= "<span>" TransformHTML(Role) "</span>"
@@ -711,19 +724,6 @@ AccInfoUnderMouse(x, y)  {
 		code = %code%`n%D1% <a></a><span id='param'>( Role - parent )</span> %DB% %copy_button% %D2%`n
 		code .= "<span>" TransformHTML(ObjRole) "</span>"
 			. DP "<span id='param'>code: </span>" Acc.accRole(0)
-	}
-	If ((Value := Acc.accValue(child)) != "")  {
-		code = %code%`n%D1% <a></a><span id='param'>( Value )</span> %DB% %copy_button% %D2%`n
-		code .= "<span>" TransformHTML(Value) "</span>"
-	}
-	If ((Name := Acc.accName(child)) != "")  {
-		code = %code%`n%D1% <a></a><span id='param'>( Name )</span> %DB% %copy_button% %D2%`n
-		code .= "<span>" TransformHTML(Name) "</span>"
-	}
-	If ((State := AccGetStateText(StateCode := Acc.accState(child))) != "")  {
-		code = %code%`n%D1% <a></a><span id='param'>( State )</span> %DB% %copy_button% %D2%`n
-		code .= "<span>" TransformHTML(State) "</span>"
-			. DP "<span id='param'>code: </span>" StateCode
 	}
 	If ((Action := Acc.accDefaultAction(child)) != "")  {
 		code = %code%`n%D1% <a></a><span id='param'>( Action )</span> %DB% %copy_button% %D2%`n
@@ -826,12 +826,16 @@ Write_Hotkey(K*)  {
 	inp_hk := o_edithotkey.value, inp_kn := o_editkeyname.value
 
 	If Prefix !=
-		DUMods := "SendInput " (K.MCtrl ? "{Ctrl Down}" : "") (K.MAlt ? "{Alt Down}" : "")
-			. (K.MShift ? "{Shift Down}" : "") (K.MWin ? "{Win Down}" : "") "{" Hotkey "}"
-			. (K.MCtrl ? "{Ctrl Up}" : "") (K.MAlt ? "{Alt Up}" : "")
-			. (K.MShift ? "{Shift Up}" : "") (K.MWin ? "{Win Up}" : "")
-			. "<span id='param'>    `;  """ Mods KeyName """</span>"
-			
+		DUMods := "SendInput " (K.MLCtrl ? "{LCtrl Down}" : "") (K.MRCtrl ? "{RCtrl Down}" : "") 
+			. (K.MLAlt ? "{LAlt Down}" : "") (K.MRAlt ? "{RAlt Down}" : "")
+			. (K.MLShift ? "{LShift Down}" : "") (K.MRShift ? "{RShift Down}" : "") 
+			. (K.MLWin ? "{LWin Down}" : "") (K.MRWin ? "{RWin Down}" : "") . "{" Hotkey "}" 
+			. (K.MLCtrl ? "{LCtrl Up}" : "") (K.MRCtrl ? "{RCtrl Up}" : "") 
+			. (K.MLAlt ? "{LAlt Up}" : "") (K.MRAlt ? "{RAlt Up}" : "")
+			. (K.MLShift ? "{LShift Up}" : "") (K.MRShift ? "{RShift Up}" : "")
+			. (K.MLWin ? "{LWin Up}" : "") (K.MRWin ? "{RWin Up}" : "")
+			. "<span id='param'>    `;  """ Mods KeyName """</span>" 
+		
 	SendHotkey := Hotkey = "" ? ThisKey : Hotkey
 	
 	HTML_Hotkey =
@@ -1493,7 +1497,7 @@ Class Events  {
 	}
 	ondblclick()  {
 		oevent := oDoc.parentWindow.event.srcElement
-		If (oevent.isContentEditable && (rng := oDoc.selection.createRange()).text != "")
+		If (oevent.isContentEditable && (rng := oDoc.selection.createRange()).text != "" && oevent.tagname != "input")
 		{
 			While !t
 				rng.moveEnd("character", 1), (SubStr(rng.text, 0) = "_" ? rng.moveEnd("word", 1)
@@ -1503,7 +1507,7 @@ Class Events  {
 					: (rng.moveStart("character", 1), t := 0))
 			sel := rng.text, rng.moveEnd("character", StrLen(RTrim(sel)) - StrLen(sel)), rng.select()
 		}
-		If (oevent.tagname = "BUTTON")
+		Else If (oevent.tagname = "BUTTON")
 		{
 			thisid := oevent.id
 			oDoc.body.focus()
