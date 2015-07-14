@@ -14,7 +14,7 @@ SetBatchLines, -1
 ListLines, Off
 DetectHiddenWindows, On
 
-Global AhkSpyVersion := 1.68
+Global AhkSpyVersion := 1.69
 Gosub, RevAhkVersion
 Menu, Tray, UseErrorLevel
 Menu, Tray, Icon, Shell32.dll, % A_OSVersion = "WIN_XP" ? 222 : 278
@@ -58,7 +58,7 @@ Global m_run_AccViewer := FileExist(A_ScriptDir "\AccViewer Source.ahk")
 	? DB " <span contenteditable='false' unselectable='on'><button id='run_AccViewer'> run accviewer </button></span> " : ""
 	, m_run_iWB2Learner := FileExist(A_ScriptDir "\iWB2 Learner.ahk")
 	? DB " <span contenteditable='false' unselectable='on'><button id='run_iWB2Learner'> run iwb2 learner </button></span> " : ""
-    
+
 FixIE(0)
 
 Gui, +AlwaysOnTop +HWNDhGui +ReSize -DPIScale
@@ -324,7 +324,7 @@ Spot_Win(NotHTML=0)  {
 HTML_Win:
 	ButStyleTip := !w_ShowStyles ? "show styles" : ButStyleTip
 	HTML_Win =
-( Ltrim
+	( Ltrim
 	<body id='body'><pre id='pre'; contenteditable='true'>
 	%D1% <span id='title'>( Title )</span> %DB% %pause_button% %D2%
 	<span id='wintitle1'>%WinTitle%</span>
@@ -804,7 +804,7 @@ Write_Hotkey(K*)  {
 	LRMods := K.LRMods, LRPref := TransformHTML(K.LRPref)
 	ThisKey := K.TK, VKCode := K.VK, SCCode := K.SC
 
-	If (Hotkey_NFP && Mods KeyName != "")
+	If (K.NFP && Mods KeyName != "")
 		NotPhysical	:= " " DP "<span style='color:" ColorDelimiter "'> Not a physical press </span>"
 	IsVk := Hotkey ~= "^vk" ? 1 : 0
 
@@ -826,18 +826,18 @@ Write_Hotkey(K*)  {
 	inp_hk := o_edithotkey.value, inp_kn := o_editkeyname.value
 
 	If Prefix !=
-		DUMods := "SendInput " (K.MLCtrl ? "{LCtrl Down}" : "") (K.MRCtrl ? "{RCtrl Down}" : "") 
+		DUMods := "SendInput " (K.MLCtrl ? "{LCtrl Down}" : "") (K.MRCtrl ? "{RCtrl Down}" : "")
 			. (K.MLAlt ? "{LAlt Down}" : "") (K.MRAlt ? "{RAlt Down}" : "")
-			. (K.MLShift ? "{LShift Down}" : "") (K.MRShift ? "{RShift Down}" : "") 
-			. (K.MLWin ? "{LWin Down}" : "") (K.MRWin ? "{RWin Down}" : "") . "{" Hotkey "}" 
-			. (K.MLCtrl ? "{LCtrl Up}" : "") (K.MRCtrl ? "{RCtrl Up}" : "") 
+			. (K.MLShift ? "{LShift Down}" : "") (K.MRShift ? "{RShift Down}" : "")
+			. (K.MLWin ? "{LWin Down}" : "") (K.MRWin ? "{RWin Down}" : "") . "{" Hotkey "}"
+			. (K.MLCtrl ? "{LCtrl Up}" : "") (K.MRCtrl ? "{RCtrl Up}" : "")
 			. (K.MLAlt ? "{LAlt Up}" : "") (K.MRAlt ? "{RAlt Up}" : "")
 			. (K.MLShift ? "{LShift Up}" : "") (K.MRShift ? "{RShift Up}" : "")
 			. (K.MLWin ? "{LWin Up}" : "") (K.MRWin ? "{RWin Up}" : "")
-			. "<span id='param'>    `;  """ Mods KeyName """</span>" 
-		
+			. "<span id='param'>    `;  """ Mods KeyName """</span>"
+
 	SendHotkey := Hotkey = "" ? ThisKey : Hotkey
-	
+
 	HTML_Hotkey =
 	( Ltrim
 	<body id='body'> <pre id='pre'; contenteditable='true'>
@@ -869,10 +869,6 @@ Write_Hotkey(K*)  {
 
 	<span contenteditable='false' unselectable='on'><input id='edithotkey' value='%inp_hk%'><button id='keyname'> &#8250 &#8250 &#8250 </button><input id='editkeyname' value='%inp_kn%'></input></span>
 
-	%D1% <span id='title'>( Not detect buttons )</span> %D2%
-
-	<span id='param'>LButton - vk1   %DP%   RButton - vk2</span>
-
 	%D2%</pre></body>
 
 	<style>
@@ -898,31 +894,34 @@ Write_HotkeyHTML()  {
 	; _________________________________________________ Hotkey Rules _________________________________________________
 
 HotkeyInit:
-	Hotkey_Control(1)
-	Global Hotkey_TargetFunc := "Write_Hotkey", Hotkey_Hook := (ThisMode = "Hotkey" ? 1 : 0), Hotkey_NFP
+	Hotkey_Control("MLRJ")
+	Global Hotkey_TargetFunc := "Write_Hotkey", Hotkey_Hook := (ThisMode = "Hotkey" ? 1 : 0)
 	Return
 
 	; _________________________________________________ Hotkey Functions _________________________________________________
 
 	;  http://forum.script-coding.com/viewtopic.php?pid=69765#p69765
 
-Hotkey_Control(State)  {
+Hotkey_Control(State=1)  {
 	Static IsStart
 	If (!IsStart)
-		Hotkey_ExtKeyInit(), IsStart := 1
-	Hotkey_WindowsHookEx(State)
+		Hotkey_ExtKeyInit(State), IsStart := 1
+	Hotkey_WindowsHookEx(!!State)
 }
 
-Hotkey_Main(VKCode, SCCode, Option = 0, IsMod = 0)  {
+Hotkey_Main(In)  {
 	Static K:={}, ModsOnly, Prefix := {"Alt":"!","Ctrl":"^","Shift":"+","Win":"#"}
 		, LRPrefix := {"LAlt":"<!","LCtrl":"<^","LShift":"<+","LWin":"<#"
 				,"RAlt":">!","RCtrl":">^","RShift":">+","RWin":">#"}
-		, VkMouse := {"MButton":"vk4","WheelDown":"vk9E","WheelUp":"vk9F","WheelRight":"vk9D"
-				,"WheelLeft":"vk9C","XButton1":"vk5","XButton2":"vk6"}
+		, VkMouse := {"LButton":"vk1","RButton":"vk2","MButton":"vk4","WheelDown":"vk9E","WheelUp":"vk9F"
+				,"WheelRight":"vk9D","WheelLeft":"vk9C","XButton1":"vk5","XButton2":"vk6"}
 		, Symbols := "|vkBA|vkBB|vkBC|vkBD|vkBE|vkBF|vkC0|vkDB|vkDC|vkDD|vkDE|vk41|vk42|"
 				. "vk43|vk44|vk45|vk46|vk47|vk48|vk49|vk4A|vk4B|vk4C|vk4D|vk4E|"
 				. "vk4F|vk50|vk51|vk52|vk53|vk54|vk55|vk56|vk57|vk58|vk59|vk5A|"
-	If (Option = "Down")
+	Local IsMod, sIsMod
+
+	IsMod := In.IsMod
+	If (In.Opt = "Down")
 	{
 		If (K["M" IsMod] != "")
 			Return 1
@@ -930,7 +929,7 @@ Hotkey_Main(VKCode, SCCode, Option = 0, IsMod = 0)  {
 		K["M" sIsMod] := sIsMod "+", K["P" sIsMod] := Prefix[sIsMod]
 		K["M" IsMod] := IsMod "+", K["P" IsMod] := LRPrefix[IsMod]
 	}
-	Else If (Option = "Up")
+	Else If (In.Opt = "Up")
 	{
 		sIsMod := SubStr(IsMod, 2)
 		K["M" IsMod] := K["P" IsMod] := ""
@@ -939,7 +938,7 @@ Hotkey_Main(VKCode, SCCode, Option = 0, IsMod = 0)  {
 		If (K.HK != "")
 			Return 1
 	}
-	Else If (Option = "OnlyMods")
+	Else If (In.Opt = "OnlyMods")
 	{
 		If !ModsOnly
 			Return 0
@@ -952,13 +951,17 @@ Hotkey_Main(VKCode, SCCode, Option = 0, IsMod = 0)  {
 		%Hotkey_TargetFunc%(K*)
 		Return ModsOnly := 0
 	}
-	K.VK := VKCode, K.SC := SCCode
+	Else If (In.Opt = "GetMod")
+		Return K.PCtrl K.PAlt K.PShift K.PWin
+
+	K.VK := In.VK, K.SC := In.SC, K.NFP := In.NFP
 	K.Mods := K.MCtrl K.MAlt K.MShift K.MWin
 	K.LRMods := K.MLCtrl K.MRCtrl K.MLAlt K.MRAlt K.MLShift K.MRShift K.MLWin K.MRWin
-	K.TK := GetKeyName(VKCode SCCode), K.TK := K.TK = "" ? VKCode SCCode : K.TK
+	K.TK := GetKeyName(K.VK K.SC), K.TK := K.TK = "" ? K.VK K.SC : K.TK
 	(IsMod) ? (K.HK := K.Pref := K.LRPref := K.Name := "", ModsOnly := K.Mods = "" ? 0 : 1)
-	: (K.HK := InStr(Symbols, "|" VKCode "|") ? VKCode : K.TK
+	: (K.HK := InStr(Symbols, "|" K.VK "|") ? K.VK : K.TK
 	, K.Name := K.HK = "vkBF" ? "/" : K.TK
+	, (StrLen(K.Name) = 1 ? (K.TK := K.Name := Format("{:U}", K.Name)) : 0)
 	, K.Pref := K.PCtrl K.PAlt K.PShift K.PWin
 	, K.LRPref := K.PLCtrl K.PRCtrl K.PLAlt K.PRAlt K.PLShift K.PRShift K.PLWin K.PRWin
 	, ModsOnly := 0)
@@ -970,47 +973,85 @@ Hotkey_PressName:
 	K.LRMods := K.MLCtrl K.MRCtrl K.MLAlt K.MRAlt K.MLShift K.MRShift K.MLWin K.MRWin
 	K.Pref := K.PCtrl K.PAlt K.PShift K.PWin
 	K.LRPref := K.PLCtrl K.PRCtrl K.PLAlt K.PRAlt K.PLShift K.PRShift K.PLWin K.PRWin
-	K.HK := K.Name := K.TK := A_ThisHotkey, ModsOnly := Hotkey_NFP := 0, K.SC := ""
+	K.HK := K.Name := K.TK := A_ThisHotkey, ModsOnly := 0, K.SC := "", K.NFP := 0
 	K.VK := !InStr(A_ThisHotkey, "Joy") ? VkMouse[A_ThisHotkey] : ""
 	%Hotkey_TargetFunc%(K*)
 	Return 1
 }
 
-Hotkey_ExtKeyInit()  {
-	MouseKey := "MButton|WheelDown|WheelUp|WheelRight|WheelLeft|XButton1|XButton2"
+Hotkey_ExtKeyInit(Options)   {
+	Local SaveFormat, MouseKey
 	#If Hotkey_Hook
+	#If Hotkey_Hook && !Hotkey_Main({Opt:"GetMod"})
+	#If Hotkey_Hook && Hotkey_Main({Opt:"GetMod"})
 	#If
-	Hotkey, If, Hotkey_Hook
-	Loop, Parse, MouseKey, |
-		Hotkey, %A_LoopField%, Hotkey_PressName, P3 UseErrorLevel
-	Loop 128
-		Hotkey % Ceil(A_Index/32) "Joy" Mod(A_Index-1,32)+1, Hotkey_PressName, P3 UseErrorLevel
-	Hotkey, If
+	IfInString, Options, M
+	{
+		MouseKey := "MButton|WheelDown|WheelUp|WheelRight|WheelLeft|XButton1|XButton2"
+		Hotkey, IF, Hotkey_Hook
+		Loop, Parse, MouseKey, |
+			Hotkey, %A_LoopField%, Hotkey_PressName
+	}
+	IfInString, Options, L
+	{
+		Hotkey, IF, Hotkey_Hook && Hotkey_Main({Opt:"GetMod"})
+		Hotkey, LButton, Hotkey_PressName
+	}
+	IfInString, Options, R
+	{
+		Hotkey, IF, Hotkey_Hook && Hotkey_Main({Opt:"GetMod"})
+		Hotkey, RButton, Hotkey_PressName
+	}
+	IfInString, Options, J
+	{
+		SaveFormat := A_FormatInteger
+		SetFormat, IntegerFast, D
+		Hotkey, IF, Hotkey_Hook && !Hotkey_Main({Opt:"GetMod"})
+		Loop, 128
+			Hotkey % Ceil(A_Index/32) "Joy" Mod(A_Index-1,32)+1, Hotkey_PressName
+		SetFormat, IntegerFast, %SaveFormat%
+	}
+	Hotkey, IF
 }
 
 Hotkey_Reset()  {
-	Return Hotkey_Hook := 0, Hotkey_Main(0, 0, "OnlyMods")
+	Return Hotkey_Hook := 0, Hotkey_Main({Opt:"OnlyMods"})
 }
 
 	;  http://forum.script-coding.com/viewtopic.php?id=6350
 
 Hotkey_LowLevelKeyboardProc(nCode, wParam, lParam)  {
 	Static Mods := {"vkA4":"LAlt","vkA5":"RAlt","vkA2":"LCtrl","vkA3":"RCtrl"
-		,"vkA0":"LShift","vkA1":"RShift","vk5B":"LWin","vk5C":"RWin"}, SaveFormat
+		,"vkA0":"LShift","vkA1":"RShift","vk5B":"LWin","vk5C":"RWin"}
+		, oMem := [], HEAP_ZERO_MEMORY := 0x8, hHeap := DllCall("GetProcessHeap", Ptr)
+	Local pHeap, Wp, Lp, Ext, VK, SC, IsMod, Time, NFP
+
 	If !Hotkey_Hook
 		Return DllCall("CallNextHookEx", "Ptr", 0, "Int", nCode, "UInt", wParam, "UInt", lParam)
-	Ext := NumGet(lParam+0, 8, "UInt")
-	SaveFormat := A_FormatInteger
-	SetFormat, IntegerFast, H
-	VKCode := "vk" SubStr(NumGet(lParam+0, 0, "UInt"), 3)
-	SCCode := "sc" SubStr((Ext & 1) << 8 | NumGet(lParam+0, 4, "UInt"), 3)
-	SetFormat, IntegerFast, %SaveFormat%
-	IsMod := Mods[VKCode], Hotkey_NFP := Ext & 16   ;  Hotkey_NFP := Not a physical press
-	If (wParam = 0x100 || wParam = 0x104)   ;  WM_KEYDOWN := 0x100, WM_SYSKEYDOWN := 0x104
-		IsMod ? Hotkey_Main(VKCode, SCCode, "Down", IsMod) : Hotkey_Main(VKCode, SCCode)
-	Else If ((wParam = 0x101 || wParam = 0x105) && VKCode != "vk5D")   ;  WM_KEYUP := 0x101, WM_SYSKEYUP := 0x105, AppsKey = "vk5D"
-		nCode := -1, IsMod ? Hotkey_Main(VKCode, SCCode, "Up", IsMod) : 0
+	pHeap := DllCall("HeapAlloc", Ptr, hHeap, UInt, HEAP_ZERO_MEMORY, Ptr, Size := 16, Ptr)
+	DllCall("RtlMoveMemory", Ptr, pHeap, Ptr, lParam, Ptr, Size), oMem.Push([wParam, pHeap])
+    SetTimer, Hotkey_LLKPWork, -10
 	Return nCode < 0 ? DllCall("CallNextHookEx", "Ptr", 0, "Int", nCode, "UInt", wParam, "UInt", lParam) : 1
+
+	Hotkey_LLKPWork:
+		While (oMem[1] != "")
+		{
+			Wp := oMem[1][1], Lp := oMem[1][2]
+			VK := Format("vk{:X}", NumGet(Lp + 0, "UInt"))
+			Ext := NumGet(Lp + 0, 8, "UInt")
+			SC := Format("sc{:X}", (Ext & 1) << 8 | NumGet(Lp + 0, 4, "UInt"))
+			NFP := Ext & 16			;  Не физическое нажатие
+			; Time := NumGet(Lp + 12, "UInt")
+			IsMod := Mods[VK]
+			If (Wp = 0x100 || Wp = 0x104)		;  WM_KEYDOWN := 0x100, WM_SYSKEYDOWN := 0x104
+				IsMod ? Hotkey_Main({VK:VK, SC:SC, Opt:"Down", IsMod:IsMod, NFP:NFP})
+				: Hotkey_Main({VK:VK, SC:SC, NFP:NFP})
+			Else If (Wp = 0x101 || Wp = 0x105)		;  WM_KEYUP := 0x101, WM_SYSKEYUP := 0x105
+				IsMod ? Hotkey_Main({VK:VK, SC:SC, Opt:"Up", IsMod:IsMod, NFP:NFP}) : 0
+			DllCall("HeapFree", Ptr, hHeap, UInt, 0, Ptr, Lp)
+			oMem.RemoveAt(1)
+		}
+		Return
 }
 
 Hotkey_WindowsHookEx(State)  {
@@ -1121,12 +1162,12 @@ Sys_Help:
 	Else If A_ThisMenuItem = About AhkSpy
 		RunPath("http://forum.script-coding.com/viewtopic.php?pid=72459#p72459")
 	Return
-	
+
 Sys_OpenScriptDir:
 	SelectFilePath(A_ScriptFullPath)
 	Gui, 1: Minimize
 	Return
-	
+
 Spot_together:
 	StateAllwaysSpot := IniWrite(!StateAllwaysSpot, "AllwaysSpot")
 	Menu, Sys, % StateAllwaysSpot ? "Check" : "UnCheck", Spot together (low speed)
@@ -1154,7 +1195,7 @@ WM_ACTIVATE(wp)  {
 CheckHideMarker()  {
 	SetTimer, CheckHideMarker, -150
 	Return
-	
+
 	CheckHideMarker:
 		WinActive("ahk_id" hGui) ? (HideMarker(), HideAccMarker()) : 0
 		Return
@@ -1368,7 +1409,7 @@ NextLink(s = "")  {
 	If (!curpos && s = "-")
 		Return
 	While (pos := oDoc.getElementsByTagName("a").item(A_Index-1).getBoundingClientRect().top) != ""
-		(s 1) * pos > 0 && (!res || abs(res) > abs(pos)) ? res := pos : ""
+		(s 1) * pos > 0 && (!res || abs(res) > abs(pos)) ? res := pos : ""       ; http://forum.script-coding.com/viewtopic.php?pid=82360#p82360
 	If (res = "" && s = "")
 		Return
 	st := !res ? -curpos : res, co := abs(st) > 150 ? 80 : 30
@@ -1418,7 +1459,7 @@ ViewStyles(elem)  {
 	? RegExReplace(GetStyles(oDoc.getElementById("c_Style").innerText
 	, oDoc.getElementById("c_ExStyle").innerText), "\n", "<br>") : ""
 	HTML_Win := oDoc.body.innerHTML
-} 
+}
 
 HighLight(elem, time="", RemoveFormat=1)  {
 	Try SetTimer, UnHighLight, % "-" time
