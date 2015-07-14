@@ -998,28 +998,28 @@ Hotkey_LowLevelKeyboardProc(nCode, wParam, lParam)  {
 	Static Mods := {"vkA4":"LAlt","vkA5":"RAlt","vkA2":"LCtrl","vkA3":"RCtrl"
 		,"vkA0":"LShift","vkA1":"RShift","vk5B":"LWin","vk5C":"RWin"}
 		, oMem := [], HEAP_ZERO_MEMORY := 0x8, hHeap := DllCall("GetProcessHeap", Ptr)
-	Local pHeap
+	Local pHeap, Wp, Lp, Ext, VKCode, SCCode, IsMod, VKCode, VKCode
 		
 	If !Hotkey_Hook
 		Return DllCall("CallNextHookEx", "Ptr", 0, "Int", nCode, "UInt", wParam, "UInt", lParam)
 	pHeap := DllCall("HeapAlloc", Ptr, hHeap, UInt, HEAP_ZERO_MEMORY, Ptr, Size := 16, Ptr)
 	DllCall("RtlMoveMemory", Ptr, pHeap, Ptr, lParam, Ptr, Size), oMem.Push([wParam, pHeap])
-    SetTimer, Hotkey_LLKPWork, -2 
+    SetTimer, Hotkey_LLKPWork, -10 
 	Return nCode < 0 ? DllCall("CallNextHookEx", "Ptr", 0, "Int", nCode, "UInt", wParam, "UInt", lParam) : 1
-	 
+	
 	Hotkey_LLKPWork:
 		While (oMem[1] != "") 
 		{  
-			wp := oMem[1][1], lp := oMem[1][2]
-			VKCode := "vk" SubStr(Format("{:#X}", NumGet(lp + 0, "UInt")), 3)
-			Ext := NumGet(lp + 0, 8, "UInt") 
-			SCCode := "sc" SubStr(Format("{:#X}", (Ext & 1) << 8 | NumGet(lp + 0, 4, "UInt")), 3) 
-			IsMod := Mods[VKCode], Hotkey_NFP := Ext & 16   ;  Hotkey_NFP := Not a physical press
-			If (wp = 0x100 || wp = 0x104)   ;  WM_KEYDOWN := 0x100, WM_SYSKEYDOWN := 0x104
+			Wp := oMem[1][1], Lp := oMem[1][2]
+			VKCode := Format("vk{:X}", NumGet(Lp + 0, "UInt"))
+			Ext := NumGet(Lp + 0, 8, "UInt") 
+			SCCode := Format("sc{:X}", (Ext & 1) << 8 | NumGet(Lp + 0, 4, "UInt"))
+			IsMod := Mods[VKCode], Hotkey_NFP := Ext & 16   ;	Not a physical press  
+			If (Wp = 0x100 || Wp = 0x104)   ;  WM_KEYDOWN := 0x100, WM_SYSKEYDOWN := 0x104
 				IsMod ? Hotkey_Main(VKCode, SCCode, "Down", IsMod) : Hotkey_Main(VKCode, SCCode)
-			Else If ((wp = 0x101 || wp = 0x105) && VKCode != "vk5D")   ;  WM_KEYUP := 0x101, WM_SYSKEYUP := 0x105, AppsKey = "vk5D"
-				nCode := -1, IsMod ? Hotkey_Main(VKCode, SCCode, "Up", IsMod) : 0
-			DllCall("HeapFree", Ptr, hHeap, UInt, 0, Ptr, lp)
+			Else If ((Wp = 0x101 || Wp = 0x105) && VKCode != "vk5D")   ;  WM_KEYUP := 0x101, WM_SYSKEYUP := 0x105, AppsKey = "vk5D"
+				IsMod ? Hotkey_Main(VKCode, SCCode, "Up", IsMod) : 0
+			DllCall("HeapFree", Ptr, hHeap, UInt, 0, Ptr, Lp)
 			oMem.RemoveAt(1)
 		} 
 		Return
