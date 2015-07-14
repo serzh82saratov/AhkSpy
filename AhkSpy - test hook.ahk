@@ -58,7 +58,7 @@ Global m_run_AccViewer := FileExist(A_ScriptDir "\AccViewer Source.ahk")
 	? DB " <span contenteditable='false' unselectable='on'><button id='run_AccViewer'> run accviewer </button></span> " : ""
 	, m_run_iWB2Learner := FileExist(A_ScriptDir "\iWB2 Learner.ahk")
 	? DB " <span contenteditable='false' unselectable='on'><button id='run_iWB2Learner'> run iwb2 learner </button></span> " : ""
-    
+
 FixIE(0)
 
 Gui, +AlwaysOnTop +HWNDhGui +ReSize -DPIScale
@@ -826,18 +826,18 @@ Write_Hotkey(K*)  {
 	inp_hk := o_edithotkey.value, inp_kn := o_editkeyname.value
 
 	If Prefix !=
-		DUMods := "SendInput " (K.MLCtrl ? "{LCtrl Down}" : "") (K.MRCtrl ? "{RCtrl Down}" : "") 
+		DUMods := "SendInput " (K.MLCtrl ? "{LCtrl Down}" : "") (K.MRCtrl ? "{RCtrl Down}" : "")
 			. (K.MLAlt ? "{LAlt Down}" : "") (K.MRAlt ? "{RAlt Down}" : "")
-			. (K.MLShift ? "{LShift Down}" : "") (K.MRShift ? "{RShift Down}" : "") 
-			. (K.MLWin ? "{LWin Down}" : "") (K.MRWin ? "{RWin Down}" : "") . "{" Hotkey "}" 
-			. (K.MLCtrl ? "{LCtrl Up}" : "") (K.MRCtrl ? "{RCtrl Up}" : "") 
+			. (K.MLShift ? "{LShift Down}" : "") (K.MRShift ? "{RShift Down}" : "")
+			. (K.MLWin ? "{LWin Down}" : "") (K.MRWin ? "{RWin Down}" : "") . "{" Hotkey "}"
+			. (K.MLCtrl ? "{LCtrl Up}" : "") (K.MRCtrl ? "{RCtrl Up}" : "")
 			. (K.MLAlt ? "{LAlt Up}" : "") (K.MRAlt ? "{RAlt Up}" : "")
 			. (K.MLShift ? "{LShift Up}" : "") (K.MRShift ? "{RShift Up}" : "")
 			. (K.MLWin ? "{LWin Up}" : "") (K.MRWin ? "{RWin Up}" : "")
-			. "<span id='param'>    `;  """ Mods KeyName """</span>" 
-		
+			. "<span id='param'>    `;  """ Mods KeyName """</span>"
+
 	SendHotkey := Hotkey = "" ? ThisKey : Hotkey
-	
+
 	HTML_Hotkey =
 	( Ltrim
 	<body id='body'> <pre id='pre'; contenteditable='true'>
@@ -998,30 +998,30 @@ Hotkey_LowLevelKeyboardProc(nCode, wParam, lParam)  {
 	Static Mods := {"vkA4":"LAlt","vkA5":"RAlt","vkA2":"LCtrl","vkA3":"RCtrl"
 		,"vkA0":"LShift","vkA1":"RShift","vk5B":"LWin","vk5C":"RWin"}
 		, oMem := [], HEAP_ZERO_MEMORY := 0x8, hHeap := DllCall("GetProcessHeap", Ptr)
-	Local pHeap, Wp, Lp, Ext, VKCode, SCCode, IsMod, VKCode, VKCode
-		
+	Local pHeap, Wp, Lp, Ext, VKCode, SCCode, IsMod
+
 	If !Hotkey_Hook
 		Return DllCall("CallNextHookEx", "Ptr", 0, "Int", nCode, "UInt", wParam, "UInt", lParam)
 	pHeap := DllCall("HeapAlloc", Ptr, hHeap, UInt, HEAP_ZERO_MEMORY, Ptr, Size := 16, Ptr)
 	DllCall("RtlMoveMemory", Ptr, pHeap, Ptr, lParam, Ptr, Size), oMem.Push([wParam, pHeap])
-    SetTimer, Hotkey_LLKPWork, -10 
+    SetTimer, Hotkey_LLKPWork, -10
 	Return nCode < 0 ? DllCall("CallNextHookEx", "Ptr", 0, "Int", nCode, "UInt", wParam, "UInt", lParam) : 1
-	
+
 	Hotkey_LLKPWork:
-		While (oMem[1] != "") 
-		{  
+		While (oMem[1] != "")
+		{
 			Wp := oMem[1][1], Lp := oMem[1][2]
 			VKCode := Format("vk{:X}", NumGet(Lp + 0, "UInt"))
-			Ext := NumGet(Lp + 0, 8, "UInt") 
+			Ext := NumGet(Lp + 0, 8, "UInt")
 			SCCode := Format("sc{:X}", (Ext & 1) << 8 | NumGet(Lp + 0, 4, "UInt"))
-			IsMod := Mods[VKCode], Hotkey_NFP := Ext & 16   ;	Not a physical press  
+			IsMod := Mods[VKCode], Hotkey_NFP := Ext & 16   ;	Not a physical press
 			If (Wp = 0x100 || Wp = 0x104)   ;  WM_KEYDOWN := 0x100, WM_SYSKEYDOWN := 0x104
 				IsMod ? Hotkey_Main(VKCode, SCCode, "Down", IsMod) : Hotkey_Main(VKCode, SCCode)
 			Else If ((Wp = 0x101 || Wp = 0x105) && VKCode != "vk5D")   ;  WM_KEYUP := 0x101, WM_SYSKEYUP := 0x105, AppsKey = "vk5D"
 				IsMod ? Hotkey_Main(VKCode, SCCode, "Up", IsMod) : 0
 			DllCall("HeapFree", Ptr, hHeap, UInt, 0, Ptr, Lp)
 			oMem.RemoveAt(1)
-		} 
+		}
 		Return
 }
 
@@ -1133,12 +1133,12 @@ Sys_Help:
 	Else If A_ThisMenuItem = About AhkSpy
 		RunPath("http://forum.script-coding.com/viewtopic.php?pid=72459#p72459")
 	Return
-	
+
 Sys_OpenScriptDir:
 	SelectFilePath(A_ScriptFullPath)
 	Gui, 1: Minimize
 	Return
-	
+
 Spot_together:
 	StateAllwaysSpot := IniWrite(!StateAllwaysSpot, "AllwaysSpot")
 	Menu, Sys, % StateAllwaysSpot ? "Check" : "UnCheck", Spot together (low speed)
@@ -1166,7 +1166,7 @@ WM_ACTIVATE(wp)  {
 CheckHideMarker()  {
 	SetTimer, CheckHideMarker, -150
 	Return
-	
+
 	CheckHideMarker:
 		WinActive("ahk_id" hGui) ? (HideMarker(), HideAccMarker()) : 0
 		Return
@@ -1430,7 +1430,7 @@ ViewStyles(elem)  {
 	? RegExReplace(GetStyles(oDoc.getElementById("c_Style").innerText
 	, oDoc.getElementById("c_ExStyle").innerText), "\n", "<br>") : ""
 	HTML_Win := oDoc.body.innerHTML
-} 
+}
 
 HighLight(elem, time="", RemoveFormat=1)  {
 	Try SetTimer, UnHighLight, % "-" time
