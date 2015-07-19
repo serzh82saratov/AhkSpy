@@ -14,7 +14,7 @@ SetBatchLines, -1
 ListLines, Off
 DetectHiddenWindows, On
 
-Global AhkSpyVersion := 1.69
+Global AhkSpyVersion := 1.70
 Gosub, RevAhkVersion
 Menu, Tray, UseErrorLevel
 Menu, Tray, Icon, Shell32.dll, % A_OSVersion = "WIN_XP" ? 222 : 278
@@ -1025,6 +1025,7 @@ Hotkey_LowLevelKeyboardProc(nCode, wParam, lParam)  {
 		,"vkA0":"LShift","vkA1":"RShift","vk5B":"LWin","vk5C":"RWin"}
 		, oMem := [], HEAP_ZERO_MEMORY := 0x8, hHeap := DllCall("GetProcessHeap", Ptr)
 	Local pHeap, Wp, Lp, Ext, VK, SC, IsMod, Time, NFP
+	Critical
 
 	If !Hotkey_Hook
 		Return DllCall("CallNextHookEx", "Ptr", 0, "Int", nCode, "UInt", wParam, "UInt", lParam)
@@ -1041,13 +1042,13 @@ Hotkey_LowLevelKeyboardProc(nCode, wParam, lParam)  {
 			Ext := NumGet(Lp + 0, 8, "UInt")
 			SC := Format("sc{:X}", (Ext & 1) << 8 | NumGet(Lp + 0, 4, "UInt"))
 			NFP := Ext & 16			;  Не физическое нажатие
-			; Time := NumGet(Lp + 12, "UInt")
+			Time := NumGet(Lp + 12, "UInt")
 			IsMod := Mods[VK]
-			If (Wp = 0x100 || Wp = 0x104)		;  WM_KEYDOWN := 0x100, WM_SYSKEYDOWN := 0x104
-				IsMod ? Hotkey_Main({VK:VK, SC:SC, Opt:"Down", IsMod:IsMod, NFP:NFP})
-				: Hotkey_Main({VK:VK, SC:SC, NFP:NFP})
-			Else If (Wp = 0x101 || Wp = 0x105)		;  WM_KEYUP := 0x101, WM_SYSKEYUP := 0x105
-				IsMod ? Hotkey_Main({VK:VK, SC:SC, Opt:"Up", IsMod:IsMod, NFP:NFP}) : 0
+			If Hotkey_Hook && (Wp = 0x100 || Wp = 0x104)		;  WM_KEYDOWN := 0x100, WM_SYSKEYDOWN := 0x104
+				IsMod ? Hotkey_Main({VK:VK, SC:SC, Opt:"Down", IsMod:IsMod, NFP:NFP, Time:Time})
+				: Hotkey_Main({VK:VK, SC:SC, NFP:NFP, Time:Time})
+			Else If Hotkey_Hook && (Wp = 0x101 || Wp = 0x105)		;  WM_KEYUP := 0x101, WM_SYSKEYUP := 0x105
+				IsMod ? Hotkey_Main({VK:VK, SC:SC, Opt:"Up", IsMod:IsMod, NFP:NFP, Time:Time}) : 0
 			DllCall("HeapFree", Ptr, hHeap, UInt, 0, Ptr, Lp)
 			oMem.RemoveAt(1)
 		}
@@ -1192,15 +1193,6 @@ WM_ACTIVATE(wp)  {
 		Hotkey_Reset()
 }
 
-CheckHideMarker()  {
-	SetTimer, CheckHideMarker, -150
-	Return
-
-	CheckHideMarker:
-		WinActive("ahk_id" hGui) ? (HideMarker(), HideAccMarker()) : 0
-		Return
-}
-
 WM_LBUTTONDOWN()  {
 	If A_GuiControl = ColorProgress
 	{
@@ -1253,10 +1245,6 @@ ShowMarker(x, y, w, h, b:=4)  {
 		. " " w-b "-" b " " w-b "-" h-b " " b "-" h-b " " b "-" b, ahk_id %hMarkerGui%
 }
 
-HideMarker()  {
-	Gui, M: Show, Hide
-}
-
 ShowAccMarker(x, y, w, h, b:=2)  {
 	Try Gui, AcM: Show, NA x%x% y%y% w%w% h%h%
 	Catch
@@ -1265,8 +1253,27 @@ ShowAccMarker(x, y, w, h, b:=2)  {
 	WinSet, Region, % "0-0 " w "-0 " w "-" h " 0-" h " 0-0 " b "-" b
 		. " " w-b "-" b " " w-b "-" h-b " " b "-" h-b " " b "-" b, ahk_id %hMarkerAccGui%
 }
+
+HideMarker()  {
+	Gui, M: Show, Hide
+}
+
 HideAccMarker()  {
 	Gui, AcM: Show, Hide
+}
+
+
+CheckHideMarker()  {
+	Static Try := 0
+	SetTimer, CheckHideMarker, -150
+	Return
+
+	CheckHideMarker:
+		If !(Try := ++Try > 2 ? 0 : Try)
+			Return
+		WinActive("ahk_id" hGui) ? (HideMarker(), HideAccMarker()) : 0
+		SetTimer, CheckHideMarker, -250
+		Return
 }
 
 IniRead(Key)  {
@@ -1501,7 +1508,7 @@ Class Events  {
 					HighLight(oDoc.getElementById("wintitle3"), 500, 0)
 			}
 			Else If thisid = keyname
-				KeyName := GetKeyName(o_edithotkey.value), o_editkeyname.value := KeyName
+				Name := GetKeyName(o_edithotkey.value), o_editkeyname.value := (StrLen(Name) = 1 ? (Format("{:U}", Name)) : Name)
 				, o := KeyName = "" ? o_edithotkey : o_editkeyname
 				, o.focus(), o.createTextRange().select()
 			Else If thisid = pause_button
