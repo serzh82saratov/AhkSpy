@@ -14,7 +14,7 @@ SetBatchLines, -1
 ListLines, Off
 DetectHiddenWindows, On
 
-Global AhkSpyVersion := 1.70
+Global AhkSpyVersion := 1.71
 Gosub, RevAhkVersion
 Menu, Tray, UseErrorLevel
 Menu, Tray, Icon, Shell32.dll, % A_OSVersion = "WIN_XP" ? 222 : 278
@@ -330,7 +330,7 @@ HTML_Win:
 	<span id='wintitle1'>%WinTitle%</span>
 	%D1% <span id='title'>( Class )</span> %D2%
 	<span id='wintitle2'><span id='param'>ahk_class</span> %WinClass%</span>
-	%D1% <span id='title'>( ProcessName )</span> %DB% <span contenteditable='false' unselectable='on'><button id='copy_alltitle'>copy all params</button></span> %D2%
+	%D1% <span id='title'>( ProcessName )</span> %DB% <span contenteditable='false' unselectable='on'><button id='copy_alltitle'>copy all</button></span> %D2%
 	<span id='wintitle3'><span id='param'>ahk_exe</span> %WinProcessName%</span>
 	%D1% <span id='title'>( ProcessPath )</span> %DB% <span contenteditable='false' unselectable='on'> <button id='w_folder'> in folder </button> <button id='paste_process_path'>paste</button> <button id='copy_button_1'> copy </button></span> %D2%
 	<span id='param'>ahk_exe</span> <span id='copy_processpath'>%WinProcessPath%</span>
@@ -1509,7 +1509,7 @@ Class Events  {
 			}
 			Else If thisid = keyname
 				Name := GetKeyName(o_edithotkey.value), o_editkeyname.value := (StrLen(Name) = 1 ? (Format("{:U}", Name)) : Name)
-				, o := KeyName = "" ? o_edithotkey : o_editkeyname
+				, o := Name = "" ? o_edithotkey : o_editkeyname
 				, o.focus(), o.createTextRange().select()
 			Else If thisid = pause_button
 				Gosub, PausedScript
