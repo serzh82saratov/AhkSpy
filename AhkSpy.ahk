@@ -14,7 +14,7 @@ SetBatchLines, -1
 ListLines, Off
 DetectHiddenWindows, On
 
-Global AhkSpyVersion := 1.71
+Global AhkSpyVersion := 1.72
 Gosub, RevAhkVersion
 Menu, Tray, UseErrorLevel
 Menu, Tray, Icon, Shell32.dll, % A_OSVersion = "WIN_XP" ? 222 : 278
@@ -52,7 +52,7 @@ Loop 20
 	D2 .= D1
 D1 := "<span style='color: " ColorDelimiter "'>" D1 "</span>"
 D2 := "<span style='color: " ColorDelimiter "'>" D2 "</span>"
-DB := "<span style='color: " ColorDelimiter "'>" # # # # # # # # # # # # "</span>"
+DB := "<span style='color: " ColorDelimiter "'>" # # # # # # # # # # # # "</span>"    
 
 Global m_run_AccViewer := FileExist(A_ScriptDir "\AccViewer Source.ahk")
 	? DB " <span contenteditable='false' unselectable='on'><button id='run_AccViewer'> run accviewer </button></span> " : ""
@@ -798,7 +798,7 @@ Mode_Hotkey:
 
 Write_Hotkey(K*)  {
 	Static PrHK1, PrHK2, PrKeys1, PrKeys2, PrKeysComm, KeysComm
-
+	
 	Mods := K.Mods, KeyName := K.Name
 	Prefix := K.Pref, Hotkey := K.HK
 	LRMods := K.LRMods, LRPref := TransformHTML(K.LRPref)
@@ -837,7 +837,7 @@ Write_Hotkey(K*)  {
 			. "<span id='param'>    `;  """ Mods KeyName """</span>"
 
 	SendHotkey := Hotkey = "" ? ThisKey : Hotkey
-
+	
 	HTML_Hotkey =
 	( Ltrim
 	<body id='body'> <pre id='pre'; contenteditable='true'>
@@ -1235,6 +1235,14 @@ RunPath(Link, WorkingDir="", Option="")  {
 	Gui, 1: Minimize
 }
 
+RunRealPath(Path) {
+	SplitPath, Path, , Dir
+	Dir := LTrim(Dir, """")
+	While !InStr(FileExist(Dir), "D")
+		Dir := SubStr(Dir, 1, -1) 
+	Run, %Path%, %Dir% 
+} 
+
 ShowMarker(x, y, w, h, b:=4)  {
 	w < 8 || h < 8 ? b := 2 : 0
 	Try Gui, M: Show, NA x%x% y%y% w%w% h%h%
@@ -1518,7 +1526,7 @@ Class Events  {
 			Else If thisid = paste_process_path
 				oDoc.getElementById("copy_processpath").innerHTML := TransformHTML(Trim(Trim(Clipboard), """"))
 			Else If thisid = w_command_line
-				Run % comspec " /c """ oDoc.getElementById("c_command_line").OuterText """", , Hide
+				RunRealPath(oDoc.getElementById("c_command_line").OuterText)
 			Else If thisid = paste_command_line
 				oDoc.getElementById("c_command_line").innerHTML := TransformHTML(Clipboard)
 			Else If thisid = process_close
