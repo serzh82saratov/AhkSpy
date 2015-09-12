@@ -14,7 +14,7 @@ SetBatchLines, -1
 ListLines, Off
 DetectHiddenWindows, On
 
-Global AhkSpyVersion := 1.73
+Global AhkSpyVersion := 1.74
 Gosub, RevAhkVersion
 Menu, Tray, UseErrorLevel
 Menu, Tray, Icon, Shell32.dll, % A_OSVersion = "WIN_XP" ? 222 : 278
@@ -139,6 +139,8 @@ Gui, +MinSize%widthTB%x%HeigtButton%
 
 Gosub, HotkeyInit
 Gosub, Mode_%ThisMode%
+PostMessage, 0x50, 0, 0x0409, , % "ahk_id" hActiveX
+
 #Include *i %A_ScriptDir%\AhkSpyInclude.ahk
 Return
 
@@ -210,6 +212,8 @@ F4::
 F5:: oDoc.body.innerHTML := HTML_%ThisMode%					;  Return HTML
 
 F6:: AppsKey
+
+F7::Menu, Sys, Show, 5, 5
 
 !Space:: SetTimer, ShowSys, -1
 
@@ -478,7 +482,7 @@ HTML_Mouse:
 	<span id='param'>Screen:</span>  x%MXS% y%MYS%%DP%<span id='param'>Window:</span>  x%RWinX% y%RWinY%%DP%<span id='param'>Client:</span>  x%MXC% y%MYC%%WithRespectWin%
 	<span id='param'>Relative active window:</span>  x%MXWA% y%MYWA%%DP%<span id='param'>exe</span> %ProcessName_A% <span id='param'>class</span> %WinClass_A%
 	%D1% <span id='title'>( PixelGetColor )</span> %D2%
-	<span id='param'>RGB: </span> %ColorRGB%%DP%%sColorRGB%%DP%<span id='param'>BGR: </span> %ColorBGR%%DP%%sColorBGR%
+	<span id='param'>RGB: </span> %ColorRGB%%DP%#%sColorRGB%%DP%<span id='param'>BGR: </span> %ColorBGR%%DP%#%sColorBGR%
 	%D1% <span id='title'>( Window: Class & ProcessName & HWND )</span> %D2%
 	<span id='param'>ahk_class</span> %WinClass% <span id='param'>ahk_exe</span> %ProcessName% <span id='param'>ahk_id</span> %WinID%
 	%D1% <span id='title'>( Control )</span> %D2%<a></a>
