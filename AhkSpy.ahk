@@ -14,7 +14,7 @@ SetBatchLines, -1
 ListLines, Off
 DetectHiddenWindows, On
 
-Global AhkSpyVersion := 1.74
+Global AhkSpyVersion := 1.75
 Gosub, RevAhkVersion
 Menu, Tray, UseErrorLevel
 Menu, Tray, Icon, Shell32.dll, % A_OSVersion = "WIN_XP" ? 222 : 278
@@ -165,7 +165,7 @@ PausedScript:
 	oDoc.body.style.background := (ColorBg := isPaused ? ColorBgPaused : ColorBgOriginal)
 	Try SetTimer, Loop_%ThisMode%, % isPaused ? "Off" : "On"
 	If (ThisMode = "Hotkey" && WinActive("ahk_id" hGui))
-		Hotkey_Hook := isPaused ? Hotkey_Reset() : 1
+		Hotkey_Arr("Hook", isPaused ? Hotkey_Reset() : 1)
 	If (isPaused && !WinActive("ahk_id" hGui))
 		(ThisMode = "Mouse" ? Spot_Win() : ThisMode = "Win" ? Spot_Mouse() : 0)
 	HideMarker(), HideAccMarker()
@@ -436,10 +436,10 @@ Spot_Mouse(NotHTML=0)  {
 		ControlGetText, CtrlText, , ahk_id %ControlID%
 		If CtrlText !=
 		{
-			CtrlText := TransformHTML(InStr(ControlNN, "Scintilla") ? StrGet(&CtrlText, "utf-8") : CtrlText)
+			CtrlText := TransformHTML(CtrlText)
 			CtrlText = `n%D1% <a></a><span id='title'>( Control text )</span> %DB% %copy_button% %D2%`n<span>%CtrlText%</span>
 		}
-		AccText := AccInfoUnderMouse(MXS, MYS)
+		AccText := AccInfoUnderMouse(MXS, MYS, WinX, WinY)
 		If AccText !=
 			AccText = `n%D1% <a></a><span id='title'>( AccInfo )</span> %m_run_AccViewer%%D2%%AccText%
 		If ControlNN !=
@@ -690,7 +690,7 @@ WBGet(hwnd)  {
 
 	;  http://www.autohotkey.com/board/topic/77888-accessible-info-viewer-alpha-release-2012-09-20/
 
-AccInfoUnderMouse(x, y)  {
+AccInfoUnderMouse(x, y, wx, wy)  {
 	Static h
 	If Not h
 		h := DllCall("LoadLibrary","Str","oleacc","Ptr")
@@ -705,6 +705,7 @@ AccInfoUnderMouse(x, y)  {
 	code = `n<span id='param'>Type:</span>  %Type%
 	code .= DP "<span id='param'>Pos: </span>" AccGetLocation(Acc, child)
 		. DP "<span id='param'>Mouse relative: </span>x" x - AccCoord[1] " y" y - AccCoord[2]
+		. DP "<span id='param'>Win relative: </span>x" AccCoord[1] - wx " y" AccCoord[2] - wy
 
 	If ((Name := Acc.accName(child)) != "")  {
 		code = %code%`n%D1% <a></a><span id='param'>( Name )</span> %DB% %copy_button% %D2%`n
@@ -790,17 +791,17 @@ Mode_Hotkey:
 	ScrollPos[ThisMode,1] := oDoc.body.scrollLeft, ScrollPos[ThisMode,2] := oDoc.body.scrollTop
 	If ThisMode != Hotkey
 		HTML_%ThisMode% := oDoc.body.innerHTML
-	ThisMode := "Hotkey", Hotkey_Hook := (!isPaused ? 1 : Hotkey_Reset()), TitleText := "AhkSpy - Button" TitleTextP2
+	ThisMode := "Hotkey", Hotkey_Arr("Hook", (!isPaused ? 1 : Hotkey_Reset())), TitleText := "AhkSpy - Button" TitleTextP2
 	oDoc.body.scrollLeft := ScrollPos[ThisMode,1], oDoc.body.scrollTop := ScrollPos[ThisMode,2]
 	ShowMarker ? (HideMarker(), HideAccMarker()) : 0
-	(HTML_Hotkey != "") ? Write_HotkeyHTML() : Write_Hotkey({Mods:"Wait press button..."}*)
+	(HTML_Hotkey != "") ? Write_HotkeyHTML() : Write_Hotkey({Mods:"Wait press button..."})
 	SendMessage, 0xC, 0, &TitleText, , ahk_id %hGui%
 	GuiControl, TB: -0x0001, But3
 	WinActivate ahk_id %hGui%
 	GuiControl, 1:Focus, oDoc
 	Return
 
-Write_Hotkey(K*)  {
+Write_Hotkey(K)  {
 	Static PrHK1, PrHK2, PrKeys1, PrKeys2, PrKeysComm, KeysComm
 
 	Mods := K.Mods, KeyName := K.Name
@@ -838,7 +839,7 @@ Write_Hotkey(K*)  {
 			. (K.MLAlt ? "{LAlt Up}" : "") (K.MRAlt ? "{RAlt Up}" : "")
 			. (K.MLShift ? "{LShift Up}" : "") (K.MRShift ? "{RShift Up}" : "")
 			. (K.MLWin ? "{LWin Up}" : "") (K.MRWin ? "{RWin Up}" : "")
-			. "<span id='param'>    `;  """ Mods KeyName """</span>"
+			. "<span id='param'>    `;  """ LRMods KeyName """</span>"
 
 	SendHotkey := Hotkey = "" ? ThisKey : Hotkey
 
@@ -876,14 +877,14 @@ Write_Hotkey(K*)  {
 	%D2%</pre></body>
 
 	<style>
-	pre {font-family: '%FontFamily%'; font-size: '%FontSize%'; position: absolute; top: 5px}
+	pre {font-family: '%FontFamily%'; font-size: '%FontSize%'; position: absolute; top: 5px;}
 	body {background-color: '#%ColorBg%'; color: '%ColorFont%'}
-	#title {color: '%ColorTitle%'}
-	#param {color: '%ColorParam%'}
-	#edithotkey {font-size: '1.18em'; text-align: center; border: 1px dashed black}
-	#keyname {font-size: '1.18em';   background-color: '%ColorParam%'; width: 65px; height: 90`%}
-	#pause_button, #numlock, #paste_keyname, #scrolllock, #rus_eng, #copy_selected {font-size: 0.9em; border: 1px dashed black}
-	#editkeyname {font-size: '1.18em'; text-align: center; border: 1px dashed black}
+	#title {color: '%ColorTitle%';}
+	#param {color: '%ColorParam%';}
+	#edithotkey {font-size: '1.2em'; text-align: center; border: 1px dashed black; height: 26px;}
+	#keyname {font-size: '1.2em'; border: 1px dashed black;  background-color: '%ColorParam%'; position: relative; top: 0px; left: 2px; height: 26px; width: 65px;}
+	#editkeyname {font-size: '1.2em'; text-align: center; border: 1px dashed black; position: relative; left: 4px;}
+	#pause_button, #numlock, #paste_keyname, #scrolllock, #rus_eng, #copy_selected {font-size: 0.9em; border: 1px dashed black;}
 	</style>
 	)
 	Write_HotkeyHTML()
@@ -898,8 +899,9 @@ Write_HotkeyHTML()  {
 	; _________________________________________________ Hotkey Rules _________________________________________________
 
 HotkeyInit:
+	Hotkey_Arr("Func", "Write_Hotkey")
 	Hotkey_Control("MLRJ")
-	Global Hotkey_TargetFunc := "Write_Hotkey", Hotkey_Hook := (ThisMode = "Hotkey" ? 1 : 0)
+	Hotkey_Arr("Hook", ThisMode = "Hotkey" ? 1 : 0)
 	Return
 
 	; _________________________________________________ Hotkey Functions _________________________________________________
@@ -952,7 +954,7 @@ Hotkey_Main(In)  {
 		K.PLCtrl := K.PLAlt := K.PLShift := K.PLWin := K.LRPref := ""
 		K.MRCtrl := K.MRAlt := K.MRShift := K.MRWin := ""
 		K.MLCtrl := K.MLAlt := K.MLShift := K.MLWin := K.LRMods := ""
-		%Hotkey_TargetFunc%(K*)
+		Func(Hotkey_Arr("Func")).Call(K)
 		Return ModsOnly := 0
 	}
 	Else If (In.Opt = "GetMod")
@@ -969,7 +971,7 @@ Hotkey_Main(In)  {
 	, K.Pref := K.PCtrl K.PAlt K.PShift K.PWin
 	, K.LRPref := K.PLCtrl K.PRCtrl K.PLAlt K.PRAlt K.PLShift K.PRShift K.PLWin K.PRWin
 	, ModsOnly := 0)
-	%Hotkey_TargetFunc%(K*)
+	Func(Hotkey_Arr("Func")).Call(K)
 	Return 1
 
 Hotkey_PressName:
@@ -979,47 +981,52 @@ Hotkey_PressName:
 	K.LRPref := K.PLCtrl K.PRCtrl K.PLAlt K.PRAlt K.PLShift K.PRShift K.PLWin K.PRWin
 	K.HK := K.Name := K.TK := A_ThisHotkey, ModsOnly := 0, K.SC := "", K.NFP := 0
 	K.VK := !InStr(A_ThisHotkey, "Joy") ? VkMouse[A_ThisHotkey] : ""
-	%Hotkey_TargetFunc%(K*)
+	Func(Hotkey_Arr("Func")).Call(K)
 	Return 1
 }
 
 Hotkey_ExtKeyInit(Options)   {
-	Local SaveFormat, MouseKey
-	#If Hotkey_Hook
-	#If Hotkey_Hook && !Hotkey_Main({Opt:"GetMod"})
-	#If Hotkey_Hook && Hotkey_Main({Opt:"GetMod"})
+	Local S_FormatInteger, MouseKey
+	#If Hotkey_Arr("Hook")
+	#If Hotkey_Arr("Hook") && !Hotkey_Main({Opt:"GetMod"})
+	#If Hotkey_Arr("Hook") && Hotkey_Main({Opt:"GetMod"})
 	#If
 	IfInString, Options, M
 	{
 		MouseKey := "MButton|WheelDown|WheelUp|WheelRight|WheelLeft|XButton1|XButton2"
-		Hotkey, IF, Hotkey_Hook
+		Hotkey, IF, Hotkey_Arr("Hook")
 		Loop, Parse, MouseKey, |
 			Hotkey, %A_LoopField%, Hotkey_PressName
 	}
 	IfInString, Options, L
 	{
-		Hotkey, IF, Hotkey_Hook && Hotkey_Main({Opt:"GetMod"})
+		Hotkey, IF, Hotkey_Arr("Hook") && Hotkey_Main({Opt:"GetMod"})
 		Hotkey, LButton, Hotkey_PressName
 	}
 	IfInString, Options, R
 	{
-		Hotkey, IF, Hotkey_Hook && Hotkey_Main({Opt:"GetMod"})
+		Hotkey, IF, Hotkey_Arr("Hook") && Hotkey_Main({Opt:"GetMod"})
 		Hotkey, RButton, Hotkey_PressName
 	}
 	IfInString, Options, J
 	{
-		SaveFormat := A_FormatInteger
+		S_FormatInteger := A_FormatInteger
 		SetFormat, IntegerFast, D
-		Hotkey, IF, Hotkey_Hook && !Hotkey_Main({Opt:"GetMod"})
+		Hotkey, IF, Hotkey_Arr("Hook") && !Hotkey_Main({Opt:"GetMod"})
 		Loop, 128
 			Hotkey % Ceil(A_Index/32) "Joy" Mod(A_Index-1,32)+1, Hotkey_PressName
-		SetFormat, IntegerFast, %SaveFormat%
+		SetFormat, IntegerFast, %S_FormatInteger%
 	}
 	Hotkey, IF
 }
 
+Hotkey_Arr(P*) {
+	Static Arr := {}
+	Return P.MaxIndex() = 1 ? Arr[P[1]] : (Arr[P[1]] := P[2])
+}
+
 Hotkey_Reset()  {
-	Return Hotkey_Hook := 0, Hotkey_Main({Opt:"OnlyMods"})
+	Return Hotkey_Arr("Hook", 0), Hotkey_Main({Opt:"OnlyMods"})
 }
 
 	;  http://forum.script-coding.com/viewtopic.php?id=6350
@@ -1028,31 +1035,34 @@ Hotkey_LowLevelKeyboardProc(nCode, wParam, lParam)  {
 	Static Mods := {"vkA4":"LAlt","vkA5":"RAlt","vkA2":"LCtrl","vkA3":"RCtrl"
 		,"vkA0":"LShift","vkA1":"RShift","vk5B":"LWin","vk5C":"RWin"}
 		, oMem := [], HEAP_ZERO_MEMORY := 0x8, hHeap := DllCall("GetProcessHeap", Ptr)
-	Local pHeap, Wp, Lp, Ext, VK, SC, IsMod, Time, NFP
+	Local pHeap, Wp, Lp, Ext, VK, SC, IsMod, Time, NFP, Size
 	Critical
 
-	If !Hotkey_Hook
+	If !Hotkey_Arr("Hook")
 		Return DllCall("CallNextHookEx", "Ptr", 0, "Int", nCode, "UInt", wParam, "UInt", lParam)
 	pHeap := DllCall("HeapAlloc", Ptr, hHeap, UInt, HEAP_ZERO_MEMORY, Ptr, Size := 16, Ptr)
 	DllCall("RtlMoveMemory", Ptr, pHeap, Ptr, lParam, Ptr, Size), oMem.Push([wParam, pHeap])
-    SetTimer, Hotkey_LLKPWork, -10
+	SetTimer, Hotkey_LLKPWork, -10
 	Return nCode < 0 ? DllCall("CallNextHookEx", "Ptr", 0, "Int", nCode, "UInt", wParam, "UInt", lParam) : 1
 
 	Hotkey_LLKPWork:
 		While (oMem[1] != "")
 		{
-			Wp := oMem[1][1], Lp := oMem[1][2]
-			VK := Format("vk{:X}", NumGet(Lp + 0, "UInt"))
-			Ext := NumGet(Lp + 0, 8, "UInt")
-			SC := Format("sc{:X}", (Ext & 1) << 8 | NumGet(Lp + 0, 4, "UInt"))
-			NFP := Ext & 16			;  Не физическое нажатие
-			Time := NumGet(Lp + 12, "UInt")
-			IsMod := Mods[VK]
-			If Hotkey_Hook && (Wp = 0x100 || Wp = 0x104)		;  WM_KEYDOWN := 0x100, WM_SYSKEYDOWN := 0x104
-				IsMod ? Hotkey_Main({VK:VK, SC:SC, Opt:"Down", IsMod:IsMod, NFP:NFP, Time:Time})
-				: Hotkey_Main({VK:VK, SC:SC, NFP:NFP, Time:Time})
-			Else If Hotkey_Hook && (Wp = 0x101 || Wp = 0x105)		;  WM_KEYUP := 0x101, WM_SYSKEYUP := 0x105
-				IsMod ? Hotkey_Main({VK:VK, SC:SC, Opt:"Up", IsMod:IsMod, NFP:NFP, Time:Time}) : 0
+			If Hotkey_Arr("Hook")
+			{
+				Wp := oMem[1][1], Lp := oMem[1][2]
+				VK := Format("vk{:X}", NumGet(Lp + 0, "UInt"))
+				Ext := NumGet(Lp + 0, 8, "UInt")
+				SC := Format("sc{:X}", (Ext & 1) << 8 | NumGet(Lp + 0, 4, "UInt"))
+				NFP := Ext & 16			;  Не физическое нажатие
+				Time := NumGet(Lp + 12, "UInt")
+				IsMod := Mods[VK]
+				If Hotkey_Arr("Hook") && (Wp = 0x100 || Wp = 0x104)		;  WM_KEYDOWN := 0x100, WM_SYSKEYDOWN := 0x104
+					IsMod ? Hotkey_Main({VK:VK, SC:SC, Opt:"Down", IsMod:IsMod, NFP:NFP, Time:Time})
+					: Hotkey_Main({VK:VK, SC:SC, NFP:NFP, Time:Time})
+				Else If Hotkey_Arr("Hook") && (Wp = 0x101 || Wp = 0x105)		;  WM_KEYUP := 0x101, WM_SYSKEYUP := 0x105
+					IsMod ? Hotkey_Main({VK:VK, SC:SC, Opt:"Up", IsMod:IsMod, NFP:NFP, Time:Time}) : 0
+			}
 			DllCall("HeapFree", Ptr, hHeap, UInt, 0, Ptr, Lp)
 			oMem.RemoveAt(1)
 		}
@@ -1184,16 +1194,16 @@ ShellProc(nCode, wParam)  {
 	If (nCode = 4)
 	{
 		If (wParam = hGui)
-			(ThisMode = "Hotkey" && !isPaused ? Hotkey_Hook := 1 : ""), HideMarker(), HideAccMarker(), CheckHideMarker()
-		Else If Hotkey_Hook
+			(ThisMode = "Hotkey" && !isPaused ? Hotkey_Arr("Hook", 1) : ""), HideMarker(), HideAccMarker(), CheckHideMarker()
+		Else If Hotkey_Arr("Hook")
 			Hotkey_Reset()
 	}
 }
 
 WM_ACTIVATE(wp)  {
 	If (wp & 0xFFFF)
-		(ThisMode = "Hotkey" && !isPaused ? Hotkey_Hook := 1 : ""), HideMarker(), HideAccMarker(), CheckHideMarker()
-	Else If (wp & 0xFFFF = 0 && Hotkey_Hook)
+		(ThisMode = "Hotkey" && !isPaused ? Hotkey_Arr("Hook", 1) : ""), HideMarker(), HideAccMarker(), CheckHideMarker()
+	Else If (wp & 0xFFFF = 0 && Hotkey_Arr("Hook"))
 		Hotkey_Reset()
 }
 
@@ -1552,8 +1562,8 @@ Class Events  {
 			Else If thisid = run_iWB2Learner
 				RunPath(A_ScriptDir "\iWB2 Learner.ahk")
 		}
-		Else If (ThisMode = "Hotkey" && !Hotkey_Hook && !isPaused && tagname ~= "PRE|SPAN")
-			Hotkey_Hook := 1
+		Else If (ThisMode = "Hotkey" && !Hotkey_Arr("Hook") && !isPaused && tagname ~= "PRE|SPAN")
+			Hotkey_Arr("Hook", 1)
 	}
 	ondblclick()  {
 		oevent := oDoc.parentWindow.event.srcElement
@@ -1586,12 +1596,12 @@ Class Events  {
 	onblur()  {
 		Sleep 100
 		If (WinActive("ahk_id" hGui) && !isPaused && ThisMode = "Hotkey")
-			Hotkey_Hook := 1
+			Hotkey_Arr("Hook", 1)
 	}
 	num_scroll(thisid)  {
-		(OnHook := Hotkey_Hook) ? (Hotkey_Hook := 0) : 0
+		(OnHook := Hotkey_Arr("Hook")) ? Hotkey_Arr("Hook", 0) : 0
 		SendInput, {%thisid%}
-		(OnHook ? Hotkey_Hook := 1 : 0)
+		(OnHook ? Hotkey_Arr("Hook", 1) : 0)
 		ToolTip(thisid " " (GetKeyState(thisid, "T") ? "On" : "Off"), 500)
 	}
 }
