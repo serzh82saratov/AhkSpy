@@ -14,7 +14,7 @@ SetBatchLines, -1
 ListLines, Off
 DetectHiddenWindows, On
 
-Global AhkSpyVersion := 1.76
+Global AhkSpyVersion := 1.77
 Gosub, CheckAhkVersion
 Menu, Tray, UseErrorLevel
 Menu, Tray, Icon, Shell32.dll, % A_OSVersion = "WIN_XP" ? 222 : 278
@@ -313,8 +313,7 @@ Spot_Win(NotHTML=0)  {
 		SBText := "`n" D1 " <a></a><span id='title'>( StatusBarText )</span> " D2 "`n" RTrim(SBText, "`n")
 	WinGetText, WinText, ahk_id %WinID%
 	If WinText !=
-		WinText := TransformHTML(WinClass = "Notepad++" ? SubStr(WinText, 1, 5000) : WinText)
-		, WinText := "`n" D1 " <a></a><span id='title'>( Window Text )</span> " DB " " copy_button " " D2 "`n<span>" WinText "</span>"
+		WinText := "`n" D1 " <a></a><span id='title'>( Window Text )</span> " DB " " copy_button " " D2 "`n<span>" TransformHTML(WinText) "</span>"
 	CoordMode, Mouse
 	CoordMode, Pixel
 	MouseGetPos, WinXS, WinYS
@@ -435,10 +434,7 @@ Spot_Mouse(NotHTML=0)  {
 		CtrlCAX2 := CtrlX2-caX, CtrlCAY2 := CtrlY2-caY
 		ControlGetText, CtrlText, , ahk_id %ControlID%
 		If CtrlText !=
-		{
-			CtrlText := TransformHTML(CtrlText)
-			CtrlText = `n%D1% <a></a><span id='title'>( Control text )</span> %DB% %copy_button% %D2%`n<span>%CtrlText%</span>
-		}
+			CtrlText := "`n" D1 " <a></a><span id='title'>( Control Text )</span> " DB " " copy_button " " D2 "`n<span>" TransformHTML(CtrlText) "</span>"
 		AccText := AccInfoUnderMouse(MXS, MYS, WinX, WinY)
 		If AccText !=
 			AccText = `n%D1% <a></a><span id='title'>( AccInfo )</span> %m_run_AccViewer%%D2%%AccText%
@@ -1526,9 +1522,9 @@ Class Events  {
 				Clipboard := (t:=oDoc.getElementById("wintitle1").OuterText) . (t = "" ? "" : " ")
 					. oDoc.getElementById("wintitle2").OuterText " "
 					. oDoc.getElementById("wintitle3").OuterText
-					HighLight(oDoc.getElementById("wintitle1"), 500)
-					HighLight(oDoc.getElementById("wintitle2"), 500, 0)
-					HighLight(oDoc.getElementById("wintitle3"), 500, 0)
+				HighLight(oDoc.getElementById("wintitle1"), 500)
+				HighLight(oDoc.getElementById("wintitle2"), 500, 0)
+				HighLight(oDoc.getElementById("wintitle3"), 500, 0)
 			}
 			Else If thisid = keyname
 				Name := GetKeyName(o_edithotkey.value), o_editkeyname.value := (StrLen(Name) = 1 ? (Format("{:U}", Name)) : Name)
@@ -1537,7 +1533,10 @@ Class Events  {
 			Else If thisid = pause_button
 				Gosub, PausedScript
 			Else If thisid = w_folder
+			{
 				SelectFilePath(oDoc.getElementById("copy_processpath").OuterText)
+				Gui, 1: Minimize
+			}
 			Else If thisid = paste_process_path
 				oDoc.getElementById("copy_processpath").innerHTML := TransformHTML(Trim(Trim(Clipboard), """"))
 			Else If thisid = w_command_line
