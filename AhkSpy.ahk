@@ -14,8 +14,8 @@ SetBatchLines, -1
 ListLines, Off
 DetectHiddenWindows, On
 
-Global AhkSpyVersion := 1.75
-Gosub, RevAhkVersion
+Global AhkSpyVersion := 1.76
+Gosub, CheckAhkVersion
 Menu, Tray, UseErrorLevel
 Menu, Tray, Icon, Shell32.dll, % A_OSVersion = "WIN_XP" ? 222 : 278
 
@@ -802,7 +802,7 @@ Mode_Hotkey:
 	Return
 
 Write_Hotkey(K)  {
-	Static PrHK1, PrHK2, PrKeys1, PrKeys2, PrKeysComm, KeysComm
+	Static PrHK1, PrHK2, PrKeys1, PrKeys2, PrKeysComm, KeysComm, Name
 
 	Mods := K.Mods, KeyName := K.Name
 	Prefix := K.Pref, Hotkey := K.HK
@@ -815,7 +815,8 @@ Write_Hotkey(K)  {
 
 	HK1 := IsVk ? Hotkey : ThisKey
 	HK2 := HK1 = PrHK1 ? PrHK2 : PrHK1, PrHK1 := HK1, PrHK2 := HK2
-	HKComm1 := "    `;  """ GetKeyName(HK2), HKComm2 := GetKeyName(HK1) """"
+	HKComm1 := "    `;  """ (StrLen(Name := GetKeyName(HK2)) = 1 ? Format("{:U}", Name) : Name)
+	HKComm2 := (StrLen(Name := GetKeyName(HK1)) = 1 ? Format("{:U}", Name) : Name) """"
 
 	If ((Keys1 := Prefix Hotkey) != "" && Keys1 != PrKeys1)
 		Keys2 := PrKeys1, PrKeys1 := Keys1
@@ -862,7 +863,7 @@ Write_Hotkey(K)  {
 
 	%DUMods%
 
-	%HK2% & %HK1%::<span id='param'>%HKComm1% & %HKComm2%</span>   %DP%   <span id='param'>Double hotkey</span>
+	%HK2% & %HK1%::<span id='param'>%HKComm1% & %HKComm2%</span>   %DP%   GetKeyState("%Hotkey%", "P")   %DP%   KeyWait, %Hotkey%, D T3
 
 	%Keys2%:: %Keys1%<span id='param'>%KeysComm%</span>   %DP%   %HK2%::%HK1%<span id='param'>%HKComm1% >> %HKComm2%</span>   %DP%   <span id='param'>Remapping keys</span>
 
@@ -1106,10 +1107,10 @@ TitleShow:
 	SendMessage, 0xC, 0, &TitleText, , ahk_id %hGui%
 	Return
 
-RevAhkVersion:
-	If A_AhkVersion < 1.1.11.00
+CheckAhkVersion:
+	If A_AhkVersion < 1.1.17.00
 	{
-		MsgBox Requires AutoHotkey_L version 1.1.12.00+
+		MsgBox Requires AutoHotkey_L version 1.1.17.00+
 		RunPath("http://ahkscript.org/download/")
 		ExitApp
 	}
