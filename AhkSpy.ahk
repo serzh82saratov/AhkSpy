@@ -9,12 +9,11 @@
 #NoTrayIcon
 #SingleInstance Force
 #NoEnv
-#HotkeyInterval 0
 SetBatchLines, -1
 ListLines, Off
 DetectHiddenWindows, On
 
-Global AhkSpyVersion := 1.77
+Global AhkSpyVersion := 1.78
 Gosub, CheckAhkVersion
 Menu, Tray, UseErrorLevel
 Menu, Tray, Icon, Shell32.dll, % A_OSVersion = "WIN_XP" ? 222 : 278
@@ -859,7 +858,7 @@ Write_Hotkey(K)  {
 
 	%DUMods%
 
-	%HK2% & %HK1%::<span id='param'>%HKComm1% & %HKComm2%</span>   %DP%   GetKeyState("%Hotkey%", "P")   %DP%   KeyWait, %Hotkey%, D T3
+	%HK2% & %HK1%::<span id='param'>%HKComm1% & %HKComm2%</span>   %DP%   GetKeyState("%SendHotkey%", "P")<span id='param'>%Comment%</span>   %DP%   KeyWait, %SendHotkey%, D T3<span id='param'>%Comment%</span>
 
 	%Keys2%:: %Keys1%<span id='param'>%KeysComm%</span>   %DP%   %HK2%::%HK1%<span id='param'>%HKComm1% >> %HKComm2%</span>   %DP%   <span id='param'>Remapping keys</span>
 
@@ -910,6 +909,7 @@ Hotkey_Control(State=1)  {
 	If (!IsStart)
 		Hotkey_ExtKeyInit(State), IsStart := 1
 	Hotkey_WindowsHookEx(!!State)
+	#HotkeyInterval 0
 }
 
 Hotkey_Main(In)  {
@@ -1031,13 +1031,13 @@ Hotkey_Reset()  {
 Hotkey_LowLevelKeyboardProc(nCode, wParam, lParam)  {
 	Static Mods := {"vkA4":"LAlt","vkA5":"RAlt","vkA2":"LCtrl","vkA3":"RCtrl"
 		,"vkA0":"LShift","vkA1":"RShift","vk5B":"LWin","vk5C":"RWin"}
-		, oMem := [], HEAP_ZERO_MEMORY := 0x8, hHeap := DllCall("GetProcessHeap", Ptr)
-	Local pHeap, Wp, Lp, Ext, VK, SC, IsMod, Time, NFP, Size
+		, oMem := [], HEAP_ZERO_MEMORY := 0x8, Size := 16, hHeap := DllCall("GetProcessHeap", Ptr)
+	Local pHeap, Wp, Lp, Ext, VK, SC, IsMod, Time, NFP
 	Critical
 
 	If !Hotkey_Arr("Hook")
 		Return DllCall("CallNextHookEx", "Ptr", 0, "Int", nCode, "UInt", wParam, "UInt", lParam)
-	pHeap := DllCall("HeapAlloc", Ptr, hHeap, UInt, HEAP_ZERO_MEMORY, Ptr, Size := 16, Ptr)
+	pHeap := DllCall("HeapAlloc", Ptr, hHeap, UInt, HEAP_ZERO_MEMORY, Ptr, Size, Ptr)
 	DllCall("RtlMoveMemory", Ptr, pHeap, Ptr, lParam, Ptr, Size), oMem.Push([wParam, pHeap])
 	SetTimer, Hotkey_LLKPWork, -10
 	Return nCode < 0 ? DllCall("CallNextHookEx", "Ptr", 0, "Int", nCode, "UInt", wParam, "UInt", lParam) : 1
@@ -1077,6 +1077,8 @@ Hotkey_WindowsHookEx(State)  {
 	Else
 		DllCall("UnhookWindowsHookEx", "Ptr", Hook), Hook := "", Hotkey_Reset()
 }
+
+
 
 	; _________________________________________________ Labels _________________________________________________
 
