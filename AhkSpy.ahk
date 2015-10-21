@@ -13,7 +13,7 @@ SetBatchLines, -1
 ListLines, Off
 DetectHiddenWindows, On
 
-Global AhkSpyVersion := 1.78
+Global AhkSpyVersion := 1.79
 Gosub, CheckAhkVersion
 Menu, Tray, UseErrorLevel
 Menu, Tray, Icon, Shell32.dll, % A_OSVersion = "WIN_XP" ? 222 : 278
@@ -820,14 +820,14 @@ Write_Hotkey(K)  {
 	Else
 		Keys1 := PrKeys1, Keys2 := PrKeys2
 
-	Comment := IsVk ? "    `;  """ KeyName """" : ""
+	Comment := IsVk ? "<span id='param'>    `;  """ KeyName """</span>" : ""
 	(Hotkey != "") ? (LRComment := "::<span id='param'>    `;  """ LRMods KeyName """</span>"
 		, FComment := "::<span id='param'>    `;  """ Mods KeyName """</span>") : 0
 	(LRMods != "") ? (LRMStr := LRMods KeyName, LRPStr := LRPref Hotkey LRComment) : 0
 	inp_hk := o_edithotkey.value, inp_kn := o_editkeyname.value
 
 	If Prefix !=
-		DUMods := "SendInput " (K.MLCtrl ? "{LCtrl Down}" : "") (K.MRCtrl ? "{RCtrl Down}" : "")
+		DUMods := (K.MLCtrl ? "{LCtrl Down}" : "") (K.MRCtrl ? "{RCtrl Down}" : "")
 			. (K.MLAlt ? "{LAlt Down}" : "") (K.MRAlt ? "{RAlt Down}" : "")
 			. (K.MLShift ? "{LShift Down}" : "") (K.MRShift ? "{RShift Down}" : "")
 			. (K.MLWin ? "{LWin Down}" : "") (K.MRWin ? "{RWin Down}" : "") . "{" Hotkey "}"
@@ -835,9 +835,10 @@ Write_Hotkey(K)  {
 			. (K.MLAlt ? "{LAlt Up}" : "") (K.MRAlt ? "{RAlt Up}" : "")
 			. (K.MLShift ? "{LShift Up}" : "") (K.MRShift ? "{RShift Up}" : "")
 			. (K.MLWin ? "{LWin Up}" : "") (K.MRWin ? "{RWin Up}" : "")
-			. "<span id='param'>    `;  """ LRMods KeyName """</span>"
 
 	SendHotkey := Hotkey = "" ? ThisKey : Hotkey
+	ControlSend := DUMods = "" ? "{" SendHotkey "}" : DUMods
+	LRSend := DUMods = "" ? "" : "SendInput " DUMods Comment
 
 	HTML_Hotkey =
 	( Ltrim
@@ -854,11 +855,11 @@ Write_Hotkey(K)  {
 
 	%LRPStr%
 
-	Send %Prefix%{%SendHotkey%}<span id='param'>%Comment%</span>  %DP%  SendInput %Prefix%{%SendHotkey%}<span id='param'>%Comment%</span>  %DP%  ControlSend, ahk_parent, %Prefix%{%SendHotkey%}, WinTitle<span id='param'>%Comment%</span>
+	Send %Prefix%{%SendHotkey%}%Comment%  %DP%  SendInput %Prefix%{%SendHotkey%}%Comment%  %DP%  ControlSend, ahk_parent, %ControlSend%, WinTitle%Comment%
 
-	%DUMods%
+	%LRSend%
 
-	%HK2% & %HK1%::<span id='param'>%HKComm1% & %HKComm2%</span>   %DP%   GetKeyState("%SendHotkey%", "P")<span id='param'>%Comment%</span>   %DP%   KeyWait, %SendHotkey%, D T3<span id='param'>%Comment%</span>
+	%HK2% & %HK1%::<span id='param'>%HKComm1% & %HKComm2%</span>   %DP%   GetKeyState("%SendHotkey%", "P")%Comment%   %DP%   KeyWait, %SendHotkey%, D T3%Comment%
 
 	%Keys2%:: %Keys1%<span id='param'>%KeysComm%</span>   %DP%   %HK2%::%HK1%<span id='param'>%HKComm1% >> %HKComm2%</span>   %DP%   <span id='param'>Remapping keys</span>
 
