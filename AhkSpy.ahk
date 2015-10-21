@@ -13,7 +13,7 @@ SetBatchLines, -1
 ListLines, Off
 DetectHiddenWindows, On
 
-Global AhkSpyVersion := 1.80
+Global AhkSpyVersion := 1.81
 Gosub, CheckAhkVersion
 Menu, Tray, UseErrorLevel
 Menu, Tray, Icon, Shell32.dll, % A_OSVersion = "WIN_XP" ? 222 : 278
@@ -700,8 +700,8 @@ AccInfoUnderMouse(x, y, wx, wy, cx, cy)  {
 	code = `n<span id='param'>Type:</span>  %Type%
 	code = %code%`n%D1% <a></a><span id='param'>( Position relative )</span> %D2%`n
 	code .= "<span id='param'>Screen: </span>" AccGetLocation(Acc, child)
-		. DP "<span id='param'>Mouse: </span>x" x - AccCoord[1] " y" y - AccCoord[2]
-		. "`n<span id='param'>Window: </span>x" AccCoord[1] - wx " y" AccCoord[2] - wy
+		. "`n<span id='param'>Mouse: </span>x" x - AccCoord[1] " y" y - AccCoord[2]
+		. DP "<span id='param'>Window: </span>x" AccCoord[1] - wx " y" AccCoord[2] - wy
 		. (cx != "" ? DP "<span id='param'>Control: </span>x" (AccCoord[1] - wx - cx) " y" (AccCoord[2] - wy - cy) : "")
 
 	If ((Name := Acc.accName(child)) != "")  {
