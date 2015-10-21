@@ -13,7 +13,7 @@ SetBatchLines, -1
 ListLines, Off
 DetectHiddenWindows, On
 
-Global AhkSpyVersion := 1.79
+Global AhkSpyVersion := 1.80
 Gosub, CheckAhkVersion
 Menu, Tray, UseErrorLevel
 Menu, Tray, Icon, Shell32.dll, % A_OSVersion = "WIN_XP" ? 222 : 278
@@ -434,7 +434,7 @@ Spot_Mouse(NotHTML=0)  {
 		ControlGetText, CtrlText, , ahk_id %ControlID%
 		If CtrlText !=
 			CtrlText := "`n" D1 " <a></a><span id='title'>( Control Text )</span> " DB " " copy_button " " D2 "`n<span>" TransformHTML(CtrlText) "</span>"
-		AccText := AccInfoUnderMouse(MXS, MYS, WinX, WinY)
+		AccText := AccInfoUnderMouse(MXS, MYS, WinX, WinY, CtrlX, CtrlY)
 		If AccText !=
 			AccText = `n%D1% <a></a><span id='title'>( AccInfo )</span> %m_run_AccViewer%%D2%%AccText%
 		If ControlNN !=
@@ -685,7 +685,7 @@ WBGet(hwnd)  {
 
 	;  http://www.autohotkey.com/board/topic/77888-accessible-info-viewer-alpha-release-2012-09-20/
 
-AccInfoUnderMouse(x, y, wx, wy)  {
+AccInfoUnderMouse(x, y, wx, wy, cx, cy)  {
 	Static h
 	If Not h
 		h := DllCall("LoadLibrary","Str","oleacc","Ptr")
@@ -698,9 +698,11 @@ AccInfoUnderMouse(x, y, wx, wy)  {
 	Type := child ? "Child" DP "<span id='param'>Id:  </span>" child
 		: "Parent" DP "<span id='param'>ChildCount:  </span>" ((C:=Acc.accChildCount)!=""?C:"N/A")
 	code = `n<span id='param'>Type:</span>  %Type%
-	code .= DP "<span id='param'>Pos: </span>" AccGetLocation(Acc, child)
-		. DP "<span id='param'>Mouse relative: </span>x" x - AccCoord[1] " y" y - AccCoord[2]
-		. DP "<span id='param'>Win relative: </span>x" AccCoord[1] - wx " y" AccCoord[2] - wy
+	code = %code%`n%D1% <a></a><span id='param'>( Position relative )</span> %D2%`n
+	code .= "<span id='param'>Screen: </span>" AccGetLocation(Acc, child)
+		. DP "<span id='param'>Mouse: </span>x" x - AccCoord[1] " y" y - AccCoord[2]
+		. "`n<span id='param'>Window: </span>x" AccCoord[1] - wx " y" AccCoord[2] - wy
+		. (cx != "" ? DP "<span id='param'>Control: </span>x" (AccCoord[1] - wx - cx) " y" (AccCoord[2] - wy - cy) : "")
 
 	If ((Name := Acc.accName(child)) != "")  {
 		code = %code%`n%D1% <a></a><span id='param'>( Name )</span> %DB% %copy_button% %D2%`n
@@ -773,7 +775,7 @@ AccGetStateText(nState)  {
 AccGetLocation(Acc, Child=0) {
 	Acc.accLocation(ComObj(0x4003,&x:=0), ComObj(0x4003,&y:=0), ComObj(0x4003,&w:=0), ComObj(0x4003,&h:=0), Child)
 	Return "x" (AccCoord[1]:=NumGet(x,0,"int")) " y" (AccCoord[2]:=NumGet(y,0,"int"))
-			. " w" (AccCoord[3]:=NumGet(w,0,"int")) " h" (AccCoord[4]:=NumGet(h,0,"int"))
+			. DP "<span id='param'>Size: </span>w" (AccCoord[3]:=NumGet(w,0,"int")) " h" (AccCoord[4]:=NumGet(h,0,"int"))
 }
 
 	; _________________________________________________ Mode_Hotkey _________________________________________________
