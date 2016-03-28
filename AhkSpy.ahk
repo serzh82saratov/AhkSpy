@@ -13,7 +13,7 @@ SetBatchLines, -1
 ListLines, Off
 DetectHiddenWindows, On
 
-Global AhkSpyVersion := 1.81
+Global AhkSpyVersion := 1.82
 Gosub, CheckAhkVersion
 Menu, Tray, UseErrorLevel
 Menu, Tray, Icon, Shell32.dll, % A_OSVersion = "WIN_XP" ? 222 : 278
@@ -30,13 +30,15 @@ Global ThisMode := "Mouse"						;  Стартовый режим - Win|Mouse|Hot
 , # := "&#9642"									;  Символ разделителя заголовков - &#8226 | &#9642
 
 , DP := "  <span style='color: " ColorDelimiter "'>" # "</span>  ", D1, D2, DB
-, ThisMode:=((t:=IniRead("StartMode"))=""?"Mouse":t), StateLight:=((t:=IniRead("StateLight"))=""||t>3?1:t)
-, StateLightAcc:=((t:=IniRead("StateLightAcc"))=""?1:t), StateUpdate:=((t:=IniRead("StateUpdate"))=""?1:t)
-, StateAllwaysSpot := IniRead("AllwaysSpot"), ScrollPos:={}, AccCoord:=[]
-, hGui, hActiveX, hMarkerGui, hMarkerAccGui, oDoc, ShowMarker, isIE, isPaused, w_ShowStyles
+, ThisMode := IniRead("StartMode", "Mouse"), ThisMode := ThisMode = "LastMode" ? IniRead("LastMode", "Mouse") : ThisMode
+, MemoryPos := IniRead("MemoryPos", 0), MemorySize := IniRead("MemorySize", 0), MemoryZoomSize := IniRead("MemoryZoomSize", 0)
+, StateLight := IniRead("StateLight", 1), StateLightAcc := IniRead("StateLightAcc", 1), StateUpdate := IniRead("StateUpdate", 1)
+, StateAllwaysSpot := IniRead("AllwaysSpot"), ScrollPos:={}, AccCoord:=[], oOther:={}
+, hGui, hActiveX, hMarkerGui, hMarkerAccGui, oDoc, ShowMarker, isIE, isPaused, w_ShowStyles, MsgAhkSpyZoom, Sleep
 , HTML_Win, HTML_Mouse, HTML_Hotkey, o_edithotkey, o_editkeyname, rmCtrlX, rmCtrlY, m_hwnd_3, Hotkey_NFP
 , copy_button := "<span contenteditable='false' unselectable='on'><button id='copy_button'> copy </button></span>"
 , pause_button := "<span contenteditable='false' unselectable='on'><button id='pause_button'> pause </button></span>"
+, set_button_pos := "<span contenteditable='false' unselectable='on'><button id='set_button_pos'>"
 
 TitleTextP2 := "     ( Shift+Tab - Freeze | RButton - CopySelected | Pause - Pause )     v" AhkSpyVersion
 BLGroup := ["Backlight allways","Backlight disable","Backlight hold shift button"]
@@ -53,10 +55,12 @@ D1 := "<span style='color: " ColorDelimiter "'>" D1 "</span>"
 D2 := "<span style='color: " ColorDelimiter "'>" D2 "</span>"
 DB := "<span style='color: " ColorDelimiter "'>" # # # # # # # # # # # # "</span>"
 
-Global m_run_AccViewer := FileExist(A_ScriptDir "\AccViewer Source.ahk")
+Global m_run_AccViewer := ExtraFile("AccViewer Source")
 	? DB " <span contenteditable='false' unselectable='on'><button id='run_AccViewer'> run accviewer </button></span> " : ""
-	, m_run_iWB2Learner := FileExist(A_ScriptDir "\iWB2 Learner.ahk")
+	, m_run_iWB2Learner := ExtraFile("iWB2 Learner")
 	? DB " <span contenteditable='false' unselectable='on'><button id='run_iWB2Learner'> run iwb2 learner </button></span> " : ""
+	, m_run_AhkSpyZoom := ExtraFile("AhkSpyZoom")
+	? " " DB " <span contenteditable='false' unselectable='on'><button id='run_AhkSpyZoom'> zoom </button></span>" : ""
 
 FixIE(0)
 
@@ -68,6 +72,8 @@ ComObjError(false), ComObjConnect(oDoc, Events)
 OnMessage(0x201, "WM_LBUTTONDOWN")
 OnMessage(0x7B, "WM_CONTEXTMENU")
 OnMessage(0x6, "WM_ACTIVATE")
+OnMessage(0x03, "WM_MOVE")
+OnMessage(MsgAhkSpyZoom := DllCall("RegisterWindowMessage", "Str", "AhkSpyZoom"), "MsgZoom")
 OnExit, Exit
 DllCall("RegisterShellHookWindow", "UInt", A_ScriptHwnd)
 OnMessage(DllCall("RegisterWindowMessage", "str", "SHELLHOOK"), "ShellProc")
@@ -114,8 +120,24 @@ Else
 Menu, Startmode, Add, Window, SelStartMode
 Menu, Startmode, Add, Mouse && Control, SelStartMode
 Menu, Startmode, Add, Button, SelStartMode
+Menu, Startmode, Add
+Menu, Startmode, Add, Last Mode, SelStartMode
 Menu, Sys, Add, Start mode, :Startmode
-Menu, Startmode, Check, % {"Win":"Window","Mouse":"Mouse && Control","Hotkey":"Button"}[ThisMode]
+Menu, Startmode, Check, % {"Win":"Window","Mouse":"Mouse && Control","Hotkey":"Button","LastMode":"Last Mode"}[IniRead("StartMode", "Mouse")]
+Menu, Sys, Add
+Menu, Sys, Add, Memory position, MemoryPos
+Menu, Sys, % MemoryPos ? "Check" : "UnCheck", Memory position
+Menu, Sys, Add, Memory size, MemorySize
+Menu, Sys, % MemorySize ? "Check" : "UnCheck", Memory size
+If m_run_AhkSpyZoom !=
+{
+	Menu, Sys, Add
+	Menu, Sys, Add, Memory zoom size, MemoryZoomSize
+	Menu, Sys, % MemoryZoomSize ? "Check" : "UnCheck", Memory zoom size
+}
+Menu, Sys, Add
+Menu, Sys, Add, Default size, DefaultSize
+Menu, Sys, Add, Open script dir, Sys_OpenScriptDir
 Menu, Sys, Add
 Menu, Help, Add, About AhkSpy, Sys_Help
 Menu, Help, Add
@@ -124,21 +146,22 @@ If FileExist(SubStr(A_AhkPath,1,InStr(A_AhkPath,"\",,0,1)) "AutoHotkey.chm")
 Menu, Help, Add, AutoHotKey official help online, Sys_Help
 Menu, Help, Add, AutoHotKey russian help online, Sys_Help
 Menu, Sys, Add, Help, :Help
-Menu, Sys, Color, % ColorBgOriginal
-Menu, Sys, Add
-Menu, Sys, Add, Default size, DefaultSize
-Menu, Sys, Add, Open script dir, Sys_OpenScriptDir
 Menu, Sys, Add
 Menu, Sys, Add, Reload AhkSpy, Reload
 Menu, Sys, Add, Suspend Hotkeys, Suspend
 Menu, Sys, Add, Pause AhkSpy, PausedScript
-
-Gui, Show, NA h%HeightStart% w%widthTB%
+Menu, Sys, Color, % ColorBgOriginal
+If MemorySize
+	Gui, Show, % "NA h" IniRead("MemorySizeH", HeightStart) " w" IniRead("MemorySizeW", widthTB)
+Else
+	Gui, Show, NA h%HeightStart% w%widthTB%
+If MemoryPos
+	Gui, Show, % "NA x" IniRead("MemoryPosX", "Center") " y" IniRead("MemoryPosY", "Center")
 Gui, +MinSize%widthTB%x%HeigtButton%
 
 Gosub, HotkeyInit
 Gosub, Mode_%ThisMode%
-PostMessage, 0x50, 0, 0x0409, , % "ahk_id" hActiveX
+PostMessage, 0x50, 0, 0x0409, , % "ahk_id" hActiveX			;  установить английскую раскладку
 
 #Include *i %A_ScriptDir%\AhkSpyInclude.ahk
 Return
@@ -152,7 +175,10 @@ Return
 	If !WinActive("ahk_id" hGui)  {
 		WinActivate ahk_id %hGui%
 		GuiControl, 1:Focus, oDoc
+		ZoomMsg(1)
 	}
+	Else
+		ZoomMsg(2)
 	Return
 
 #If Sleep != 1
@@ -169,7 +195,13 @@ PausedScript:
 		(ThisMode = "Mouse" ? Spot_Win() : ThisMode = "Win" ? Spot_Mouse() : 0)
 	HideMarker(), HideAccMarker()
 	Menu, Sys, % isPaused ? "Check" : "UnCheck", Pause AhkSpy
+	ZoomMsg(isPaused || WinActive("ahk_id" hGui) ? 1 : 0)
 	Return
+
++#Up::MouseMove, 0, -1, 0, R
++#Down::MouseMove, 0, 1, 0, R
++#Left::MouseMove, -1, 0, 0, R
++#Right::MouseMove, 1, 0, 0, R
 
 #If WinActive("ahk_id" hGui)
 
@@ -255,6 +287,7 @@ Mode_Win:
 	TitleText := "AhkSpy - Window" TitleTextP2
 	SendMessage, 0xC, 0, &TitleText, , ahk_id %hGui%
 	Write_Win(), oDoc.body.scrollLeft := ScrollPos[ThisMode,1], oDoc.body.scrollTop := ScrollPos[ThisMode,2]
+	IniWrite(ThisMode, "LastMode")
 
 Loop_Win:
 	If (WinActive("ahk_id" hGui) || Sleep = 1)
@@ -271,7 +304,7 @@ Spot_Win(NotHTML=0)  {
 	If NotHTML
 		GoTo HTML_Win
 	MouseGetPos,,,WinID
-	If (WinID = hGui)
+	If (WinID = hGui || WinID = oOther.hZoom)
 		Return HideMarker(), HideAccMarker()
 	WinGetTitle, WinTitle, ahk_id %WinID%
 	WinTitle := TransformHTML(WinTitle)
@@ -328,7 +361,7 @@ HTML_Win:
 	HTML_Win =
 	( Ltrim
 	<body id='body'><pre id='pre'; contenteditable='true'>
-	%D1% <span id='title'>( Title )</span> %DB% %pause_button% %D2%
+	%D1% <span id='title'>( Title )</span> %DB% %pause_button%%m_run_AhkSpyZoom% %D2%
 	<span id='wintitle1'>%WinTitle%</span>
 	%D1% <span id='title'>( Class )</span> %D2%
 	<span id='wintitle2'><span id='param'>ahk_class</span> %WinClass%</span>
@@ -339,11 +372,11 @@ HTML_Win:
 	%D1% <span id='title'>( CommandLine )</span> %DB% <span contenteditable='false' unselectable='on'><button id='w_command_line'>launch</button> <button id='paste_command_line'>paste</button></span> %copy_button% %D2%
 	<span id='c_command_line'>%ComLine%</span>
 	%D1% <span id='title'>( Position`s )</span> %D2%
-	<span id='param'>Pos:</span>  x%WinX% y%WinY%%DP%<span id='param'>Size:</span>  w%WinWidth% h%WinHeight%%DP%<span id='param'>x<span style='font-size: 0.7em'>2</span></span>%WinX2% <span id='param'>y<span style='font-size: 0.7em'>2</span></span>%WinY2%%DP%%WinX%, %WinY%, %WinWidth%, %WinHeight%
+	%set_button_pos%Pos:</button></span>  <span>x%WinX% y%WinY%</span>%DP%%set_button_pos%Size:</button></span>  <span>w%WinWidth% h%WinHeight%</span>%DP%<span id='param'>x<span style='font-size: 0.7em'>2</span></span>%WinX2% <span id='param'>y<span style='font-size: 0.7em'>2</span></span>%WinY2%%DP%%WinX%, %WinY%, %WinWidth%, %WinHeight%
 	<span id='param'>Client area size:</span>  w%caW% h%caH%%DP%<span id='param'>top</span> %caY% <span id='param'>left</span> %caX% <span id='param'>bottom</span> %caWinBottom% <span id='param'>right</span> %caWinRight%
 	<a></a>%D1% <span id='title'>( Other )</span> %D2%
-	<span id='param'>PID:</span>  %WinPID%%DP%<span id='param'>Count window this PID:</span> %WinCountProcess%%DP%<span contenteditable='false' unselectable='on'><button id='process_close' name='%WinPID%'>process close</button></span>
-	<span id='param'>HWND:</span>  %WinID%%DP%<span contenteditable='false' unselectable='on'><button id='win_close' name='%WinID%'>win close</button></span>%DP%<span id='param'>Control count:</span>  %CountControl%
+	<span id='param'>PID:</span>  %WinPID%%DP%<span id='param'>Count window this PID:</span> %WinCountProcess%%DP%<span contenteditable='false' unselectable='on'><button id='process_close'>process close</button></span>
+	<span id='param'>HWND:</span>  %WinID%%DP%<span contenteditable='false' unselectable='on'><button id='win_close'>win close</button></span>%DP%<span id='param'>Control count:</span>  %CountControl%
 	<span id='param'>Style:</span><span id='c_Style'>  %WinStyle%</span>%DP%<span id='param'>ExStyle:</span><span id='c_ExStyle'>  %WinExStyle%</span>%DP%<span contenteditable='false' unselectable='on'><button id='get_styles'>%ButStyleTip%</button></span>%WinTransparent%%WinTransColor%%CLSID%<span id='AllWinStyles'>%WinStyles%</span>%SBText%%WinText%
 	<a></a>%D2%</pre></body>
 
@@ -352,9 +385,12 @@ HTML_Win:
 	pre {font-family: '%FontFamily%'; font-size: '%FontSize%'; position: absolute; top: 5px}
 	#title {color: '%ColorTitle%'}
 	#param {color: '%ColorParam%'}
+	#set_button_pos {color: '%ColorParam%'}
 	button {font-size: 0.9em; border: 1px dashed black}
 	</style>
 	)
+	oOther.WinPID := WinPID
+	oOther.WinID := WinID
 	If (ThisMode = "Win") && (StateLight = 1 || (StateLight = 3 && GetKeyState("Shift", "P")))
 		ShowMarker(WinX, WinY, WinWidth, WinHeight, 5)
 	Return 1
@@ -386,6 +422,7 @@ Mode_Mouse:
 	TitleText := "AhkSpy - Mouse & Control" TitleTextP2
 	SendMessage, 0xC, 0, &TitleText, , ahk_id %hGui%
 	Write_Mouse(), oDoc.body.scrollLeft := ScrollPos[ThisMode,1], oDoc.body.scrollTop := ScrollPos[ThisMode,2]
+	IniWrite(ThisMode, "LastMode")
 
 Loop_Mouse:
 	If WinActive("ahk_id" hGui) || Sleep = 1
@@ -402,6 +439,7 @@ Spot_Mouse(NotHTML=0)  {
 	If NotHTML
 		GoTo HTML_Mouse
 	WinGet, ProcessName_A, ProcessName, A
+	WinGet, HWND_A, ID, A
 	WinGetClass, WinClass_A, A
 	CoordMode, Mouse
 	MouseGetPos, MXS, MYS, tWinID, tControlNN
@@ -409,7 +447,7 @@ Spot_Mouse(NotHTML=0)  {
 	CoordMode, Mouse, Window
 	MouseGetPos, MXWA, MYWA, , tControlID, 2
 
-	If (tWinID != hGui)
+	If (tWinID != hGui && tWinID !=oOther.hZoom)
 	{
 		WinID := tWinID, CtrlInfo := "", isIE := 0
 		ControlNN := tControlNN, ControlID := tControlID
@@ -425,7 +463,7 @@ Spot_Mouse(NotHTML=0)  {
 		GuiControl, % "TB: +c" sColorRGB := SubStr(ColorRGB, 3), ColorProgress
 		GuiControl, TB: +Redraw, ColorProgress
 		WinGetPos, WinX2, WinY2, WinW, WinH, ahk_id %WinID%
-		WithRespectWin := "`n<span id='param'>Relative pos to a window:</span>  x/w " RWinX / WinW "  y/h " RWinY / WinH
+		WithRespectWin := "`n<span id='param'>Relative pos to a window:</span> " RWinX / WinW ", " RWinY / WinH
 			. "  <span id='param'>for</span>  w" WinW "  h" WinH
 		ControlGetPos, CtrlX, CtrlY, CtrlW, CtrlH,, ahk_id %ControlID%
 		CtrlCAX := CtrlX - caX, CtrlCAY := CtrlY - caY
@@ -473,16 +511,16 @@ HTML_Mouse:
 	HTML_Mouse =
 	( Ltrim
 	<body id='body'><pre id='pre' contenteditable='true'>
-	%D1% <span id='title'>( Mouse pos )</span> %DB% %pause_button% %D2%
+	%D1% <span id='title'>( Mouse )</span> %DB% %pause_button%%m_run_AhkSpyZoom% %D2%
 	<span id='param'>Screen:</span>  x%MXS% y%MYS%%DP%<span id='param'>Window:</span>  x%RWinX% y%RWinY%%DP%<span id='param'>Client:</span>  x%MXC% y%MYC%%WithRespectWin%
-	<span id='param'>Relative active window:</span>  x%MXWA% y%MYWA%%DP%<span id='param'>exe</span> %ProcessName_A% <span id='param'>class</span> %WinClass_A%
+	<span id='param'>Relative active window:</span>  x%MXWA% y%MYWA%%DP%<span id='param'>exe</span> %ProcessName_A% <span id='param'>class</span> %WinClass_A% <span id='param'>hwnd</span> %HWND_A%
 	%D1% <span id='title'>( PixelGetColor )</span> %D2%
 	<span id='param'>RGB: </span> %ColorRGB%%DP%#%sColorRGB%%DP%<span id='param'>BGR: </span> %ColorBGR%%DP%#%sColorBGR%
-	%D1% <span id='title'>( Window: Class & ProcessName & HWND )</span> %D2%
+	%D1% <span id='title'>( Window: Class & Process & HWND )</span> %D2%
 	<span id='param'>ahk_class</span> %WinClass% <span id='param'>ahk_exe</span> %ProcessName% <span id='param'>ahk_id</span> %WinID%
 	%D1% <span id='title'>( Control )</span> %D2%<a></a>
 	<span id='param'>Class NN:</span>  %ControlNN%%DP%<span id='param'>Win class:</span>  %CtrlClass%
-	<span id='param'>Pos:</span>  x%CtrlX% y%CtrlY%%DP%<span id='param'>Size:</span>  w%CtrlW% h%CtrlH%%DP%<span id='param'>x<span style='font-size: 0.7em'>2</span></span>%CtrlX2% <span id='param'>y<span style='font-size: 0.7em'>2</span></span>%CtrlY2%
+	%set_button_pos%Pos:</button></span>  <span>x%CtrlX% y%CtrlY%</span>%DP%%set_button_pos%Size:</button></span>  <span>w%CtrlW% h%CtrlH%</span>%DP%<span id='param'>x<span style='font-size: 0.7em'>2</span></span>%CtrlX2% <span id='param'>y<span style='font-size: 0.7em'>2</span></span>%CtrlY2%
 	<span id='param'>Pos relative client area:</span>  x%CtrlCAX% y%CtrlCAY%%DP%<span id='param'>x<span style='font-size: 0.7em'>2</span></span>%CtrlCAX2% <span id='param'>y<span style='font-size: 0.7em'>2</span></span>%CtrlCAY2%
 	<span id='param'>Mouse relative control:</span>  x%rmCtrlX% y%rmCtrlY%%DP%<span id='param'>Client area:</span>  x%caX% y%caY% w%caW% h%caH%
 	<span id='param'>HWND:</span>  %ControlID%%DP%<span id='param'>Style:</span>  %CtrlStyle%%DP%<span id='param'>ExStyle:</span>  %CtrlExStyle%
@@ -494,9 +532,11 @@ HTML_Mouse:
 	body {background-color: '#%ColorBg%'; color: '%ColorFont%'}
 	#title {color: '%ColorTitle%'}
 	#param {color: '%ColorParam%'}
+	#set_button_pos {color: '%ColorParam%'}
 	Button {font-size: 0.9em; border: 1px dashed black}
 	</style>
 	)
+	oOther.ControlID := ControlID
 	Return 1
 }
 
@@ -622,6 +662,12 @@ GetInfo_SysTabControl(hwnd, ByRef ClassNN)  {
 			. "<span id='param'>Selected item:</span> " SelTab
 }
 
+GetInfo_ToolbarWindow(hwnd, ByRef ClassNN)  {
+	ClassNN := "ToolbarWindow32"
+	SendMessage, 0x0418,,,, ahk_id %hwnd%		;  TB_BUTTONCOUNT
+	BUTTONCOUNT := ErrorLevel
+	Return	"`n<span id='param'>Button count:</span> " BUTTONCOUNT
+}
 	; _________________________________________________ Get Internet Explorer Info _________________________________________________
 
 	;  http://www.autohotkey.com/board/topic/84258-iwb2-learner-iwebbrowser2/
@@ -796,6 +842,7 @@ Mode_Hotkey:
 	GuiControl, TB: -0x0001, But3
 	WinActivate ahk_id %hGui%
 	GuiControl, 1:Focus, oDoc
+	IniWrite(ThisMode, "LastMode")
 	Return
 
 Write_Hotkey(K)  {
@@ -863,7 +910,7 @@ Write_Hotkey(K)  {
 
 	%HK2% & %HK1%::<span id='param'>%HKComm1% & %HKComm2%</span>   %DP%   GetKeyState("%SendHotkey%", "P")%Comment%   %DP%   KeyWait, %SendHotkey%, D T3%Comment%
 
-	%Keys2%:: %Keys1%<span id='param'>%KeysComm%</span>   %DP%   %HK2%::%HK1%<span id='param'>%HKComm1% >> %HKComm2%</span>   %DP%   <span id='param'>Remapping keys</span>
+	%HK2%::%HK1%<span id='param'>%HKComm1% >> %HKComm2%</span>   %DP%   %Keys2%:: %Keys1%<span id='param'>%KeysComm%</span>   %DP%   <span id='param'>Remapping keys</span>
 
 	%D1% <span id='title'>( Last pressed )</span> %DB% <span contenteditable='false' unselectable='on'><button id='numlock'> num </button> <button id='scrolllock'> scroll </button> <button id='rus_eng'> rus/eng </button></span> %D2%
 
@@ -986,14 +1033,14 @@ Hotkey_PressName:
 }
 
 Hotkey_ExtKeyInit(Options)   {
-	Local S_FormatInteger, MouseKey
+	Local S_FormatInteger
+	Static MouseKey := "MButton|WheelDown|WheelUp|WheelRight|WheelLeft|XButton1|XButton2"
 	#If Hotkey_Arr("Hook")
 	#If Hotkey_Arr("Hook") && !Hotkey_Main({Opt:"GetMod"})
 	#If Hotkey_Arr("Hook") && Hotkey_Main({Opt:"GetMod"})
 	#If
 	IfInString, Options, M
 	{
-		MouseKey := "MButton|WheelDown|WheelUp|WheelRight|WheelLeft|XButton1|XButton2"
 		Hotkey, IF, Hotkey_Arr("Hook")
 		Loop, Parse, MouseKey, |
 			Hotkey, %A_LoopField%, Hotkey_PressName
@@ -1093,7 +1140,7 @@ GuiSize:
 		WinMove, ahk_id %hActiveX%, , 0, HeigtButton, A_GuiWidth, A_GuiHeight - HeigtButton
 	}
 	Else
-		HideMarker(), HideAccMarker()
+		HideMarker(), HideAccMarker(), ZoomMsg(1)
 	Try SetTimer, Loop_%ThisMode%, % Sleep = 1 || isPaused ? "Off" : "On"
 	Return
 
@@ -1125,7 +1172,8 @@ LaunchHelp:
 	Return
 
 DefaultSize:
-	Gui, 1: Show, % "NA Center w" widthTB "h" HeightStart
+	Gui, 1: Show, % "NA w" widthTB "h" HeightStart
+	ZoomMsg(6)
 	Return
 
 Reload:
@@ -1152,7 +1200,8 @@ SelStartMode:
 	Menu, Startmode, UnCheck, Window
 	Menu, Startmode, UnCheck, Mouse && Control
 	Menu, Startmode, UnCheck, Button
-	IniWrite({"Window":"Win","Mouse && Control":"Mouse","Button":"Hotkey"}[A_ThisMenuItem], "StartMode")
+	Menu, Startmode, UnCheck, Last Mode
+	IniWrite({"Window":"Win","Mouse && Control":"Mouse","Button":"Hotkey","Last Mode":"LastMode"}[A_ThisMenuItem], "StartMode")
 	Menu, Startmode, Check, % A_ThisMenuItem
 	Return
 
@@ -1190,6 +1239,24 @@ Spot_together:
 	Menu, Sys, % StateAllwaysSpot ? "Check" : "UnCheck", Spot together (low speed)
 	Return
 
+MemoryPos:
+	IniWrite(MemoryPos := !MemoryPos, "MemoryPos")
+	Menu, Sys, % MemoryPos ? "Check" : "UnCheck", Memory position
+	SavePos()
+	Return
+
+MemorySize:
+	IniWrite(MemorySize := !MemorySize, "MemorySize")
+	Menu, Sys, % MemorySize ? "Check" : "UnCheck", Memory size
+	SavePos()
+	Return
+
+MemoryZoomSize:
+	IniWrite(MemoryZoomSize := !MemoryZoomSize, "MemoryZoomSize")
+	Menu, Sys, % MemoryZoomSize ? "Check" : "UnCheck", Memory zoom size
+	ZoomMsg(5, MemoryZoomSize)
+	Return
+
 	; _________________________________________________ Functions _________________________________________________
 
 ShellProc(nCode, wParam)  {
@@ -1199,6 +1266,7 @@ ShellProc(nCode, wParam)  {
 			(ThisMode = "Hotkey" && !isPaused ? Hotkey_Arr("Hook", 1) : ""), HideMarker(), HideAccMarker(), CheckHideMarker()
 		Else If Hotkey_Arr("Hook")
 			Hotkey_Reset()
+		ZoomMsg(wParam = hGui ? 1 : Sleep != 1 && !isPaused ? 0 : 1)
 	}
 }
 
@@ -1207,6 +1275,7 @@ WM_ACTIVATE(wp)  {
 		(ThisMode = "Hotkey" && !isPaused ? Hotkey_Arr("Hook", 1) : ""), HideMarker(), HideAccMarker(), CheckHideMarker()
 	Else If (wp & 0xFFFF = 0 && Hotkey_Arr("Hook"))
 		Hotkey_Reset()
+	ZoomMsg((wp & 0xFFFF) ? 1 : Sleep != 1 && !isPaused ? 0 : 1)
 }
 
 WM_LBUTTONDOWN()  {
@@ -1216,7 +1285,7 @@ WM_LBUTTONDOWN()  {
 			oDoc.execCommand("Paste"), ToolTip("Paste", 300)
 		Else
 		{
-			SendInput !{Esc}
+			SendInput {LAlt Down}{Escape}{LAlt Up}
 			ToolTip("Alt+Escape", 300)
 		}
 	}
@@ -1228,6 +1297,31 @@ WM_CONTEXTMENU()  {
 	{
 		SetTimer, ShowSys, -1
 		Return 0
+	}
+}
+
+MsgZoom(wParam, lParam) {
+	oOther.hZoom := lParam
+	ZoomMsg(Sleep != 1 && !isPaused && !WinActive("ahk_id" hGui) ? 0 : 1)
+}
+
+ZoomMsg(wParam = -1, lParam = -1) {
+	If WinExist("AhkSpyZoom ahk_id" oOther.hZoom)
+		PostMessage, % MsgAhkSpyZoom, wParam, lParam, , % "ahk_id" oOther.hZoom
+}
+
+WM_MOVE() {
+	SetTimer, SavePos, -200
+}
+
+SavePos() {
+	If (MemoryPos || MemorySize)
+	{
+		WinGetPos, WinX, WinY, WinWidth, WinHeight, ahk_id %hGui%
+		IniWrite(WinX, "MemoryPosX")
+		IniWrite(WinY, "MemoryPosY")
+		IniWrite(WinWidth, "MemorySizeW")
+		IniWrite(WinHeight, "MemorySizeH")
 	}
 }
 
@@ -1249,6 +1343,14 @@ FixIE(Fix)  {
 RunPath(Link, WorkingDir="", Option="")  {
 	Run %Link%, %WorkingDir%, %Option%
 	Gui, 1: Minimize
+}
+
+ExtraFile(Name) {
+	Static Dir := A_ScriptDir
+	If FileExist(Dir "\" Name ".exe")
+		Return Dir "\" Name ".exe"
+	If FileExist(Dir "\" Name ".ahk")
+		Return Dir "\" Name ".ahk"
 }
 
 RunRealPath(Path) {
@@ -1300,8 +1402,8 @@ CheckHideMarker()  {
 		Return
 }
 
-IniRead(Key)  {
-	IniRead, Value, %A_AppData%\AhkSpy.ini, AhkSpy, %Key%, %A_Space%
+IniRead(Key, Error := " ")  {
+	IniRead, Value, %A_AppData%\AhkSpy.ini, AhkSpy, %Key%, %Error%
 	Return Value
 }
 IniWrite(Value, Key) {
@@ -1549,9 +1651,9 @@ Class Events  {
 			Else If thisid = paste_command_line
 				oDoc.getElementById("c_command_line").innerHTML := TransformHTML(Clipboard)
 			Else If thisid = process_close
-				Process, Close, % oevent.name
+				Process, Close, % oOther.WinPID
 			Else If thisid = win_close
-				WinClose, % "ahk_id" oevent.name
+				WinClose, % "ahk_id" oOther.WinID
 			Else If (thisid = "numlock" || thisid = "scrolllock")
 				Events.num_scroll(thisid)
 			Else If thisid = rus_eng
@@ -1563,9 +1665,24 @@ Class Events  {
 			Else If thisid = get_styles
 				ViewStyles(oevent)
 			Else If thisid = run_AccViewer
-				RunPath(A_ScriptDir "\AccViewer Source.ahk")
+				RunPath(ExtraFile("AccViewer Source"))
 			Else If thisid = run_iWB2Learner
-				RunPath(A_ScriptDir "\iWB2 Learner.ahk")
+				RunPath(ExtraFile("iWB2 Learner"))
+			Else If thisid = set_button_pos
+			{
+				HayStack := oevent.OuterText = "Pos:"
+				? oDoc.all.item(oevent.sourceIndex + 1).OuterText " " oDoc.all.item(oevent.sourceIndex + 5).OuterText
+				: oDoc.all.item(oevent.sourceIndex - 3).OuterText " " oDoc.all.item(oevent.sourceIndex + 1).OuterText
+				RegExMatch(HayStack, "x(.*?)\s+y(.*?)\s+w(.*?)\s+h(.*?)(\s+|$)", p)
+				If (p1 + 0 = "" || p2 + 0 = "" || p3 + 0 = "" || p4 + 0 = "")
+					Return ToolTip("Invalid parametrs", 500)
+				If (ThisMode = "Win")
+					WinMove, % "ahk_id " oOther.WinID, , p1, p2, p3, p4
+				Else
+					ControlMove, , p1, p2, p3, p4, % "ahk_id " oOther.ControlID
+			}
+			Else If thisid = run_AhkSpyZoom
+				Events.AhkSpyZoomShow()
 		}
 		Else If (ThisMode = "Hotkey" && !Hotkey_Arr("Hook") && !isPaused && tagname ~= "PRE|SPAN")
 			Hotkey_Arr("Hook", 1)
@@ -1592,6 +1709,8 @@ Class Events  {
 				Gosub, PausedScript
 			Else If thisid = get_styles
 				ViewStyles(oevent)
+			Else If thisid = run_AhkSpyZoom
+				Events.AhkSpyZoomShow()
 		}
 	}
 	onfocus()  {
@@ -1603,11 +1722,20 @@ Class Events  {
 		If (WinActive("ahk_id" hGui) && !isPaused && ThisMode = "Hotkey")
 			Hotkey_Arr("Hook", 1)
 	}
+
 	num_scroll(thisid)  {
 		(OnHook := Hotkey_Arr("Hook")) ? Hotkey_Arr("Hook", 0) : 0
 		SendInput, {%thisid%}
 		(OnHook ? Hotkey_Arr("Hook", 1) : 0)
 		ToolTip(thisid " " (GetKeyState(thisid, "T") ? "On" : "Off"), 500)
+	}
+	AhkSpyZoomShow()  {
+		If !DllCall("IsWindowVisible", "Ptr", oOther.hZoom)
+			SendInput {LAlt Down}{Escape}{LAlt Up}
+		If !WinExist("AhkSpyZoom ahk_id" oOther.hZoom)
+			Run % ExtraFile("AhkSpyZoom") " " hGui
+		Else
+			ZoomMsg(DllCall("IsWindowVisible", "Ptr", oOther.hZoom) ? 3 : 4)
 	}
 }
 	;)
