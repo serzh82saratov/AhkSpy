@@ -1,3 +1,6 @@
+
+	; version = 1.0
+
 #NoEnv
 #NoTrayIcon
 #SingleInstance Ignore
