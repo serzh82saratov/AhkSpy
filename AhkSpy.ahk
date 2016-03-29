@@ -13,7 +13,7 @@ SetBatchLines, -1
 ListLines, Off
 DetectHiddenWindows, On
 
-Global AhkSpyVersion := 1.82
+Global AhkSpyVersion := 1.83
 Gosub, CheckAhkVersion
 Menu, Tray, UseErrorLevel
 Menu, Tray, Icon, Shell32.dll, % A_OSVersion = "WIN_XP" ? 222 : 278
@@ -171,7 +171,7 @@ Return
 #If (Sleep != 1 && !isPaused && ThisMode != "Hotkey")
 
 +Tab::
-	(ThisMode = "Mouse" ? Spot_Mouse() Spot_Win() Write_Mouse() : Spot_Win() Spot_Mouse() Write_Win())
+	(ThisMode = "Mouse" ? (Spot_Mouse() (StateAllwaysSpot ? Spot_Win() : 0) Write_Mouse()) : (Spot_Win() (StateAllwaysSpot ? Spot_Mouse() : 0) Write_Win()))
 	If !WinActive("ahk_id" hGui)  {
 		WinActivate ahk_id %hGui%
 		GuiControl, 1:Focus, oDoc
@@ -198,10 +198,22 @@ PausedScript:
 	ZoomMsg(isPaused || WinActive("ahk_id" hGui) ? 1 : 0)
 	Return
 
-+#Up::MouseMove, 0, -1, 0, R
-+#Down::MouseMove, 0, 1, 0, R
-+#Left::MouseMove, -1, 0, 0, R
-+#Right::MouseMove, 1, 0, 0, R
++#Up::MouseStep(0, -1)
++#Down::MouseStep(0, 1)
++#Left::MouseStep(-1, 0)
++#Right::MouseStep(1, 0)
+
+MouseStep(x, y) {
+	MouseMove, x, y, 0, R
+	If (Sleep != 1 && !isPaused && ThisMode != "Hotkey" && WinActive("ahk_id" hGui))
+	{
+;		MouseGetPos,,,WinID
+;		If (WinID = hGui || WinID = oOther.hZoom)
+;			Return
+		(ThisMode = "Mouse" ? (Spot_Mouse() (StateAllwaysSpot ? Spot_Win() : 0) Write_Mouse()) : (Spot_Win() (StateAllwaysSpot ? Spot_Mouse() : 0) Write_Win()))
+		ZoomMsg(2)
+	}
+}
 
 #If WinActive("ahk_id" hGui)
 
