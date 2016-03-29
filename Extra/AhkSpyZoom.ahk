@@ -94,7 +94,7 @@ Magnify() {
 		StretchBlt(oZoom.hdcDest, oZoom.hdcSrc, 0, 0, oZoom.nWidthDest, oZoom.nHeightDest
 			, mX - oZoom.nXOriginSrcOffset, mY - oZoom.nYOriginSrcOffset, oZoom.nWidthSrc, oZoom.nHeightSrc)
 		For k, v In oZoom.oMarkers[oZoom.Mark]
-			StretchBlt(oZoom.hdcDest, oZoom.hdcDest, v.x, v.y, v.w, v.h, v.x, v.y, v.w, v.h, 0x330008)
+			StretchBlt(oZoom.hdcDest, oZoom.hdcDest, v.x, v.y, v.w, v.h, v.x, v.y, v.w, v.h, 0x550009)	; DSTINVERT
 	}
 	If !oZoom.Pause
 		SetTimer, Magnify, -1
@@ -211,7 +211,7 @@ SetWinEventHook(EventProc, eventMin, eventMax = 0)  {
 				, "UInt", dwflags := 0x0|0x2, "Ptr")	;	WINEVENT_OUTOFCONTEXT | WINEVENT_SKIPOWNPROCESS
 }
 
-StretchBlt(hdcDest, hdcSrc, nXOriginDest, nYOriginDest, nWidthDest, nHeightDest, nXOriginSrc, nYOriginSrc, nWidthSrc, nHeightSrc, dwRop = 0xC000CA) {
+StretchBlt(hdcDest, hdcSrc, nXOriginDest, nYOriginDest, nWidthDest, nHeightDest, nXOriginSrc, nYOriginSrc, nWidthSrc, nHeightSrc, dwRop = 0xCC0020) {	; SRCCOPY
 	DllCall("gdi32.dll\StretchBlt", Ptr, hdcDest
 								, Int, nXOriginDest
 								, Int, nYOriginDest
