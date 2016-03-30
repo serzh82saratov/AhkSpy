@@ -212,6 +212,7 @@ MouseStep(x, y) {
 ;			Return
 		(ThisMode = "Mouse" ? (Spot_Mouse() (StateAllwaysSpot ? Spot_Win() : 0) Write_Mouse()) : (Spot_Win() (StateAllwaysSpot ? Spot_Mouse() : 0) Write_Win())) 
 		ZoomMsg(2)
+	}
 }
 
 #If WinActive("ahk_id" hGui)
