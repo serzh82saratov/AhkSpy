@@ -13,7 +13,7 @@ SetBatchLines, -1
 ListLines, Off
 DetectHiddenWindows, On
 
-Global AhkSpyVersion := 1.84
+Global AhkSpyVersion := 1.85
 Gosub, CheckAhkVersion
 Menu, Tray, UseErrorLevel
 Menu, Tray, Icon, Shell32.dll, % A_OSVersion = "WIN_XP" ? 222 : 278
@@ -31,9 +31,10 @@ Global ThisMode := "Mouse"						;  Стартовый режим - Win|Mouse|Hot
 
 , DP := "  <span style='color: " ColorDelimiter "'>" # "</span>  ", D1, D2, DB
 , ThisMode := IniRead("StartMode", "Mouse"), ThisMode := ThisMode = "LastMode" ? IniRead("LastMode", "Mouse") : ThisMode
-, MemoryPos := IniRead("MemoryPos", 0), MemorySize := IniRead("MemorySize", 0), MemoryZoomSize := IniRead("MemoryZoomSize", 0)
+, MemoryPos := IniRead("MemoryPos", 0), MemorySize := IniRead("MemorySize", 0)
+, MemoryZoomSize := IniRead("MemoryZoomSize", 0), MemoryStateZoom := IniRead("MemoryStateZoom", 0)
 , StateLight := IniRead("StateLight", 1), StateLightAcc := IniRead("StateLightAcc", 1), StateUpdate := IniRead("StateUpdate", 1)
-, StateAllwaysSpot := IniRead("AllwaysSpot"), ScrollPos:={}, AccCoord:=[], oOther:={}
+, StateAllwaysSpot := IniRead("AllwaysSpot", 0), ScrollPos:={}, AccCoord:=[], oOther:={}
 , hGui, hActiveX, hMarkerGui, hMarkerAccGui, oDoc, ShowMarker, isIE, isPaused, w_ShowStyles, MsgAhkSpyZoom, Sleep
 , HTML_Win, HTML_Mouse, HTML_Hotkey, o_edithotkey, o_editkeyname, rmCtrlX, rmCtrlY, m_hwnd_3, Hotkey_NFP
 , copy_button := "<span contenteditable='false' unselectable='on'><button id='copy_button'> copy </button></span>"
@@ -134,6 +135,8 @@ If m_run_AhkSpyZoom !=
 	Menu, Sys, Add
 	Menu, Sys, Add, Memory zoom size, MemoryZoomSize
 	Menu, Sys, % MemoryZoomSize ? "Check" : "UnCheck", Memory zoom size
+	Menu, Sys, Add, Memory state zoom, MemoryStateZoom
+	Menu, Sys, % MemoryStateZoom ? "Check" : "UnCheck", Memory state zoom
 }
 Menu, Sys, Add
 Menu, Sys, Add, Default size, DefaultSize
@@ -163,6 +166,9 @@ Gosub, HotkeyInit
 Gosub, Mode_%ThisMode%
 PostMessage, 0x50, 0, 0x0409, , % "ahk_id" hActiveX			;  установить английскую раскладку
 
+If (m_run_AhkSpyZoom != "" && MemoryStateZoom && IniRead("ZoomShow", 0))
+	Events.AhkSpyZoomShow()
+	
 #Include *i %A_ScriptDir%\AhkSpyInclude.ahk
 Return
 
@@ -210,7 +216,7 @@ MouseStep(x, y) {
 ;		MouseGetPos,,,WinID
 ;		If (WinID = hGui || WinID = oOther.hZoom)
 ;			Return
-		(ThisMode = "Mouse" ? (Spot_Mouse() (StateAllwaysSpot ? Spot_Win() : 0) Write_Mouse()) : (Spot_Win() (StateAllwaysSpot ? Spot_Mouse() : 0) Write_Win())) 
+		(ThisMode = "Mouse" ? (Spot_Mouse() (StateAllwaysSpot ? Spot_Win() : 0) Write_Mouse()) : (Spot_Win() (StateAllwaysSpot ? Spot_Mouse() : 0) Write_Win()))
 		ZoomMsg(2)
 	}
 }
@@ -1269,6 +1275,12 @@ MemoryZoomSize:
 	ZoomMsg(5, MemoryZoomSize)
 	Return
 
+MemoryStateZoom:
+	IniWrite(MemoryStateZoom := !MemoryStateZoom, "MemoryStateZoom")
+	Menu, Sys, % MemoryStateZoom ? "Check" : "UnCheck", Memory state zoom
+	IniWrite(DllCall("IsWindowVisible", "Ptr", oOther.hZoom) ? 1 : 0, "ZoomShow")
+	Return
+
 	; _________________________________________________ Functions _________________________________________________
 
 ShellProc(nCode, wParam)  {
@@ -1742,12 +1754,14 @@ Class Events  {
 		ToolTip(thisid " " (GetKeyState(thisid, "T") ? "On" : "Off"), 500)
 	}
 	AhkSpyZoomShow()  {
-		If !DllCall("IsWindowVisible", "Ptr", oOther.hZoom)
-			SendInput {LAlt Down}{Escape}{LAlt Up}
-		If !WinExist("AhkSpyZoom ahk_id" oOther.hZoom)
+		WindowVisible := DllCall("IsWindowVisible", "Ptr", oOther.hZoom)
+;		If (!isPaused && !WindowVisible)
+;			SendInput {LAlt Down}{Escape}{LAlt Up}
+		If !WinExist("AhkSpyZoom ahk_id" oOther.hZoom) && IniWrite(1, "ZoomShow")
 			Run % ExtraFile("AhkSpyZoom") " " hGui
 		Else
-			ZoomMsg(DllCall("IsWindowVisible", "Ptr", oOther.hZoom) ? 3 : 4)
+			ZoomMsg(WindowVisible ? 3 : 4)
+			, IniWrite(WindowVisible ? 0 : 1, "ZoomShow")
 	}
 }
 	;)
