@@ -13,7 +13,7 @@ SetBatchLines, -1
 ListLines, Off
 DetectHiddenWindows, On
 
-Global AhkSpyVersion := 1.87
+Global AhkSpyVersion := 1.88
 Gosub, CheckAhkVersion
 Menu, Tray, UseErrorLevel
 Menu, Tray, Icon, Shell32.dll, % A_OSVersion = "WIN_XP" ? 222 : 278
@@ -40,6 +40,7 @@ Global ThisMode := "Mouse"						;  Стартовый режим - Win|Mouse|Hot
 , copy_button := "<span contenteditable='false' unselectable='on'><button id='copy_button'> copy </button></span>"
 , pause_button := "<span contenteditable='false' unselectable='on'><button id='pause_button'> pause </button></span>"
 , set_button_pos := "<span contenteditable='false' unselectable='on'><button id='set_button_pos'>"
+, set_button_mouse_pos := "<span contenteditable='false' unselectable='on'><button id='set_button_mouse_pos' style='overflow: visible'>"
 
 TitleTextP2 := "     ( Shift+Tab - Freeze | RButton - CopySelected | Pause - Pause )     v" AhkSpyVersion
 BLGroup := ["Backlight allways","Backlight disable","Backlight hold shift button"]
@@ -483,8 +484,8 @@ Spot_Mouse(NotHTML=0)  {
 		GuiControl, % "TB: +c" sColorRGB := SubStr(ColorRGB, 3), ColorProgress
 		GuiControl, TB: +Redraw, ColorProgress
 		WinGetPos, WinX2, WinY2, WinW, WinH, ahk_id %WinID%
-		WithRespectWin := "`n<span id='param'>Relative pos to a window:</span> " RWinX / WinW ", " RWinY / WinH
-			. "  <span id='param'>for</span>  w" WinW "  h" WinH
+		WithRespectWin := "`n" set_button_mouse_pos "Relative pos to a window:</button></span> <span>" RWinX / WinW ", " RWinY / WinH
+			. "</span>  <span id='param'>for</span>  w" WinW "  h" WinH
 		ControlGetPos, CtrlX, CtrlY, CtrlW, CtrlH,, ahk_id %ControlID%
 		CtrlCAX := CtrlX - caX, CtrlCAY := CtrlY - caY
 		CtrlX2 := CtrlX+CtrlW, CtrlY2 := CtrlY+CtrlH
@@ -532,7 +533,7 @@ HTML_Mouse:
 	( Ltrim
 	<body id='body'><pre id='pre' contenteditable='true'>
 	%D1% <span id='title'>( Mouse )</span> %DB% %pause_button%%m_run_AhkSpyZoom% %D2%
-	<span id='param'>Screen:</span>  x%MXS% y%MYS%%DP%<span id='param'>Window:</span>  x%RWinX% y%RWinY%%DP%<span id='param'>Client:</span>  x%MXC% y%MYC%%WithRespectWin%
+	%set_button_mouse_pos%Screen:</button></span>  <span>x%MXS% y%MYS%</span>%DP%%set_button_mouse_pos%Window:</button></span>  <span>x%RWinX% y%RWinY%</span>%DP%%set_button_mouse_pos%Client:</button></span>  <span>x%MXC% y%MYC%</span>%WithRespectWin%
 	<span id='param'>Relative active window:</span>  x%MXWA% y%MYWA%%DP%<span id='param'>exe</span> %ProcessName_A% <span id='param'>class</span> %WinClass_A% <span id='param'>hwnd</span> %HWND_A%
 	%D1% <span id='title'>( PixelGetColor )</span> %D2%
 	<span id='param'>RGB: </span> %ColorRGB%%DP%#%sColorRGB%%DP%<span id='param'>BGR: </span> %ColorBGR%%DP%#%sColorBGR%
@@ -542,7 +543,7 @@ HTML_Mouse:
 	<span id='param'>Class NN:</span>  %ControlNN%%DP%<span id='param'>Win class:</span>  %CtrlClass%
 	%set_button_pos%Pos:</button></span>  <span>x%CtrlX% y%CtrlY%</span>%DP%%set_button_pos%Size:</button></span>  <span>w%CtrlW% h%CtrlH%</span>%DP%<span id='param'>x<span style='font-size: 0.7em'>2</span></span>%CtrlX2% <span id='param'>y<span style='font-size: 0.7em'>2</span></span>%CtrlY2%
 	<span id='param'>Pos relative client area:</span>  x%CtrlCAX% y%CtrlCAY%%DP%<span id='param'>x<span style='font-size: 0.7em'>2</span></span>%CtrlCAX2% <span id='param'>y<span style='font-size: 0.7em'>2</span></span>%CtrlCAY2%
-	<span id='param'>Mouse relative control:</span>  x%rmCtrlX% y%rmCtrlY%%DP%<span id='param'>Client area:</span>  x%caX% y%caY% w%caW% h%caH%
+	%set_button_mouse_pos%Mouse relative control:</button></span>  <span>x%rmCtrlX% y%rmCtrlY%</span>%DP%<span id='param'>Client area:</span>  x%caX% y%caY% w%caW% h%caH%
 	<span id='param'>HWND:</span>  %ControlID%%DP%<span id='param'>Style:</span>  %CtrlStyle%%DP%<span id='param'>ExStyle:</span>  %CtrlExStyle%
 	<span id='param'>Focus control:</span>  %CtrlFocus%%DP%<span id='param'>Cursor type:</span>  %A_Cursor%%DP%<span id='param'>Caret pos:</span>  x%A_CaretX% y%A_CaretY%%CtrlInfo%%CtrlText%%AccText%
 	<a></a>%D2%</pre></body>
@@ -553,10 +554,12 @@ HTML_Mouse:
 	#title {color: '%ColorTitle%'}
 	#param {color: '%ColorParam%'}
 	#set_button_pos {color: '%ColorParam%'}
+	#set_button_mouse_pos {color: '%ColorParam%'}
 	Button {font-size: 0.9em; border: 1px dashed black}
 	</style>
 	)
-	oOther.ControlID := ControlID
+	oOther.MouseControlID := ControlID
+	oOther.MouseWinID := WinID
 	Return 1
 }
 
@@ -1382,8 +1385,10 @@ RunPath(Link, WorkingDir="", Option="")  {
 	Gui, 1: Minimize
 }
 
-ExtraFile(Name) {
+ExtraFile(Name, GetNoCompile = 0) {
 	Static Dir := A_ScriptDir
+	If GetNoCompile
+		Return Dir "\" Name ".ahk"
 	If FileExist(Dir "\" Name ".exe")
 		Return Dir "\" Name ".exe"
 	If FileExist(Dir "\" Name ".ahk")
@@ -1592,6 +1597,7 @@ Update(in=1)  {
 	Static att, Ver, req
 		, url1 := "https://raw.githubusercontent.com/serzh82saratov/AhkSpy/master/Readme.txt"
 		, url2 := "https://raw.githubusercontent.com/serzh82saratov/AhkSpy/master/AhkSpy.ahk"
+		, urlZoom := "https://raw.githubusercontent.com/serzh82saratov/AhkSpy/master/Extra/AhkSpyZoom.ahk"
 	If !req
 		req := ComObjCreate("WinHttp.WinHttpRequest.5.1"), req.Option(6) := 0
 	req.open("GET", url%in%, 1), req.send(), att := 0
@@ -1616,6 +1622,13 @@ Update(in=1)  {
 				Return
 			File := FileOpen(A_ScriptFullPath, "w", "UTF-8")
 			File.Length := 0, File.Write(Text), File.Close()
+			If FileExist(ExtraFile("AhkSpyZoom", 1))
+			{
+				req.open("GET", urlZoom, 0), req.send()
+				Text := req.responseText
+				File := FileOpen(ExtraFile("AhkSpyZoom", 1), "w", "UTF-8")
+				File.Length := 0, File.Write(Text), File.Close()
+			}
 			Reload
 		}
 		Error := (++att = 20 || Status != "")
@@ -1716,7 +1729,58 @@ Class Events  {
 				If (ThisMode = "Win")
 					WinMove, % "ahk_id " oOther.WinID, , p1, p2, p3, p4
 				Else
-					ControlMove, , p1, p2, p3, p4, % "ahk_id " oOther.ControlID
+					ControlMove, , p1, p2, p3, p4, % "ahk_id " oOther.MouseControlID
+			}
+			Else If thisid = set_button_mouse_pos
+			{
+				thisbutton := oevent.OuterText
+				If thisbutton = Relative pos to a window:
+				{
+					RegExMatch(oDoc.all.item(oevent.sourceIndex + 1).OuterText, "(.*?), (.*)", p)
+					If (p1 + 0 = "" || p2 + 0 = "")
+						Return ToolTip("Invalid parametrs", 500)
+					BlockInput, MouseMove
+					hWnd := oOther.MouseWinID
+					WinGetPos, X, Y, W, H, ahk_id %hWnd%
+					DllCall("SetCursorPos", "Uint", X + Round(W * p1), "Uint", Y + Round(H * p2))
+				}
+				Else
+				{
+					RegExMatch(oDoc.all.item(oevent.sourceIndex + 1).OuterText, "x(.*?) y(.*)", p)
+					If (p1 + 0 = "" || p2 + 0 = "")
+						Return ToolTip("Invalid parametrs", 500)
+					BlockInput, MouseMove
+					If thisbutton = Screen:
+						DllCall("SetCursorPos", "Uint", p1, "Uint", p2)
+					Else If thisbutton = Window:
+					{
+						hWnd := oOther.MouseWinID
+						WinGetPos, X, Y, W, H, ahk_id %hWnd%
+						DllCall("SetCursorPos", "Uint", X + p1, "Uint", Y + p2)
+					}
+					Else If thisbutton = Client:
+					{
+						hWnd := oOther.MouseWinID
+						WinGetPos, X, Y, W, H, ahk_id %hWnd%
+						GetClientPos(hWnd, caX, caY, caW, caH)
+						DllCall("SetCursorPos", "Uint", X + p1 + caX, "Uint", Y + p2 + caY)
+					}
+					Else If thisbutton = Mouse relative control:
+					{
+						hWnd := oOther.MouseControlID
+						WinGetPos, X, Y, W, H, ahk_id %hWnd%
+						DllCall("SetCursorPos", "Uint", X + p1, "Uint", Y + p2)
+					}
+				}
+				If isPaused
+				{
+					BlockInput, MouseMoveOff
+					Return
+				}
+				GoSub, +Tab
+				Sleep 350
+				HideMarker(), HideAccMarker()
+				BlockInput, MouseMoveOff
 			}
 			Else If thisid = run_AhkSpyZoom
 				Events.AhkSpyZoomShow()
