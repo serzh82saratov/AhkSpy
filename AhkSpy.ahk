@@ -13,7 +13,7 @@ SetBatchLines, -1
 ListLines, Off
 DetectHiddenWindows, On
 
-Global AhkSpyVersion := 1.85
+Global AhkSpyVersion := 1.86
 Gosub, CheckAhkVersion
 Menu, Tray, UseErrorLevel
 Menu, Tray, Icon, Shell32.dll, % A_OSVersion = "WIN_XP" ? 222 : 278
@@ -1339,7 +1339,8 @@ WM_MOVE() {
 }
 
 SavePos() {
-	If (MemoryPos || MemorySize)
+	WinGet, Min, MinMax, ahk_id %hGui%
+	If (Min != -1 && (MemoryPos || MemorySize))
 	{
 		WinGetPos, WinX, WinY, WinWidth, WinHeight, ahk_id %hGui%
 		IniWrite(WinX, "MemoryPosX")
