@@ -13,7 +13,7 @@ SetBatchLines, -1
 ListLines, Off
 DetectHiddenWindows, On
 
-Global AhkSpyVersion := 1.86
+Global AhkSpyVersion := 1.87
 Gosub, CheckAhkVersion
 Menu, Tray, UseErrorLevel
 Menu, Tray, Icon, Shell32.dll, % A_OSVersion = "WIN_XP" ? 222 : 278
@@ -168,7 +168,7 @@ PostMessage, 0x50, 0, 0x0409, , % "ahk_id" hActiveX			;  установить а
 
 If (m_run_AhkSpyZoom != "" && MemoryStateZoom && IniRead("ZoomShow", 0))
 	Events.AhkSpyZoomShow()
-	
+
 #Include *i %A_ScriptDir%\AhkSpyInclude.ahk
 Return
 
@@ -203,23 +203,6 @@ PausedScript:
 	Menu, Sys, % isPaused ? "Check" : "UnCheck", Pause AhkSpy
 	ZoomMsg(isPaused || WinActive("ahk_id" hGui) ? 1 : 0)
 	Return
-
-+#Up::MouseStep(0, -1)
-+#Down::MouseStep(0, 1)
-+#Left::MouseStep(-1, 0)
-+#Right::MouseStep(1, 0)
-
-MouseStep(x, y) {
-	MouseMove, x, y, 0, R
-	If (Sleep != 1 && !isPaused && ThisMode != "Hotkey" && WinActive("ahk_id" hGui))
-	{
-;		MouseGetPos,,,WinID
-;		If (WinID = hGui || WinID = oOther.hZoom)
-;			Return
-		(ThisMode = "Mouse" ? (Spot_Mouse() (StateAllwaysSpot ? Spot_Win() : 0) Write_Mouse()) : (Spot_Win() (StateAllwaysSpot ? Spot_Mouse() : 0) Write_Win()))
-		ZoomMsg(2)
-	}
-}
 
 #If WinActive("ahk_id" hGui)
 
@@ -281,6 +264,25 @@ CopyText:
 #If ShowMarker && (StateLight = 3 || WinActive("ahk_id" hGui))
 
 ~Shift Up:: HideMarker(), HideAccMarker()
+
+#If (Sleep != 1 && !DllCall("IsWindowVisible", "Ptr", oOther.hZoom))
+
++#Up::MouseStep(0, -1)
++#Down::MouseStep(0, 1)
++#Left::MouseStep(-1, 0)
++#Right::MouseStep(1, 0)
+
+MouseStep(x, y) {
+	MouseMove, x, y, 0, R
+	If (Sleep != 1 && !isPaused && ThisMode != "Hotkey" && WinActive("ahk_id" hGui))
+	{
+;		MouseGetPos,,,WinID
+;		If (WinID = hGui || WinID = oOther.hZoom)
+;			Return
+		(ThisMode = "Mouse" ? (Spot_Mouse() (StateAllwaysSpot ? Spot_Win() : 0) Write_Mouse()) : (Spot_Win() (StateAllwaysSpot ? Spot_Mouse() : 0) Write_Win()))
+		ZoomMsg(2)
+	}
+}
 
 #If
 
@@ -1324,7 +1326,17 @@ WM_CONTEXTMENU()  {
 	}
 }
 
+ZoomSpot() {
+	If (!isPaused && Sleep != 1 && WinActive("ahk_id" hGui))
+		(ThisMode = "Mouse" ? (Spot_Mouse() (StateAllwaysSpot ? Spot_Win() : 0) Write_Mouse()) : (Spot_Win() (StateAllwaysSpot ? Spot_Mouse() : 0) Write_Win()))
+}
+
 MsgZoom(wParam, lParam) {
+	If (wParam = 1)
+	{
+		SetTimer, ZoomSpot, -10
+		Return
+	}
 	oOther.hZoom := lParam
 	ZoomMsg(Sleep != 1 && !isPaused && !WinActive("ahk_id" hGui) ? 0 : 1)
 }
