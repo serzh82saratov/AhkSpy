@@ -1,5 +1,5 @@
 
-	; version = 1.0
+	; version = 1.3
 
 #NoEnv
 #NoTrayIcon
@@ -21,7 +21,7 @@ OnMessage(0x201, "LBUTTONDOWN") ; WM_LBUTTONDOWN
 OnMessage(0xA1, "LBUTTONDOWN") ; WM_NCLBUTTONDOWN
 ZoomCreate()
 OnMessage(MsgAhkSpyZoom := DllCall("RegisterWindowMessage", "Str", "AhkSpyZoom"), "MsgZoom")
-PostMessage, % MsgAhkSpyZoom, , % oZoom.hGui, , ahk_id %hAhkSpy%
+PostMessage, % MsgAhkSpyZoom, 0, % oZoom.hGui, , ahk_id %hAhkSpy%
 SetWinEventHook("EVENT_OBJECT_DESTROY", 0x8001)
 SetWinEventHook("EVENT_OBJECT_LOCATIONCHANGE", 0x800B)
 SetWinEventHook("EVENT_SYSTEM_MINIMIZESTART", 0x0016, 0x0017)
@@ -32,8 +32,22 @@ SetTimer, CheckAhkSpy, 200
 Return
 
 #If oZoom.Show
+^+#Up::
+^+#Down::
 +#WheelUp::
 +#WheelDown::ChangeZoom(InStr(A_ThisHotKey, "Down") ? oZoom.Zoom + 1 : oZoom.Zoom - 1)
+
++#Up::MouseStep(0, -1)
++#Down::MouseStep(0, 1)
++#Left::MouseStep(-1, 0)
++#Right::MouseStep(1, 0)
+
+MouseStep(x, y) {
+	MouseMove, x, y, 0, R
+	PostMessage, % MsgAhkSpyZoom, 1, 0, , ahk_id %hAhkSpy%
+	If oZoom.Pause
+		Magnify()
+}
 #If
 
 ZoomCreate() {
@@ -287,7 +301,9 @@ EVENT_SYSTEM_MINIMIZESTART(hWinEventHook, event, hwnd) {
 	; _________________________________________________ Sizing _________________________________________________
 
 WM_SETCURSOR(W, L, M, H) {
-	Static IDC_SIZEALL := DllCall("User32.dll\LoadCursor", "Ptr", NULL, "Int", 32646, "UPtr")
+	Static SIZENWSE := DllCall("User32.dll\LoadCursor", "Ptr", NULL, "Int", 32642, "UPtr")
+			, SIZENS := DllCall("User32.dll\LoadCursor", "Ptr", NULL, "Int", 32645, "UPtr")
+			, SIZEWE := DllCall("User32.dll\LoadCursor", "Ptr", NULL, "Int", 32644, "UPtr")
 	If (oZoom.SIZING = 2)
 		Return
 	If (W = oZoom.hGui)
@@ -296,25 +312,30 @@ WM_SETCURSOR(W, L, M, H) {
 		WinGetPos, WinX, WinY, WinW, WinH, % "ahk_id " oZoom.hDev
 		If (mX > WinX && mY > WinY)
 		{
-			DllCall("User32.dll\SetCursor", "Ptr", IDC_SIZEALL)
+			If (mX < WinX + WinW - 10)
+				DllCall("User32.dll\SetCursor", "Ptr", SIZENS), oZoom.SIZINGType := "NS"
+			Else If (mY < WinY + WinH)
+				DllCall("User32.dll\SetCursor", "Ptr", SIZEWE), oZoom.SIZINGType := "WE"
+			Else
+				DllCall("User32.dll\SetCursor", "Ptr", SIZENWSE), oZoom.SIZINGType := "NWSE"
 			Return oZoom.SIZING := 1
 		}
 	}
 	Else
-		oZoom.SIZING := 0
+		oZoom.SIZING := 0, oZoom.SIZINGType := ""
 }
 
 LBUTTONDOWN(W, L, M, H) {
 	If oZoom.SIZING
 	{
 		oZoom.SIZING := 2
-		SetSystemCursor("SIZEALL")
+		SetSystemCursor("SIZE" oZoom.SIZINGType)
 		SetTimer, Sizing, -10
 		KeyWait LButton
 		SetTimer, Sizing, Off
 		RestoreCursors()
 		SetSize()
-		oZoom.SIZING := 0
+		oZoom.SIZING := 0, oZoom.SIZINGType := ""
 	}
 }
 
@@ -322,8 +343,11 @@ Sizing() {
 	Critical
 	MouseGetPos, mX, mY
 	WinGetPos, WinX, WinY, , , % "ahk_id " oZoom.hGui
-	Gui, Zoom:Show, % "NA w" (mX - WinX < oZoom.GuiMinW ? oZoom.GuiMinW : mX - WinX)
-					. " h" (mY - WinY < oZoom.GuiMinH ? oZoom.GuiMinH : mY - WinY)
+	If (oZoom.SIZINGType = "NWSE" || oZoom.SIZINGType = "WE")
+		Width := " w" (mX - WinX < oZoom.GuiMinW ? oZoom.GuiMinW : mX - WinX)
+	If (oZoom.SIZINGType = "NWSE" || oZoom.SIZINGType = "NS")
+		Height := " h" (mY - WinY < oZoom.GuiMinH ? oZoom.GuiMinH : mY - WinY)
+	Gui, Zoom:Show, % "NA" Width . Height
 	SetTimer, Sizing, -1, 1
 }
 
