@@ -1,5 +1,5 @@
 
-	; version = 1.3
+	; version = 1.31
 
 #NoEnv
 #NoTrayIcon
@@ -251,6 +251,7 @@ ZoomOnSize() {
 ZoomOnClose() {
 	DllCall("gdi32.dll\DeleteDC", "Ptr", oZoom.hdcDest)
 	DllCall("gdi32.dll\DeleteDC", "Ptr", oZoom.hdcSrc)
+	RestoreCursors()
 	ExitApp
 }
 
@@ -340,7 +341,6 @@ LBUTTONDOWN(W, L, M, H) {
 }
 
 Sizing() {
-	Critical
 	MouseGetPos, mX, mY
 	WinGetPos, WinX, WinY, , , % "ahk_id " oZoom.hGui
 	If (oZoom.SIZINGType = "NWSE" || oZoom.SIZINGType = "WE")
@@ -354,14 +354,14 @@ Sizing() {
 SetSystemCursor(Cursor, cx = 32, cy = 32) {
 	Static SystemCursors := {ARROW:32512,IBEAM:32513,WAIT:32514,CROSS:32515,UPARROW:32516,SIZE:32640,ICON:32641,SIZENWSE:32642
 					,SIZENESW:32643,SIZEWE:32644,SIZENS:32645,SIZEALL:32646,NO:32648,HAND:32649,APPSTARTING:32650,HELP:32651}
-    Local CursorID, CursorHandle, Name, ID
+    Local CursorID, CursorHandle, Name, ID, hImage
 
 	If (CursorID := SystemCursors[Cursor])
 		For Name, ID in SystemCursors
 		{
 			CursorHandle := DllCall("LoadCursor", Uint, 0, Int, CursorID)
-			1%A_Index% := DllCall("CopyImage", Uint, CursorHandle, Uint, 0x2, Int, cx, Int, cy, Uint, 0)
-			CursorHandle := DllCall("CopyImage", Uint, 1%A_Index%, Uint, 0x2, Int, 0, Int, 0, Int, 0)
+			hImage := DllCall("CopyImage", Uint, CursorHandle, Uint, 0x2, Int, cx, Int, cy, Uint, 0)
+			CursorHandle := DllCall("CopyImage", Uint, hImage, Uint, 0x2, Int, 0, Int, 0, Int, 0)
 			DllCall("SetSystemCursor", Uint, CursorHandle, Int, ID)
 		}
 }
