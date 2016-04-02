@@ -13,7 +13,7 @@ SetBatchLines, -1
 ListLines, Off
 DetectHiddenWindows, On
 
-Global AhkSpyVersion := 1.88
+Global AhkSpyVersion := 1.89
 Gosub, CheckAhkVersion
 Menu, Tray, UseErrorLevel
 Menu, Tray, Icon, Shell32.dll, % A_OSVersion = "WIN_XP" ? 222 : 278
@@ -39,7 +39,7 @@ Global ThisMode := "Mouse"						;  Стартовый режим - Win|Mouse|Hot
 , HTML_Win, HTML_Mouse, HTML_Hotkey, o_edithotkey, o_editkeyname, rmCtrlX, rmCtrlY, m_hwnd_3, Hotkey_NFP
 , copy_button := "<span contenteditable='false' unselectable='on'><button id='copy_button'> copy </button></span>"
 , pause_button := "<span contenteditable='false' unselectable='on'><button id='pause_button'> pause </button></span>"
-, set_button_pos := "<span contenteditable='false' unselectable='on'><button id='set_button_pos'>"
+, set_button_pos := "<span contenteditable='false' unselectable='on'><button id='set_button_pos' style='overflow: visible'>"
 , set_button_mouse_pos := "<span contenteditable='false' unselectable='on'><button id='set_button_mouse_pos' style='overflow: visible'>"
 
 TitleTextP2 := "     ( Shift+Tab - Freeze | RButton - CopySelected | Pause - Pause )     v" AhkSpyVersion
@@ -406,7 +406,7 @@ HTML_Win:
 	pre {font-family: '%FontFamily%'; font-size: '%FontSize%'; position: absolute; top: 5px}
 	#title {color: '%ColorTitle%'}
 	#param {color: '%ColorParam%'}
-	#set_button_pos {color: '%ColorParam%'}
+	#set_button_pos {color: '%ColorParam%';font-size: 1em;}
 	button {font-size: 0.9em; border: 1px dashed black}
 	</style>
 	)
@@ -553,8 +553,8 @@ HTML_Mouse:
 	body {background-color: '#%ColorBg%'; color: '%ColorFont%'}
 	#title {color: '%ColorTitle%'}
 	#param {color: '%ColorParam%'}
-	#set_button_pos {color: '%ColorParam%'}
-	#set_button_mouse_pos {color: '%ColorParam%'}
+	#set_button_pos {color: '%ColorParam%';font-size: 1em;}
+	#set_button_mouse_pos {color: '%ColorParam%';font-size: 1em;}
 	Button {font-size: 0.9em; border: 1px dashed black}
 	</style>
 	)
