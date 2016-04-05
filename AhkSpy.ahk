@@ -13,7 +13,7 @@ SetBatchLines, -1
 ListLines, Off
 DetectHiddenWindows, On
 
-Global AhkSpyVersion := 1.92
+Global AhkSpyVersion := 1.93
 Gosub, CheckAhkVersion
 Menu, Tray, UseErrorLevel
 Menu, Tray, Icon, Shell32.dll, % A_OSVersion = "WIN_XP" ? 222 : 278
@@ -34,7 +34,7 @@ Global ThisMode := "Mouse"						;  Стартовый режим - Win|Mouse|Hot
 , MemoryPos := IniRead("MemoryPos", 0), MemorySize := IniRead("MemorySize", 0)
 , MemoryZoomSize := IniRead("MemoryZoomSize", 0), MemoryStateZoom := IniRead("MemoryStateZoom", 0)
 , StateLight := IniRead("StateLight", 1), StateLightAcc := IniRead("StateLightAcc", 1), StateUpdate := IniRead("StateUpdate", 1)
-, StateAllwaysSpot := IniRead("AllwaysSpot", 0), ScrollPos:={}, AccCoord:=[], oOther:={}
+, StateAllwaysSpot := IniRead("AllwaysSpot", 0), ScrollPos := {}, AccCoord := [], oOther := {}
 , hGui, hActiveX, hMarkerGui, hMarkerAccGui, oDoc, ShowMarker, isIE, isPaused, w_ShowStyles, MsgAhkSpyZoom, Sleep
 , HTML_Win, HTML_Mouse, HTML_Hotkey, o_edithotkey, o_editkeyname, rmCtrlX, rmCtrlY, m_hwnd_3, Hotkey_NFP
 , copy_button := "<span contenteditable='false' unselectable='on'><button id='copy_button'> copy </button></span>"
@@ -600,8 +600,11 @@ GetInfo_TComboBox(hwnd, ByRef ClassNN)  {
 GetInfo_ComboBox(hwnd, ByRef ClassNN)  {
 	ClassNN = ComboBox
 	ControlGet, ListText, List,,, ahk_id %hwnd%
+	SendMessage, 0x147, 0, 0, , ahk_id %hwnd%   ; CB_GETCURSEL
+	SelPos := ErrorLevel
+	SelPos := SelPos = 0xffffffff || SelPos < 0 ? "NoSelect" : SelPos + 1
 	RegExReplace(ListText, "m`a)$", "", RowCount)
-	Return	"`n<span id='param'>Row count:</span> " RowCount
+	Return	"`n<span id='param'>Row count:</span> " RowCount DP "<span id='param'>Row selected:</span> " SelPos
 			. "`n" D1 " <a></a><span id='param'>( Content )</span> " DB " "
 			. copy_button " " D2 "`n<span>" TransformHTML(ListText) "</span>"
 }
@@ -1765,7 +1768,13 @@ Class Events {
 					Else If thisbutton = Window:
 						DllCall("SetCursorPos", "Uint", X + p1, "Uint", Y + p2)
 					Else If thisbutton = Mouse relative control:
+					{
+						hWnd := oOther.MouseControlID					
+						If !WinExist("ahk_id " hwnd)
+							Return ToolTip("Control not exist", 500)
+						WinGetPos, X, Y, W, H, ahk_id %hWnd%
 						DllCall("SetCursorPos", "Uint", X + p1, "Uint", Y + p2)
+					}
 					Else If thisbutton = Client:
 					{
 						GetClientPos(hWnd, caX, caY, caW, caH)
