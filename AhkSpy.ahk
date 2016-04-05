@@ -13,7 +13,7 @@ SetBatchLines, -1
 ListLines, Off
 DetectHiddenWindows, On
 
-Global AhkSpyVersion := 1.91
+Global AhkSpyVersion := 1.92
 Gosub, CheckAhkVersion
 Menu, Tray, UseErrorLevel
 Menu, Tray, Icon, Shell32.dll, % A_OSVersion = "WIN_XP" ? 222 : 278
@@ -1288,7 +1288,7 @@ MemoryStateZoom:
 
 	; _________________________________________________ Functions _________________________________________________
 
-ShellProc(nCode, wParam)  {
+ShellProc(nCode, wParam) {
 	If (nCode = 4)
 	{
 		If (wParam = hGui)
@@ -1299,7 +1299,7 @@ ShellProc(nCode, wParam)  {
 	}
 }
 
-WM_ACTIVATE(wp)  {
+WM_ACTIVATE(wp) {
 	If (wp & 0xFFFF)
 		(ThisMode = "Hotkey" && !isPaused ? Hotkey_Arr("Hook", 1) : ""), HideMarker(), HideAccMarker(), CheckHideMarker()
 	Else If (wp & 0xFFFF = 0 && Hotkey_Arr("Hook"))
@@ -1307,7 +1307,7 @@ WM_ACTIVATE(wp)  {
 	ZoomMsg((wp & 0xFFFF) ? 1 : Sleep != 1 && !isPaused ? 0 : 1)
 }
 
-WM_LBUTTONDOWN()  {
+WM_LBUTTONDOWN() {
 	If A_GuiControl = ColorProgress
 	{
 		If ThisMode = Hotkey
@@ -1322,7 +1322,7 @@ WM_LBUTTONDOWN()  {
 	}
 }
 
-WM_CONTEXTMENU()  {
+WM_CONTEXTMENU() {
 	MouseGetPos, , , wid, cid, 2
 	If (cid != hActiveX && wid = hGui)
 	{
@@ -1370,7 +1370,7 @@ SavePos() {
 	;  http://forum.script-coding.com/viewtopic.php?pid=87817#p87817
 	;  http://www.autohotkey.com/board/topic/93660-embedded-ie-shellexplorer-render-issues-fix-force-it-to-use-a-newer-render-engine/
 
-FixIE(Fix)  {
+FixIE(Fix) {
 	Static Key := "Software\Microsoft\Internet Explorer\MAIN\FeatureControl\FEATURE_BROWSER_EMULATION"
 	If A_IsCompiled
 		ExeName := A_ScriptName
@@ -1382,7 +1382,7 @@ FixIE(Fix)  {
 		RegDelete, HKCU, %Key%, %ExeName%
 }
 
-RunPath(Link, WorkingDir="", Option="")  {
+RunPath(Link, WorkingDir="", Option="") {
 	Run %Link%, %WorkingDir%, %Option%
 	Gui, 1: Minimize
 }
@@ -1405,7 +1405,7 @@ RunRealPath(Path) {
 	Run, %Path%, %Dir%
 }
 
-ShowMarker(x, y, w, h, b:=4)  {
+ShowMarker(x, y, w, h, b:=4) {
 	w < 8 || h < 8 ? b := 2 : 0
 	Try Gui, M: Show, NA x%x% y%y% w%w% h%h%
 	Catch
@@ -1415,7 +1415,7 @@ ShowMarker(x, y, w, h, b:=4)  {
 		. " " w-b "-" b " " w-b "-" h-b " " b "-" h-b " " b "-" b, ahk_id %hMarkerGui%
 }
 
-ShowAccMarker(x, y, w, h, b:=2)  {
+ShowAccMarker(x, y, w, h, b:=2) {
 	Try Gui, AcM: Show, NA x%x% y%y% w%w% h%h%
 	Catch
 		Return HideAccMarker(), (ShowMarker := ShowMarker ? 1 : 0)
@@ -1424,16 +1424,16 @@ ShowAccMarker(x, y, w, h, b:=2)  {
 		. " " w-b "-" b " " w-b "-" h-b " " b "-" h-b " " b "-" b, ahk_id %hMarkerAccGui%
 }
 
-HideMarker()  {
+HideMarker() {
 	Gui, M: Show, Hide
 }
 
-HideAccMarker()  {
+HideAccMarker() {
 	Gui, AcM: Show, Hide
 }
 
 
-CheckHideMarker()  {
+CheckHideMarker() {
 	Static Try := 0
 	SetTimer, CheckHideMarker, -150
 	Return
@@ -1446,7 +1446,7 @@ CheckHideMarker()  {
 		Return
 }
 
-IniRead(Key, Error := " ")  {
+IniRead(Key, Error := " ") {
 	IniRead, Value, %A_AppData%\AhkSpy.ini, AhkSpy, %Key%, %Error%
 	Return Value
 }
@@ -1455,19 +1455,19 @@ IniWrite(Value, Key) {
 	Return Value
 }
 
-InArr(Val, Arr*)  {
+InArr(Val, Arr*) {
 	For k, v in Arr
 		If (v == Val)
 			Return k
 }
 
-TransformHTML(str)  {
+TransformHTML(str) {
 	Transform, str, HTML, %str%, 3
 	StringReplace, str, str,`n,, 1
 	Return str
 }
 
-ExistSelectedText(byref Copy)  {
+ExistSelectedText(byref Copy) {
 	MouseGetPos, , , , ControlID, 2
 	If (ControlID != hActiveX)
 		Return 0
@@ -1483,14 +1483,14 @@ ExistSelectedText(byref Copy)  {
 
 	;  http://forum.script-coding.com/viewtopic.php?pid=53516#p53516
 
-GetCommandLineProc(pid)  {
+GetCommandLineProc(pid) {
 	ComObjGet("winmgmts:").ExecQuery("Select * from Win32_Process WHERE ProcessId = " pid)._NewEnum.next(X)
 	Return Trim(X.CommandLine)
 }
 
 	;  http://www.autohotkey.com/board/topic/69254-func-api-getwindowinfo-ahk-l/#entry438372
 
-GetClientPos(hwnd, ByRef left, ByRef top, ByRef w, ByRef h)  {
+GetClientPos(hwnd, ByRef left, ByRef top, ByRef w, ByRef h) {
 	VarSetCapacity(pwi, 60, 0), NumPut(60, pwi, 0, "UInt")
 	DllCall("GetWindowInfo", "Ptr", hwnd, "UInt", &pwi)
 	top:=NumGet(pwi,24,"int")-NumGet(pwi,8,"int")
@@ -1501,7 +1501,7 @@ GetClientPos(hwnd, ByRef left, ByRef top, ByRef w, ByRef h)  {
 
 	;  http://forum.script-coding.com/viewtopic.php?pid=81833#p81833
 
-SelectFilePath(FilePath)  {
+SelectFilePath(FilePath) {
 	If !FileExist(FilePath)
 		Return
 	SplitPath, FilePath,, Dir
@@ -1522,7 +1522,7 @@ SelectFilePath(FilePath)  {
 	Run, %A_WinDir%\explorer.exe /select`, "%FilePath%", , UseErrorLevel
 }
 
-GetCLSIDExplorer(hwnd)  {
+GetCLSIDExplorer(hwnd) {
 	for window in ComObjCreate("Shell.Application").Windows
 		If (window.hwnd = hwnd)
 			Return (CLSID := window.Document.Folder.Self.Path) ~= "^::\{" ? "`n<span id='param'>CLSID: </span>" CLSID : ""
@@ -1531,7 +1531,7 @@ GetCLSIDExplorer(hwnd)  {
 	;  http://msdn.microsoft.com/en-us/library/windows/desktop/ms632600(v=vs.85).aspx
 	;  http://msdn.microsoft.com/en-us/library/windows/desktop/ff700543(v=vs.85).aspx
 
-GetStyles(Style, ExStyle)  {
+GetStyles(Style, ExStyle) {
 	Static Styles := {"WS_BORDER":"0x00800000", "WS_CAPTION":"0x00C00000", "WS_CHILD":"0x40000000", "WS_CHILDWINDOW":"0x40000000"
 		, "WS_CLIPCHILDREN":"0x02000000", "WS_CLIPSIBLINGS":"0x04000000", "WS_DISABLED":"0x08000000", "WS_DLGFRAME":"0x00400000"
 		, "WS_GROUP":"0x00020000", "WS_HSCROLL":"0x00100000", "WS_ICONIC":"0x20000000", "WS_MAXIMIZE":"0x01000000"
@@ -1560,7 +1560,7 @@ GetStyles(Style, ExStyle)  {
 	Return (Res = "" ? "" : "`n") . RTrim(Res, "`n")
 }
 
-ToggleLocale()  {
+ToggleLocale() {
 	LocaleID := DllCall("GetKeyboardLayout", "Int"
 	, DllCall("GetWindowThreadProcessId", "Int", WinExist("A"), "Int", "0"))
 	ControlGetFocus, CtrlFocus
@@ -1568,7 +1568,7 @@ ToggleLocale()  {
 	Return LocaleID = 0x4090409 ? "Rus" : "Eng"
 }
 
-ToolTip(text, time)  {
+ToolTip(text, time) {
 	CoordMode, Mouse
 	CoordMode, ToolTip
 	MouseGetPos, X, Y
@@ -1581,7 +1581,7 @@ ToolTip(text, time)  {
 		Return
 }
 
-NextLink(s = "")  {
+NextLink(s = "") {
 	curpos := oDoc.body.scrollTop, oDoc.body.scrollLeft := 0
 	If (!curpos && s = "-")
 		Return
@@ -1595,7 +1595,7 @@ NextLink(s = "")  {
 	oDoc.body.scrollTop := curpos + res
 }
 
-Update(in=1)  {
+Update(in=1) {
 	Static att, Ver, req
 		, url1 := "https://raw.githubusercontent.com/serzh82saratov/AhkSpy/master/Readme.txt"
 		, url2 := "https://raw.githubusercontent.com/serzh82saratov/AhkSpy/master/AhkSpy.ahk"
@@ -1638,7 +1638,7 @@ Update(in=1)  {
 		Return
 }
 
-ViewStyles(elem)  {
+ViewStyles(elem) {
 	elem.innerText := (w_ShowStyles := !w_ShowStyles) ? "hide styles" : "show styles"
 	oDoc.getElementById("AllWinStyles").innerHTML := w_ShowStyles
 	? RegExReplace(GetStyles(oDoc.getElementById("c_Style").innerText
@@ -1646,7 +1646,7 @@ ViewStyles(elem)  {
 	HTML_Win := oDoc.body.innerHTML
 }
 
-HighLight(elem, time="", RemoveFormat=1)  {
+HighLight(elem, time="", RemoveFormat=1) {
 	Try SetTimer, UnHighLight, % "-" time
 	R := oDoc.body.createTextRange()
 	RemoveFormat ? R.execCommand("RemoveFormat") : 0
@@ -1664,8 +1664,8 @@ HighLight(elem, time="", RemoveFormat=1)  {
 
 	;  http://forum.script-coding.com/viewtopic.php?pid=82283#p82283
 
-Class Events  {
-	onclick()  {
+Class Events {
+	onclick() {
 	Global CopyText
 		oevent := oDoc.parentWindow.event.srcElement
 		tagname := oevent.tagname
@@ -1736,14 +1736,22 @@ Class Events  {
 			Else If thisid = set_button_mouse_pos
 			{
 				thisbutton := oevent.OuterText
+				If thisbutton != Screen:
+				{
+					hWnd := oOther.MouseWinID
+					If !WinExist("ahk_id " hwnd)
+						Return ToolTip("Window not exist", 500)
+					WinGet, Min, MinMax, % "ahk_id " hwnd
+					If Min = -1
+						Return ToolTip("Window minimize", 500)
+					WinGetPos, X, Y, W, H, ahk_id %hWnd%
+				}
 				If thisbutton = Relative pos to a window:
 				{
 					RegExMatch(oDoc.all.item(oevent.sourceIndex + 1).OuterText, "(.*?), (.*)", p)
 					If (p1 + 0 = "" || p2 + 0 = "")
 						Return ToolTip("Invalid parametrs", 500)
 					BlockInput, MouseMove
-					hWnd := oOther.MouseWinID
-					WinGetPos, X, Y, W, H, ahk_id %hWnd%
 					DllCall("SetCursorPos", "Uint", X + Round(W * p1), "Uint", Y + Round(H * p2))
 				}
 				Else
@@ -1755,23 +1763,13 @@ Class Events  {
 					If thisbutton = Screen:
 						DllCall("SetCursorPos", "Uint", p1, "Uint", p2)
 					Else If thisbutton = Window:
-					{
-						hWnd := oOther.MouseWinID
-						WinGetPos, X, Y, W, H, ahk_id %hWnd%
 						DllCall("SetCursorPos", "Uint", X + p1, "Uint", Y + p2)
-					}
+					Else If thisbutton = Mouse relative control:
+						DllCall("SetCursorPos", "Uint", X + p1, "Uint", Y + p2)
 					Else If thisbutton = Client:
 					{
-						hWnd := oOther.MouseWinID
-						WinGetPos, X, Y, W, H, ahk_id %hWnd%
 						GetClientPos(hWnd, caX, caY, caW, caH)
 						DllCall("SetCursorPos", "Uint", X + p1 + caX, "Uint", Y + p2 + caY)
-					}
-					Else If thisbutton = Mouse relative control:
-					{
-						hWnd := oOther.MouseControlID
-						WinGetPos, X, Y, W, H, ahk_id %hWnd%
-						DllCall("SetCursorPos", "Uint", X + p1, "Uint", Y + p2)
 					}
 				}
 				If isPaused
@@ -1816,23 +1814,23 @@ Class Events  {
 				Events.AhkSpyZoomShow()
 		}
 	}
-	onfocus()  {
+	onfocus() {
 		Sleep 100
 		Hotkey_Reset()
 	}
-	onblur()  {
+	onblur() {
 		Sleep 100
 		If (WinActive("ahk_id" hGui) && !isPaused && ThisMode = "Hotkey")
 			Hotkey_Arr("Hook", 1)
 	}
 
-	num_scroll(thisid)  {
+	num_scroll(thisid) {
 		(OnHook := Hotkey_Arr("Hook")) ? Hotkey_Arr("Hook", 0) : 0
 		SendInput, {%thisid%}
 		(OnHook ? Hotkey_Arr("Hook", 1) : 0)
 		ToolTip(thisid " " (GetKeyState(thisid, "T") ? "On" : "Off"), 500)
 	}
-	AhkSpyZoomShow()  {
+	AhkSpyZoomShow() {
 		WindowVisible := DllCall("IsWindowVisible", "Ptr", oOther.hZoom)
 ;		If (!isPaused && !WindowVisible)
 ;			SendInput {LAlt Down}{Escape}{LAlt Up}
