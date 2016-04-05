@@ -13,7 +13,7 @@ SetBatchLines, -1
 ListLines, Off
 DetectHiddenWindows, On
 
-Global AhkSpyVersion := 1.89
+Global AhkSpyVersion := 1.90
 Gosub, CheckAhkVersion
 Menu, Tray, UseErrorLevel
 Menu, Tray, Icon, Shell32.dll, % A_OSVersion = "WIN_XP" ? 222 : 278
@@ -1315,6 +1315,8 @@ WM_LBUTTONDOWN()  {
 		Else
 		{
 			SendInput {LAlt Down}{Escape}{LAlt Up}
+			If (Sleep != 1 && !isPaused)
+				ZoomMsg(1)
 			ToolTip("Alt+Escape", 300)
 		}
 	}
