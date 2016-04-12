@@ -1,5 +1,5 @@
 
-	; version = 1.31
+	; version = 1.32
 
 #NoEnv
 #NoTrayIcon
@@ -19,6 +19,7 @@ Global oZoom := {}, hAhkSpy, MsgAhkSpyZoom
 OnMessage(0x0020, "WM_SETCURSOR")
 OnMessage(0x201, "LBUTTONDOWN") ; WM_LBUTTONDOWN
 OnMessage(0xA1, "LBUTTONDOWN") ; WM_NCLBUTTONDOWN
+OnMessage(0xF, "WM_Paint")
 ZoomCreate()
 OnMessage(MsgAhkSpyZoom := DllCall("RegisterWindowMessage", "Str", "AhkSpyZoom"), "MsgZoom")
 PostMessage, % MsgAhkSpyZoom, 0, % oZoom.hGui, , ahk_id %hAhkSpy%
@@ -77,6 +78,7 @@ ZoomCreate() {
 
 	oZoom.hdcSrc := DllCall("GetDC", Ptr, "")
 	oZoom.hdcDest := DllCall("GetDC", Ptr, hDevCon, Ptr)
+	oZoom.hdcDummyDest := DllCall("CreateCompatibleDC", "Ptr", 0) 
 	DllCall("gdi32.dll\SetStretchBltMode", "Ptr", oZoom.hdcDest, "Int", 4)
 	oZoom.hGui := hGui
 	oZoom.hDev := hDev
@@ -105,10 +107,14 @@ Magnify() {
 	MouseGetPos, mX, mY, WinID, CtrlID, 3
 	If (oZoom.hDev != CtrlID && WinID != hAhkSpy)
 	{
-		StretchBlt(oZoom.hdcDest, oZoom.hdcSrc, 0, 0, oZoom.nWidthDest, oZoom.nHeightDest
-			, mX - oZoom.nXOriginSrcOffset, mY - oZoom.nYOriginSrcOffset, oZoom.nWidthSrc, oZoom.nHeightSrc)
+		StretchBlt(oZoom.hdcDest, 0, 0, oZoom.nWidthDest, oZoom.nHeightDest
+			, oZoom.hdcSrc, mX - oZoom.nXOriginSrcOffset, mY - oZoom.nYOriginSrcOffset, oZoom.nWidthSrc, oZoom.nHeightSrc)
 		For k, v In oZoom.oMarkers[oZoom.Mark]
-			StretchBlt(oZoom.hdcDest, oZoom.hdcDest, v.x, v.y, v.w, v.h, v.x, v.y, v.w, v.h, 0x5A0049)	; PATINVERT
+			StretchBlt(oZoom.hdcDest, v.x, v.y, v.w, v.h, oZoom.hdcDest, v.x, v.y, v.w, v.h, 0x5A0049)	; PATINVERT
+			
+		hBM := DllCall("Gdi32.Dll\CreateCompatibleBitmap", "Ptr", oZoom.hdcSrc, "Int", oZoom.nWidthSrc, "Int", oZoom.nHeightSrc)
+		DllCall("Gdi32.Dll\SelectObject", "Ptr", oZoom.hdcDummyDest, "Ptr", hBM), DllCall("DeleteObject", "Ptr", hBM)
+		BitBlt(oZoom.hdcDummyDest, 0, 0, oZoom.nWidthSrc, oZoom.nHeightSrc, oZoom.hdcSrc, mX - oZoom.nXOriginSrcOffset, mY - oZoom.nYOriginSrcOffset)
 	}
 	If !oZoom.Pause
 		SetTimer, Magnify, -1
@@ -192,6 +198,17 @@ ChangeMark()  {
 	IniWrite(oZoom.Mark, "MagnifyMark")
 }
 
+WM_Paint() {
+	SetTimer, Redraw, -10
+}
+
+Redraw() { 
+	StretchBlt(oZoom.hdcDest, 0, 0, oZoom.nWidthDest, oZoom.nHeightDest
+		, oZoom.hdcDummyDest, 0, 0, oZoom.nWidthSrc, oZoom.nHeightSrc)
+	For k, v In oZoom.oMarkers[oZoom.Mark]
+		StretchBlt(oZoom.hdcDest, v.x, v.y, v.w, v.h, oZoom.hdcDest, v.x, v.y, v.w, v.h, 0x5A0049)	; PATINVERT
+}
+
 CheckAhkSpy() {
 	WinGet, Min, MinMax, % "ahk_id " hAhkSpy
 	If Min =
@@ -225,18 +242,34 @@ SetWinEventHook(EventProc, eventMin, eventMax = 0)  {
 				, "UInt", dwflags := 0x0|0x2, "Ptr")	;	WINEVENT_OUTOFCONTEXT | WINEVENT_SKIPOWNPROCESS
 }
 
-StretchBlt(hdcDest, hdcSrc, nXOriginDest, nYOriginDest, nWidthDest, nHeightDest, nXOriginSrc, nYOriginSrc, nWidthSrc, nHeightSrc, dwRop = 0xC000CA) {	; MERGECOPY
-	DllCall("gdi32.dll\StretchBlt", Ptr, hdcDest
-								, Int, nXOriginDest
-								, Int, nYOriginDest
-								, Int, nWidthDest
-								, Int, nHeightDest
-								, Ptr, hdcSrc
-								, Int, nXOriginSrc
-								, Int, nYOriginSrc
-								, Int, nWidthSrc
-								, Int, nHeightSrc
-								, UInt, dwRop)
+BitBlt(ddc, dx, dy, dw, dh, sdc, sx, sy, Raster="") {
+	Ptr := A_PtrSize ? "UPtr" : "UInt" 
+	return DllCall("Gdi32.Dll\BitBlt"
+					, Ptr, dDC
+					, "int", dx
+					, "int", dy
+					, "int", dw
+					, "int", dh
+					, Ptr, sDC
+					, "int", sx
+					, "int", sy
+					, "uint", Raster ? Raster : 0xC000CA)
+}
+
+StretchBlt(ddc, dx, dy, dw, dh, sdc, sx, sy, sw, sh, Raster="") {
+	Ptr := A_PtrSize ? "UPtr" : "UInt" 
+	return DllCall("Gdi32.Dll\StretchBlt"
+					, Ptr, ddc
+					, "int", dx
+					, "int", dy
+					, "int", dw
+					, "int", dh
+					, Ptr, sdc
+					, "int", sx
+					, "int", sy
+					, "int", sw
+					, "int", sh
+					, "uint", Raster ? Raster : 0xC000CA)
 }
 
 	; _________________________________________________ Events _________________________________________________
