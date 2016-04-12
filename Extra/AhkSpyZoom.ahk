@@ -1,5 +1,5 @@
 
-	; version = 1.33
+	; version = 1.34
 
 #NoEnv
 #NoTrayIcon
@@ -200,6 +200,7 @@ ChangeMark()  {
 	oZoom.Mark := ["Cross","Square","Grid","None"][{"Cross":2,"Square":3,"Grid":4,"None":1}[oZoom.Mark]]
 	GuiControl, Zoom:, % oZoom.vChangeMark, % oZoom.Mark
 	IniWrite(oZoom.Mark, "MagnifyMark")
+	Redraw()
 }
 
 WM_Paint() {
