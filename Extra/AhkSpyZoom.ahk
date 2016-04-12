@@ -1,5 +1,5 @@
 
-	; version = 1.32
+	; version = 1.33
 
 #NoEnv
 #NoTrayIcon
@@ -33,10 +33,13 @@ SetTimer, CheckAhkSpy, 200
 Return
 
 #If oZoom.Show
+
 ^+#Up::
 ^+#Down::
 +#WheelUp::
 +#WheelDown::ChangeZoom(InStr(A_ThisHotKey, "Down") ? oZoom.Zoom + 1 : oZoom.Zoom - 1)
+
+#If (oZoom.Show && !IsMinimize(hAhkSpy))
 
 +#Up::MouseStep(0, -1)
 +#Down::MouseStep(0, 1)
@@ -49,6 +52,7 @@ MouseStep(x, y) {
 	If oZoom.Pause
 		Magnify()
 }
+
 #If
 
 ZoomCreate() {
@@ -104,8 +108,8 @@ ZoomHide() {
 Magnify() {
 	If !oZoom.Show
 		Return
-	MouseGetPos, mX, mY, WinID, CtrlID, 3
-	If (oZoom.hDev != CtrlID && WinID != hAhkSpy)
+	MouseGetPos, mX, mY, WinID
+	If (WinID != oZoom.hGui && WinID != hAhkSpy)
 	{
 		StretchBlt(oZoom.hdcDest, 0, 0, oZoom.nWidthDest, oZoom.nHeightDest
 			, oZoom.hdcSrc, mX - oZoom.nXOriginSrcOffset, mY - oZoom.nYOriginSrcOffset, oZoom.nWidthSrc, oZoom.nHeightSrc)
@@ -176,7 +180,7 @@ ZoomMove() {
 	If !oZoom.Show
 		Return
 	WinGetPos, WinX, WinY, WinWidth, WinHeight, ahk_id %hAhkSpy%
-	Gui, Zoom:Show, % "x" WinX + WinWidth " y" WinY " NA"
+	Gui, Zoom:Show, % "x" WinX + WinWidth " y" WinY " NA" 
 }
 
 SliderZoom()  {
@@ -232,6 +236,12 @@ IniRead(Key, Error := " ")  {
 IniWrite(Value, Key) {
 	IniWrite, %Value%, %A_AppData%\AhkSpy.ini, AhkSpy, %Key%
 	Return Value
+}
+
+IsMinimize(hwnd) {
+	WinGet, Min, MinMax, % "ahk_id " hwnd
+	If Min = -1
+		Return 1
 }
 
 SetWinEventHook(EventProc, eventMin, eventMax = 0)  {
