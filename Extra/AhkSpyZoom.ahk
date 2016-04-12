@@ -1,5 +1,5 @@
 
-	; version = 1.34
+	; version = 1.35
 
 #NoEnv
 #NoTrayIcon
@@ -253,34 +253,32 @@ SetWinEventHook(EventProc, eventMin, eventMax = 0)  {
 				, "UInt", dwflags := 0x0|0x2, "Ptr")	;	WINEVENT_OUTOFCONTEXT | WINEVENT_SKIPOWNPROCESS
 }
 
-BitBlt(ddc, dx, dy, dw, dh, sdc, sx, sy, Raster="") {
-	Ptr := A_PtrSize ? "UPtr" : "UInt" 
-	return DllCall("Gdi32.Dll\BitBlt"
-					, Ptr, dDC
-					, "int", dx
-					, "int", dy
-					, "int", dw
-					, "int", dh
-					, Ptr, sDC
-					, "int", sx
-					, "int", sy
-					, "uint", Raster ? Raster : 0xC000CA)
+BitBlt(ddc, dx, dy, dw, dh, sdc, sx, sy, Raster = 0xC000CA) {
+	Return DllCall("Gdi32.Dll\BitBlt"
+					, "Ptr", dDC
+					, "Int", dx
+					, "Int", dy
+					, "Int", dw
+					, "Int", dh
+					, "Ptr", sDC
+					, "Int", sx
+					, "Int", sy
+					, "Uint", Raster)
 }
 
-StretchBlt(ddc, dx, dy, dw, dh, sdc, sx, sy, sw, sh, Raster="") {
-	Ptr := A_PtrSize ? "UPtr" : "UInt" 
-	return DllCall("Gdi32.Dll\StretchBlt"
-					, Ptr, ddc
-					, "int", dx
-					, "int", dy
-					, "int", dw
-					, "int", dh
-					, Ptr, sdc
-					, "int", sx
-					, "int", sy
-					, "int", sw
-					, "int", sh
-					, "uint", Raster ? Raster : 0xC000CA)
+StretchBlt(ddc, dx, dy, dw, dh, sdc, sx, sy, sw, sh, Raster = 0xC000CA) {
+	Return DllCall("Gdi32.Dll\StretchBlt"
+					, "Ptr", dDC
+					, "Int", dx
+					, "Int", dy
+					, "Int", dw
+					, "Int", dh
+					, "Ptr", sDC
+					, "Int", sx
+					, "Int", sy
+					, "Int", sw
+					, "Int", sh
+					, "Uint", Raster)
 }
 
 	; _________________________________________________ Events _________________________________________________
