@@ -1,5 +1,5 @@
 
-	; version = 1.35
+	; version = 1.40
 
 #NoEnv
 #NoTrayIcon
@@ -39,7 +39,7 @@ Return
 +#WheelUp::
 +#WheelDown::ChangeZoom(InStr(A_ThisHotKey, "Down") ? oZoom.Zoom + 1 : oZoom.Zoom - 1)
 
-#If (oZoom.Show && !IsMinimize(hAhkSpy))
+#If (!oZoom.AhkSpyPause && oZoom.Show && !IsMinimize(hAhkSpy))
 
 +#Up::MouseStep(0, -1)
 +#Down::MouseStep(0, 1)
@@ -48,9 +48,13 @@ Return
 
 MouseStep(x, y) {
 	MouseMove, x, y, 0, R
-	PostMessage, % MsgAhkSpyZoom, 1, 0, , ahk_id %hAhkSpy%
 	If oZoom.Pause
-		Magnify()
+	{
+		SetTimer, Magnify, Off
+		oZoom.Pause := 0, Magnify(), oZoom.Pause := 1
+		SetTimer, Magnify, -10
+	}
+	PostMessage, % MsgAhkSpyZoom, 1, 0, , ahk_id %hAhkSpy%
 }
 
 #If
@@ -82,7 +86,7 @@ ZoomCreate() {
 
 	oZoom.hdcSrc := DllCall("GetDC", Ptr, "")
 	oZoom.hdcDest := DllCall("GetDC", Ptr, hDevCon, Ptr)
-	oZoom.hdcDummyDest := DllCall("CreateCompatibleDC", "Ptr", 0) 
+	oZoom.hdcMemory := DllCall("CreateCompatibleDC", "Ptr", 0)
 	DllCall("gdi32.dll\SetStretchBltMode", "Ptr", oZoom.hdcDest, "Int", 4)
 	oZoom.hGui := hGui
 	oZoom.hDev := hDev
@@ -103,30 +107,29 @@ ZoomHide() {
 	oZoom.Show := 0
 	oZoom.Pause := 1
 	Gui, Zoom: Show, Hide
-}
+} 
 
 Magnify() {
-	If !oZoom.Show
-		Return
-	MouseGetPos, mX, mY, WinID
-	If (WinID != oZoom.hGui && WinID != hAhkSpy)
+	If (oZoom.Show && !oZoom.Pause && oZoom.SIZING != 2)
 	{
-		StretchBlt(oZoom.hdcDest, 0, 0, oZoom.nWidthDest, oZoom.nHeightDest
-			, oZoom.hdcSrc, mX - oZoom.nXOriginSrcOffset, mY - oZoom.nYOriginSrcOffset, oZoom.nWidthSrc, oZoom.nHeightSrc)
-		For k, v In oZoom.oMarkers[oZoom.Mark]
-			StretchBlt(oZoom.hdcDest, v.x, v.y, v.w, v.h, oZoom.hdcDest, v.x, v.y, v.w, v.h, 0x5A0049)	; PATINVERT
-			
-		hBM := DllCall("Gdi32.Dll\CreateCompatibleBitmap", "Ptr", oZoom.hdcSrc, "Int", oZoom.nWidthSrc, "Int", oZoom.nHeightSrc)
-		DllCall("Gdi32.Dll\SelectObject", "Ptr", oZoom.hdcDummyDest, "Ptr", hBM), DllCall("DeleteObject", "Ptr", hBM)
-		BitBlt(oZoom.hdcDummyDest, 0, 0, oZoom.nWidthSrc, oZoom.nHeightSrc, oZoom.hdcSrc, mX - oZoom.nXOriginSrcOffset, mY - oZoom.nYOriginSrcOffset)
+		MouseGetPos, mX, mY, WinID
+		If (WinID != oZoom.hGui && WinID != hAhkSpy)
+		{
+			SetTimer, Memory, Off
+			oZoom.MouseX := mX, oZoom.MouseY := mY
+			StretchBlt(oZoom.hdcDest, 0, 0, oZoom.nWidthDest, oZoom.nHeightDest
+				, oZoom.hdcSrc, mX - oZoom.nXOriginSrcOffset, mY - oZoom.nYOriginSrcOffset, oZoom.nWidthSrc, oZoom.nHeightSrc)
+			For k, v In oZoom.oMarkers[oZoom.Mark]
+				StretchBlt(oZoom.hdcDest, v.x, v.y, v.w, v.h, oZoom.hdcDest, v.x, v.y, v.w, v.h, 0x5A0049)	; PATINVERT
+			SetTimer, Memory, -30
+		}
 	}
-	If !oZoom.Pause
-		SetTimer, Magnify, -1
+	SetTimer, Magnify, -10
 }
 
 SetSize() {
 	Static Top := 64, Left := 4, Right := 4, Bottom := 4
-
+	SetTimer, Magnify, Off
 	GetClientPos(oZoom.hGui, GuiWidth, GuiHeight)
 	Width := GuiWidth - Left - Right
 	Height := GuiHeight - Top - Bottom
@@ -167,13 +170,31 @@ SetSize() {
 		, {x:xCenter + Zoom,y:yCenter - Zoom,w:1,h:Zoom * 3}
 		, {x:xCenter + Zoom * 2,y:yCenter - Zoom,w:1,h:Zoom * 3}]
 
-	WinMove, % "ahk_id" oZoom.hDev, , Left, Top, Width, Height
-	GuiControl, Dev: -Redraw, % oZoom.hDevCon
-	WinMove, % "ahk_id" oZoom.hDevCon, , conX, conY, conW, conH
-	GuiControl, Dev: +Redraw, % oZoom.hDevCon
+	SetWindowPos(oZoom.hDev, Left, Top, Width, Height)
+	SetWindowPos(oZoom.hDevCon, conX, conY, conW, conH)
+	Redraw()
 	IniWrite(Zoom, "MagnifyZoom")
 	If oZoom.MemoryZoomSize
 		IniWrite(GuiWidth, "MemoryZoomSizeW"), IniWrite(GuiHeight, "MemoryZoomSizeH")
+	SetTimer, Magnify, -10
+}
+
+SetWindowPos(hWnd, x, y, w, h) {
+	Static SWP_ASYNCWINDOWPOS := 0x4000, SWP_DEFERERASE := 0x2000, SWP_NOACTIVATE := 0x0010, SWP_NOCOPYBITS := 0x0100
+		, SWP_NOOWNERZORDER := 0x0200, SWP_NOREDRAW := 0x0008, SWP_NOSENDCHANGING := 0x0400
+	DllCall("SetWindowPos"
+		, "Ptr", hWnd
+		, "Ptr", 0
+		, "Int", x
+		, "Int", y
+		, "Int", w
+		, "Int", h
+		, "UInt", SWP_ASYNCWINDOWPOS|SWP_DEFERERASE|SWP_NOACTIVATE|SWP_NOCOPYBITS|SWP_NOOWNERZORDER|SWP_NOREDRAW|SWP_NOSENDCHANGING)
+	SetTimer, RedrawWindow, -100
+}
+
+RedrawWindow() {
+	DllCall("RedrawWindow", "Ptr", oZoom.hGui, "Uint", 0, "Uint", 0, "Uint", 0x1|0x4) 
 }
 
 ZoomMove() {
@@ -191,9 +212,10 @@ SliderZoom()  {
 ChangeZoom(Val)  {
 	If (Val < 1 || Val > 50)
 		Return
+	SetTimer, Magnify, Off
 	GuiControl, Zoom:, % oZoom.vTextZoom, % oZoom.Zoom := Val
 	GuiControl, Zoom:, % oZoom.vSliderZoom, % oZoom.Zoom
-	SetTimer, SetSize, -150
+	SetTimer, SetSize, -10
 }
 
 ChangeMark()  {
@@ -207,12 +229,23 @@ WM_Paint() {
 	SetTimer, Redraw, -10
 }
 
-Redraw() { 
+Memory() {
+	SysGet, VirtualScreenX, 76
+	SysGet, VirtualScreenY, 77
+	SysGet, VirtualScreenWidth, 78
+	SysGet, VirtualScreenHeight, 79 
+	oZoom.nXOriginSrc := oZoom.MouseX - VirtualScreenX, oZoom.nYOriginSrc := oZoom.MouseY - VirtualScreenY
+	hBM := DllCall("Gdi32.Dll\CreateCompatibleBitmap", "Ptr", oZoom.hdcSrc, "Int", VirtualScreenWidth, "Int", VirtualScreenHeight)
+	DllCall("Gdi32.Dll\SelectObject", "Ptr", oZoom.hdcMemory, "Ptr", hBM), DllCall("DeleteObject", "Ptr", hBM)
+	BitBlt(oZoom.hdcMemory, 0, 0, VirtualScreenWidth, VirtualScreenHeight, oZoom.hdcSrc, VirtualScreenX, VirtualScreenY)
+}
+
+Redraw() {
 	StretchBlt(oZoom.hdcDest, 0, 0, oZoom.nWidthDest, oZoom.nHeightDest
-		, oZoom.hdcDummyDest, 0, 0, oZoom.nWidthSrc, oZoom.nHeightSrc)
+		, oZoom.hdcMemory, oZoom.nXOriginSrc - oZoom.nXOriginSrcOffset, oZoom.nYOriginSrc - oZoom.nYOriginSrcOffset, oZoom.nWidthSrc, oZoom.nHeightSrc)
 	For k, v In oZoom.oMarkers[oZoom.Mark]
 		StretchBlt(oZoom.hdcDest, v.x, v.y, v.w, v.h, oZoom.hdcDest, v.x, v.y, v.w, v.h, 0x5A0049)	; PATINVERT
-}
+} 
 
 CheckAhkSpy() {
 	WinGet, Min, MinMax, % "ahk_id " hAhkSpy
@@ -286,27 +319,31 @@ StretchBlt(ddc, dx, dy, dw, dh, sdc, sx, sy, sw, sh, Raster = 0xC000CA) {
 ZoomOnSize() {
 	If A_EventInfo != 0
 		Return
-	SetTimer, SetSize, -100
+	SetTimer, SetSize, -10
 	ZoomMove()
 }
 
 ZoomOnClose() {
 	DllCall("gdi32.dll\DeleteDC", "Ptr", oZoom.hdcDest)
 	DllCall("gdi32.dll\DeleteDC", "Ptr", oZoom.hdcSrc)
+	DllCall("Gdi32.Dll\DeleteDC", "Ptr", oZoom.hdcMemory)
 	RestoreCursors()
 	ExitApp
 }
 
-	; wParam: 0 снять паузу, 1 пауза, 2 однократный зум, 3 hide, 4 show, 5 MemoryZoomSize, 6 MinSize
+	; wParam: 0 снять паузу, 1 пауза, 2 однократный зум, 3 hide, 4 show, 5 MemoryZoomSize, 6 MinSize, 7 пауза AhkSpy
 
 MsgZoom(wParam, lParam) {
-	Critical
 	If wParam = 0
 		oZoom.Pause := 0, Magnify()
 	Else If wParam = 1
 		oZoom.Pause := 1
 	Else If wParam = 2
-		Magnify()
+	{
+		SetTimer, Magnify, Off
+		S_Pause := oZoom.Pause, oZoom.Pause := 0, Magnify(), oZoom.Pause := S_Pause
+		SetTimer, Magnify, -10
+	}
 	Else If wParam = 3
 		ZoomHide()
 	Else If wParam = 4
@@ -321,6 +358,8 @@ MsgZoom(wParam, lParam) {
 	}
 	Else If (wParam = 6 && oZoom.Show)
 		Gui, Zoom:Show, % "NA w" oZoom.GuiMinW " h" oZoom.GuiMinH
+	Else If wParam = 7
+		oZoom.AhkSpyPause := lParam
 }
 
 EVENT_OBJECT_DESTROY(hWinEventHook, event, hwnd) {
