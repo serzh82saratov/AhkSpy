@@ -13,7 +13,7 @@ SetBatchLines, -1
 ListLines, Off
 DetectHiddenWindows, On
 
-Global AhkSpyVersion := 1.93
+Global AhkSpyVersion := 1.94
 Gosub, CheckAhkVersion
 Menu, Tray, UseErrorLevel
 Menu, Tray, Icon, Shell32.dll, % A_OSVersion = "WIN_XP" ? 222 : 278
@@ -72,12 +72,13 @@ Gui, Add, ActiveX, Border voDoc HWNDhActiveX x0 y+0, HTMLFile
 
 ComObjError(false), ComObjConnect(oDoc, Events)
 OnMessage(0x201, "WM_LBUTTONDOWN")
+OnMessage(0xA1, "WM_NCLBUTTONDOWN")
 OnMessage(0x7B, "WM_CONTEXTMENU")
 OnMessage(0x6, "WM_ACTIVATE")
 OnMessage(0x03, "WM_MOVE")
 OnMessage(MsgAhkSpyZoom := DllCall("RegisterWindowMessage", "Str", "AhkSpyZoom"), "MsgZoom")
 OnExit, Exit
-DllCall("RegisterShellHookWindow", "UInt", A_ScriptHwnd)
+DllCall("RegisterShellHookWindow", "Ptr", A_ScriptHwnd)
 OnMessage(DllCall("RegisterWindowMessage", "str", "SHELLHOOK"), "ShellProc")
 
 Gui, TB: +HWNDhTBGui -Caption -DPIScale +Parent%hGui% +E0x08000000
@@ -134,10 +135,10 @@ Menu, Sys, % MemorySize ? "Check" : "UnCheck", Memory size
 If m_run_AhkSpyZoom !=
 {
 	Menu, Sys, Add
-	Menu, Sys, Add, Memory zoom size, MemoryZoomSize
-	Menu, Sys, % MemoryZoomSize ? "Check" : "UnCheck", Memory zoom size
 	Menu, Sys, Add, Memory state zoom, MemoryStateZoom
 	Menu, Sys, % MemoryStateZoom ? "Check" : "UnCheck", Memory state zoom
+	Menu, Sys, Add, Memory zoom size, MemoryZoomSize
+	Menu, Sys, % MemoryZoomSize ? "Check" : "UnCheck", Memory zoom size
 }
 Menu, Sys, Add
 Menu, Sys, Add, Default size, DefaultSize
@@ -179,7 +180,8 @@ Return
 
 +Tab::
 	(ThisMode = "Mouse" ? (Spot_Mouse() (StateAllwaysSpot ? Spot_Win() : 0) Write_Mouse()) : (Spot_Win() (StateAllwaysSpot ? Spot_Mouse() : 0) Write_Win()))
-	If !WinActive("ahk_id" hGui)  {
+	If !WinActive("ahk_id" hGui)
+	{
 		ZoomMsg(1)
 		WinActivate ahk_id %hGui%
 		GuiControl, 1:Focus, oDoc
@@ -203,7 +205,10 @@ PausedScript:
 	HideMarker(), HideAccMarker()
 	Menu, Sys, % isPaused ? "Check" : "UnCheck", Pause AhkSpy
 	ZoomMsg(isPaused || WinActive("ahk_id" hGui) ? 1 : 0)
+	ZoomMsg(7, isPaused)
 	Return
+
+~Shift Up:: CheckHideMarker()
 
 #If WinActive("ahk_id" hGui)
 
@@ -277,9 +282,6 @@ MouseStep(x, y) {
 	MouseMove, x, y, 0, R
 	If (Sleep != 1 && !isPaused && ThisMode != "Hotkey" && WinActive("ahk_id" hGui))
 	{
-;		MouseGetPos,,,WinID
-;		If (WinID = hGui || WinID = oOther.hZoom)
-;			Return
 		(ThisMode = "Mouse" ? (Spot_Mouse() (StateAllwaysSpot ? Spot_Win() : 0) Write_Mouse()) : (Spot_Win() (StateAllwaysSpot ? Spot_Mouse() : 0) Write_Win()))
 		ZoomMsg(2)
 	}
@@ -463,70 +465,64 @@ Spot_Mouse(NotHTML=0)  {
 	WinGet, HWND_A, ID, A
 	WinGetClass, WinClass_A, A
 	CoordMode, Mouse
-	MouseGetPos, MXS, MYS, tWinID, tControlNN
+	MouseGetPos, MXS, MYS, WinID, tControlNN
 	MouseGetPos, , , , m_hwnd_3, 3
 	CoordMode, Mouse, Window
 	MouseGetPos, MXWA, MYWA, , tControlID, 2
 
-	If (tWinID != hGui && tWinID !=oOther.hZoom)
+	If (WinID = hGui || WinID = oOther.hZoom)
+		Return HideMarker(), HideAccMarker()
+
+	CtrlInfo := "", isIE := 0
+	ControlNN := tControlNN, ControlID := tControlID
+	WinGetPos, WinX, WinY, , , ahk_id %WinID%
+	RWinX := MXS - WinX, RWinY := MYS - WinY
+	GetClientPos(WinID, caX, caY, caW, caH)
+	MXC := RWinX - caX, MYC := RWinY - caY
+	CoordMode, Pixel
+	PixelGetColor, ColorRGB, %MXS%, %MYS%, RGB
+	PixelGetColor, ColorBGR, %MXS%, %MYS%
+	sColorBGR := SubStr(ColorBGR, 3)
+	GuiControl, TB: -Redraw, ColorProgress
+	GuiControl, % "TB: +c" sColorRGB := SubStr(ColorRGB, 3), ColorProgress
+	GuiControl, TB: +Redraw, ColorProgress
+	WinGetPos, WinX2, WinY2, WinW, WinH, ahk_id %WinID%
+	WithRespectWin := "`n" set_button_mouse_pos "Relative pos to a window:</button></span> <span>" RWinX / WinW ", " RWinY / WinH
+		. "</span>  <span id='param'>for</span>  w" WinW "  h" WinH
+	ControlGetPos, CtrlX, CtrlY, CtrlW, CtrlH,, ahk_id %ControlID%
+	CtrlCAX := CtrlX - caX, CtrlCAY := CtrlY - caY
+	CtrlX2 := CtrlX+CtrlW, CtrlY2 := CtrlY+CtrlH
+	CtrlCAX2 := CtrlX2-caX, CtrlCAY2 := CtrlY2-caY
+	ControlGetText, CtrlText, , ahk_id %ControlID%
+	If CtrlText !=
+		CtrlText := "`n" D1 " <a></a><span id='title'>( Control Text )</span> " DB " " copy_button " " D2 "`n<span>" TransformHTML(CtrlText) "</span>"
+	AccText := AccInfoUnderMouse(MXS, MYS, WinX, WinY, CtrlX, CtrlY)
+	If AccText !=
+		AccText = `n%D1% <a></a><span id='title'>( AccInfo )</span> %m_run_AccViewer%%D2%%AccText%
+	If ControlNN !=
 	{
-		WinID := tWinID, CtrlInfo := "", isIE := 0
-		ControlNN := tControlNN, ControlID := tControlID
-		WinGetPos, WinX, WinY, , , ahk_id %tWinID%
-		RWinX := MXS - WinX, RWinY := MYS - WinY
-		GetClientPos(tWinID, caX, caY, caW, caH)
-		MXC := RWinX - caX, MYC := RWinY - caY
-		CoordMode, Pixel
-		PixelGetColor, ColorRGB, %MXS%, %MYS%, RGB
-		PixelGetColor, ColorBGR, %MXS%, %MYS%
-		sColorBGR := SubStr(ColorBGR, 3)
-		GuiControl, TB: -Redraw, ColorProgress
-		GuiControl, % "TB: +c" sColorRGB := SubStr(ColorRGB, 3), ColorProgress
-		GuiControl, TB: +Redraw, ColorProgress
-		WinGetPos, WinX2, WinY2, WinW, WinH, ahk_id %WinID%
-		WithRespectWin := "`n" set_button_mouse_pos "Relative pos to a window:</button></span> <span>" RWinX / WinW ", " RWinY / WinH
-			. "</span>  <span id='param'>for</span>  w" WinW "  h" WinH
-		ControlGetPos, CtrlX, CtrlY, CtrlW, CtrlH,, ahk_id %ControlID%
-		CtrlCAX := CtrlX - caX, CtrlCAY := CtrlY - caY
-		CtrlX2 := CtrlX+CtrlW, CtrlY2 := CtrlY+CtrlH
-		CtrlCAX2 := CtrlX2-caX, CtrlCAY2 := CtrlY2-caY
-		ControlGetText, CtrlText, , ahk_id %ControlID%
-		If CtrlText !=
-			CtrlText := "`n" D1 " <a></a><span id='title'>( Control Text )</span> " DB " " copy_button " " D2 "`n<span>" TransformHTML(CtrlText) "</span>"
-		AccText := AccInfoUnderMouse(MXS, MYS, WinX, WinY, CtrlX, CtrlY)
-		If AccText !=
-			AccText = `n%D1% <a></a><span id='title'>( AccInfo )</span> %m_run_AccViewer%%D2%%AccText%
-		If ControlNN !=
+		rmCtrlX := MXS - WinX - CtrlX, rmCtrlY := MYS - WinY - CtrlY
+		ControlNN_Sub := RegExReplace(ControlNN, "S)\d+| ")
+		If IsFunc("GetInfo_" ControlNN_Sub)
 		{
-			rmCtrlX := MXS - WinX - CtrlX, rmCtrlY := MYS - WinY - CtrlY
-			ControlNN_Sub := RegExReplace(ControlNN, "S)\d+| ")
-			If IsFunc("GetInfo_" ControlNN_Sub)
-			{
-				CtrlInfo := GetInfo_%ControlNN_Sub%(ControlID, ClassNN), ml_run_iWB2Learner := isIE ? m_run_iWB2Learner : ""
-				If CtrlInfo !=
-					CtrlInfo = `n%D1% <a></a><span id='title'>( Info - %ClassNN% )</span> %ml_run_iWB2Learner%%D2%%CtrlInfo%
-			}
+			CtrlInfo := GetInfo_%ControlNN_Sub%(ControlID, ClassNN), ml_run_iWB2Learner := isIE ? m_run_iWB2Learner : ""
+			If CtrlInfo !=
+				CtrlInfo = `n%D1% <a></a><span id='title'>( Info - %ClassNN% )</span> %ml_run_iWB2Learner%%D2%%CtrlInfo%
 		}
-		Else
-			rmCtrlX := rmCtrlY := ""
-		If (!isIE && ThisMode = "Mouse" && (StateLight = 1 || (StateLight = 3 && GetKeyState("Shift", "P"))))
-		{
-			ShowMarker(WinX2+CtrlX, WinY2+CtrlY, CtrlW, CtrlH)
-			StateLightAcc ? ShowAccMarker(AccCoord[1], AccCoord[2], AccCoord[3], AccCoord[4]) : 0
-		}
-		ControlGet, CtrlStyle, Style,,, ahk_id %ControlID%
-		ControlGet, CtrlExStyle, ExStyle,,, ahk_id %ControlID%
-		WinGetClass, CtrlClass, ahk_id %ControlID%
-		ControlGetFocus, CtrlFocus, ahk_id %WinID%
-		WinGet, ProcessName, ProcessName, ahk_id %WinID%
-		WinGetClass, WinClass, ahk_id %WinID%
 	}
 	Else
+		rmCtrlX := rmCtrlY := ""
+	If (!isIE && ThisMode = "Mouse" && (StateLight = 1 || (StateLight = 3 && GetKeyState("Shift", "P"))))
 	{
-		WinX := WinY := RWinX := RWinY := MXC := MYC := ""
-		rmCtrlX := rmCtrlY := WithRespectWin := ""
-		ShowMarker ? (HideMarker(), HideAccMarker()) : 0
+		ShowMarker(WinX2+CtrlX, WinY2+CtrlY, CtrlW, CtrlH)
+		StateLightAcc ? ShowAccMarker(AccCoord[1], AccCoord[2], AccCoord[3], AccCoord[4]) : 0
 	}
+	ControlGet, CtrlStyle, Style,,, ahk_id %ControlID%
+	ControlGet, CtrlExStyle, ExStyle,,, ahk_id %ControlID%
+	WinGetClass, CtrlClass, ahk_id %ControlID%
+	ControlGetFocus, CtrlFocus, ahk_id %WinID%
+	WinGet, ProcessName, ProcessName, ahk_id %WinID%
+	WinGetClass, WinClass, ahk_id %WinID%
 
 HTML_Mouse:
 	HTML_Mouse =
@@ -1154,8 +1150,6 @@ Hotkey_WindowsHookEx(State)  {
 		DllCall("UnhookWindowsHookEx", "Ptr", Hook), Hook := "", Hotkey_Reset()
 }
 
-
-
 	; _________________________________________________ Labels _________________________________________________
 
 GuiSize:
@@ -1166,7 +1160,7 @@ GuiSize:
 		WinMove, ahk_id %hActiveX%, , 0, HeigtButton, A_GuiWidth, A_GuiHeight - HeigtButton
 	}
 	Else
-		HideMarker(), HideAccMarker(), ZoomMsg(1)
+		ZoomMsg(1), HideMarker(), HideAccMarker()
 	Try SetTimer, Loop_%ThisMode%, % Sleep = 1 || isPaused ? "Off" : "On"
 	Return
 
@@ -1174,7 +1168,7 @@ Exit:
 GuiClose:
 GuiEscape:
 	Hotkey_Control(0), oDoc := ""
-	DllCall("DeregisterShellHookWindow", "UInt", A_ScriptHwnd)
+	DllCall("DeregisterShellHookWindow", "Ptr", A_ScriptHwnd)
 	ExitApp
 
 TitleShow:
@@ -1194,7 +1188,7 @@ LaunchHelp:
 	IfWinNotExist AutoHotkey Help ahk_class HH Parent ahk_exe hh.exe
 		Run % SubStr(A_AhkPath,1,InStr(A_AhkPath,"\",,0,1)) "AutoHotkey.chm"
 	WinActivate
-	Gui, 1: Minimize
+	Minimize()
 	Return
 
 DefaultSize:
@@ -1257,7 +1251,7 @@ Sys_Help:
 
 Sys_OpenScriptDir:
 	SelectFilePath(A_ScriptFullPath)
-	Gui, 1: Minimize
+	Minimize()
 	Return
 
 Spot_together:
@@ -1310,6 +1304,21 @@ WM_ACTIVATE(wp) {
 	ZoomMsg((wp & 0xFFFF) ? 1 : Sleep != 1 && !isPaused ? 0 : 1)
 }
 
+WM_NCLBUTTONDOWN(wp) {
+	Static HTMINBUTTON := 8
+	If (wp = HTMINBUTTON)
+	{
+		SetTimer, Minimize, -10
+		Return 0
+	}
+}
+
+Minimize() {
+	Sleep := 1
+	ZoomMsg(1)
+	Gui, 1: Minimize
+}
+
 WM_LBUTTONDOWN() {
 	If A_GuiControl = ColorProgress
 	{
@@ -1343,7 +1352,7 @@ MsgZoom(wParam, lParam) {
 	If (wParam = 1)
 	{
 		SetTimer, ZoomSpot, -10
-		Return
+		Return 1
 	}
 	oOther.hZoom := lParam
 	ZoomMsg(Sleep != 1 && !isPaused && !WinActive("ahk_id" hGui) ? 0 : 1)
@@ -1387,7 +1396,7 @@ FixIE(Fix) {
 
 RunPath(Link, WorkingDir="", Option="") {
 	Run %Link%, %WorkingDir%, %Option%
-	Gui, 1: Minimize
+	Minimize()
 }
 
 ExtraFile(Name, GetNoCompile = 0) {
@@ -1697,7 +1706,7 @@ Class Events {
 			Else If thisid = w_folder
 			{
 				SelectFilePath(oDoc.getElementById("copy_processpath").OuterText)
-				Gui, 1: Minimize
+				Minimize()
 			}
 			Else If thisid = paste_process_path
 				oDoc.getElementById("copy_processpath").innerHTML := TransformHTML(Trim(Trim(Clipboard), """"))
@@ -1769,7 +1778,7 @@ Class Events {
 						DllCall("SetCursorPos", "Uint", X + p1, "Uint", Y + p2)
 					Else If thisbutton = Mouse relative control:
 					{
-						hWnd := oOther.MouseControlID					
+						hWnd := oOther.MouseControlID
 						If !WinExist("ahk_id " hwnd)
 							Return ToolTip("Control not exist", 500)
 						WinGetPos, X, Y, W, H, ahk_id %hWnd%
@@ -1848,6 +1857,7 @@ Class Events {
 		Else
 			ZoomMsg(WindowVisible ? 3 : 4)
 			, IniWrite(WindowVisible ? 0 : 1, "ZoomShow")
+		ZoomMsg(7, isPaused)
 	}
 }
 	;)
