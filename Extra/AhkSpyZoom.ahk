@@ -1,5 +1,5 @@
 
-	; version = 1.40
+	; version = 1.41
 
 #NoEnv
 #NoTrayIcon
@@ -429,7 +429,7 @@ Sizing() {
 	If (oZoom.SIZINGType = "NWSE" || oZoom.SIZINGType = "NS")
 		Height := " h" (mY - WinY < oZoom.GuiMinH ? oZoom.GuiMinH : mY - WinY)
 	Gui, Zoom:Show, % "NA" Width . Height
-	SetTimer, Sizing, -1, 1
+	SetTimer, Sizing, -1
 }
 
 SetSystemCursor(Cursor, cx = 32, cy = 32) {
