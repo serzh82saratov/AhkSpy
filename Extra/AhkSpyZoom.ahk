@@ -1,5 +1,5 @@
 
-	; version = 1.41
+	; version = 1.42
 
 #NoEnv
 #NoTrayIcon
@@ -128,7 +128,7 @@ Magnify() {
 }
 
 SetSize() {
-	Static Top := 64, Left := 4, Right := 4, Bottom := 4
+	Static Top := 64, Left := 4, Right := 4, Bottom := 4, PrWidth, PrHeight
 	SetTimer, Magnify, Off
 	GetClientPos(oZoom.hGui, GuiWidth, GuiHeight)
 	Width := GuiWidth - Left - Right
@@ -173,9 +173,13 @@ SetSize() {
 	SetWindowPos(oZoom.hDev, Left, Top, Width, Height)
 	SetWindowPos(oZoom.hDevCon, conX, conY, conW, conH)
 	Redraw()
-	IniWrite(Zoom, "MagnifyZoom")
-	If oZoom.MemoryZoomSize
-		IniWrite(GuiWidth, "MemoryZoomSizeW"), IniWrite(GuiHeight, "MemoryZoomSizeH")
+	If (PrWidth != Width || PrHeight != Height)
+	{
+		PrWidth := Width, PrHeight := Height
+		If oZoom.MemoryZoomSize
+			IniWrite(GuiWidth, "MemoryZoomSizeW"), IniWrite(GuiHeight, "MemoryZoomSizeH")
+		SetTimer, RedrawWindow, -100
+	}
 	SetTimer, Magnify, -10
 }
 
@@ -190,7 +194,6 @@ SetWindowPos(hWnd, x, y, w, h) {
 		, "Int", w
 		, "Int", h
 		, "UInt", SWP_ASYNCWINDOWPOS|SWP_DEFERERASE|SWP_NOACTIVATE|SWP_NOCOPYBITS|SWP_NOOWNERZORDER|SWP_NOREDRAW|SWP_NOSENDCHANGING)
-	SetTimer, RedrawWindow, -100
 }
 
 RedrawWindow() {
@@ -215,6 +218,7 @@ ChangeZoom(Val)  {
 	SetTimer, Magnify, Off
 	GuiControl, Zoom:, % oZoom.vTextZoom, % oZoom.Zoom := Val
 	GuiControl, Zoom:, % oZoom.vSliderZoom, % oZoom.Zoom
+	IniWrite(oZoom.Zoom, "MagnifyZoom")
 	SetTimer, SetSize, -10
 }
 
@@ -432,19 +436,14 @@ Sizing() {
 	SetTimer, Sizing, -1
 }
 
-SetSystemCursor(Cursor, cx = 32, cy = 32) {
-	Static SystemCursors := {ARROW:32512,IBEAM:32513,WAIT:32514,CROSS:32515,UPARROW:32516,SIZE:32640,ICON:32641,SIZENWSE:32642
-					,SIZENESW:32643,SIZEWE:32644,SIZENS:32645,SIZEALL:32646,NO:32648,HAND:32649,APPSTARTING:32650,HELP:32651}
-    Local CursorID, CursorHandle, Name, ID, hImage
-
-	If (CursorID := SystemCursors[Cursor])
+SetSystemCursor(CursorName, cx = 0, cy = 0) {
+	Static SystemCursors := {ARROW:32512, IBEAM:32513, WAIT:32514, CROSS:32515, UPARROW:32516, SIZE:32640, ICON:32641, SIZENWSE:32642
+					, SIZENESW:32643, SIZEWE:32644 ,SIZENS:32645, SIZEALL:32646, NO:32648, HAND:32649, APPSTARTING:32650, HELP:32651}
+    Local CursorHandle, hImage, Name, ID
+	If (CursorHandle := DllCall("LoadCursor", Uint, 0, Int, SystemCursors[CursorName]))
 		For Name, ID in SystemCursors
-		{
-			CursorHandle := DllCall("LoadCursor", Uint, 0, Int, CursorID)
-			hImage := DllCall("CopyImage", Uint, CursorHandle, Uint, 0x2, Int, cx, Int, cy, Uint, 0)
-			CursorHandle := DllCall("CopyImage", Uint, hImage, Uint, 0x2, Int, 0, Int, 0, Int, 0)
-			DllCall("SetSystemCursor", Uint, CursorHandle, Int, ID)
-		}
+			hImage := DllCall("CopyImage", Ptr, CursorHandle, Uint, 0x2, Int, cx, Int, cy, Uint, 0)
+			, DllCall("SetSystemCursor", Ptr, hImage, Int, ID)
 }
 
 RestoreCursors() {
