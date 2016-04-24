@@ -13,7 +13,7 @@ SetBatchLines, -1
 ListLines, Off
 DetectHiddenWindows, On
 
-Global AhkSpyVersion := 1.95
+Global AhkSpyVersion := 1.96
 Gosub, CheckAhkVersion
 Menu, Tray, UseErrorLevel
 Menu, Tray, Icon, Shell32.dll, % A_OSVersion = "WIN_XP" ? 222 : 278
@@ -76,7 +76,7 @@ OnMessage(0xA1, "WM_NCLBUTTONDOWN")
 OnMessage(0x7B, "WM_CONTEXTMENU")
 OnMessage(0x6, "WM_ACTIVATE")
 OnMessage(0x03, "WM_MOVE")
-OnMessage(MsgAhkSpyZoom := DllCall("RegisterWindowMessage", "Str", "AhkSpyZoom"), "MsgZoom")
+OnMessage(MsgAhkSpyZoom := DllCall("RegisterWindowMessage", "Str", "MsgAhkSpyZoom"), "MsgZoom")
 OnExit, Exit
 DllCall("RegisterShellHookWindow", "Ptr", A_ScriptHwnd)
 OnMessage(DllCall("RegisterWindowMessage", "str", "SHELLHOOK"), "ShellProc")
@@ -579,6 +579,13 @@ GetInfo_SysListView(hwnd, ByRef ClassNN)  {
 			. "<span id='param'>Focused row:</span> " FocusedCount
 			. "`n" D1 " <span id='param'>( Content )</span> " DB
 			. " " copy_button " " D2 "`n<span>" TransformHTML(ListText) "</span>"
+}
+
+GetInfo_SysTreeView(hwnd, ByRef ClassNN)  {
+	ClassNN := "SysTreeView32"
+	SendMessage 0x1105, 0, 0, , ahk_id %hwnd%   ; TVM_GETCOUNT
+	ItemCount := ErrorLevel
+	Return	"`n<span id='param'>Item count:</span> " ItemCount
 }
 
 GetInfo_ListBox(hwnd, ByRef ClassNN)  {
