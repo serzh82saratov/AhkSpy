@@ -13,7 +13,7 @@ SetBatchLines, -1
 ListLines, Off
 DetectHiddenWindows, On
 
-Global AhkSpyVersion := 1.96
+Global AhkSpyVersion := 1.97
 Gosub, CheckAhkVersion
 Menu, Tray, UseErrorLevel
 Menu, Tray, Icon, Shell32.dll, % A_OSVersion = "WIN_XP" ? 222 : 278
@@ -721,7 +721,7 @@ GetInfo_InternetExplorer_Server(hwnd, ByRef ClassNN)  {
 		code = `n%D1% <a></a><span id='param'>( Outer Text )</span> %DB% %copy_button% %D2%`n
 		elText = %code%<span>%elText%</span>
 	}
-	WB2 := ComObject(9,ComObjQuery(pwin,IID_IWebBrowserApp,IID_IWebBrowserApp),1)
+	WB2 := ComObject(9, ComObjQuery(pwin, IID_IWebBrowserApp, IID_IWebBrowserApp), 1)
 	If ((Location := WB2.LocationName) != "")
 		Location = `n<span id='param'>Title:  </span>%Location%
 	If ((URL := WB2.LocationURL) != "")
@@ -749,11 +749,11 @@ GetInfo_InternetExplorer_Server(hwnd, ByRef ClassNN)  {
 }
 
 WBGet(hwnd)  {
-	static msg := DllCall("RegisterWindowMessage", "str", "WM_HTML_GETOBJECT")
+	Static Msg := DllCall("RegisterWindowMessage", "Str", "WM_HTML_GETOBJECT")
 		, IID_IHTMLWindow2 := "{332C4427-26CB-11D0-B483-00C04FD90119}"
-	SendMessage, msg,,,, ahk_id %hwnd%
+	SendMessage, Msg, , , , ahk_id %hwnd%
 	DllCall("oleacc\ObjectFromLresult", "Ptr", ErrorLevel, "Ptr", 0, "Ptr", 0, PtrP, pdoc)
-	Return ComObj(9,ComObjQuery(pdoc,IID_IHTMLWindow2,IID_IHTMLWindow2),1), ObjRelease(pdoc)
+	Return ComObj(9, ComObjQuery(pdoc, IID_IHTMLWindow2, IID_IHTMLWindow2), 1), ObjRelease(pdoc)
 }
 
 	; _________________________________________________ Get Acc Info _________________________________________________
