@@ -1,5 +1,5 @@
 
-	; version = 1.42
+	; version = 1.43
 
 #NoEnv
 #NoTrayIcon
@@ -21,7 +21,7 @@ OnMessage(0x201, "LBUTTONDOWN") ; WM_LBUTTONDOWN
 OnMessage(0xA1, "LBUTTONDOWN") ; WM_NCLBUTTONDOWN
 OnMessage(0xF, "WM_Paint")
 ZoomCreate()
-OnMessage(MsgAhkSpyZoom := DllCall("RegisterWindowMessage", "Str", "AhkSpyZoom"), "MsgZoom")
+OnMessage(MsgAhkSpyZoom := DllCall("RegisterWindowMessage", "Str", "MsgAhkSpyZoom"), "MsgZoom")
 PostMessage, % MsgAhkSpyZoom, 0, % oZoom.hGui, , ahk_id %hAhkSpy%
 SetWinEventHook("EVENT_OBJECT_DESTROY", 0x8001)
 SetWinEventHook("EVENT_OBJECT_LOCATIONCHANGE", 0x800B)
@@ -52,7 +52,7 @@ MouseStep(x, y) {
 	{
 		SetTimer, Magnify, Off
 		oZoom.Pause := 0, Magnify(), oZoom.Pause := 1
-		SetTimer, Magnify, -10
+		SetTimer, Magnify, -30
 	}
 	PostMessage, % MsgAhkSpyZoom, 1, 0, , ahk_id %hAhkSpy%
 }
@@ -170,8 +170,8 @@ SetSize() {
 		, {x:xCenter + Zoom,y:yCenter - Zoom,w:1,h:Zoom * 3}
 		, {x:xCenter + Zoom * 2,y:yCenter - Zoom,w:1,h:Zoom * 3}]
 
-	SetWindowPos(oZoom.hDev, Left, Top, Width, Height)
 	SetWindowPos(oZoom.hDevCon, conX, conY, conW, conH)
+	SetWindowPos(oZoom.hDev, Left, Top, Width, Height)
 	Redraw()
 	If (PrWidth != Width || PrHeight != Height)
 	{
@@ -230,7 +230,8 @@ ChangeMark()  {
 }
 
 WM_Paint() {
-	SetTimer, Redraw, -10
+	If A_GuiControl =
+		SetTimer, Redraw, -10
 }
 
 Memory() {
