@@ -12,8 +12,9 @@
 SetBatchLines, -1
 ListLines, Off
 DetectHiddenWindows, On
+CoordMode, Pixel
 
-Global AhkSpyVersion := 1.97
+Global AhkSpyVersion := 1.98
 Gosub, CheckAhkVersion
 Menu, Tray, UseErrorLevel
 Menu, Tray, Icon, Shell32.dll, % A_OSVersion = "WIN_XP" ? 222 : 278
@@ -166,7 +167,9 @@ Gui, +MinSize%widthTB%x%HeigtButton%
 
 Gosub, HotkeyInit
 Gosub, Mode_%ThisMode%
-PostMessage, 0x50, 0, 0x0409, , % "ahk_id" hActiveX			;  установить английскую раскладку
+; PostMessage, 0x50, 0, 0x409, , % "ahk_id" hActiveX			;  установить английскую раскладку
+DllCall("PostMessage", "Ptr", A_ScriptHWND, "UInt", 0x50, "UInt", 0, "UInt", 0x409)
+
 
 If (m_run_AhkSpyZoom != "" && MemoryStateZoom && IniRead("ZoomShow", 0))
 	Events.AhkSpyZoomShow()
@@ -219,6 +222,7 @@ ScrollLeft:
 	Return
 
 ^vk5A:: oDoc.execCommand("Undo")							;  Ctrl+Z
+^vk59:: oDoc.execCommand("Redo")							;  Ctrl+Y
 
 ^vk43:: Clipboard := oDoc.selection.createRange().text		;  Ctrl+C
 
@@ -370,7 +374,6 @@ Spot_Win(NotHTML=0)  {
 	If WinText !=
 		WinText := "`n" D1 " <a></a><span id='title'>( Window Text )</span> " DB " " copy_button " " D2 "`n<span>" TransformHTML(WinText) "</span>"
 	CoordMode, Mouse
-	CoordMode, Pixel
 	MouseGetPos, WinXS, WinYS
 	PixelGetColor, ColorRGB, %WinXS%, %WinYS%, RGB
 	GuiControl, TB: -Redraw, ColorProgress
@@ -478,13 +481,13 @@ Spot_Mouse(NotHTML=0)  {
 	WinGetPos, WinX, WinY, , , ahk_id %WinID%
 	RWinX := MXS - WinX, RWinY := MYS - WinY
 	GetClientPos(WinID, caX, caY, caW, caH)
-	MXC := RWinX - caX, MYC := RWinY - caY
-	CoordMode, Pixel
-	PixelGetColor, ColorRGB, %MXS%, %MYS%, RGB
+	MXC := RWinX - caX, MYC := RWinY - caY 
 	PixelGetColor, ColorBGR, %MXS%, %MYS%
+	ColorRGB := Format("0x{:06X}", (ColorBGR & 0xFF) << 16 | (ColorBGR & 0xFF00) | (ColorBGR >> 16))
 	sColorBGR := SubStr(ColorBGR, 3)
+	sColorRGB := SubStr(ColorRGB, 3)
 	GuiControl, TB: -Redraw, ColorProgress
-	GuiControl, % "TB: +c" sColorRGB := SubStr(ColorRGB, 3), ColorProgress
+	GuiControl, % "TB: +c" sColorRGB, ColorProgress
 	GuiControl, TB: +Redraw, ColorProgress
 	WinGetPos, WinX2, WinY2, WinW, WinH, ahk_id %WinID%
 	WithRespectWin := "`n" set_button_mouse_pos "Relative pos to a window:</button></span> <span>" RWinX / WinW ", " RWinY / WinH
@@ -1744,7 +1747,7 @@ Class Events {
 				HayStack := oevent.OuterText = "Pos:"
 				? oDoc.all.item(oevent.sourceIndex + 1).OuterText " " oDoc.all.item(oevent.sourceIndex + 5).OuterText
 				: oDoc.all.item(oevent.sourceIndex - 3).OuterText " " oDoc.all.item(oevent.sourceIndex + 1).OuterText
-				RegExMatch(HayStack, "x(.*?)\s+y(.*?)\s+w(.*?)\s+h(.*?)(\s+|$)", p)
+				RegExMatch(HayStack, "(-*\d+[\.\d+]*).*\s+.*?(-*\d+[\.\d+]*).*\s+.*?(-*\d+[\.\d+]*).*\s+.*?(-*\d+[\.\d+]*)", p)
 				If (p1 + 0 = "" || p2 + 0 = "" || p3 + 0 = "" || p4 + 0 = "")
 					Return ToolTip("Invalid parametrs", 500)
 				If (ThisMode = "Win")
@@ -1767,7 +1770,7 @@ Class Events {
 				}
 				If thisbutton = Relative pos to a window:
 				{
-					RegExMatch(oDoc.all.item(oevent.sourceIndex + 1).OuterText, "(.*?), (.*)", p)
+					RegExMatch(oDoc.all.item(oevent.sourceIndex + 1).OuterText, "(-*\d+[\.\d+]*).*\s+.*?(-*\d+[\.\d+]*)", p)
 					If (p1 + 0 = "" || p2 + 0 = "")
 						Return ToolTip("Invalid parametrs", 500)
 					BlockInput, MouseMove
@@ -1775,7 +1778,7 @@ Class Events {
 				}
 				Else
 				{
-					RegExMatch(oDoc.all.item(oevent.sourceIndex + 1).OuterText, "x(.*?) y(.*)", p)
+					RegExMatch(oDoc.all.item(oevent.sourceIndex + 1).OuterText, "(-*\d+[\.\d+]*).*\s+.*?(-*\d+[\.\d+]*)", p)
 					If (p1 + 0 = "" || p2 + 0 = "")
 						Return ToolTip("Invalid parametrs", 500)
 					BlockInput, MouseMove
