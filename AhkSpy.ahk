@@ -715,10 +715,15 @@ GetInfo_InternetExplorer_Server(hwnd, ByRef ClassNN)  {
 	If !(pwin := WBGet(hwnd))
 		Return
 	pelt := pwin.document.elementFromPoint(rmCtrlX, rmCtrlY)
+	If ((_id := pelt.id) != "")
+		id = `n<span id='param'>ID:  </span>%_id%
 	If ((Tag := pelt.TagName) != "")
 		TagName = `n%D1% <span id='param'>( Tag name: </span>%Tag%<span id='param'> )</span> %D2%
 	If (Tag = "IFRAME" || Tag = "FRAME") {
-		iFrame := ComObj(9,ComObjQuery(pelt.contentWindow,IID_IHTMLWindow2,IID_IHTMLWindow2),1)
+		If pFrame := ComObjQuery(pwin.document.parentWindow.frames[_id],IID_IHTMLWindow2,IID_IHTMLWindow2)
+			iFrame := ComObject(9, pFrame, 1)
+		Else
+			iFrame := ComObj(9, ComObjQuery(pelt.contentWindow,IID_IHTMLWindow2,IID_IHTMLWindow2), 1)
 		Loop % iFrame.length
 		{
 			el := iFrame[A_Index - 1].document.documentElement
@@ -751,8 +756,6 @@ GetInfo_InternetExplorer_Server(hwnd, ByRef ClassNN)  {
 		Location = `n<span id='param'>Title:  </span>%Location%
 	If ((URL := WB2.LocationURL) != "")
 		URL = `n<span id='param'>URL:  </span>%URL%
-	If ((id := pelt.id) != "")
-		id = `n<span id='param'>ID:  </span>%id%
 	If ((Class := pelt.ClassName) != "")
 		Class = `n<span id='param'>Class:  </span>%Class%
 	If ((name := pelt.name) != "")
@@ -767,7 +770,7 @@ GetInfo_InternetExplorer_Server(hwnd, ByRef ClassNN)  {
 		StateLightAcc ? ShowAccMarker(AccCoord[1], AccCoord[2], AccCoord[3], AccCoord[4]) : 0
 		ObjRelease(pbrt)
 	}
-	ObjRelease(pwin), ObjRelease(pelt), ObjRelease(WB2)
+	ObjRelease(pwin), ObjRelease(pelt), ObjRelease(WB2), ObjRelease(iFrame)
 	Return Location URL TagName id Class name Index elHTML elText
 }
 
