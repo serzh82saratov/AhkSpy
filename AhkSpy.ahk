@@ -719,15 +719,19 @@ GetInfo_InternetExplorer_Server(hwnd, ByRef ClassNN)  {
 		TagName = `n%D1% <span id='param'>( Tag name: </span>%Tag%<span id='param'> )</span> %D2%
 	If (Tag = "IFRAME" || Tag = "FRAME") {
 		iFrame := ComObj(9,ComObjQuery(pelt.contentWindow,IID_IHTMLWindow2,IID_IHTMLWindow2),1)
-		If ((elHTML := iFrame[0].document.documentElement.OuterHtml) != "")  {
-			elHTML := TransformHTML(iFrame[0].document.documentElement.OuterHtml)
-			code = `n%D1% <a></a><span id='param'>( Outer HTML )</span> %DB% %copy_button% %D2%`n
-			elHTML = %code%<span>%elHTML%</span>
-		}
-		If ((elText := iFrame[0].document.documentElement.outerText) != "")  {
-			elText := TransformHTML(elText)
-			code = `n%D1% <a></a><span id='param'>( Outer Text )</span> %DB% %copy_button% %D2%`n
-			elText = %code%<span>%elText%</span>
+		Loop % iFrame.length
+		{
+			el := iFrame[A_Index - 1].document.documentElement
+			If ((_elHTML := el.OuterHtml) != "")  {
+				_elHTML := TransformHTML(_elHTML)
+				code = `n%D1% <a></a><span id='param'>( Outer HTML Frame %A_Index% )</span> %DB% %copy_button% %D2%`n
+				elHTML .= code "<span>" _elHTML "</span>"
+			}
+			If ((_elText := el.outerText) != "")  {
+				_elText := TransformHTML(_elText)
+				code = `n%D1% <a></a><span id='param'>( Outer Text Frame %A_Index% )</span> %DB% %copy_button% %D2%`n
+				elHTML .= code "<span>" _elText "</span>"
+			}
 		}
 	}
 	Else  {
