@@ -481,7 +481,7 @@ Spot_Mouse(NotHTML=0)  {
 	WinGetPos, WinX, WinY, , , ahk_id %WinID%
 	RWinX := MXS - WinX, RWinY := MYS - WinY
 	GetClientPos(WinID, caX, caY, caW, caH)
-	MXC := RWinX - caX, MYC := RWinY - caY 
+	MXC := RWinX - caX, MYC := RWinY - caY
 	PixelGetColor, ColorBGR, %MXS%, %MYS%
 	ColorRGB := Format("0x{:06X}", (ColorBGR & 0xFF) << 16 | (ColorBGR & 0xFF00) | (ColorBGR >> 16))
 	sColorBGR := SubStr(ColorBGR, 3)
@@ -710,27 +710,43 @@ GetInfo_AtlAxWin(hwnd, ByRef ClassNN)  {
 }
 GetInfo_InternetExplorer_Server(hwnd, ByRef ClassNN)  {
 	Static IID_IWebBrowserApp := "{0002DF05-0000-0000-C000-000000000046}"
+		, IID_IHTMLWindow2 := "{332C4427-26CB-11D0-B483-00C04FD90119}"
 	isIE := 1, ClassNN := "Internet Explorer_Server", hwnd := m_hwnd_3
 	If !(pwin := WBGet(hwnd))
 		Return
 	pelt := pwin.document.elementFromPoint(rmCtrlX, rmCtrlY)
-	If ((elHTML := pelt.outerHTML) != "")  {
-		elHTML := TransformHTML(elHTML)
-		code = `n%D1% <a></a><span id='param'>( Outer HTML )</span> %DB% %copy_button% %D2%`n
-		elHTML = %code%<span>%elHTML%</span>
+	If ((Tag := pelt.TagName) != "")
+		TagName = `n%D1% <span id='param'>( Tag name: </span>%Tag%<span id='param'> )</span> %D2%
+	If (Tag = "IFRAME" || Tag = "FRAME") {
+		iFrame := ComObj(9,ComObjQuery(pelt.contentWindow,IID_IHTMLWindow2,IID_IHTMLWindow2),1)
+		If ((elHTML := iFrame[0].document.documentElement.OuterHtml) != "")  {
+			elHTML := TransformHTML(iFrame[0].document.documentElement.OuterHtml)
+			code = `n%D1% <a></a><span id='param'>( Outer HTML )</span> %DB% %copy_button% %D2%`n
+			elHTML = %code%<span>%elHTML%</span>
+		}
+		If ((elText := iFrame[0].document.documentElement.outerText) != "")  {
+			elText := TransformHTML(elText)
+			code = `n%D1% <a></a><span id='param'>( Outer Text )</span> %DB% %copy_button% %D2%`n
+			elText = %code%<span>%elText%</span>
+		}
 	}
-	If ((elText := pelt.outerText) != "")  {
-		elText := TransformHTML(elText)
-		code = `n%D1% <a></a><span id='param'>( Outer Text )</span> %DB% %copy_button% %D2%`n
-		elText = %code%<span>%elText%</span>
+	Else  {
+		If ((elHTML := pelt.outerHTML) != "")  {
+			elHTML := TransformHTML(elHTML)
+			code = `n%D1% <a></a><span id='param'>( Outer HTML )</span> %DB% %copy_button% %D2%`n
+			elHTML = %code%<span>%elHTML%</span>
+		}
+		If ((elText := pelt.outerText) != "")  {
+			elText := TransformHTML(elText)
+			code = `n%D1% <a></a><span id='param'>( Outer Text )</span> %DB% %copy_button% %D2%`n
+			elText = %code%<span>%elText%</span>
+		}
 	}
 	WB2 := ComObject(9, ComObjQuery(pwin, IID_IWebBrowserApp, IID_IWebBrowserApp), 1)
 	If ((Location := WB2.LocationName) != "")
 		Location = `n<span id='param'>Title:  </span>%Location%
 	If ((URL := WB2.LocationURL) != "")
 		URL = `n<span id='param'>URL:  </span>%URL%
-	If ((TagName := pelt.TagName) != "")
-		TagName = `n%D1% <span id='param'>( Tag name: </span>%TagName%<span id='param'> )</span> %D2%
 	If ((id := pelt.id) != "")
 		id = `n<span id='param'>ID:  </span>%id%
 	If ((Class := pelt.ClassName) != "")
@@ -1715,8 +1731,10 @@ Class Events {
 				Gosub, PausedScript
 			Else If thisid = w_folder
 			{
-				SelectFilePath(oDoc.getElementById("copy_processpath").OuterText)
-				Minimize()
+				If FileExist(FilePath := oDoc.getElementById("copy_processpath").OuterText)
+					SelectFilePath(FilePath), Minimize()
+				Else
+					ToolTip("Not file exist", 500)
 			}
 			Else If thisid = paste_process_path
 				oDoc.getElementById("copy_processpath").innerHTML := TransformHTML(Trim(Trim(Clipboard), """"))
