@@ -14,7 +14,7 @@ ListLines, Off
 DetectHiddenWindows, On
 CoordMode, Pixel
 
-Global AhkSpyVersion := 1.98
+Global AhkSpyVersion := 1.99
 Gosub, CheckAhkVersion
 Menu, Tray, UseErrorLevel
 Menu, Tray, Icon, Shell32.dll, % A_OSVersion = "WIN_XP" ? 222 : 278
@@ -37,7 +37,7 @@ Global ThisMode := "Mouse"						;  Стартовый режим - Win|Mouse|Hot
 , StateLight := IniRead("StateLight", 1), StateLightAcc := IniRead("StateLightAcc", 1), StateUpdate := IniRead("StateUpdate", 1)
 , StateAllwaysSpot := IniRead("AllwaysSpot", 0), ScrollPos := {}, AccCoord := [], oOther := {}
 , hGui, hActiveX, hMarkerGui, hMarkerAccGui, oDoc, ShowMarker, isIE, isPaused, w_ShowStyles, MsgAhkSpyZoom, Sleep
-, HTML_Win, HTML_Mouse, HTML_Hotkey, o_edithotkey, o_editkeyname, rmCtrlX, rmCtrlY, m_hwnd_3, Hotkey_NFP
+, HTML_Win, HTML_Mouse, HTML_Hotkey, o_edithotkey, o_editkeyname, rmCtrlX, rmCtrlY, Hotkey_NFP
 , copy_button := "<span contenteditable='false' unselectable='on'><button id='copy_button'> copy </button></span>"
 , pause_button := "<span contenteditable='false' unselectable='on'><button id='pause_button'> pause </button></span>"
 , set_button_pos := "<span contenteditable='false' unselectable='on'><button id='set_button_pos' style='overflow: visible'>"
@@ -469,7 +469,6 @@ Spot_Mouse(NotHTML=0)  {
 	WinGetClass, WinClass_A, A
 	CoordMode, Mouse
 	MouseGetPos, MXS, MYS, WinID, tControlNN
-	MouseGetPos, , , , m_hwnd_3, 3
 	CoordMode, Mouse, Window
 	MouseGetPos, MXWA, MYWA, , tControlID, 2
 
@@ -710,68 +709,97 @@ GetInfo_AtlAxWin(hwnd, ByRef ClassNN)  {
 }
 GetInfo_InternetExplorer_Server(hwnd, ByRef ClassNN)  {
 	Static IID_IWebBrowserApp := "{0002DF05-0000-0000-C000-000000000046}"
-		, IID_IHTMLWindow2 := "{332C4427-26CB-11D0-B483-00C04FD90119}"
-	isIE := 1, ClassNN := "Internet Explorer_Server", hwnd := m_hwnd_3
+	, ratios := [], IID_IHTMLWindow2 := "{332C4427-26CB-11D0-B483-00C04FD90119}"
+
+	isIE := 1, ClassNN := "Internet Explorer_Server"
+	MouseGetPos, , , , hwnd, 3
 	If !(pwin := WBGet(hwnd))
 		Return
-	pelt := pwin.document.elementFromPoint(rmCtrlX, rmCtrlY)
-	If ((_id := pelt.id) != "")
-		id = `n<span id='param'>ID:  </span>%_id%
-	If ((Tag := pelt.TagName) != "")
-		TagName = `n%D1% <span id='param'>( Tag name: </span>%Tag%<span id='param'> )</span> %D2%
+	If !ratios[hwnd]
+	{
+		ratio := pwin.window.screen.deviceXDPI / pwin.window.screen.logicalXDPI
+		Sleep 10
+		!ratio && (ratio := 1)
+		ratios[hwnd] := ratio
+	}
+	ratio := ratios[hwnd]
+	pelt := pwin.document.elementFromPoint(rmCtrlX / ratio, rmCtrlY / ratio)
+	Tag := pelt.TagName
 	If (Tag = "IFRAME" || Tag = "FRAME") {
-		If pFrame := ComObjQuery(pwin.document.parentWindow.frames[_id],IID_IHTMLWindow2,IID_IHTMLWindow2)
+		If pFrame := ComObjQuery(pwin.document.parentWindow.frames[_id], IID_IHTMLWindow2, IID_IHTMLWindow2)
 			iFrame := ComObject(9, pFrame, 1)
 		Else
-			iFrame := ComObj(9, ComObjQuery(pelt.contentWindow,IID_IHTMLWindow2,IID_IHTMLWindow2), 1)
-		Loop % iFrame.length
-		{
-			el := iFrame[A_Index - 1].document.documentElement
-			If ((_elHTML := el.OuterHtml) != "")  {
-				_elHTML := TransformHTML(_elHTML)
-				code = `n%D1% <a></a><span id='param'>( Outer HTML Frame %A_Index% )</span> %DB% %copy_button% %D2%`n
-				elHTML .= code "<span>" _elHTML "</span>"
-			}
-			If ((_elText := el.outerText) != "")  {
-				_elText := TransformHTML(_elText)
-				code = `n%D1% <a></a><span id='param'>( Outer Text Frame %A_Index% )</span> %DB% %copy_button% %D2%`n
-				elHTML .= code "<span>" _elText "</span>"
-			}
-		}
-	}
-	Else  {
-		If ((elHTML := pelt.outerHTML) != "")  {
-			elHTML := TransformHTML(elHTML)
+			iFrame := ComObj(9, ComObjQuery(pelt.contentWindow, IID_IHTMLWindow2, IID_IHTMLWindow2), 1)
+		Frame = `n%D1% <a></a><span id='title'>( FrameInfo )</span> %D2%
+		If (iFrame.length)
+			Frame .= "`n<span id='param'>Count frames:  </span>" iFrame.length
+		If (Tag != "")
+			Frame .= "`n<span id='param'>TagName:  </span>" Tag
+		If ((Var := pelt.id) != "")
+			Frame .= "`n<span id='param'>ID:  </span>" Var
+		If ((Var := pelt.ClassName) != "")
+			Frame .= "`n<span id='param'>Class:  </span>" Var
+		If ((Var := pelt.name) != "")
+			Frame .= "`n<span id='param'>Name:  </span>" Var
+		If ((Var := pelt.sourceIndex) != "")
+			Frame .= "`n<span id='param'>Index:  </span>" Var
+
+		If ((Var := pelt.OuterHtml) != "")  {
+			Var := TransformHTML(Var)
 			code = `n%D1% <a></a><span id='param'>( Outer HTML )</span> %DB% %copy_button% %D2%`n
-			elHTML = %code%<span>%elHTML%</span>
+			Frame .= code "<span>" Var "</span>"
 		}
-		If ((elText := pelt.outerText) != "")  {
-			elText := TransformHTML(elText)
+		If ((Var := pelt.outerText) != "")  {
+			Var := TransformHTML(Var)
 			code = `n%D1% <a></a><span id='param'>( Outer Text )</span> %DB% %copy_button% %D2%`n
-			elText = %code%<span>%elText%</span>
+			Frame .= code "<span>" Var "</span>"
 		}
+		_pbrt := pelt.getBoundingClientRect()
+		pelt := iFrame.document.elementFromPoint((rmCtrlX / ratio) - _pbrt.left, (rmCtrlY / ratio) - _pbrt.top)
+		__pbrt := pelt.getBoundingClientRect(), pbrt := {}
+		pbrt.left := __pbrt.left + _pbrt.left, pbrt.right := __pbrt.right + _pbrt.left
+		pbrt.top := __pbrt.top + _pbrt.top, pbrt.bottom := __pbrt.bottom + _pbrt.top
 	}
+	Else
+		pbrt := pelt.getBoundingClientRect()
+
 	WB2 := ComObject(9, ComObjQuery(pwin, IID_IWebBrowserApp, IID_IWebBrowserApp), 1)
 	If ((Location := WB2.LocationName) != "")
 		Location = `n<span id='param'>Title:  </span>%Location%
 	If ((URL := WB2.LocationURL) != "")
 		URL = `n<span id='param'>URL:  </span>%URL%
-	If ((Class := pelt.ClassName) != "")
-		Class = `n<span id='param'>Class:  </span>%Class%
-	If ((name := pelt.name) != "")
-		name = `n<span id='param'>Name:  </span>%name%
-	If ((Index := pelt.sourceIndex) != "")
-		Index = `n<span id='param'>Index:  </span>%Index%
+
+	Info := "`n" D1 " <span id='param'>( Tag name: </span>" pelt.TagName "<span id='param'> )" (Frame ? " " # " ( in frame )" : "") "</span> " D2
+	If ((Var := pelt.id) != "")
+		Info .= "`n<span id='param'>ID:  </span>" Var
+	If ((Var := pelt.ClassName) != "")
+		Info .= "`n<span id='param'>Class:  </span>" Var
+	If ((Var := pelt.name) != "")
+		Info .= "`n<span id='param'>Name:  </span>" Var
+	If ((Var := pelt.sourceIndex) != "")
+		Info .= "`n<span id='param'>Index:  </span>" Var
+
+	If ((Var := pelt.OuterHtml) != "")  {
+		Var := TransformHTML(Var)
+		code = `n%D1% <a></a><span id='param'>( Outer HTML )</span> %DB% %copy_button% %D2%`n
+		Info .= code "<span>" Var "</span>"
+	}
+	If ((Var := pelt.outerText) != "")  {
+		Var := TransformHTML(Var)
+		code = `n%D1% <a></a><span id='param'>( Outer Text )</span> %DB% %copy_button% %D2%`n
+		Info .= code "<span>" Var "</span>"
+	}
 	If (ThisMode = "Mouse") && (StateLight = 1 || (StateLight = 3 && GetKeyState("Shift", "P")))
 	{
-		pbrt := pelt.getBoundingClientRect(), x1 := pbrt.left, y1 := pbrt.top
+		x1 := pbrt.left * ratio, y1 := pbrt.top * ratio
+		x2 := pbrt.right * ratio, y2 := pbrt.bottom * ratio
 		WinGetPos, sX, sY, , , ahk_id %hwnd%
-		ShowMarker(sX+x1, sY+y1, pbrt.right-x1, pbrt.bottom-y1)
+		ShowMarker(sX + x1, sY + y1, x2 - x1, y2 - y1)
 		StateLightAcc ? ShowAccMarker(AccCoord[1], AccCoord[2], AccCoord[3], AccCoord[4]) : 0
 		ObjRelease(pbrt)
 	}
 	ObjRelease(pwin), ObjRelease(pelt), ObjRelease(WB2), ObjRelease(iFrame)
-	Return Location URL TagName id Class name Index elHTML elText
+	Return Location URL Info Frame
 }
 
 WBGet(hwnd)  {
@@ -1896,3 +1924,4 @@ Class Events {
 	}
 }
 	;)
+
