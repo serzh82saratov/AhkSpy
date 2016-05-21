@@ -14,7 +14,7 @@ ListLines, Off
 DetectHiddenWindows, On
 CoordMode, Pixel
 
-Global AhkSpyVersion := 1.99
+Global AhkSpyVersion := 2.00
 Gosub, CheckAhkVersion
 Menu, Tray, UseErrorLevel
 Menu, Tray, Icon, Shell32.dll, % A_OSVersion = "WIN_XP" ? 222 : 278
@@ -726,11 +726,17 @@ GetInfo_InternetExplorer_Server(hwnd, ByRef ClassNN)  {
 	pelt := pwin.document.elementFromPoint(rmCtrlX / ratio, rmCtrlY / ratio)
 	Tag := pelt.TagName
 	If (Tag = "IFRAME" || Tag = "FRAME") {
-		If pFrame := ComObjQuery(pwin.document.parentWindow.frames[_id], IID_IHTMLWindow2, IID_IHTMLWindow2)
+		If pFrame := ComObjQuery(pwin.document.parentWindow.frames[pelt.id], IID_IHTMLWindow2, IID_IHTMLWindow2)
 			iFrame := ComObject(9, pFrame, 1)
 		Else
 			iFrame := ComObj(9, ComObjQuery(pelt.contentWindow, IID_IHTMLWindow2, IID_IHTMLWindow2), 1)
+
 		Frame = `n%D1% <a></a><span id='title'>( FrameInfo )</span> %D2%
+		WB2 := ComObject(9, ComObjQuery(pelt.contentWindow, IID_IWebBrowserApp, IID_IWebBrowserApp), 1)
+		If ((Var := WB2.LocationName) != "")
+			Frame .= "`n<span id='param'>Title:  </span>" Var
+		If ((Var := WB2.LocationURL) != "")
+			Frame .= "`n<span id='param'>URL:  </span>" Var
 		If (iFrame.length)
 			Frame .= "`n<span id='param'>Count frames:  </span>" iFrame.length
 		If (Tag != "")
@@ -796,9 +802,8 @@ GetInfo_InternetExplorer_Server(hwnd, ByRef ClassNN)  {
 		WinGetPos, sX, sY, , , ahk_id %hwnd%
 		ShowMarker(sX + x1, sY + y1, x2 - x1, y2 - y1)
 		StateLightAcc ? ShowAccMarker(AccCoord[1], AccCoord[2], AccCoord[3], AccCoord[4]) : 0
-		ObjRelease(pbrt)
 	}
-	ObjRelease(pwin), ObjRelease(pelt), ObjRelease(WB2), ObjRelease(iFrame)
+	ObjRelease(pwin), ObjRelease(pelt), ObjRelease(WB2), ObjRelease(iFrame), ObjRelease(pbrt)
 	Return Location URL Info Frame
 }
 
