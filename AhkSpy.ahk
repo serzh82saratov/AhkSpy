@@ -14,7 +14,7 @@ ListLines, Off
 DetectHiddenWindows, On
 CoordMode, Pixel
 
-Global AhkSpyVersion := 2.00
+Global AhkSpyVersion := 2.02
 Gosub, CheckAhkVersion
 Menu, Tray, UseErrorLevel
 Menu, Tray, Icon, Shell32.dll, % A_OSVersion = "WIN_XP" ? 222 : 278
@@ -30,14 +30,14 @@ Global ThisMode := "Mouse"						;  Стартовый режим - Win|Mouse|Hot
 , ColorParam := "189200"						;  Цвет шрифта параметров
 , # := "&#9642"									;  Символ разделителя заголовков - &#8226 | &#9642
 
-, DP := "  <span style='color: " ColorDelimiter "'>" # "</span>  ", D1, D2, DB
+, DP := "  <span id='delimiter' style='color: " ColorDelimiter "'>" # "</span>  ", D1, D2, DB
 , ThisMode := IniRead("StartMode", "Mouse"), ThisMode := ThisMode = "LastMode" ? IniRead("LastMode", "Mouse") : ThisMode
 , MemoryPos := IniRead("MemoryPos", 0), MemorySize := IniRead("MemorySize", 0)
 , MemoryZoomSize := IniRead("MemoryZoomSize", 0), MemoryStateZoom := IniRead("MemoryStateZoom", 0)
 , StateLight := IniRead("StateLight", 1), StateLightAcc := IniRead("StateLightAcc", 1), StateUpdate := IniRead("StateUpdate", 1)
-, StateAllwaysSpot := IniRead("AllwaysSpot", 0), ScrollPos := {}, AccCoord := [], oOther := {}
-, hGui, hActiveX, hMarkerGui, hMarkerAccGui, oDoc, ShowMarker, isIE, isPaused, w_ShowStyles, MsgAhkSpyZoom, Sleep
-, HTML_Win, HTML_Mouse, HTML_Hotkey, o_edithotkey, o_editkeyname, rmCtrlX, rmCtrlY, Hotkey_NFP
+, StateAllwaysSpot := IniRead("AllwaysSpot", 0), ScrollPos := {}, AccCoord := [], oOther := {}, oFind := {}
+, hGui, hActiveX, hMarkerGui, hMarkerAccGui, hFindGui, oDoc, ShowMarker, isFindView, isIE, isPaused, w_ShowStyles, MsgAhkSpyZoom, Sleep
+, HTML_Win, HTML_Mouse, HTML_Hotkey, o_edithotkey, o_editkeyname, rmCtrlX, rmCtrlY, Hotkey_NFP, widthTB, HeigtButton, FullScreenMode
 , copy_button := "<span contenteditable='false' unselectable='on'><button id='copy_button'> copy </button></span>"
 , pause_button := "<span contenteditable='false' unselectable='on'><button id='pause_button'> pause </button></span>"
 , set_button_pos := "<span contenteditable='false' unselectable='on'><button id='set_button_pos' style='overflow: visible'>"
@@ -54,9 +54,9 @@ Loop 24
 	D1 .= #
 Loop 20
 	D2 .= D1
-D1 := "<span style='color: " ColorDelimiter "'>" D1 "</span>"
-D2 := "<span style='color: " ColorDelimiter "'>" D2 "</span>"
-DB := "<span style='color: " ColorDelimiter "'>" # # # # # # # # # # # # "</span>"
+D1 := "<span id='Delimiter' style='color: " ColorDelimiter "'>" D1 "</span>"
+D2 := "<span id='Delimiter' style='color: " ColorDelimiter "'>" D2 "</span>"
+DB := "<span id='Delimiter' style='color: " ColorDelimiter "'>" # # # # # # # # # # # # "</span>"
 
 Global m_run_AccViewer := ExtraFile("AccViewer Source")
 	? DB " <span contenteditable='false' unselectable='on'><button id='run_AccViewer'> run accviewer </button></span> " : ""
@@ -77,10 +77,11 @@ OnMessage(0xA1, "WM_NCLBUTTONDOWN")
 OnMessage(0x7B, "WM_CONTEXTMENU")
 OnMessage(0x6, "WM_ACTIVATE")
 OnMessage(0x03, "WM_MOVE")
-OnMessage(MsgAhkSpyZoom := DllCall("RegisterWindowMessage", "Str", "MsgAhkSpyZoom"), "MsgZoom")
 OnExit, Exit
+OnMessage(MsgAhkSpyZoom := DllCall("RegisterWindowMessage", "Str", "MsgAhkSpyZoom"), "MsgZoom")
 DllCall("RegisterShellHookWindow", "Ptr", A_ScriptHwnd)
 OnMessage(DllCall("RegisterWindowMessage", "str", "SHELLHOOK"), "ShellProc")
+DllCall("PostMessage", "Ptr", A_ScriptHWND, "UInt", 0x50, "UInt", 0, "UInt", 0x409) ; eng layout
 
 Gui, TB: +HWNDhTBGui -Caption -DPIScale +Parent%hGui% +E0x08000000
 Gui, TB: Font, % " s" (A_ScreenDPI = 120 ? 8 : 10), Verdana
@@ -89,6 +90,17 @@ Gui, TB: Add, Button, x+0 yp hp wp vBut2 gMode_Mouse, Mouse && Control
 Gui, TB: Add, Progress, x+0 yp hp w%wColor% vColorProgress cWhite, 100
 Gui, TB: Add, Button, x+0 yp hp w%wKey% vBut3 gMode_Hotkey, Button
 Gui, TB: Show, % "x0 y0 NA h" HeigtButton " w" widthTB := wKey*3+wColor
+
+Gui, F: Color, %ColorBgPaused%
+Gui, F: +HWNDhFindGui -Caption -DPIScale +Parent%hGui%
+Gui, F: Font, % " s" (A_ScreenDPI = 120 ? 10 : 12)
+Gui, F: Add, Edit, x1 y0 w180 h30 gFindNew WantTab
+Gui, F: Add, UpDown, -16 Horz Range0-1 x+0 yp h30 w60 gFindNext vFindUpDown
+GuiControl, F: Move, FindUpDown, h30 w60
+Gui, F: Font
+Gui, F: Add, Text, x+16 yp+3 h24 c2F2F2F +0x201 gFindOption, % "  case sensitive  "
+Gui, F: Add, Text, x+16 yp h24 c2F2F2F +0x201 gFindOption, % "  whole word "
+Gui, F: Add, Button, % "+0x300 +0xC00 y5 h20 w20 gFindHide x" widthTB - 21, X
 
 Gui, M: Margin, 0, 0
 Gui, M: -DPIScale +AlwaysOnTop +HWNDhMarkerGui +E0x08000000 +E0x20 -Caption +Owner
@@ -156,6 +168,8 @@ Menu, Sys, Add
 Menu, Sys, Add, Reload AhkSpy, Reload
 Menu, Sys, Add, Suspend Hotkeys, Suspend
 Menu, Sys, Add, Pause AhkSpy, PausedScript
+Menu, Sys, Add
+Menu, Sys, Add, Find to page, FindView
 Menu, Sys, Color, % ColorBgOriginal
 If MemorySize
 	Gui, Show, % "NA h" IniRead("MemorySizeH", HeightStart) " w" IniRead("MemorySizeW", widthTB)
@@ -163,12 +177,10 @@ Else
 	Gui, Show, NA h%HeightStart% w%widthTB%
 If MemoryPos
 	Gui, Show, % "NA x" IniRead("MemoryPosX", "Center") " y" IniRead("MemoryPosY", "Center")
-Gui, +MinSize%widthTB%x%HeigtButton%
+Gui, % "+MinSize" widthTB "x" HeigtButton
 
 Gosub, HotkeyInit
 Gosub, Mode_%ThisMode%
-; PostMessage, 0x50, 0, 0x409, , % "ahk_id" hActiveX			;  установить английскую раскладку
-DllCall("PostMessage", "Ptr", A_ScriptHWND, "UInt", 0x50, "UInt", 0, "UInt", 0x409)
 
 
 If (m_run_AhkSpyZoom != "" && MemoryStateZoom && IniRead("ZoomShow", 0))
@@ -221,24 +233,6 @@ ScrollLeft:
 	oDoc.body.ScrollLeft := 0
 	Return
 
-^vk5A:: oDoc.execCommand("Undo")							;  Ctrl+Z
-^vk59:: oDoc.execCommand("Redo")							;  Ctrl+Y
-
-^vk43:: Clipboard := oDoc.selection.createRange().text		;  Ctrl+C
-
-+RButton::
-^vk56:: oDoc.execCommand("Paste")							;  Ctrl+V
-
-^vk41:: oDoc.execCommand("SelectAll")						;  Ctrl+A
-
-^vk58:: oDoc.execCommand("Cut")								;  Ctrl+X
-
-Del:: oDoc.execCommand("Delete")							;  Delete
-
-Enter:: oDoc.selection.createRange().text := " `n"			;  &shy
-
-Tab:: oDoc.selection.createRange().text := "    "			;  &emsp
-
 F1::
 +WheelUp:: NextLink("-")
 
@@ -258,6 +252,42 @@ F6:: AppsKey
 F7::Menu, Sys, Show, 5, 5
 
 !Space:: SetTimer, ShowSys, -1
+
+Esc::
+	If isFindView
+		FindHide()
+	Else If FullScreenMode
+		FullScreenMode()
+	Else
+		GoSub, Exit
+	Return
+
+F8::
+^vk46:: FindView()											;  Ctrl+F
+
+F11::FullScreenMode()
+
+#If WinActive("ahk_id" hGui) && IsIEFocus()
+
+^vk5A:: oDoc.execCommand("Undo")							;  Ctrl+Z
+
+^vk59:: oDoc.execCommand("Redo")							;  Ctrl+Y
+
+^vk43:: Clipboard := oDoc.selection.createRange().text		;  Ctrl+C
+
++RButton::
+^vk56:: oDoc.execCommand("Paste")							;  Ctrl+V
+
+~^vk41:: oDoc.execCommand("SelectAll")						;  Ctrl+A
+
+
+^vk58:: oDoc.execCommand("Cut")								;  Ctrl+X
+
+Del:: oDoc.execCommand("Delete")							;  Delete
+
+Enter:: oDoc.selection.createRange().text := " `n"			;  &shy
+
+Tab:: oDoc.selection.createRange().text := "    "			;  &emsp
 
 #If WinActive("ahk_id" hGui) && ExistSelectedText(CopyText)
 
@@ -281,15 +311,6 @@ CopyText:
 +#Down::MouseStep(0, 1)
 +#Left::MouseStep(-1, 0)
 +#Right::MouseStep(1, 0)
-
-MouseStep(x, y) {
-	MouseMove, x, y, 0, R
-	If (Sleep != 1 && !isPaused && ThisMode != "Hotkey" && WinActive("ahk_id" hGui))
-	{
-		(ThisMode = "Mouse" ? (Spot_Mouse() (StateAllwaysSpot ? Spot_Win() : 0) Write_Mouse()) : (Spot_Win() (StateAllwaysSpot ? Spot_Mouse() : 0) Write_Win()))
-		ZoomMsg(2)
-	}
-}
 
 #If
 
@@ -315,6 +336,8 @@ Mode_Win:
 	SendMessage, 0xC, 0, &TitleText, , ahk_id %hGui%
 	Write_Win(), oDoc.body.scrollLeft := ScrollPos[ThisMode,1], oDoc.body.scrollTop := ScrollPos[ThisMode,2]
 	IniWrite(ThisMode, "LastMode")
+	If isFindView
+		FindSearch(1)
 
 Loop_Win:
 	If (WinActive("ahk_id" hGui) || Sleep = 1)
@@ -449,6 +472,8 @@ Mode_Mouse:
 	SendMessage, 0xC, 0, &TitleText, , ahk_id %hGui%
 	Write_Mouse(), oDoc.body.scrollLeft := ScrollPos[ThisMode,1], oDoc.body.scrollTop := ScrollPos[ThisMode,2]
 	IniWrite(ThisMode, "LastMode")
+	If isFindView
+		FindSearch(1)
 
 Loop_Mouse:
 	If WinActive("ahk_id" hGui) || Sleep = 1
@@ -929,6 +954,8 @@ Mode_Hotkey:
 	WinActivate ahk_id %hGui%
 	GuiControl, 1:Focus, oDoc
 	IniWrite(ThisMode, "LastMode")
+	If isFindView
+		FindHide()
 	Return
 
 Write_Hotkey(K)  {
@@ -1219,10 +1246,7 @@ Hotkey_WindowsHookEx(State)  {
 GuiSize:
 	Sleep := A_EventInfo
 	If Sleep != 1
-	{
-		Gui, TB: Show, % "NA y0 x" (A_GuiWidth - widthTB) // 2.2
-		WinMove, ahk_id %hActiveX%, , 0, HeigtButton, A_GuiWidth, A_GuiHeight - HeigtButton
-	}
+		ControlsMove(A_GuiWidth, A_GuiHeight)
 	Else
 		ZoomMsg(1), HideMarker(), HideAccMarker()
 	Try SetTimer, Loop_%ThisMode%, % Sleep = 1 || isPaused ? "Off" : "On"
@@ -1230,7 +1254,6 @@ GuiSize:
 
 Exit:
 GuiClose:
-GuiEscape:
 	Hotkey_Control(0), oDoc := ""
 	DllCall("DeregisterShellHookWindow", "Ptr", A_ScriptHwnd)
 	ExitApp
@@ -1256,6 +1279,12 @@ LaunchHelp:
 	Return
 
 DefaultSize:
+	If FullScreenMode
+	{
+		FullScreenMode()
+		Gui, 1: Restore
+		Sleep 200
+	}
 	Gui, 1: Show, % "NA w" widthTB "h" HeightStart
 	ZoomMsg(6)
 	Return
@@ -1377,12 +1406,6 @@ WM_NCLBUTTONDOWN(wp) {
 	}
 }
 
-Minimize() {
-	Sleep := 1
-	ZoomMsg(1)
-	Gui, 1: Minimize
-}
-
 WM_LBUTTONDOWN() {
 	If A_GuiControl = ColorProgress
 	{
@@ -1407,6 +1430,23 @@ WM_CONTEXTMENU() {
 	}
 }
 
+WM_MOVE() {
+	SetTimer, SavePos, -200
+}
+
+ControlsMove(Width, Height) {
+	Gui, TB: Show, % "NA y0 x" (Width - widthTB) // 2.2
+	If isFindView
+		Gui, F: Show, % "NA x" (Width - widthTB) // 2.2 " y" (Height - (Height < HeigtButton * 2 ? 0 : HeigtButton) + 1)
+	WinMove, ahk_id %hActiveX%, , 0, HeigtButton, Width, Height - HeigtButton - (isFindView ? 32 : 0)
+}
+
+Minimize() {
+	Sleep := 1
+	ZoomMsg(1)
+	Gui, 1: Minimize
+}
+
 ZoomSpot() {
 	If (!isPaused && Sleep != 1 && WinActive("ahk_id" hGui))
 		(ThisMode = "Mouse" ? (Spot_Mouse() (StateAllwaysSpot ? Spot_Win() : 0) Write_Mouse()) : (Spot_Win() (StateAllwaysSpot ? Spot_Mouse() : 0) Write_Win()))
@@ -1427,13 +1467,9 @@ ZoomMsg(wParam = -1, lParam = -1) {
 		PostMessage, % MsgAhkSpyZoom, wParam, lParam, , % "ahk_id" oOther.hZoom
 }
 
-WM_MOVE() {
-	SetTimer, SavePos, -200
-}
-
 SavePos() {
 	WinGet, Min, MinMax, ahk_id %hGui%
-	If (Min != -1 && (MemoryPos || MemorySize))
+	If (!FullScreenMode && Min = 0 && (MemoryPos || MemorySize))
 	{
 		WinGetPos, WinX, WinY, WinWidth, WinHeight, ahk_id %hGui%
 		IniWrite(WinX, "MemoryPosX")
@@ -1507,7 +1543,6 @@ HideMarker() {
 HideAccMarker() {
 	Gui, AcM: Show, Hide
 }
-
 
 CheckHideMarker() {
 	Static Try := 0
@@ -1657,6 +1692,20 @@ ToolTip(text, time) {
 		Return
 }
 
+MouseStep(x, y) {
+	MouseMove, x, y, 0, R
+	If (Sleep != 1 && !isPaused && ThisMode != "Hotkey" && WinActive("ahk_id" hGui))
+	{
+		(ThisMode = "Mouse" ? (Spot_Mouse() (StateAllwaysSpot ? Spot_Win() : 0) Write_Mouse()) : (Spot_Win() (StateAllwaysSpot ? Spot_Mouse() : 0) Write_Win()))
+		ZoomMsg(2)
+	}
+}
+
+IsIEFocus() {
+	ControlGetFocus, Focus
+	Return InStr(Focus, "Internet")
+}
+
 NextLink(s = "") {
 	curpos := oDoc.body.scrollTop, oDoc.body.scrollLeft := 0
 	If (!curpos && s = "-")
@@ -1736,6 +1785,127 @@ HighLight(elem, time="", RemoveFormat=1) {
 	UnHighLight:
 		oDoc.body.createTextRange().execCommand("RemoveFormat")
 		Return
+}
+
+	; _________________________________________________ FullScreen _________________________________________________
+
+FullScreenMode() {
+	Static Max, hFunc
+	hwnd := WinExist("ahk_id" hGui)
+	If !FullScreenMode
+	{
+		FullScreenMode := 1
+		WinGet, Max, MinMax, ahk_id %hwnd%
+		WinGetNormalPos(hwnd, X, Y, W, H)
+		Gui, 1: -ReSize -Caption
+		Gui, 1: Show, x0 y0 w%A_ScreenWidth% h%A_ScreenHeight%
+		Gui, 1: Maximize
+		WinSetNormalPos(hwnd, X, Y, W, H)
+		hFunc := Func("ControlsMove").Bind(A_ScreenWidth, A_ScreenHeight)
+	}
+	Else
+	{
+		Gui, 1: +ReSize +Caption
+		If Max = 1
+		{
+			WinGetNormalPos(hwnd, X, Y, W, H)
+			Gui, 1: Maximize
+			WinSetNormalPos(hwnd, X, Y, W, H)
+		}
+		Else
+			Gui, 1: Restore
+		WinGetPos, , , WinWidth, WinHeight
+		hFunc := Func("ControlsMove").Bind(WinWidth, WinHeight)
+		FullScreenMode := 0
+	}
+	SetTimer, % hFunc, % Max ? -150 : -50
+}
+
+WinGetNormalPos(hwnd, ByRef x, ByRef y, ByRef w, ByRef h) {
+	VarSetCapacity(wp, 44), NumPut(44, wp)
+	DllCall("GetWindowPlacement", "Ptr", hwnd, "Ptr", &wp)
+	x := NumGet(wp, 28, "int"), y := NumGet(wp, 32, "int")
+	w := NumGet(wp, 36, "int") - x,  h := NumGet(wp, 40, "int") - y
+}
+
+WinSetNormalPos(hwnd, x, y, w, h) {
+	VarSetCapacity(wp, 44, 0), NumPut(44, wp, 0, "uint")
+	DllCall("GetWindowPlacement", "Ptr", hWnd, "Ptr", &wp)
+	NumPut(x, wp, 28, "int"), NumPut(y, wp, 32, "int")
+	NumPut(w + x, wp, 36, "int"), NumPut(h + y, wp, 40, "int")
+	DllCall("SetWindowPlacement", "Ptr", hWnd, "Ptr", &wp)
+}
+
+	; _________________________________________________ Find _________________________________________________
+
+FindView() {
+	If !isFindView
+	{
+		GuiControlGet, p, 1:Pos, %hActiveX%
+		GuiControl, 1:Move, %hActiveX%, % "x" pX " y" pY " w" pW " h" pH - 32
+		Gui, F: Show, % "NA x" (pW - widthTB) // 2.2 " h30 y" (pY + pH - 31)
+	}
+	GuiControl, F:Focus, Edit1
+	isFindView := 1
+	FindSearch(1)
+}
+
+FindHide() {
+	Gui, F: Show, Hide
+	GuiControlGet, a, 1:Pos, %hActiveX%
+	GuiControl, 1:Move, %hActiveX%, % "x" aX "y" aY "w" aW "h" aH + 32
+	R := oDoc.selection.createRange(), R.collapse(1), R.select()
+	isFindView := 0
+	GuiControl, Focus, %hActiveX%
+}
+
+FindOption(Hwnd) {
+	GuiControlGet, p, Pos, %Hwnd%
+	ControlGet, Style, Style,, , ahk_id %Hwnd%
+	ControlGetText, Text, , ahk_id %Hwnd%
+	DllCall("DestroyWindow", "Ptr", Hwnd)
+	Gui, %A_Gui%: Add, Text, % "x" pX " y" pY " w" pW " h" pH " g" A_ThisFunc " " (Style & 0x1000 ? "c2F2F2F +0x201" : "+Border +0x1201"), % Text
+	InStr(Text, "sensitive") ? (oFind.Registr := !(Style & 0x1000)) : (oFind.Whole := !(Style & 0x1000))
+	FindSearch(1)
+}
+
+FindNew(Hwnd) {
+	ControlGetText, Text, , ahk_id %Hwnd%
+	oFind.Text := Text
+	hFunc := Func("FindSearch").Bind(1)
+	SetTimer, % hFunc, -150
+}
+
+FindNext(Hwnd) {
+	SendMessage, 0x400+114,,,, ahk_id %Hwnd%		;  UDM_GETPOS32
+	Back := !ErrorLevel
+	FindSearch(0, Back)
+}
+
+FindSearch(This, Back = 0) {
+	Static IsMatch
+	R := oDoc.selection.createRange(), R.collapse(This || Back ? 1 : 0)
+	If (oFind.Text = "" && !R.select() && (IsMatch := 1))
+		Gui, F: Color, %ColorBgPaused%
+	Else
+	{
+		Option := (Back ? 1 : 0) ^ (oFind.Whole ? 2 : 0) ^ (oFind.Registr ? 4 : 0)
+		Loop
+		{
+			F := R.findText(oFind.Text, 1, Option)
+			If (F = 0)
+				Break
+			El := R.parentElement()
+			If (El.TagName ~= "^(BUTTON|INPUT)$" || El.ID ~= "^(delimiter|title|param)$") && !R.collapse(Back)
+				Continue
+			R.select(), F := 1
+			Break
+		}
+		If (F != 1 && IsMatch && !(IsMatch := 0))
+			Gui, F: Color, FF6666
+		Else If (F && !IsMatch && (IsMatch := 1))
+			Gui, F: Color, %ColorBgPaused%
+	}
 }
 
 	;  http://forum.script-coding.com/viewtopic.php?pid=82283#p82283
@@ -1927,4 +2097,3 @@ Class Events {
 	}
 }
 	;)
-
