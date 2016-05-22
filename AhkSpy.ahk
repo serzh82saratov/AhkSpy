@@ -718,7 +718,7 @@ GetInfo_InternetExplorer_Server(hwnd, ByRef ClassNN)  {
 	If !ratios[hwnd]
 	{
 		ratio := pwin.window.screen.deviceXDPI / pwin.window.screen.logicalXDPI
-		Sleep 10
+		Sleep 10 ; при частом запросе deviceXDPI, возвращает пусто
 		!ratio && (ratio := 1)
 		ratios[hwnd] := ratio
 	}
@@ -731,7 +731,6 @@ GetInfo_InternetExplorer_Server(hwnd, ByRef ClassNN)  {
 		Else
 			iFrame := ComObj(9, ComObjQuery(pelt.contentWindow, IID_IHTMLWindow2, IID_IHTMLWindow2), 1)
 
-		Frame = `n%D1% <a></a><span id='title'>( FrameInfo )</span> %D2%
 		WB2 := ComObject(9, ComObjQuery(pelt.contentWindow, IID_IWebBrowserApp, IID_IWebBrowserApp), 1)
 		If ((Var := WB2.LocationName) != "")
 			Frame .= "`n<span id='param'>Title:  </span>" Var
@@ -745,21 +744,21 @@ GetInfo_InternetExplorer_Server(hwnd, ByRef ClassNN)  {
 			Frame .= "`n<span id='param'>ID:  </span>" Var
 		If ((Var := pelt.ClassName) != "")
 			Frame .= "`n<span id='param'>Class:  </span>" Var
-		If ((Var := pelt.name) != "")
-			Frame .= "`n<span id='param'>Name:  </span>" Var
 		If ((Var := pelt.sourceIndex) != "")
 			Frame .= "`n<span id='param'>Index:  </span>" Var
+		If ((Var := pelt.name) != "")
+			Frame .= "`n<span id='param'>Name:  </span>" TransformHTML(Var)
 
 		If ((Var := pelt.OuterHtml) != "")  {
-			Var := TransformHTML(Var)
 			code = `n%D1% <a></a><span id='param'>( Outer HTML )</span> %DB% %copy_button% %D2%`n
-			Frame .= code "<span>" Var "</span>"
+			Frame .= code "<span>" TransformHTML(Var) "</span>"
 		}
-		If ((Var := pelt.outerText) != "")  {
-			Var := TransformHTML(Var)
+		If ((Var := pelt.OuterText) != "")  {
 			code = `n%D1% <a></a><span id='param'>( Outer Text )</span> %DB% %copy_button% %D2%`n
-			Frame .= code "<span>" Var "</span>"
+			Frame .= code "<span>" TransformHTML(Var) "</span>"
 		}
+		If Frame !=
+			Frame = `n%D1% <a></a><span id='title'>( FrameInfo )</span> %D2%%Frame%
 		_pbrt := pelt.getBoundingClientRect()
 		pelt := iFrame.document.elementFromPoint((rmCtrlX / ratio) - _pbrt.left, (rmCtrlY / ratio) - _pbrt.top)
 		__pbrt := pelt.getBoundingClientRect(), pbrt := {}
@@ -775,26 +774,25 @@ GetInfo_InternetExplorer_Server(hwnd, ByRef ClassNN)  {
 	If ((URL := WB2.LocationURL) != "")
 		URL = `n<span id='param'>URL:  </span>%URL%
 
-	Info := "`n" D1 " <span id='param'>( Tag name: </span>" pelt.TagName "<span id='param'> )" (Frame ? " " # " ( in frame )" : "") "</span> " D2
 	If ((Var := pelt.id) != "")
 		Info .= "`n<span id='param'>ID:  </span>" Var
 	If ((Var := pelt.ClassName) != "")
 		Info .= "`n<span id='param'>Class:  </span>" Var
-	If ((Var := pelt.name) != "")
-		Info .= "`n<span id='param'>Name:  </span>" Var
 	If ((Var := pelt.sourceIndex) != "")
 		Info .= "`n<span id='param'>Index:  </span>" Var
+	If ((Var := pelt.name) != "")
+		Info .= "`n<span id='param'>Name:  </span>" TransformHTML(Var)
 
 	If ((Var := pelt.OuterHtml) != "")  {
-		Var := TransformHTML(Var)
 		code = `n%D1% <a></a><span id='param'>( Outer HTML )</span> %DB% %copy_button% %D2%`n
-		Info .= code "<span>" Var "</span>"
+		Info .= code "<span>" TransformHTML(Var) "</span>"
 	}
-	If ((Var := pelt.outerText) != "")  {
-		Var := TransformHTML(Var)
+	If ((Var := pelt.OuterText) != "")  {
 		code = `n%D1% <a></a><span id='param'>( Outer Text )</span> %DB% %copy_button% %D2%`n
-		Info .= code "<span>" Var "</span>"
+		Info .= code "<span>" TransformHTML(Var) "</span>"
 	}
+	If Info !=
+		Info := "`n" D1 " <span id='param'>( Tag name: </span>" pelt.TagName "<span id='param'> )" (Frame ? " " # " ( in frame )" : "") "</span> " D2 Info
 	If (ThisMode = "Mouse") && (StateLight = 1 || (StateLight = 3 && GetKeyState("Shift", "P")))
 	{
 		x1 := pbrt.left * ratio, y1 := pbrt.top * ratio
