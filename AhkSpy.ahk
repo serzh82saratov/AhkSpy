@@ -14,7 +14,7 @@ ListLines, Off
 DetectHiddenWindows, On
 CoordMode, Pixel
 
-Global AhkSpyVersion := 2.02
+Global AhkSpyVersion := 2.03
 Gosub, CheckAhkVersion
 Menu, Tray, UseErrorLevel
 Menu, Tray, Icon, Shell32.dll, % A_OSVersion = "WIN_XP" ? 222 : 278
@@ -1814,8 +1814,9 @@ FullScreenMode() {
 		}
 		Else
 			Gui, 1: Restore
-		WinGetPos, , , WinWidth, WinHeight
-		hFunc := Func("ControlsMove").Bind(WinWidth, WinHeight)
+		Sleep 20
+		GetClientPos(hwnd, _, _, Width, Height)
+		hFunc := Func("ControlsMove").Bind(Width, Height)
 		FullScreenMode := 0
 	}
 	SetTimer, % hFunc, % Max ? -150 : -50
