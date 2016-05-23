@@ -14,7 +14,7 @@ ListLines, Off
 DetectHiddenWindows, On
 CoordMode, Pixel
 
-Global AhkSpyVersion := 2.03
+Global AhkSpyVersion := 2.04
 Gosub, CheckAhkVersion
 Menu, Tray, UseErrorLevel
 Menu, Tray, Icon, Shell32.dll, % A_OSVersion = "WIN_XP" ? 222 : 278
@@ -154,10 +154,11 @@ If m_run_AhkSpyZoom !=
 	Menu, Sys, % MemoryZoomSize ? "Check" : "UnCheck", Memory zoom size
 }
 Menu, Sys, Add
+Menu, Sys, Add, Full screen, FullScreenMode
 Menu, Sys, Add, Default size, DefaultSize
 Menu, Sys, Add, Open script dir, Sys_OpenScriptDir
 Menu, Sys, Add
-Menu, Help, Add, About AhkSpy, Sys_Help
+Menu, Help, Add, About, Sys_Help
 Menu, Help, Add
 If FileExist(SubStr(A_AhkPath,1,InStr(A_AhkPath,"\",,0,1)) "AutoHotkey.chm")
 	Menu, Help, Add, AutoHotKey help file, LaunchHelp
@@ -165,9 +166,10 @@ Menu, Help, Add, AutoHotKey official help online, Sys_Help
 Menu, Help, Add, AutoHotKey russian help online, Sys_Help
 Menu, Sys, Add, Help, :Help
 Menu, Sys, Add
-Menu, Sys, Add, Reload AhkSpy, Reload
-Menu, Sys, Add, Suspend Hotkeys, Suspend
-Menu, Sys, Add, Pause AhkSpy, PausedScript
+Menu, Sys, Add, Reload, Reload
+Menu, Sys, Add, Suspend hotkeys, Suspend
+Menu, Sys, Add, Pause, PausedScript
+Menu, Sys, Add, Exit, Exit
 Menu, Sys, Add
 Menu, Sys, Add, Find to page, FindView
 Menu, Sys, Color, % ColorBgOriginal
@@ -985,7 +987,7 @@ Write_Hotkey(K)  {
 	Comment := IsVk ? "<span id='param'>    `;  """ KeyName """</span>" : ""
 	(Hotkey != "") ? (LRComment := "::<span id='param'>    `;  """ LRMods KeyName """</span>"
 		, FComment := "::<span id='param'>    `;  """ Mods KeyName """</span>") : 0
-	(LRMods != "") ? (LRMStr := LRMods KeyName, LRPStr := LRPref Hotkey LRComment) : 0
+	(LRMods != "") ? (LRMStr := LRMods KeyName, LRPStr := "  " DP "  " LRPref Hotkey LRComment) : 0
 	inp_hk := o_edithotkey.value, inp_kn := o_editkeyname.value
 
 	If Prefix !=
@@ -1000,7 +1002,7 @@ Write_Hotkey(K)  {
 
 	SendHotkey := Hotkey = "" ? ThisKey : Hotkey
 	ControlSend := DUMods = "" ? "{" SendHotkey "}" : DUMods
-	LRSend := DUMods = "" ? "" : "SendInput " DUMods Comment
+	LRSend := DUMods = "" ? "" : "  " DP "  SendInput " DUMods Comment
 
 	HTML_Hotkey =
 	( Ltrim
@@ -1013,17 +1015,15 @@ Write_Hotkey(K)  {
 
 	%D1% <span id='title'>( Command syntax )</span> %DB% <span contenteditable='false' unselectable='on'><button id='copy_selected'>copy selected</button></span> %D2%
 
-	%Prefix%%Hotkey%%FComment%
+	%Prefix%%Hotkey%%FComment%%LRPStr%
 
-	%LRPStr%
+	Send %Prefix%{%SendHotkey%}%Comment%  %DP%  ControlSend, ahk_parent, %ControlSend%, WinTitle%Comment%
 
-	Send %Prefix%{%SendHotkey%}%Comment%  %DP%  SendInput %Prefix%{%SendHotkey%}%Comment%  %DP%  ControlSend, ahk_parent, %ControlSend%, WinTitle%Comment%
-
-	%LRSend%
+	SendInput %Prefix%{%SendHotkey%}%Comment%%LRSend%
 
 	%HK2% & %HK1%::<span id='param'>%HKComm1% & %HKComm2%</span>   %DP%   GetKeyState("%SendHotkey%", "P")%Comment%   %DP%   KeyWait, %SendHotkey%, D T3%Comment%
 
-	%HK2%::%HK1%<span id='param'>%HKComm1% >> %HKComm2%</span>   %DP%   %Keys2%:: %Keys1%<span id='param'>%KeysComm%</span>   %DP%   <span id='param'>Remapping keys</span>
+	%HK2%::%HK1%<span id='param'>%HKComm1% >> %HKComm2%</span>   %DP%   %Keys2%:: %Keys1%<span id='param'>%KeysComm%</span>
 
 	%D1% <span id='title'>( Last pressed )</span> %DB% <span contenteditable='false' unselectable='on'><button id='numlock'> num </button> <button id='scrolllock'> scroll </button> <button id='rus_eng'> rus/eng </button></span> %D2%
 
