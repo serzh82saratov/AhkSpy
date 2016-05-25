@@ -14,7 +14,7 @@ ListLines, Off
 DetectHiddenWindows, On
 CoordMode, Pixel
 
-Global AhkSpyVersion := 2.06
+Global AhkSpyVersion := 2.07
 Gosub, CheckAhkVersion
 Menu, Tray, UseErrorLevel
 Menu, Tray, Icon, Shell32.dll, % A_OSVersion = "WIN_XP" ? 222 : 278
@@ -96,6 +96,7 @@ Gui, F: Color, %ColorBgPaused%
 Gui, F: +HWNDhFindGui -Caption -DPIScale +Parent%hGui%
 Gui, F: Font, % " s" (A_ScreenDPI = 120 ? 10 : 12)
 Gui, F: Add, Edit, x1 y0 w180 h26 gFindNew WantTab HWNDhFindEdit
+SendMessage, 0x1501, 1, "Find to page",, ahk_id %hFindEdit%   ; EM_SETCUEBANNER
 Gui, F: Add, UpDown, -16 Horz Range0-1 x+0 yp h26 w52 gFindNext vFindUpDown
 GuiControl, F: Move, FindUpDown, h26 w52
 Gui, F: Font
