@@ -14,7 +14,7 @@ ListLines, Off
 DetectHiddenWindows, On
 CoordMode, Pixel
 
-Global AhkSpyVersion := 2.05
+Global AhkSpyVersion := 2.06
 Gosub, CheckAhkVersion
 Menu, Tray, UseErrorLevel
 Menu, Tray, Icon, Shell32.dll, % A_OSVersion = "WIN_XP" ? 222 : 278
@@ -1864,9 +1864,9 @@ FindView() {
 		GuiControlGet, p, 1:Pos, %hActiveX%
 		GuiControl, 1:Move, %hActiveX%, % "x" pX " y" pY " w" pW " h" pH - 28
 		Gui, F: Show, % "NA x" (pW - widthTB) // 2.2 " h26 y" (pY + pH - 27)
+		isFindView := 1
 	}
 	GuiControl, F:Focus, Edit1
-	isFindView := 1
 	FindSearch(1)
 }
 
@@ -1901,11 +1901,31 @@ FindNext(Hwnd) {
 	FindSearch(0, Back)
 }
 
+FindAll() {
+	R := oDoc.selection.createRange(), Matches := 0
+	R.moveToElementText(oDoc.getElementById("pre")), R.collapse(1)
+	Option := (oFind.Whole ? 2 : 0) ^ (oFind.Registr ? 4 : 0)
+	Loop
+	{
+		F := R.findText(oFind.Text, 1, Option)
+		If (F = 0)
+			Break
+		El := R.parentElement()
+		If (El.TagName ~= "^(BUTTON|INPUT)$" || El.ID ~= "^(delimiter|title|param)$") && !R.collapse(0)
+			Continue
+		++Matches
+		R.execCommand("BackColor", 0, "EF0FFF")
+		R.execCommand("ForeColor", 0, "FFEEFF")
+		R.collapse(0)
+	}
+	ToolTip("Count matches: " Matches, 555)
+}
+
 FindSearch(This, Back = 0) {
-	Static IsMatch
 	Global hFindEdit
-	R := oDoc.selection.createRange(), R.collapse(This || Back ? 1 : 0)
-	If (oFind.Text = "" && !R.select() && (IsMatch := 1))
+	R := oDoc.selection.createRange(), sR := R.duplicate()
+	R.collapse(This || Back ? 1 : 0)
+	If (oFind.Text = "" && !R.select())
 		SetEditColor(hFindEdit, 0xFFFFFF, 0x000000)
 	Else
 	{
@@ -1914,17 +1934,34 @@ FindSearch(This, Back = 0) {
 		{
 			F := R.findText(oFind.Text, 1, Option)
 			If (F = 0)
+			{
+				If !A
+				{
+					R.moveToElementText(oDoc.getElementById("pre")), R.collapse(!Back), A := 1
+					Continue
+				}
+				If This
+					sR.collapse(1), sR.select()
 				Break
-			; R.moveToElementText(oDoc.getElementById("pre")) loop
+			}
+			If (!This && R.isEqual(sR))
+			{
+				If A
+				{
+					hFunc := Func("SetEditColor").Bind(hFindEdit, 0xFFFFFF, 0x000000)
+					SetTimer, % hFunc, -200
+				}
+				Break
+			}
 			El := R.parentElement()
 			If (El.TagName ~= "^(BUTTON|INPUT)$" || El.ID ~= "^(delimiter|title|param)$") && !R.collapse(Back)
 				Continue
 			R.select(), F := 1
 			Break
 		}
-		If (F != 1 && IsMatch && !(IsMatch := 0))
+		If (F != 1)
 			SetEditColor(hFindEdit, 0x6666FF, 0x000000)
-		Else If (F && !IsMatch && (IsMatch := 1))
+		Else
 			SetEditColor(hFindEdit, 0xFFFFFF, 0x000000)
 	}
 }
