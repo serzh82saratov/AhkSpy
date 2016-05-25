@@ -14,7 +14,7 @@ ListLines, Off
 DetectHiddenWindows, On
 CoordMode, Pixel
 
-Global AhkSpyVersion := 2.04
+Global AhkSpyVersion := 2.05
 Gosub, CheckAhkVersion
 Menu, Tray, UseErrorLevel
 Menu, Tray, Icon, Shell32.dll, % A_OSVersion = "WIN_XP" ? 222 : 278
@@ -35,7 +35,7 @@ Global ThisMode := "Mouse"						;  Стартовый режим - Win|Mouse|Hot
 , MemoryPos := IniRead("MemoryPos", 0), MemorySize := IniRead("MemorySize", 0)
 , MemoryZoomSize := IniRead("MemoryZoomSize", 0), MemoryStateZoom := IniRead("MemoryStateZoom", 0)
 , StateLight := IniRead("StateLight", 1), StateLightAcc := IniRead("StateLightAcc", 1), StateUpdate := IniRead("StateUpdate", 1)
-, StateAllwaysSpot := IniRead("AllwaysSpot", 0), ScrollPos := {}, AccCoord := [], oOther := {}, oFind := {}
+, StateAllwaysSpot := IniRead("AllwaysSpot", 0), ScrollPos := {}, AccCoord := [], oOther := {}, oFind := {}, Edits := []
 , hGui, hActiveX, hMarkerGui, hMarkerAccGui, hFindGui, oDoc, ShowMarker, isFindView, isIE, isPaused, w_ShowStyles, MsgAhkSpyZoom, Sleep
 , HTML_Win, HTML_Mouse, HTML_Hotkey, o_edithotkey, o_editkeyname, rmCtrlX, rmCtrlY, Hotkey_NFP, widthTB, HeigtButton, FullScreenMode
 , copy_button := "<span contenteditable='false' unselectable='on'><button id='copy_button'> copy </button></span>"
@@ -72,6 +72,7 @@ Gui, Color, %ColorBgPaused%
 Gui, Add, ActiveX, Border voDoc HWNDhActiveX x0 y+0, HTMLFile
 
 ComObjError(false), ComObjConnect(oDoc, Events)
+OnMessage(0x133, "WM_CTLCOLOREDIT")
 OnMessage(0x201, "WM_LBUTTONDOWN")
 OnMessage(0xA1, "WM_NCLBUTTONDOWN")
 OnMessage(0x7B, "WM_CONTEXTMENU")
@@ -94,13 +95,13 @@ Gui, TB: Show, % "x0 y0 NA h" HeigtButton " w" widthTB := wKey*3+wColor
 Gui, F: Color, %ColorBgPaused%
 Gui, F: +HWNDhFindGui -Caption -DPIScale +Parent%hGui%
 Gui, F: Font, % " s" (A_ScreenDPI = 120 ? 10 : 12)
-Gui, F: Add, Edit, x1 y0 w180 h30 gFindNew WantTab
-Gui, F: Add, UpDown, -16 Horz Range0-1 x+0 yp h30 w60 gFindNext vFindUpDown
-GuiControl, F: Move, FindUpDown, h30 w60
+Gui, F: Add, Edit, x1 y0 w180 h26 gFindNew WantTab HWNDhFindEdit
+Gui, F: Add, UpDown, -16 Horz Range0-1 x+0 yp h26 w52 gFindNext vFindUpDown
+GuiControl, F: Move, FindUpDown, h26 w52
 Gui, F: Font
-Gui, F: Add, Text, x+16 yp+3 h24 c2F2F2F +0x201 gFindOption, % "  case sensitive  "
-Gui, F: Add, Text, x+16 yp h24 c2F2F2F +0x201 gFindOption, % "  whole word "
-Gui, F: Add, Button, % "+0x300 +0xC00 y5 h20 w20 gFindHide x" widthTB - 21, X
+Gui, F: Add, Text, x+16 yp+1 h24 c2F2F2F +0x201 gFindOption, % "  case sensitive  "
+Gui, F: Add, Text, x+16 yp hp c2F2F2F +0x201 gFindOption, % "  whole word "
+Gui, F: Add, Button, % "+0x300 +0xC00 y3 h20 w20 gFindHide x" widthTB - 21, X
 
 Gui, M: Margin, 0, 0
 Gui, M: -DPIScale +AlwaysOnTop +HWNDhMarkerGui +E0x08000000 +E0x20 -Caption +Owner
@@ -957,7 +958,7 @@ Mode_Hotkey:
 	GuiControl, 1:Focus, oDoc
 	IniWrite(ThisMode, "LastMode")
 	If isFindView
-		FindHide()
+		FindSearch(1)
 	Return
 
 Write_Hotkey(K)  {
@@ -1437,8 +1438,8 @@ WM_MOVE() {
 ControlsMove(Width, Height) {
 	Gui, TB: Show, % "NA y0 x" (Width - widthTB) // 2.2
 	If isFindView
-		Gui, F: Show, % "NA x" (Width - widthTB) // 2.2 " y" (Height - (Height < HeigtButton * 2 ? 0 : HeigtButton) + 1)
-	WinMove, ahk_id %hActiveX%, , 0, HeigtButton, Width, Height - HeigtButton - (isFindView ? 32 : 0)
+		Gui, F: Show, % "NA x" (Width - widthTB) // 2.2 " y" (Height - (Height < HeigtButton * 2 ? -2 : 27))
+	WinMove, ahk_id %hActiveX%, , 0, HeigtButton, Width, Height - HeigtButton - (isFindView ? 28 : 0)
 }
 
 Minimize() {
@@ -1555,6 +1556,22 @@ CheckHideMarker() {
 		WinActive("ahk_id" hGui) ? (HideMarker(), HideAccMarker()) : 0
 		SetTimer, CheckHideMarker, -250
 		Return
+}
+
+SetEditColor(hwnd, BG, FG) {
+	Edits[hwnd] := {BG:BG,FG:FG}
+	WM_CTLCOLOREDIT(DllCall("GetDC", "Ptr", hwnd), hwnd)
+	DllCall("RedrawWindow", "Ptr", hwnd, "Uint", 0, "Uint", 0, "Uint", 0x1|0x4)
+}
+
+WM_CTLCOLOREDIT(wParam, lParam) {
+	If !Edits.HasKey(lParam)
+		Return 0
+	hBrush := DllCall("CreateSolidBrush", UInt, Edits[lParam].BG)
+	DllCall("SetTextColor", Ptr, wParam, UInt, Edits[lParam].FG)
+	DllCall("SetBkColor", Ptr, wParam, UInt, Edits[lParam].BG)
+	DllCall("SetBkMode", Ptr, wParam, UInt, 2)
+	Return hBrush
 }
 
 IniRead(Key, Error := " ") {
@@ -1795,8 +1812,10 @@ FullScreenMode() {
 	If !FullScreenMode
 	{
 		FullScreenMode := 1
-		WinGet, Max, MinMax, ahk_id %hwnd%
 		WinGetNormalPos(hwnd, X, Y, W, H)
+		WinGet, Max, MinMax, ahk_id %hwnd%
+		If Max = 1
+			WinSet, Style, -0x01000000	;	WS_MAXIMIZE
 		Gui, 1: -ReSize -Caption
 		Gui, 1: Show, x0 y0 w%A_ScreenWidth% h%A_ScreenHeight%
 		Gui, 1: Maximize
@@ -1843,8 +1862,8 @@ FindView() {
 	If !isFindView
 	{
 		GuiControlGet, p, 1:Pos, %hActiveX%
-		GuiControl, 1:Move, %hActiveX%, % "x" pX " y" pY " w" pW " h" pH - 32
-		Gui, F: Show, % "NA x" (pW - widthTB) // 2.2 " h30 y" (pY + pH - 31)
+		GuiControl, 1:Move, %hActiveX%, % "x" pX " y" pY " w" pW " h" pH - 28
+		Gui, F: Show, % "NA x" (pW - widthTB) // 2.2 " h26 y" (pY + pH - 27)
 	}
 	GuiControl, F:Focus, Edit1
 	isFindView := 1
@@ -1854,8 +1873,7 @@ FindView() {
 FindHide() {
 	Gui, F: Show, Hide
 	GuiControlGet, a, 1:Pos, %hActiveX%
-	GuiControl, 1:Move, %hActiveX%, % "x" aX "y" aY "w" aW "h" aH + 32
-	R := oDoc.selection.createRange(), R.collapse(1), R.select()
+	GuiControl, 1:Move, %hActiveX%, % "x" aX "y" aY "w" aW "h" aH + 28
 	isFindView := 0
 	GuiControl, Focus, %hActiveX%
 }
@@ -1885,9 +1903,10 @@ FindNext(Hwnd) {
 
 FindSearch(This, Back = 0) {
 	Static IsMatch
+	Global hFindEdit
 	R := oDoc.selection.createRange(), R.collapse(This || Back ? 1 : 0)
 	If (oFind.Text = "" && !R.select() && (IsMatch := 1))
-		Gui, F: Color, %ColorBgPaused%
+		SetEditColor(hFindEdit, 0xFFFFFF, 0x000000)
 	Else
 	{
 		Option := (Back ? 1 : 0) ^ (oFind.Whole ? 2 : 0) ^ (oFind.Registr ? 4 : 0)
@@ -1896,6 +1915,7 @@ FindSearch(This, Back = 0) {
 			F := R.findText(oFind.Text, 1, Option)
 			If (F = 0)
 				Break
+			; R.moveToElementText(oDoc.getElementById("pre")) loop
 			El := R.parentElement()
 			If (El.TagName ~= "^(BUTTON|INPUT)$" || El.ID ~= "^(delimiter|title|param)$") && !R.collapse(Back)
 				Continue
@@ -1903,9 +1923,9 @@ FindSearch(This, Back = 0) {
 			Break
 		}
 		If (F != 1 && IsMatch && !(IsMatch := 0))
-			Gui, F: Color, FF6666
+			SetEditColor(hFindEdit, 0x6666FF, 0x000000)
 		Else If (F && !IsMatch && (IsMatch := 1))
-			Gui, F: Color, %ColorBgPaused%
+			SetEditColor(hFindEdit, 0xFFFFFF, 0x000000)
 	}
 }
 
@@ -2045,7 +2065,7 @@ Class Events {
 	}
 	ondblclick()  {
 		oevent := oDoc.parentWindow.event.srcElement
-		If (oevent.isContentEditable && (rng := oDoc.selection.createRange()).text != "" && oevent.tagname != "input")
+		If (oevent.isContentEditable && oevent.tagname != "input" && (rng := oDoc.selection.createRange()).text != "")
 		{
 			While !t
 				rng.moveEnd("character", 1), (SubStr(rng.text, 0) = "_" ? rng.moveEnd("word", 1)
