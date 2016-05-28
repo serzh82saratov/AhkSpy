@@ -14,7 +14,7 @@ ListLines, Off
 DetectHiddenWindows, On
 CoordMode, Pixel
 
-Global AhkSpyVersion := 2.07
+Global AhkSpyVersion := 2.08
 Gosub, CheckAhkVersion
 Menu, Tray, UseErrorLevel
 Menu, Tray, Icon, Shell32.dll, % A_OSVersion = "WIN_XP" ? 222 : 278
@@ -99,9 +99,10 @@ Gui, F: Add, Edit, x1 y0 w180 h26 gFindNew WantTab HWNDhFindEdit
 SendMessage, 0x1501, 1, "Find to page",, ahk_id %hFindEdit%   ; EM_SETCUEBANNER
 Gui, F: Add, UpDown, -16 Horz Range0-1 x+0 yp h26 w52 gFindNext vFindUpDown
 GuiControl, F: Move, FindUpDown, h26 w52
-Gui, F: Font
-Gui, F: Add, Text, x+16 yp+1 h24 c2F2F2F +0x201 gFindOption, % "  case sensitive  "
-Gui, F: Add, Text, x+16 yp hp c2F2F2F +0x201 gFindOption, % "  whole word "
+Gui, F: Font, % (A_ScreenDPI = 120 ? "" : "s10")
+Gui, F: Add, Text, x+10 yp+1 h24 c2F2F2F +0x201 gFindOption, % " case sensitive "
+Gui, F: Add, Text, x+10 yp hp c2F2F2F +0x201 gFindOption, % " whole word "
+Gui, F: Add, Text, x+3 yp hp +0x201 w52 vFindMatches
 Gui, F: Add, Button, % "+0x300 +0xC00 y3 h20 w20 gFindHide x" widthTB - 21, X
 
 Gui, M: Margin, 0, 0
@@ -1887,12 +1888,14 @@ FindOption(Hwnd) {
 	Gui, %A_Gui%: Add, Text, % "x" pX " y" pY " w" pW " h" pH " g" A_ThisFunc " " (Style & 0x1000 ? "c2F2F2F +0x201" : "+Border +0x1201"), % Text
 	InStr(Text, "sensitive") ? (oFind.Registr := !(Style & 0x1000)) : (oFind.Whole := !(Style & 0x1000))
 	FindSearch(1)
+	FindAll()
 }
 
 FindNew(Hwnd) {
 	ControlGetText, Text, , ahk_id %Hwnd%
 	oFind.Text := Text
 	hFunc := Func("FindSearch").Bind(1)
+	SetTimer, FindAll, -150
 	SetTimer, % hFunc, -150
 }
 
@@ -1903,6 +1906,11 @@ FindNext(Hwnd) {
 }
 
 FindAll() {
+	If (oFind.Text = "")
+	{
+		GuiControl, F:Text, FindMatches
+		Return
+	}
 	R := oDoc.selection.createRange(), Matches := 0
 	R.moveToElementText(oDoc.getElementById("pre")), R.collapse(1)
 	Option := (oFind.Whole ? 2 : 0) ^ (oFind.Registr ? 4 : 0)
@@ -1914,12 +1922,11 @@ FindAll() {
 		El := R.parentElement()
 		If (El.TagName ~= "^(BUTTON|INPUT)$" || El.ID ~= "^(delimiter|title|param)$") && !R.collapse(0)
 			Continue
-		++Matches
-		R.execCommand("BackColor", 0, "EF0FFF")
-		R.execCommand("ForeColor", 0, "FFEEFF")
-		R.collapse(0)
+		; R.execCommand("BackColor", 0, "EF0FFF")
+		; R.execCommand("ForeColor", 0, "FFEEFF")
+		R.collapse(0), ++Matches
 	}
-	ToolTip("Count matches: " Matches, 555)
+	GuiControl, F:Text, FindMatches, % Matches ? Matches : ""
 }
 
 FindSearch(This, Back = 0) {
