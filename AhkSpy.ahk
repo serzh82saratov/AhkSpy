@@ -14,7 +14,7 @@ ListLines, Off
 DetectHiddenWindows, On
 CoordMode, Pixel
 
-Global AhkSpyVersion := 2.09
+Global AhkSpyVersion := 2.10
 Gosub, CheckAhkVersion
 Menu, Tray, UseErrorLevel
 Menu, Tray, Icon, Shell32.dll, % A_OSVersion = "WIN_XP" ? 222 : 278
@@ -1139,7 +1139,7 @@ Hotkey_PressMouse:
 
 Hotkey_MouseAndJoyInit(Options) {
 	Static MouseKey := "MButton|WheelDown|WheelUp|WheelRight|WheelLeft|XButton1|XButton2"
-	Local S_FormatInteger
+	Local S_FormatInteger, Option
 	#If Hotkey_Arr("Hook")
 	#If Hotkey_Arr("Hook") && !Hotkey_Main({Opt:"GetMod"})
 	#If Hotkey_Arr("Hook") && Hotkey_Main({Opt:"GetMod"})
