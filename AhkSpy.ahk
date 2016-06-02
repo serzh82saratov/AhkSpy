@@ -14,7 +14,7 @@ ListLines, Off
 DetectHiddenWindows, On
 CoordMode, Pixel
 
-Global AhkSpyVersion := 2.10
+Global AhkSpyVersion := 2.11
 Gosub, CheckAhkVersion
 Menu, Tray, UseErrorLevel
 Menu, Tray, Icon, Shell32.dll, % A_OSVersion = "WIN_XP" ? 222 : 278
@@ -37,7 +37,7 @@ Global ThisMode := "Mouse"						;  Стартовый режим - Win|Mouse|Hot
 , StateLight := IniRead("StateLight", 1), StateLightAcc := IniRead("StateLightAcc", 1), StateUpdate := IniRead("StateUpdate", 1)
 , StateAllwaysSpot := IniRead("AllwaysSpot", 0), ScrollPos := {}, AccCoord := [], oOther := {}, oFind := {}, Edits := []
 , hGui, hActiveX, hMarkerGui, hMarkerAccGui, hFindGui, oDoc, ShowMarker, isFindView, isIE, isPaused, w_ShowStyles, MsgAhkSpyZoom, Sleep
-, HTML_Win, HTML_Mouse, HTML_Hotkey, o_edithotkey, o_editkeyname, rmCtrlX, rmCtrlY, Hotkey_NFP, widthTB, HeigtButton, FullScreenMode
+, HTML_Win, HTML_Mouse, HTML_Hotkey, o_edithotkey, o_editkeyname, rmCtrlX, rmCtrlY, widthTB, HeigtButton, FullScreenMode
 , copy_button := "<span contenteditable='false' unselectable='on'><button id='copy_button'> copy </button></span>"
 , pause_button := "<span contenteditable='false' unselectable='on'><button id='pause_button'> pause </button></span>"
 , set_button_pos := "<span contenteditable='false' unselectable='on'><button id='set_button_pos' style='overflow: visible'>"
@@ -176,12 +176,8 @@ Menu, Sys, Add, Exit, Exit
 Menu, Sys, Add
 Menu, Sys, Add, Find to page, FindView
 Menu, Sys, Color, % ColorBgOriginal
-If MemorySize
-	Gui, Show, % "NA h" IniRead("MemorySizeH", HeightStart) " w" IniRead("MemorySizeW", widthTB)
-Else
-	Gui, Show, NA h%HeightStart% w%widthTB%
-If MemoryPos
-	Gui, Show, % "NA x" IniRead("MemoryPosX", "Center") " y" IniRead("MemoryPosY", "Center")
+Gui, Show, % "NA" (MemoryPos ? " x" IniRead("MemoryPosX", "Center") " y" IniRead("MemoryPosY", "Center") : "")
+. (MemorySize ? " h" IniRead("MemorySizeH", HeightStart) " w" IniRead("MemorySizeW", widthTB) : " h" HeightStart " w" widthTB)
 Gui, % "+MinSize" widthTB "x" HeigtButton
 
 Hotkey_Init("Write_Hotkey", "MLRJ")
@@ -1071,21 +1067,19 @@ Hotkey_Init(Func, Options = "") {
 	Hotkey_Arr("Hook") ? (Hotkey_Hook(0), Hotkey_Hook(1)) : 0
 }
 
-Hotkey_Main(In)  {
+Hotkey_Main(In) {
 	Static Prefix := {"LAlt":"<!","LCtrl":"<^","LShift":"<+","LWin":"<#"
-		,"RAlt":">!","RCtrl":">^","RShift":">+","RWin":">#"}, K:={}, ModsOnly
+	,"RAlt":">!","RCtrl":">^","RShift":">+","RWin":">#"}, K := {}, ModsOnly
 	Local IsMod, sIsMod
 	IsMod := In.IsMod
-	If (In.Opt = "Down")
-	{
+	If (In.Opt = "Down") {
 		If (K["M" IsMod] != "")
 			Return 1
 		sIsMod := SubStr(IsMod, 2)
 		K["M" sIsMod] := sIsMod "+", K["P" sIsMod] := SubStr(Prefix[IsMod], 2)
 		K["M" IsMod] := IsMod "+", K["P" IsMod] := Prefix[IsMod]
 	}
-	Else If (In.Opt = "Up")
-	{
+	Else If (In.Opt = "Up") {
 		sIsMod := SubStr(IsMod, 2)
 		K.ModUp := 1, K["M" IsMod] := K["P" IsMod] := ""
 		If (K["ML" sIsMod] = "" && K["MR" sIsMod] = "")
@@ -1093,8 +1087,7 @@ Hotkey_Main(In)  {
 		If (!Hotkey_Arr("Up") && K.HK != "")
 			Return 1
 	}
-	Else If (In.Opt = "OnlyMods")
-	{
+	Else If (In.Opt = "OnlyMods") {
 		If !ModsOnly
 			Return 0
 		K.MCtrl := K.MAlt := K.MShift := K.MWin := K.Mods := ""
@@ -1151,11 +1144,9 @@ Hotkey_MouseAndJoyInit(Options) {
 	Option := InStr(Options, "L") ? "On" : "Off"
 	Hotkey, IF, Hotkey_Arr("Hook") && Hotkey_Main({Opt:"GetMod"})
 	Hotkey, LButton, Hotkey_PressMouse, % Option
-
 	Option := InStr(Options, "R") ? "On" : "Off"
 	Hotkey, IF, Hotkey_Arr("Hook")
 	Hotkey, RButton, Hotkey_PressMouse, % Option
-
 	Option := InStr(Options, "J") ? "On" : "Off"
 	S_FormatInteger := A_FormatInteger
 	SetFormat, IntegerFast, D
@@ -1180,11 +1171,10 @@ Hotkey_Arr(P*) {
 
 Hotkey_LowLevelKeyboardProc(nCode, wParam, lParam) {
 	Static Mods := {"vkA4":"LAlt","vkA5":"RAlt","vkA2":"LCtrl","vkA3":"RCtrl"
-		,"vkA0":"LShift","vkA1":"RShift","vk5B":"LWin","vk5C":"RWin"}
-		, oMem := [], HEAP_ZERO_MEMORY := 0x8, Size := 16, hHeap := DllCall("GetProcessHeap", Ptr)
+	,"vkA0":"LShift","vkA1":"RShift","vk5B":"LWin","vk5C":"RWin"}, oMem := []
+	, HEAP_ZERO_MEMORY := 0x8, Size := 16, hHeap := DllCall("GetProcessHeap", Ptr)
 	Local pHeap, Wp, Lp, Ext, VK, SC, IsMod, Time, NFP
 	Critical
-
 	If !Hotkey_Arr("Hook")
 		Return DllCall("CallNextHookEx", "Ptr", 0, "Int", nCode, "UInt", wParam, "UInt", lParam)
 	pHeap := DllCall("HeapAlloc", Ptr, hHeap, UInt, HEAP_ZERO_MEMORY, Ptr, Size, Ptr)
@@ -1193,10 +1183,8 @@ Hotkey_LowLevelKeyboardProc(nCode, wParam, lParam) {
 	Return nCode < 0 ? DllCall("CallNextHookEx", "Ptr", 0, "Int", nCode, "UInt", wParam, "UInt", lParam) : 1
 
 	Hotkey_HookProcWork:
-		While (oMem[1] != "")
-		{
-			If Hotkey_Arr("Hook")
-			{
+		While (oMem[1] != "") {
+			If Hotkey_Arr("Hook") {
 				Wp := oMem[1][1], Lp := oMem[1][2]
 				VK := Format("vk{:X}", NumGet(Lp + 0, "UInt"))
 				Ext := NumGet(Lp + 0, 8, "UInt")
@@ -1457,13 +1445,18 @@ ZoomMsg(wParam = -1, lParam = -1) {
 
 SavePos() {
 	WinGet, Min, MinMax, ahk_id %hGui%
-	If (!FullScreenMode && Min = 0 && (MemoryPos || MemorySize))
+	If (!FullScreenMode && Min = 0)
 	{
-		WinGetPos, WinX, WinY, WinWidth, WinHeight, ahk_id %hGui%
-		IniWrite(WinX, "MemoryPosX")
-		IniWrite(WinY, "MemoryPosY")
-		IniWrite(WinWidth, "MemorySizeW")
-		IniWrite(WinHeight, "MemorySizeH")
+		If MemoryPos
+		{
+			WinGetPos, WinX, WinY, , , ahk_id %hGui%
+			IniWrite(WinX, "MemoryPosX")
+			IniWrite(WinY, "MemoryPosY")
+		}
+		If MemorySize
+			GetClientPos(hGui, _, _, WinWidth, WinHeight)
+			, IniWrite(WinWidth, "MemorySizeW")
+			, IniWrite(WinHeight, "MemorySizeH")
 	}
 }
 
