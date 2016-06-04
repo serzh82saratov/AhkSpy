@@ -14,7 +14,7 @@ ListLines, Off
 DetectHiddenWindows, On
 CoordMode, Pixel
 
-Global AhkSpyVersion := 2.11
+Global AhkSpyVersion := 2.12
 Gosub, CheckAhkVersion
 Menu, Tray, UseErrorLevel
 Menu, Tray, Icon, Shell32.dll, % A_OSVersion = "WIN_XP" ? 222 : 278
@@ -1028,7 +1028,7 @@ Write_Hotkey(K)  {
 
 	%ThisKey%   %DP%   %VKCode%%SCCode%   %DP%   %VKCode%   %DP%   %SCCode%
 
-	%D1% <span id='title'>( GetKeyName )</span> %DB% <span contenteditable='false' unselectable='on'><button id='paste_keyname'>paste</button></span> %D2%
+	%D1% <span id='title'>( GetKeyNameOrCode )</span> %DB% <span contenteditable='false' unselectable='on'><button id='paste_keyname'>paste</button></span> %D2%
 
 	<span contenteditable='false' unselectable='on'><input id='edithotkey' value='%inp_hk%'><button id='keyname'> &#8250 &#8250 &#8250 </button><input id='editkeyname' value='%inp_kn%'></input></span>
 
@@ -1915,16 +1915,12 @@ FindSearch(This, Back = 0) {
 	R.collapse(This || Back ? 1 : 0)
 	If (oFind.Text = "" && !R.select())
 		SetEditColor(hFindEdit, 0xFFFFFF, 0x000000)
-	Else
-	{
+	Else {
 		Option := (Back ? 1 : 0) ^ (oFind.Whole ? 2 : 0) ^ (oFind.Registr ? 4 : 0)
-		Loop
-		{
+		Loop {
 			F := R.findText(oFind.Text, 1, Option)
-			If (F = 0)
-			{
-				If !A
-				{
+			If (F = 0) {
+				If !A {
 					R.moveToElementText(oDoc.getElementById("pre")), R.collapse(!Back), A := 1
 					Continue
 				}
@@ -1932,10 +1928,8 @@ FindSearch(This, Back = 0) {
 					sR.collapse(1), sR.select()
 				Break
 			}
-			If (!This && R.isEqual(sR))
-			{
-				If A
-				{
+			If (!This && R.isEqual(sR)) {
+				If A {
 					hFunc := Func("SetEditColor").Bind(hFindEdit, 0xFFFFFF, 0x000000)
 					SetTimer, % hFunc, -200
 				}
@@ -1978,9 +1972,15 @@ Class Events {
 				HighLight(oDoc.getElementById("wintitle3"), 500, 0)
 			}
 			Else If thisid = keyname
-				Name := GetKeyName(o_edithotkey.value), o_editkeyname.value := (StrLen(Name) = 1 ? (Format("{:U}", Name)) : Name)
-				, o := Name = "" ? o_edithotkey : o_editkeyname
-				, o.focus(), o.createTextRange().select()
+			{
+				v_edit := Format("{:L}", o_edithotkey.value), name := GetKeyName(v_edit)
+				If (name = v_edit)
+					o_editkeyname.value := Format("vk{:X}", GetKeyVK(v_edit)) (!(sc := GetKeySC(v_edit)) ? "" : Format("sc{:X}", sc))
+				Else
+					o_editkeyname.value := (StrLen(name) = 1 ? (Format("{:U}", name)) : name)
+				o := name = "" ? o_edithotkey : o_editkeyname
+				o.focus(), o.createTextRange().select()
+			}
 			Else If thisid = pause_button
 				Gosub, PausedScript
 			Else If thisid = w_folder
