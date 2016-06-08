@@ -14,7 +14,7 @@ ListLines, Off
 DetectHiddenWindows, On
 CoordMode, Pixel
 
-Global AhkSpyVersion := 2.13
+Global AhkSpyVersion := 2.14
 Gosub, CheckAhkVersion
 Menu, Tray, UseErrorLevel
 Menu, Tray, Icon, Shell32.dll, % A_OSVersion = "WIN_XP" ? 222 : 278
@@ -1366,6 +1366,7 @@ ShellProc(nCode, wParam) {
 }
 
 WM_ACTIVATE(wp) {
+	Critical
 	If (wp & 0xFFFF)
 		(ThisMode = "Hotkey" && !isPaused ? Hotkey_Hook(1) : 0), HideMarker(), HideAccMarker(), CheckHideMarker()
 	Else If (wp & 0xFFFF = 0 && Hotkey_Arr("Hook"))
