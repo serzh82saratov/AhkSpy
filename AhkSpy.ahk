@@ -14,7 +14,7 @@ ListLines, Off
 DetectHiddenWindows, On
 CoordMode, Pixel
 
-Global AhkSpyVersion := 2.19
+Global AhkSpyVersion := 2.20
 Gosub, CheckAhkVersion
 Menu, Tray, UseErrorLevel
 Menu, Tray, Icon, Shell32.dll, % A_OSVersion = "WIN_XP" ? 222 : 278
@@ -1335,7 +1335,7 @@ Sys_Help:
 		RunPath("http://ahkscript.org/docs/AutoHotkey.htm")
 	Else If A_ThisMenuItem = AutoHotKey russian help online
 		RunPath("http://www.script-coding.com/AutoHotkeyTranslation.html")
-	Else If A_ThisMenuItem = About AhkSpy
+	Else If A_ThisMenuItem = About
 		RunPath("http://forum.script-coding.com/viewtopic.php?pid=72459#p72459")
 	Return
 
