@@ -14,7 +14,7 @@ ListLines, Off
 DetectHiddenWindows, On
 CoordMode, Pixel
 
-Global AhkSpyVersion := 2.17
+Global AhkSpyVersion := 2.19
 Gosub, CheckAhkVersion
 Menu, Tray, UseErrorLevel
 Menu, Tray, Icon, Shell32.dll, % A_OSVersion = "WIN_XP" ? 222 : 278
@@ -296,8 +296,8 @@ Tab:: oDoc.selection.createRange().text := "    "			;  &emsp
 RButton::
 CopyText:
 	ToolTip("copy", 300)
-	If GetKeyState("LControl", "P") && GetKeyState("LShift", "P") && CopyText ~= "(x|y|w|h)-*\d+"
-		CopyText := RegExReplace(CopyText, "i)(x|y|w|h|#|\s)+", " ")
+	If (A_ThisHotkey = "^+RButton" && CopyText ~= "(x|y|w|h|" chr(178) ")-*\d+")
+		CopyText := RegExReplace(CopyText, "i)(x|y|w|h|#|\s|" chr(178) ")+", " ")
 		, CopyText := TRim(CopyText, " "), CopyText := RegExReplace(CopyText, "(\s|,)+", ", ")
 	Clipboard := CopyText
 	StringReplace, toTitle, CopyText, `r`n, , 1
@@ -426,7 +426,7 @@ HTML_Win:
 	%D1% <span id='title'>( CommandLine )</span> %DB% <span contenteditable='false' unselectable='on'><button id='w_command_line'>launch</button> <button id='paste_command_line'>paste</button></span> %copy_button% %D2%
 	<span id='c_command_line'>%ComLine%</span>
 	%D1% <span id='title'>( Position`s )</span> %D2%
-	%set_button_pos%Pos:</button></span>  <span>x%WinX% y%WinY%</span>%DP%%set_button_pos%Size:</button></span>  <span>w%WinWidth% h%WinHeight%</span>%DP%<span id='param'>x<span style='font-size: 0.7em'>2</span></span>%WinX2% <span id='param'>y<span style='font-size: 0.7em'>2</span></span>%WinY2%%DP%%WinX%, %WinY%, %WinWidth%, %WinHeight%
+	%set_button_pos%Pos:</button></span>  <span>x%WinX% y%WinY%</span>%DP%%set_button_pos%Size:</button></span>  <span>w%WinWidth% h%WinHeight%</span>%DP%<span id='param'>x&sup2;<span style='font-size: 0.7em'></span></span>%WinX2% <span id='param'>y&sup2;<span style='font-size: 0.7em'></span></span>%WinY2%%DP%%WinX%, %WinY%, %WinWidth%, %WinHeight%
 	<span id='param'>Client area size:</span>  w%caW% h%caH%%DP%<span id='param'>left</span> %caX% <span id='param'>top</span> %caY% <span id='param'>right</span> %caWinRight% <span id='param'>bottom</span> %caWinBottom%
 	<a></a>%D1% <span id='title'>( Other )</span> %D2%
 	<span id='param'>PID:</span>  %WinPID%%DP%<span id='param'>Count window this PID:</span> %WinCountProcess%%DP%<span contenteditable='false' unselectable='on'><button id='process_close'>process close</button></span>
@@ -525,7 +525,7 @@ Spot_Mouse(NotHTML=0)  {
 	CtrlCAX := CtrlX - caX, CtrlCAY := CtrlY - caY
 	CtrlX2 := CtrlX+CtrlW, CtrlY2 := CtrlY+CtrlH
 	CtrlCAX2 := CtrlX2-caX, CtrlCAY2 := CtrlY2-caY
-	WithRespectClient := "<span id='param'>Relative client:</span></span> <span>" Round(MXC / caW, 4) ", " Round(MYC / caH, 4)
+	WithRespectClient := set_button_mouse_pos "Relative client:</button></span> <span>" Round(MXC / caW, 4) ", " Round(MYC / caH, 4)
 		. "</span>  <span id='param'>for</span>  w" caW "  h" caH
 	WithRespectControl := ControlNN = "" ? "" : DP Round(rmCtrlX / CtrlW, 4) ", " Round(rmCtrlY / CtrlH, 4)
 	ControlGetText, CtrlText, , ahk_id %ControlID%
@@ -572,8 +572,8 @@ HTML_Mouse:
 	<span id='param'>ahk_class</span> %WinClass% <span id='param'>ahk_exe</span> %ProcessName% <span id='param'>ahk_id</span> %WinID%
 	%D1% <span id='title'>( Control )</span> %D2%<a></a>
 	<span id='param'>Class NN:</span>  %ControlNN%%DP%<span id='param'>Win class:</span>  %CtrlClass%
-	%set_button_pos%Pos:</button></span>  <span>x%CtrlX% y%CtrlY%</span>%DP%%set_button_pos%Size:</button></span>  <span>w%CtrlW% h%CtrlH%</span>%DP%<span id='param'>x<span style='font-size: 0.7em'>2</span></span>%CtrlX2% <span id='param'>y<span style='font-size: 0.7em'>2</span></span>%CtrlY2%
-	<span id='param'>Pos relative client area:</span>  x%CtrlCAX% y%CtrlCAY%%DP%<span id='param'>x<span style='font-size: 0.7em'>2</span></span>%CtrlCAX2% <span id='param'>y<span style='font-size: 0.7em'>2</span></span>%CtrlCAY2%
+	%set_button_pos%Pos:</button></span>  <span>x%CtrlX% y%CtrlY%</span>%DP%%set_button_pos%Size:</button></span>  <span>w%CtrlW% h%CtrlH%</span>%DP%<span id='param'>x&sup2;<span style='font-size: 0.7em'></span></span>%CtrlX2% <span id='param'>y&sup2;<span style='font-size: 0.7em'></span></span>%CtrlY2%
+	<span id='param'>Pos relative client area:</span>  x%CtrlCAX% y%CtrlCAY%%DP%<span id='param'>x&sup2;<span style='font-size: 0.7em'></span></span>%CtrlCAX2% <span id='param'>y&sup2;<span style='font-size: 0.7em'></span></span>%CtrlCAY2%
 	%set_button_mouse_pos%Mouse relative control:</button></span>  <span>x%rmCtrlX% y%rmCtrlY%</span>%WithRespectControl%%DP%<span id='param'>Client area:</span>  x%caX% y%caY% w%caW% h%caH%
 	<span id='param'>HWND:</span>  %ControlID%%DP%<span id='param'>Style:</span>  %CtrlStyle%%DP%<span id='param'>ExStyle:</span>  %CtrlExStyle%
 	<span>%set_button_focus_ctrl%Focus control:</button></span>  %CtrlFocus%%DP%<span id='param'>Cursor type:</span>  %A_Cursor%%DP%<span id='param'>Caret pos:</span>  x%A_CaretX% y%A_CaretY%%CtrlInfo%%CtrlText%%AccText%
@@ -1604,6 +1604,9 @@ ExistSelectedText(byref Copy) {
 	Copy := oDoc.selection.createRange().text
 	If Copy is space
 		Return 0
+	; html := oDoc.selection.createRange().htmlText
+	; While pos := RegExMatch(html, "i)<SPAN id=param>(.)<SPAN style=""FONT-SIZE: 0.7em"">(.)</SPAN></SPAN>(\d+)", m, pos)
+		; Copy := StrReplace(Copy, m1 m2 m3, m1 m3, , 1), pos++
 	Copy := RegExReplace(Trim(Copy), Chr(0x25aa) Chr(0x25aa) "+", "#!#")
 	StringReplace, Copy, Copy, % Chr(0x25aa), #, 1
 	StringReplace, Copy, Copy, #!#  copy  #!#, #!#, 1
@@ -2077,6 +2080,14 @@ Class Events {
 						Return ToolTip("Invalid parametrs", 500)
 					BlockInput, MouseMove
 					DllCall("SetCursorPos", "Uint", X + Round(W * p1), "Uint", Y + Round(H * p2))
+				}
+				Else If thisbutton = Relative client:
+				{
+					RegExMatch(oDoc.all.item(oevent.sourceIndex + 1).OuterText, "(-*\d+[\.\d+]*).*\s+.*?(-*\d+[\.\d+]*)", p)
+					If (p1 + 0 = "" || p2 + 0 = "")
+						Return ToolTip("Invalid parametrs", 500)
+					GetClientPos(hWnd, caX, caY, caW, caH)
+					DllCall("SetCursorPos", "Uint", X + Round(caW * p1) + caX, "Uint", Y + Round(caH * p2) + caY)
 				}
 				Else
 				{
