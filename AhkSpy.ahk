@@ -14,7 +14,7 @@ ListLines, Off
 DetectHiddenWindows, On
 CoordMode, Pixel
 
-Global AhkSpyVersion := 2.15
+Global AhkSpyVersion := 2.16
 Gosub, CheckAhkVersion
 Menu, Tray, UseErrorLevel
 Menu, Tray, Icon, Shell32.dll, % A_OSVersion = "WIN_XP" ? 222 : 278
@@ -292,7 +292,8 @@ Tab:: oDoc.selection.createRange().text := "    "			;  &emsp
 
 #If WinActive("ahk_id" hGui) && ExistSelectedText(CopyText)
 
-*RButton::
+^+RButton::
+RButton::
 CopyText:
 	ToolTip("copy", 300)
 	If GetKeyState("LControl", "P") && GetKeyState("LShift", "P") && CopyText ~= "(x|y|w|h)-*\d+"
