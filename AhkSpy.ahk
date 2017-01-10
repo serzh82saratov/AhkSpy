@@ -14,7 +14,7 @@ ListLines, Off
 DetectHiddenWindows, On
 CoordMode, Pixel
 
-Global AhkSpyVersion := 2.16
+Global AhkSpyVersion := 2.17
 Gosub, CheckAhkVersion
 Menu, Tray, UseErrorLevel
 Menu, Tray, Icon, Shell32.dll, % A_OSVersion = "WIN_XP" ? 222 : 278
@@ -298,7 +298,7 @@ CopyText:
 	ToolTip("copy", 300)
 	If GetKeyState("LControl", "P") && GetKeyState("LShift", "P") && CopyText ~= "(x|y|w|h)-*\d+"
 		CopyText := RegExReplace(CopyText, "i)(x|y|w|h|#|\s)+", " ")
-		, CopyText := TRim(CopyText, " "), CopyText := RegExReplace(CopyText, "[^,]\s+", ", ")
+		, CopyText := TRim(CopyText, " "), CopyText := RegExReplace(CopyText, "(\s|,)+", ", ")
 	Clipboard := CopyText
 	StringReplace, toTitle, CopyText, `r`n, , 1
 	SendMessage, 0xC, 0, &toTitle, , ahk_id %hGui%
