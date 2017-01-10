@@ -1,6 +1,6 @@
 	;  AhkSpy
 	;  Автор - serzh82saratov
-	;  Спасибо wisgest за помощь в создании HTML интерфейса этой версии скрипта
+	;  Спасибо wisgest за помощь в создании HTML интерфейса
 	;  Также благодарность teadrinker, YMP и Irbis за их решения
 	;  Тема - http://forum.script-coding.com/viewtopic.php?pid=72459#p72459
 	;  Обсуждение - http://forum.script-coding.com/viewtopic.php?pid=72244#p72244
@@ -14,7 +14,7 @@ ListLines, Off
 DetectHiddenWindows, On
 CoordMode, Pixel
 
-Global AhkSpyVersion := 2.14
+Global AhkSpyVersion := 2.15
 Gosub, CheckAhkVersion
 Menu, Tray, UseErrorLevel
 Menu, Tray, Icon, Shell32.dll, % A_OSVersion = "WIN_XP" ? 222 : 278
@@ -31,6 +31,7 @@ Global ThisMode := "Mouse"						;  Стартовый режим - Win|Mouse|Hot
 , # := "&#9642"									;  Символ разделителя заголовков - &#8226 | &#9642
 
 , DP := "  <span id='delimiter' style='color: " ColorDelimiter "'>" # "</span>  ", D1, D2, DB
+, copy_button := "<span contenteditable='false' unselectable='on'><button id='copy_button'> copy </button></span>"
 , ThisMode := IniRead("StartMode", "Mouse"), ThisMode := ThisMode = "LastMode" ? IniRead("LastMode", "Mouse") : ThisMode
 , MemoryPos := IniRead("MemoryPos", 0), MemorySize := IniRead("MemorySize", 0)
 , MemoryZoomSize := IniRead("MemoryZoomSize", 0), MemoryStateZoom := IniRead("MemoryStateZoom", 0)
@@ -38,10 +39,10 @@ Global ThisMode := "Mouse"						;  Стартовый режим - Win|Mouse|Hot
 , StateAllwaysSpot := IniRead("AllwaysSpot", 0), ScrollPos := {}, AccCoord := [], oOther := {}, oFind := {}, Edits := []
 , hGui, hActiveX, hMarkerGui, hMarkerAccGui, hFindGui, oDoc, ShowMarker, isFindView, isIE, isPaused, w_ShowStyles, MsgAhkSpyZoom, Sleep
 , HTML_Win, HTML_Mouse, HTML_Hotkey, o_edithotkey, o_editkeyname, rmCtrlX, rmCtrlY, widthTB, HeigtButton, FullScreenMode
-, copy_button := "<span contenteditable='false' unselectable='on'><button id='copy_button'> copy </button></span>"
 , pause_button := "<span contenteditable='false' unselectable='on'><button id='pause_button'> pause </button></span>"
 , set_button_pos := "<span contenteditable='false' unselectable='on'><button id='set_button_pos' style='overflow: visible'>"
 , set_button_mouse_pos := "<span contenteditable='false' unselectable='on'><button id='set_button_mouse_pos' style='overflow: visible'>"
+, set_button_focus_ctrl := "<span contenteditable='false' unselectable='on'><button id='set_button_focus_ctrl' style='overflow: visible'>"
 
 TitleTextP2 := "     ( Shift+Tab - Freeze | RButton - CopySelected | Pause - Pause )     v" AhkSpyVersion
 BLGroup := ["Backlight allways","Backlight disable","Backlight hold shift button"]
@@ -183,7 +184,6 @@ Gui, % "+MinSize" widthTB "x" HeigtButton
 Hotkey_Init("Write_Hotkey", "MLRJ")
 Gosub, Mode_%ThisMode%
 
-
 If (m_run_AhkSpyZoom != "" && MemoryStateZoom && IniRead("ZoomShow", 0))
 	Events.AhkSpyZoomShow()
 
@@ -292,9 +292,12 @@ Tab:: oDoc.selection.createRange().text := "    "			;  &emsp
 
 #If WinActive("ahk_id" hGui) && ExistSelectedText(CopyText)
 
-RButton::
+*RButton::
 CopyText:
 	ToolTip("copy", 300)
+	If GetKeyState("LControl", "P") && GetKeyState("LShift", "P") && CopyText ~= "(x|y|w|h)-*\d+"
+		CopyText := RegExReplace(CopyText, "i)(x|y|w|h|#|\s)+", " ")
+		, CopyText := TRim(CopyText, " "), CopyText := RegExReplace(CopyText, "[^,]\s+", ", ")
 	Clipboard := CopyText
 	StringReplace, toTitle, CopyText, `r`n, , 1
 	SendMessage, 0xC, 0, &toTitle, , ahk_id %hGui%
@@ -423,7 +426,7 @@ HTML_Win:
 	<span id='c_command_line'>%ComLine%</span>
 	%D1% <span id='title'>( Position`s )</span> %D2%
 	%set_button_pos%Pos:</button></span>  <span>x%WinX% y%WinY%</span>%DP%%set_button_pos%Size:</button></span>  <span>w%WinWidth% h%WinHeight%</span>%DP%<span id='param'>x<span style='font-size: 0.7em'>2</span></span>%WinX2% <span id='param'>y<span style='font-size: 0.7em'>2</span></span>%WinY2%%DP%%WinX%, %WinY%, %WinWidth%, %WinHeight%
-	<span id='param'>Client area size:</span>  w%caW% h%caH%%DP%<span id='param'>top</span> %caY% <span id='param'>left</span> %caX% <span id='param'>bottom</span> %caWinBottom% <span id='param'>right</span> %caWinRight%
+	<span id='param'>Client area size:</span>  w%caW% h%caH%%DP%<span id='param'>left</span> %caX% <span id='param'>top</span> %caY% <span id='param'>right</span> %caWinRight% <span id='param'>bottom</span> %caWinBottom%
 	<a></a>%D1% <span id='title'>( Other )</span> %D2%
 	<span id='param'>PID:</span>  %WinPID%%DP%<span id='param'>Count window this PID:</span> %WinCountProcess%%DP%<span contenteditable='false' unselectable='on'><button id='process_close'>process close</button></span>
 	<span id='param'>HWND:</span>  %WinID%%DP%<span contenteditable='false' unselectable='on'><button id='win_close'>win close</button></span>%DP%<span id='param'>Control count:</span>  %CountControl%
@@ -515,12 +518,15 @@ Spot_Mouse(NotHTML=0)  {
 	GuiControl, % "TB: +c" sColorRGB, ColorProgress
 	GuiControl, TB: +Redraw, ColorProgress
 	WinGetPos, WinX2, WinY2, WinW, WinH, ahk_id %WinID%
-	WithRespectWin := "`n" set_button_mouse_pos "Relative pos to a window:</button></span> <span>" RWinX / WinW ", " RWinY / WinH
+	WithRespectWin := "`n" set_button_mouse_pos "Relative window:</button></span> <span>" Round(RWinX / WinW, 4) ", " Round(RWinY / WinH, 4)
 		. "</span>  <span id='param'>for</span>  w" WinW "  h" WinH
 	ControlGetPos, CtrlX, CtrlY, CtrlW, CtrlH,, ahk_id %ControlID%
 	CtrlCAX := CtrlX - caX, CtrlCAY := CtrlY - caY
 	CtrlX2 := CtrlX+CtrlW, CtrlY2 := CtrlY+CtrlH
 	CtrlCAX2 := CtrlX2-caX, CtrlCAY2 := CtrlY2-caY
+	WithRespectClient := "<span id='param'>Relative client:</span></span> <span>" Round(MXC / caW, 4) ", " Round(MYC / caH, 4)
+		. "</span>  <span id='param'>for</span>  w" caW "  h" caH
+	WithRespectControl := ControlNN = "" ? "" : DP Round(rmCtrlX / CtrlW, 4) ", " Round(rmCtrlY / CtrlH, 4)
 	ControlGetText, CtrlText, , ahk_id %ControlID%
 	If CtrlText !=
 		CtrlText := "`n" D1 " <a></a><span id='title'>( Control Text )</span> " DB " " copy_button " " D2 "`n<span>" TransformHTML(CtrlText) "</span>"
@@ -557,7 +563,7 @@ HTML_Mouse:
 	( Ltrim
 	<body id='body'><pre id='pre' contenteditable='true'>
 	%D1% <span id='title'>( Mouse )</span> %DB% %pause_button%%m_run_AhkSpyZoom% %D2%
-	%set_button_mouse_pos%Screen:</button></span>  <span>x%MXS% y%MYS%</span>%DP%%set_button_mouse_pos%Window:</button></span>  <span>x%RWinX% y%RWinY%</span>%DP%%set_button_mouse_pos%Client:</button></span>  <span>x%MXC% y%MYC%</span>%WithRespectWin%
+	%set_button_mouse_pos%Screen:</button></span>  <span>x%MXS% y%MYS%</span>%DP%%set_button_mouse_pos%Window:</button></span>  <span>x%RWinX% y%RWinY%</span>%DP%%set_button_mouse_pos%Client:</button></span>  <span>x%MXC% y%MYC%</span>%WithRespectWin%%DP%%WithRespectClient%
 	<span id='param'>Relative active window:</span>  x%MXWA% y%MYWA%%DP%<span id='param'>exe</span> %ProcessName_A% <span id='param'>class</span> %WinClass_A% <span id='param'>hwnd</span> %HWND_A%
 	%D1% <span id='title'>( PixelGetColor )</span> %D2%
 	<span id='param'>RGB: </span> %ColorRGB%%DP%#%sColorRGB%%DP%<span id='param'>BGR: </span> %ColorBGR%%DP%#%sColorBGR%
@@ -567,9 +573,9 @@ HTML_Mouse:
 	<span id='param'>Class NN:</span>  %ControlNN%%DP%<span id='param'>Win class:</span>  %CtrlClass%
 	%set_button_pos%Pos:</button></span>  <span>x%CtrlX% y%CtrlY%</span>%DP%%set_button_pos%Size:</button></span>  <span>w%CtrlW% h%CtrlH%</span>%DP%<span id='param'>x<span style='font-size: 0.7em'>2</span></span>%CtrlX2% <span id='param'>y<span style='font-size: 0.7em'>2</span></span>%CtrlY2%
 	<span id='param'>Pos relative client area:</span>  x%CtrlCAX% y%CtrlCAY%%DP%<span id='param'>x<span style='font-size: 0.7em'>2</span></span>%CtrlCAX2% <span id='param'>y<span style='font-size: 0.7em'>2</span></span>%CtrlCAY2%
-	%set_button_mouse_pos%Mouse relative control:</button></span>  <span>x%rmCtrlX% y%rmCtrlY%</span>%DP%<span id='param'>Client area:</span>  x%caX% y%caY% w%caW% h%caH%
+	%set_button_mouse_pos%Mouse relative control:</button></span>  <span>x%rmCtrlX% y%rmCtrlY%</span>%WithRespectControl%%DP%<span id='param'>Client area:</span>  x%caX% y%caY% w%caW% h%caH%
 	<span id='param'>HWND:</span>  %ControlID%%DP%<span id='param'>Style:</span>  %CtrlStyle%%DP%<span id='param'>ExStyle:</span>  %CtrlExStyle%
-	<span id='param'>Focus control:</span>  %CtrlFocus%%DP%<span id='param'>Cursor type:</span>  %A_Cursor%%DP%<span id='param'>Caret pos:</span>  x%A_CaretX% y%A_CaretY%%CtrlInfo%%CtrlText%%AccText%
+	<span>%set_button_focus_ctrl%Focus control:</button></span>  %CtrlFocus%%DP%<span id='param'>Cursor type:</span>  %A_Cursor%%DP%<span id='param'>Caret pos:</span>  x%A_CaretX% y%A_CaretY%%CtrlInfo%%CtrlText%%AccText%
 	<a></a>%D2%</pre></body>
 
 	<style>
@@ -578,7 +584,7 @@ HTML_Mouse:
 	#title {color: '%ColorTitle%'}
 	#param {color: '%ColorParam%'}
 	#set_button_pos {color: '%ColorParam%';font-size: 1em;}
-	#set_button_mouse_pos {color: '%ColorParam%';font-size: 1em;}
+	#set_button_mouse_pos, #set_button_focus_ctrl {color: '%ColorParam%';font-size: 1em;}
 	Button {font-size: 0.9em; border: 1px dashed black}
 	</style>
 	)
@@ -658,12 +664,25 @@ GetInfo_Scintilla(hwnd, ByRef ClassNN)  {
 	EM_GETSEL := ErrorLevel >> 16
 	SendMessage, 0x00CE,,,, ahk_id %hwnd%			;  EM_GETFIRSTVISIBLELINE
 	EM_GETFIRSTVISIBLELINE := ErrorLevel + 1
+	; Control_GetFont(hwnd, FName, FSize)
 	Return	"`n<span id='param'>Row count:</span> " LineCount DP
 			. "<span id='param'>Selected length:</span> " StrLen(Selected)
 			. "`n<span id='param'>Current row:</span> " CurrentLine DP
 			. "<span id='param'>Current column:</span> " CurrentCol
 			. "`n<span id='param'>Current select:</span> " EM_GETSEL DP
 			. "<span id='param'>First visible line:</span> " EM_GETFIRSTVISIBLELINE
+			; . "`n<span id='param'>FontSize:</span> " FSize DP "<span id='param'>FontName:</span> " FName
+}
+
+Control_GetFont(hwnd, byref FontName, byref FontSize) {
+	SendMessage 0x31, 0, 0, , ahk_id %hwnd% ; WM_GETFONT
+	IfEqual, ErrorLevel, FAIL, Return
+	hFont := Errorlevel, VarSetCapacity(LF, szLF := 60 * (A_IsUnicode ? 2 : 1))
+	DllCall("GetObject", UInt, hFont, Int, szLF, UInt, &LF)
+	hDC := DllCall("GetDC", UInt,hwnd ), DPI := DllCall("GetDeviceCaps", UInt, hDC, Int, 90)
+	DllCall("ReleaseDC", Int, 0, UInt, hDC), S := Round((-NumGet(LF, 0, "Int") * 72) / DPI)
+	FontName := DllCall("MulDiv", Int, &LF + 28, Int, 1, Int, 1, Str)
+	DllCall("SetLastError", UInt, S), FontSize := A_LastError
 }
 
 GetInfo_msctls_progress(hwnd, ByRef ClassNN)  {
@@ -725,6 +744,7 @@ GetInfo_ToolbarWindow(hwnd, ByRef ClassNN)  {
 	BUTTONCOUNT := ErrorLevel
 	Return	"`n<span id='param'>Button count:</span> " BUTTONCOUNT
 }
+
 	; _________________________________________________ Get Internet Explorer Info _________________________________________________
 
 	;  http://www.autohotkey.com/board/topic/84258-iwb2-learner-iwebbrowser2/
@@ -1189,7 +1209,7 @@ Hotkey_LowLevelKeyboardProc(nCode, wParam, lParam) {
 				VK := Format("vk{:X}", NumGet(Lp + 0, "UInt"))
 				Ext := NumGet(Lp + 0, 8, "UInt")
 				SC := Format("sc{:X}", (Ext & 1) << 8 | NumGet(Lp + 0, 4, "UInt"))
-				NFP := !!(Ext & 16)			;  Не физическое нажатие
+				NFP := (Ext >> 4) & 1 && SC != "sc100"			;  Не физическое нажатие
 				Time := NumGet(Lp + 12, "UInt")
 				IsMod := Mods[VK]
 				If Hotkey_Arr("Hook") && (Wp = 0x100 || Wp = 0x104)		;  WM_KEYDOWN := 0x100, WM_SYSKEYDOWN := 0x104
@@ -1602,10 +1622,10 @@ GetCommandLineProc(pid) {
 GetClientPos(hwnd, ByRef left, ByRef top, ByRef w, ByRef h) {
 	VarSetCapacity(pwi, 60, 0), NumPut(60, pwi, 0, "UInt")
 	DllCall("GetWindowInfo", "Ptr", hwnd, "UInt", &pwi)
-	top:=NumGet(pwi,24,"int")-NumGet(pwi,8,"int")
-	left:=NumGet(pwi,52,"int")
-	w:=NumGet(pwi,28,"int")-NumGet(pwi,20,"int")
-	h:=NumGet(pwi,32,"int")-NumGet(pwi,24,"int")
+	top := NumGet(pwi, 24, "Int") - NumGet(pwi, 8, "Int")
+	left := NumGet(pwi, 52, "Int")
+	w := NumGet(pwi, 28, "Int") - NumGet(pwi, 20, "Int")
+	h := NumGet(pwi, 32, "Int") - NumGet(pwi, 24, "Int")
 }
 
 	;  http://forum.script-coding.com/viewtopic.php?pid=81833#p81833
@@ -2028,6 +2048,14 @@ Class Events {
 				Else
 					ControlMove, , p1, p2, p3, p4, % "ahk_id " oOther.MouseControlID
 			}
+			Else If thisid = set_button_focus_ctrl
+			{
+				hWnd := oOther.MouseControlID
+				ControlFocus, , ahk_id %hWnd%
+				WinGetPos, X, Y, W, H, ahk_id %hWnd%
+				If (X + Y != "")
+					DllCall("SetCursorPos", "Uint", X + W // 2, "Uint", Y + H // 2)
+			}
 			Else If thisid = set_button_mouse_pos
 			{
 				thisbutton := oevent.OuterText
@@ -2041,7 +2069,7 @@ Class Events {
 						Return ToolTip("Window minimize", 500)
 					WinGetPos, X, Y, W, H, ahk_id %hWnd%
 				}
-				If thisbutton = Relative pos to a window:
+				If thisbutton = Relative window:
 				{
 					RegExMatch(oDoc.all.item(oevent.sourceIndex + 1).OuterText, "(-*\d+[\.\d+]*).*\s+.*?(-*\d+[\.\d+]*)", p)
 					If (p1 + 0 = "" || p2 + 0 = "")
