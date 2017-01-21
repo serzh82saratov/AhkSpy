@@ -2,7 +2,7 @@
 	;  Автор - serzh82saratov
 	;  Спасибо wisgest за помощь в создании HTML интерфейса
 	;  Также благодарность teadrinker, YMP и Irbis за их решения
-	;  Тема - http://forum.script-coding.com/viewtopic.php?pid=72459#p72459
+	;  Описание - http://forum.script-coding.com/viewtopic.php?pid=72459#p72459
 	;  Обсуждение - http://forum.script-coding.com/viewtopic.php?pid=72244#p72244
 	;  GitHub - https://github.com/serzh82saratov/AhkSpy/blob/master/AhkSpy.ahk
 
@@ -14,28 +14,30 @@ ListLines, Off
 DetectHiddenWindows, On
 CoordMode, Pixel
 
-Global AhkSpyVersion := 2.20
+Global AhkSpyVersion := 2.21
 Gosub, CheckAhkVersion
 Menu, Tray, UseErrorLevel
 Menu, Tray, Icon, Shell32.dll, % A_OSVersion = "WIN_XP" ? 222 : 278
 
-Global ThisMode := "Mouse"						;  Стартовый режим - Win|Mouse|Hotkey
-, FontSize := 15								;  Размер шрифта
-, FontFamily :=  "Arial"						;  Шрифт - Times New Roman | Georgia | Myriad Pro | Arial
-, ColorFont := ""								;  Цвет шрифта
-, ColorBg := ColorBgOriginal := "F0F0F0"		;  Цвет фона
-, ColorBgPaused := "E4E4E4"						;  Цвет фона при паузе
-, ColorDelimiter := "E14B30"					;  Цвет шрифта разделителя заголовков и параметров
-, ColorTitle := "27419B"						;  Цвет шрифта заголовка
-, ColorParam := "189200"						;  Цвет шрифта параметров
-, # := "&#9642"									;  Символ разделителя заголовков - &#8226 | &#9642
+Global ThisMode := "Mouse"												;  Стартовый режим - Win|Mouse|Hotkey
+, MemoryFontSize := IniRead("MemoryFontSize", 0)
+, FontSize := MemoryFontSize ? IniRead("FontSize", "15") : 15			;  Размер шрифта
+, FontFamily :=  "Arial"												;  Шрифт - Times New Roman | Georgia | Myriad Pro | Arial
+, ColorFont := ""														;  Цвет шрифта
+, ColorBg := ColorBgOriginal := "F0F0F0"								;  Цвет фона
+, ColorBgPaused := "E4E4E4"												;  Цвет фона при паузе
+, ColorDelimiter := "E14B30"											;  Цвет шрифта разделителя заголовков и параметров
+, ColorTitle := "27419B"												;  Цвет шрифта заголовка
+, ColorParam := "189200"												;  Цвет шрифта параметров
+, # := "&#9642"															;  Символ разделителя заголовков - &#8226 | &#9642
 
 , DP := "  <span id='delimiter' style='color: " ColorDelimiter "'>" # "</span>  ", D1, D2, DB
 , copy_button := "<span contenteditable='false' unselectable='on'><button id='copy_button'> copy </button></span>"
 , ThisMode := IniRead("StartMode", "Mouse"), ThisMode := ThisMode = "LastMode" ? IniRead("LastMode", "Mouse") : ThisMode
 , MemoryPos := IniRead("MemoryPos", 0), MemorySize := IniRead("MemorySize", 0)
 , MemoryZoomSize := IniRead("MemoryZoomSize", 0), MemoryStateZoom := IniRead("MemoryStateZoom", 0)
-, StateLight := IniRead("StateLight", 1), StateLightAcc := IniRead("StateLightAcc", 1), StateUpdate := IniRead("StateUpdate", 1)
+, StateLight := IniRead("StateLight", 1), StateLightAcc := IniRead("StateLightAcc", 1)
+, StateLightMarker := IniRead("StateLightMarker", 1), StateUpdate := IniRead("StateUpdate", 1)
 , StateAllwaysSpot := IniRead("AllwaysSpot", 0), ScrollPos := {}, AccCoord := [], oOther := {}, oFind := {}, Edits := []
 , hGui, hActiveX, hMarkerGui, hMarkerAccGui, hFindGui, oDoc, ShowMarker, isFindView, isIE, isPaused, w_ShowStyles, MsgAhkSpyZoom, Sleep
 , HTML_Win, HTML_Mouse, HTML_Hotkey, o_edithotkey, o_editkeyname, rmCtrlX, rmCtrlY, widthTB, HeigtButton, FullScreenMode
@@ -45,7 +47,7 @@ Global ThisMode := "Mouse"						;  Стартовый режим - Win|Mouse|Hot
 , set_button_focus_ctrl := "<span contenteditable='false' unselectable='on'><button id='set_button_focus_ctrl' style='overflow: visible'>"
 
 TitleTextP2 := "     ( Shift+Tab - Freeze | RButton - CopySelected | Pause - Pause )     v" AhkSpyVersion
-BLGroup := ["Backlight allways","Backlight disable","Backlight hold shift button"]
+BLGroup := ["Backlight allways","","Backlight hold shift button"]
 HeightStart := 550			;  Высота окна при старте
 HeigtButton := 32			;  Высота кнопок
 wKey := 142					;  Ширина кнопок
@@ -117,10 +119,11 @@ WinSet, TransParent, 250, ahk_id %hMarkerAccGui%
 ShowMarker(0, 0, 0, 0, 0), ShowAccMarker(0, 0, 0, 0, 0), HideMarker(), HideAccMarker()
 
 Menu, Sys, Add, Backlight allways, Sys_Backlight
-Menu, Sys, Add, Backlight disable, Sys_Backlight
 Menu, Sys, Add, Backlight hold shift button, Sys_Backlight
 Menu, Sys, Check, % BLGroup[StateLight]
 Menu, Sys, Add
+Menu, Sys, Add, Window or control backlight, Sys_WClight
+Menu, Sys, % StateLightMarker ? "Check" : "UnCheck", Window or control backlight
 Menu, Sys, Add, Acc object backlight, Sys_Acclight
 Menu, Sys, % StateLightAcc ? "Check" : "UnCheck", Acc object backlight
 Menu, Sys, Add
@@ -145,17 +148,21 @@ Menu, Startmode, Add, Last Mode, SelStartMode
 Menu, Sys, Add, Start mode, :Startmode
 Menu, Startmode, Check, % {"Win":"Window","Mouse":"Mouse && Control","Hotkey":"Button","LastMode":"Last Mode"}[IniRead("StartMode", "Mouse")]
 Menu, Sys, Add
-Menu, Sys, Add, Memory position, MemoryPos
-Menu, Sys, % MemoryPos ? "Check" : "UnCheck", Memory position
-Menu, Sys, Add, Memory size, MemorySize
-Menu, Sys, % MemorySize ? "Check" : "UnCheck", Memory size
+Menu, Sys, Add, Remember position, MemoryPos
+Menu, Sys, % MemoryPos ? "Check" : "UnCheck", Remember position
+Menu, Sys, Add, Remember size, MemorySize
+Menu, Sys, % MemorySize ? "Check" : "UnCheck", Remember size
+Menu, Sys, Add, Remember font size, MemoryFontSize
+Menu, Sys, % MemoryFontSize ? "Check" : "UnCheck", Remember font size
+
+
 If m_run_AhkSpyZoom !=
 {
 	Menu, Sys, Add
-	Menu, Sys, Add, Memory state zoom, MemoryStateZoom
-	Menu, Sys, % MemoryStateZoom ? "Check" : "UnCheck", Memory state zoom
-	Menu, Sys, Add, Memory zoom size, MemoryZoomSize
-	Menu, Sys, % MemoryZoomSize ? "Check" : "UnCheck", Memory zoom size
+	Menu, Sys, Add, Remember state zoom, MemoryStateZoom
+	Menu, Sys, % MemoryStateZoom ? "Check" : "UnCheck", Remember state zoom
+	Menu, Sys, Add, Remember zoom size, MemoryZoomSize
+	Menu, Sys, % MemoryZoomSize ? "Check" : "UnCheck", Remember zoom size
 }
 Menu, Sys, Add
 Menu, Sys, Add, Full screen, FullScreenMode
@@ -186,7 +193,6 @@ Gosub, Mode_%ThisMode%
 
 If (m_run_AhkSpyZoom != "" && MemoryStateZoom && IniRead("ZoomShow", 0))
 	Events.AhkSpyZoomShow()
-
 #Include *i %A_ScriptDir%\AhkSpyInclude.ahk
 Return
 
@@ -206,6 +212,11 @@ Return
 		ZoomMsg(2)
 	Return
 
+#If ShowMarker && (StateLight = 3 || WinActive("ahk_id" hGui))
+
+~RShift Up::
+~LShift Up:: HideMarker(), HideAccMarker()
+
 #If Sleep != 1
 
 Break::
@@ -224,14 +235,20 @@ PausedScript:
 	ZoomMsg(7, isPaused)
 	Return
 
-~Shift Up:: CheckHideMarker()
+~RShift Up::
+~LShift Up:: CheckHideMarker()
 
 #If WinActive("ahk_id" hGui)
 
-~^WheelUp::
-~^WheelDown:: SetTimer, ScrollLeft, -300
-ScrollLeft:
-	oDoc.body.ScrollLeft := 0
+^WheelUp::
+^WheelDown::
+	FontSize := InStr(A_ThisHotkey, "Up") ? ++FontSize : --FontSize
+	FontSize := FontSize < 1 ? 1 : FontSize > 32 ? 32 : FontSize
+	oDoc.getElementById("pre").style.fontSize := FontSize
+	toTitle := "FontSize: " FontSize
+	SendMessage, 0xC, 0, &toTitle, , ahk_id %hGui%
+	SetTimer, TitleShow, -1000
+	IniWrite(FontSize, "FontSize")
 	Return
 
 F1::
@@ -305,10 +322,6 @@ CopyText:
 	SetTimer, TitleShow, -1000
 	oDoc.selection.createRange().select()
 	Return
-
-#If ShowMarker && (StateLight = 3 || WinActive("ahk_id" hGui))
-
-~Shift Up:: HideMarker(), HideAccMarker()
 
 #If (Sleep != 1 && !DllCall("IsWindowVisible", "Ptr", oOther.hZoom))
 
@@ -445,7 +458,7 @@ HTML_Win:
 	)
 	oOther.WinPID := WinPID
 	oOther.WinID := WinID
-	If (ThisMode = "Win") && (StateLight = 1 || (StateLight = 3 && GetKeyState("Shift", "P")))
+	If StateLightMarker && (ThisMode = "Win") && (StateLight = 1 || (StateLight = 3 && GetKeyState("Shift", "P")))
 		ShowMarker(WinX, WinY, WinWidth, WinHeight, 5)
 	Return 1
 }
@@ -549,7 +562,7 @@ Spot_Mouse(NotHTML=0)  {
 		rmCtrlX := rmCtrlY := ""
 	If (!isIE && ThisMode = "Mouse" && (StateLight = 1 || (StateLight = 3 && GetKeyState("Shift", "P"))))
 	{
-		ShowMarker(WinX2+CtrlX, WinY2+CtrlY, CtrlW, CtrlH)
+		StateLightMarker ? ShowMarker(WinX2+CtrlX, WinY2+CtrlY, CtrlW, CtrlH) : 0
 		StateLightAcc ? ShowAccMarker(AccCoord[1], AccCoord[2], AccCoord[3], AccCoord[4]) : 0
 	}
 	ControlGet, CtrlStyle, Style,,, ahk_id %ControlID%
@@ -845,7 +858,7 @@ GetInfo_InternetExplorer_Server(hwnd, ByRef ClassNN)  {
 		x1 := pbrt.left * ratio, y1 := pbrt.top * ratio
 		x2 := pbrt.right * ratio, y2 := pbrt.bottom * ratio
 		WinGetPos, sX, sY, , , ahk_id %hwnd%
-		ShowMarker(sX + x1, sY + y1, x2 - x1, y2 - y1)
+		StateLightMarker ? ShowMarker(sX + x1, sY + y1, x2 - x1, y2 - y1) : 0
 		StateLightAcc ? ShowAccMarker(AccCoord[1], AccCoord[2], AccCoord[3], AccCoord[4]) : 0
 	}
 	ObjRelease(pwin), ObjRelease(pelt), ObjRelease(WB2), ObjRelease(iFrame), ObjRelease(pbrt)
@@ -1330,6 +1343,11 @@ Sys_Acclight:
 	Menu, Sys, % StateLightAcc ? "Check" : "UnCheck", Acc object backlight
 	Return
 
+Sys_WClight:
+	StateLightMarker := IniWrite(!StateLightMarker, "StateLightMarker"), HideMarker()
+	Menu, Sys, % StateLightMarker ? "Check" : "UnCheck", Window or control backlight
+	Return
+
 Sys_Help:
 	If A_ThisMenuItem = AutoHotKey official help online
 		RunPath("http://ahkscript.org/docs/AutoHotkey.htm")
@@ -1351,25 +1369,32 @@ Spot_together:
 
 MemoryPos:
 	IniWrite(MemoryPos := !MemoryPos, "MemoryPos")
-	Menu, Sys, % MemoryPos ? "Check" : "UnCheck", Memory position
+	Menu, Sys, % MemoryPos ? "Check" : "UnCheck", Remember position
 	SavePos()
 	Return
 
 MemorySize:
 	IniWrite(MemorySize := !MemorySize, "MemorySize")
-	Menu, Sys, % MemorySize ? "Check" : "UnCheck", Memory size
+	Menu, Sys, % MemorySize ? "Check" : "UnCheck", Remember size
 	SavePos()
+	Return
+
+MemoryFontSize:
+	IniWrite(MemoryFontSize := !MemoryFontSize, "MemoryFontSize")
+	Menu, Sys, % MemoryFontSize ? "Check" : "UnCheck", Remember font size
+	If MemoryFontSize
+		IniWrite(FontSize, "FontSize")
 	Return
 
 MemoryZoomSize:
 	IniWrite(MemoryZoomSize := !MemoryZoomSize, "MemoryZoomSize")
-	Menu, Sys, % MemoryZoomSize ? "Check" : "UnCheck", Memory zoom size
+	Menu, Sys, % MemoryZoomSize ? "Check" : "UnCheck", Remember zoom size
 	ZoomMsg(5, MemoryZoomSize)
 	Return
 
 MemoryStateZoom:
 	IniWrite(MemoryStateZoom := !MemoryStateZoom, "MemoryStateZoom")
-	Menu, Sys, % MemoryStateZoom ? "Check" : "UnCheck", Memory state zoom
+	Menu, Sys, % MemoryStateZoom ? "Check" : "UnCheck", Remember state zoom
 	IniWrite(DllCall("IsWindowVisible", "Ptr", oOther.hZoom) ? 1 : 0, "ZoomShow")
 	Return
 
@@ -1817,6 +1842,7 @@ FullScreenMode() {
 	If !FullScreenMode
 	{
 		FullScreenMode := 1
+		Menu, Sys, Check, Full screen
 		WinGetNormalPos(hwnd, X, Y, W, H)
 		WinGet, Max, MinMax, ahk_id %hwnd%
 		If Max = 1
@@ -1842,6 +1868,7 @@ FullScreenMode() {
 		GetClientPos(hwnd, _, _, Width, Height)
 		hFunc := Func("ControlsMove").Bind(Width, Height)
 		FullScreenMode := 0
+		Menu, Sys, UnCheck, Full screen
 	}
 	SetTimer, % hFunc, % Max ? -150 : -50
 }
