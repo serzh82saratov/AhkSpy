@@ -14,7 +14,7 @@ ListLines, Off
 DetectHiddenWindows, On
 CoordMode, Pixel
 
-Global AhkSpyVersion := 2.21
+Global AhkSpyVersion := 2.22
 Gosub, CheckAhkVersion
 Menu, Tray, UseErrorLevel
 Menu, Tray, Icon, Shell32.dll, % A_OSVersion = "WIN_XP" ? 222 : 278
@@ -263,7 +263,7 @@ F3::
 F4::
 ~!WheelDown:: WheelRight
 
-F5:: oDoc.body.innerHTML := HTML_%ThisMode%					;  Return HTML
+F5:: oDoc.body.innerHTML := HTML_%ThisMode%, oDoc.body.scrollLeft := 0					;  Return original HTML
 
 F6:: AppsKey
 
@@ -464,7 +464,7 @@ HTML_Win:
 }
 
 Write_Win()  {
-	oDoc.body.innerHTML := HTML_Win
+	oDoc.body.innerHTML := HTML_Win, oDoc.getElementById("pre").style.fontSize := FontSize
 	Return 1
 }
 
@@ -608,7 +608,7 @@ HTML_Mouse:
 }
 
 Write_Mouse()  {
-	oDoc.body.innerHTML := HTML_Mouse
+	oDoc.body.innerHTML := HTML_Mouse, oDoc.getElementById("pre").style.fontSize := FontSize
 	Return 1
 }
 
@@ -1073,9 +1073,9 @@ Write_Hotkey(K)  {
 	body {background-color: '#%ColorBg%'; color: '%ColorFont%'}
 	#title {color: '%ColorTitle%';}
 	#param {color: '%ColorParam%';}
-	#edithotkey {font-size: '1.2em'; text-align: center; border: 1px dashed black; height: 26px;}
-	#keyname {font-size: '1.2em'; border: 1px dashed black;  background-color: '%ColorParam%'; position: relative; top: 0px; left: 2px; height: 26px; width: 65px;}
-	#editkeyname {font-size: '1.2em'; text-align: center; border: 1px dashed black; position: relative; left: 4px;}
+	#edithotkey {font-size: '1.2em'; text-align: center; border: 1px dashed black; height: 1.45em;}
+	#keyname {font-size: '1.2em'; border: 1px dashed black;  background-color: '%ColorParam%'; position: relative; top: 0px; left: 2px; height: 1.45em; width: 3em;}
+	#editkeyname {font-size: '1.2em'; text-align: center; border: 1px dashed black; position: relative; left: 4px; top: 0px; height: 1.45em;}
 	#pause_button, #numlock, #paste_keyname, #scrolllock, #rus_eng, #copy_selected {font-size: 0.9em; border: 1px dashed black;}
 	</style>
 	)
@@ -1083,7 +1083,7 @@ Write_Hotkey(K)  {
 }
 
 Write_HotkeyHTML()  {
-	oDoc.body.innerHTML := HTML_Hotkey
+	oDoc.body.innerHTML := HTML_Hotkey, oDoc.getElementById("pre").style.fontSize := FontSize
 	ComObjConnect(o_edithotkey:=oDoc.getElementById("edithotkey"),Events)
 	ComObjConnect(o_editkeyname:=oDoc.getElementById("editkeyname"),Events)
 }
@@ -1297,6 +1297,8 @@ DefaultSize:
 	}
 	Gui, 1: Show, % "NA w" widthTB "h" HeightStart
 	ZoomMsg(6)
+	If !MemoryFontSize
+		oDoc.getElementById("pre").style.fontSize := FontSize := 15
 	Return
 
 Reload:
