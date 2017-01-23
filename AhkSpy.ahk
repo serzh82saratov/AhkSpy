@@ -237,7 +237,7 @@ PausedScript:
 		(ThisMode = "Mouse" ? Spot_Win() : ThisMode = "Win" ? Spot_Mouse() : 0)
 	HideMarker(), HideAccMarker()
 	Menu, Sys, % isPaused ? "Check" : "UnCheck", Pause
-	ZoomMsg(isPaused || WinActive("ahk_id" hGui) ? 1 : 0)
+	ZoomMsg(isPaused || (!ActiveNoPause && WinActive("ahk_id" hGui)) ? 1 : 0)
 	ZoomMsg(7, isPaused)
 	Return
 
