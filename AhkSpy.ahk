@@ -14,7 +14,7 @@ ListLines, Off
 DetectHiddenWindows, On
 CoordMode, Pixel
 
-Global AhkSpyVersion := 2.23
+Global AhkSpyVersion := 2.24
 Gosub, CheckAhkVersion
 Menu, Tray, UseErrorLevel
 Menu, Tray, Icon, Shell32.dll, % A_OSVersion = "WIN_XP" ? 222 : 278
@@ -1378,6 +1378,8 @@ Spot_together:
 Active_No_Pause:
 	ActiveNoPause := IniWrite(!ActiveNoPause, "ActiveNoPause")
 	Menu, Sys, % ActiveNoPause ? "Check" : "UnCheck", Work with the active window
+	ZoomMsg(8, ActiveNoPause)
+	(ActiveNoPause && Sleep != 1 && !isPaused) && ZoomMsg(0)
 	Return
 
 MemoryPos:
@@ -1420,7 +1422,7 @@ ShellProc(nCode, wParam) {
 			(ThisMode = "Hotkey" && !isPaused ? Hotkey_Hook(1) : ""), HideMarker(), HideAccMarker(), CheckHideMarker()
 		Else If Hotkey_Arr("Hook")
 			Hotkey_Hook(0)
-		ZoomMsg(wParam = hGui ? 1 : Sleep != 1 && !isPaused ? 0 : 1)
+		ZoomMsg(!ActiveNoPause && wParam = hGui ? 1 : Sleep != 1 && !isPaused ? 0 : 1)
 	}
 }
 
@@ -1430,7 +1432,7 @@ WM_ACTIVATE(wp) {
 		(ThisMode = "Hotkey" && !isPaused ? Hotkey_Hook(1) : 0), HideMarker(), HideAccMarker(), CheckHideMarker()
 	Else If (wp & 0xFFFF = 0 && Hotkey_Arr("Hook"))
 		Hotkey_Hook(0)
-	ZoomMsg((wp & 0xFFFF) ? 1 : Sleep != 1 && !isPaused ? 0 : 1)
+	ZoomMsg(!ActiveNoPause && (wp & 0xFFFF) ? 1 : Sleep != 1 && !isPaused ? 0 : 1)
 }
 
 WM_NCLBUTTONDOWN(wp) {
@@ -2216,7 +2218,7 @@ Class Events {
 ;		If (!isPaused && !WindowVisible)
 ;			SendInput {LAlt Down}{Escape}{LAlt Up}
 		If !WinExist("AhkSpyZoom ahk_id" oOther.hZoom) && IniWrite(1, "ZoomShow")
-			Run % ExtraFile("AhkSpyZoom") " " hGui
+			Run % ExtraFile("AhkSpyZoom") " " hGui " " ActiveNoPause
 		Else
 			ZoomMsg(WindowVisible ? 3 : 4)
 			, IniWrite(WindowVisible ? 0 : 1, "ZoomShow")
