@@ -14,7 +14,7 @@ ListLines, Off
 DetectHiddenWindows, On
 CoordMode, Pixel
 
-Global AhkSpyVersion := 2.22
+Global AhkSpyVersion := 2.23
 Gosub, CheckAhkVersion
 Menu, Tray, UseErrorLevel
 Menu, Tray, Icon, Shell32.dll, % A_OSVersion = "WIN_XP" ? 222 : 278
@@ -34,7 +34,7 @@ Global ThisMode := "Mouse"												;  Стартовый режим - Win|Mou
 , DP := "  <span id='delimiter' style='color: " ColorDelimiter "'>" # "</span>  ", D1, D2, DB
 , copy_button := "<span contenteditable='false' unselectable='on'><button id='copy_button'> copy </button></span>"
 , ThisMode := IniRead("StartMode", "Mouse"), ThisMode := ThisMode = "LastMode" ? IniRead("LastMode", "Mouse") : ThisMode
-, MemoryPos := IniRead("MemoryPos", 0), MemorySize := IniRead("MemorySize", 0)
+, ActiveNoPause := IniRead("ActiveNoPause", 0), MemoryPos := IniRead("MemoryPos", 0), MemorySize := IniRead("MemorySize", 0)
 , MemoryZoomSize := IniRead("MemoryZoomSize", 0), MemoryStateZoom := IniRead("MemoryStateZoom", 0)
 , StateLight := IniRead("StateLight", 1), StateLightAcc := IniRead("StateLightAcc", 1)
 , StateLightMarker := IniRead("StateLightMarker", 1), StateUpdate := IniRead("StateUpdate", 1)
@@ -129,6 +129,8 @@ Menu, Sys, % StateLightAcc ? "Check" : "UnCheck", Acc object backlight
 Menu, Sys, Add
 Menu, Sys, Add, Spot together (low speed), Spot_together
 Menu, Sys, % StateAllwaysSpot ? "Check" : "UnCheck", Spot together (low speed)
+Menu, Sys, Add, Work with the active window, Active_No_Pause
+Menu, Sys, % ActiveNoPause ? "Check" : "UnCheck", Work with the active window
 Menu, Sys, Add
 If !A_IsCompiled
 {
@@ -198,6 +200,10 @@ Return
 
 	; _________________________________________________ Hotkey`s _________________________________________________
 
+#If ActiveNoPause
+
++Tab:: Goto PausedScript
+
 #If (Sleep != 1 && !isPaused && ThisMode != "Hotkey")
 
 +Tab::
@@ -230,7 +236,7 @@ PausedScript:
 	If (isPaused && !WinActive("ahk_id" hGui))
 		(ThisMode = "Mouse" ? Spot_Win() : ThisMode = "Win" ? Spot_Mouse() : 0)
 	HideMarker(), HideAccMarker()
-	Menu, Sys, % isPaused ? "Check" : "UnCheck", Pause AhkSpy
+	Menu, Sys, % isPaused ? "Check" : "UnCheck", Pause
 	ZoomMsg(isPaused || WinActive("ahk_id" hGui) ? 1 : 0)
 	ZoomMsg(7, isPaused)
 	Return
@@ -358,7 +364,7 @@ Mode_Win:
 		FindSearch(1)
 
 Loop_Win:
-	If (WinActive("ahk_id" hGui) || Sleep = 1)
+	If ((WinActive("ahk_id" hGui) && !ActiveNoPause) || Sleep = 1)
 		GoTo Repeat_Loop_Win
 	If Spot_Win()
 		Write_Win(), StateAllwaysSpot ? Spot_Mouse() : 0
@@ -494,7 +500,7 @@ Mode_Mouse:
 		FindSearch(1)
 
 Loop_Mouse:
-	If WinActive("ahk_id" hGui) || Sleep = 1
+	If (WinActive("ahk_id" hGui) && !ActiveNoPause) || Sleep = 1
 		GoTo Repeat_Loop_Mouse
 	If Spot_Mouse()
 		Write_Mouse(), StateAllwaysSpot ? Spot_Win() : 0
@@ -1367,6 +1373,11 @@ Sys_OpenScriptDir:
 Spot_together:
 	StateAllwaysSpot := IniWrite(!StateAllwaysSpot, "AllwaysSpot")
 	Menu, Sys, % StateAllwaysSpot ? "Check" : "UnCheck", Spot together (low speed)
+	Return
+
+Active_No_Pause:
+	ActiveNoPause := IniWrite(!ActiveNoPause, "ActiveNoPause")
+	Menu, Sys, % ActiveNoPause ? "Check" : "UnCheck", Work with the active window
 	Return
 
 MemoryPos:
