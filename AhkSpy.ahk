@@ -1,5 +1,8 @@
 	;  AhkSpy
+	
 	;  Автор - serzh82saratov
+	;  E-Mail: serzh82saratov@mail.ru
+	
 	;  Спасибо wisgest за помощь в создании HTML интерфейса
 	;  Также благодарность teadrinker, YMP и Irbis за их решения
 	;  Описание - http://forum.script-coding.com/viewtopic.php?pid=72459#p72459
@@ -14,7 +17,7 @@ ListLines, Off
 DetectHiddenWindows, On
 CoordMode, Pixel
 
-Global AhkSpyVersion := 2.24
+Global AhkSpyVersion := 2.25
 Gosub, CheckAhkVersion
 Menu, Tray, UseErrorLevel
 Menu, Tray, Icon, Shell32.dll, % A_OSVersion = "WIN_XP" ? 222 : 278
