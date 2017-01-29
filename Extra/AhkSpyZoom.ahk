@@ -127,7 +127,7 @@ Magnify() {
 			SetTimer, Memory, -30
 		}
 	}
-	SetTimer, Magnify, -10
+	SetTimer, Magnify, -1
 }
 
 SetSize() {
