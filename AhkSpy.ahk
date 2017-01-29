@@ -17,7 +17,7 @@ ListLines, Off
 DetectHiddenWindows, On
 CoordMode, Pixel
 
-Global AhkSpyVersion := 2.25
+Global AhkSpyVersion := 2.27
 Gosub, CheckAhkVersion
 Menu, Tray, UseErrorLevel
 Menu, Tray, Icon, Shell32.dll, % A_OSVersion = "WIN_XP" ? 222 : 278
@@ -210,6 +210,7 @@ Return
 #If (Sleep != 1 && !isPaused && ThisMode != "Hotkey")
 
 +Tab::
+SpotProc:
 	(ThisMode = "Mouse" ? (Spot_Mouse() (StateAllwaysSpot ? Spot_Win() : 0) Write_Mouse()) : (Spot_Win() (StateAllwaysSpot ? Spot_Mouse() : 0) Write_Win()))
 	If !WinActive("ahk_id" hGui)
 	{
@@ -1500,7 +1501,7 @@ MsgZoom(wParam, lParam) {
 		Return 1
 	}
 	oOther.hZoom := lParam
-	ZoomMsg(Sleep != 1 && !isPaused && !WinActive("ahk_id" hGui) ? 0 : 1)
+	ZoomMsg(Sleep != 1 && !isPaused && (!WinActive("ahk_id" hGui) || ActiveNoPause) ? 0	 : 1)
 }
 
 ZoomMsg(wParam = -1, lParam = -1) {
@@ -2163,7 +2164,7 @@ Class Events {
 					BlockInput, MouseMoveOff
 					Return
 				}
-				GoSub, +Tab
+				GoSub, SpotProc
 				Sleep 350
 				HideMarker(), HideAccMarker()
 				BlockInput, MouseMoveOff
@@ -2209,7 +2210,6 @@ Class Events {
 		If (WinActive("ahk_id" hGui) && !isPaused && ThisMode = "Hotkey")
 			Hotkey_Hook(1)
 	}
-
 	num_scroll(thisid) {
 		(OnHook := Hotkey_Arr("Hook")) ? Hotkey_Hook(0) : 0
 		SendInput, {%thisid%}
@@ -2222,10 +2222,12 @@ Class Events {
 ;			SendInput {LAlt Down}{Escape}{LAlt Up}
 		If !WinExist("AhkSpyZoom ahk_id" oOther.hZoom) && IniWrite(1, "ZoomShow")
 			Run % ExtraFile("AhkSpyZoom") " " hGui " " ActiveNoPause
+		Else If WindowVisible
+			ZoomMsg(3), IniWrite(0, "ZoomShow")
 		Else
-			ZoomMsg(WindowVisible ? 3 : 4)
-			, IniWrite(WindowVisible ? 0 : 1, "ZoomShow")
-		ZoomMsg(7, isPaused)
+			ZoomMsg(4), IniWrite(1, "ZoomShow")
+		ZoomMsg(7, isPaused), ZoomMsg(8, ActiveNoPause)
+		ZoomMsg(Sleep != 1 && !isPaused && (!WinActive("ahk_id" hGui) || ActiveNoPause) ? 0	 : 1)
 	}
 }
 	;)
