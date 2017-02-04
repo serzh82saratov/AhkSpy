@@ -1675,7 +1675,8 @@ GetCommandLineProc(PID, ByRef Cmd, ByRef Path, ByRef Bit) {
 	Static PROCESS_QUERY_INFORMATION := 0x400, PROCESS_VM_READ := 0x10, STATUS_SUCCESS := 0
 
 	hProc := DllCall("OpenProcess", UInt, PROCESS_QUERY_INFORMATION|PROCESS_VM_READ, Int, 0, UInt, PID, Ptr)
-	(A_Is64bitOS && DllCall("IsWow64Process", Ptr, hProc, UIntP, IsWow64))
+	if A_Is64bitOS
+		DllCall("IsWow64Process", Ptr, hProc, UIntP, IsWow64), Bit := (IsWow64 ? "32" : "64") " bit" DP
 	if (!A_Is64bitOS || IsWow64)
 		PtrSize := 4, PtrType := "UInt", pPtr := "UIntP", offsetCMD := 0x40
 	else
@@ -1720,7 +1721,6 @@ GetCommandLineProc(PID, ByRef Cmd, ByRef Path, ByRef Bit) {
 		VarSetCapacity(buff, szPATH, 0)
 		DllCall(ReadProcessMemory, Ptr, hProc, PtrType, pPATH, Ptr, &buff, PtrType, szPATH, UIntP, bytes)
 		Path := StrGet(&buff, "UTF-16")
-		A_Is64bitOS && (Bit := (IsWow64 ? "32" : "64") " bit" DP)
 	}
 	DllCall("CloseHandle", Ptr, hProc)
 }
