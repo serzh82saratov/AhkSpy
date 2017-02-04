@@ -17,7 +17,7 @@ ListLines, Off
 DetectHiddenWindows, On
 CoordMode, Pixel
 
-Global AhkSpyVersion := 2.28
+Global AhkSpyVersion := 2.29
 Gosub, CheckAhkVersion
 Menu, Tray, UseErrorLevel
 Menu, Tray, Icon, Shell32.dll, % A_OSVersion = "WIN_XP" ? 222 : 278
@@ -380,7 +380,7 @@ Repeat_Loop_Win:
 	Return
 
 Spot_Win(NotHTML=0)  {
-	Static PrWinPID, ComLine, WinProcessPath, ProcessBitSize, WinProcessName, WinCountProcess
+	Static PrWinPID, ComLine, WinProcessPath, ProcessBitSize, WinProcessName
 	If NotHTML
 		GoTo HTML_Win
 	MouseGetPos,,,WinID
@@ -399,10 +399,10 @@ Spot_Win(NotHTML=0)  {
 		GetCommandLineProc(WinPID, ComLine, WinProcessPath, ProcessBitSize)
 		ComLine := TransformHTML(ComLine), PrWinPID := WinPID
 		SplitPath, WinProcessPath, WinProcessName
-		WinGet, WinCountProcess, Count, ahk_pid %WinPID%
 	}
 	If (WinClass ~= "(Cabinet|Explore)WClass")
 		CLSID := GetCLSIDExplorer(WinID)
+	WinGet, WinCountProcess, Count, ahk_pid %WinPID%
 	WinGet, WinStyle, Style, ahk_id %WinID%
 	WinGet, WinExStyle, ExStyle, ahk_id %WinID%
 	WinGet, WinTransparent, Transparent, ahk_id %WinID%
@@ -456,7 +456,7 @@ HTML_Win:
 	%set_button_pos%Pos:</button></span>  <span>x%WinX% y%WinY%</span>%DP%%set_button_pos%Size:</button></span>  <span>w%WinWidth% h%WinHeight%</span>%DP%<span id='param'>x&sup2;<span style='font-size: 0.7em'></span></span>%WinX2% <span id='param'>y&sup2;<span style='font-size: 0.7em'></span></span>%WinY2%%DP%%WinX%, %WinY%, %WinWidth%, %WinHeight%
 	<span id='param'>Client area size:</span>  w%caW% h%caH%%DP%<span id='param'>left</span> %caX% <span id='param'>top</span> %caY% <span id='param'>right</span> %caWinRight% <span id='param'>bottom</span> %caWinBottom%
 	<a></a>%D1% <span id='title'>( Other )</span> %D2%
-	<span id='param'>PID:</span>  %WinPID%%DP%%ProcessBitSize% bit%DP%<span id='param'>Count window this PID:</span> %WinCountProcess%%DP%<span contenteditable='false' unselectable='on'><button id='process_close'>process close</button></span>
+	<span id='param'>PID:</span>  %WinPID%%DP%%ProcessBitSize%<span id='param'>Count window this PID:</span> %WinCountProcess%%DP%<span contenteditable='false' unselectable='on'><button id='process_close'>process close</button></span>
 	<span id='param'>HWND:</span>  %WinID%%DP%<span contenteditable='false' unselectable='on'><button id='win_close'>win close</button></span>%DP%<span id='param'>Control count:</span>  %CountControl%
 	<span id='param'>Style:</span><span id='c_Style'>  %WinStyle%</span>%DP%<span id='param'>ExStyle:</span><span id='c_ExStyle'>  %WinExStyle%</span>%DP%<span contenteditable='false' unselectable='on'><button id='get_styles'>%ButStyleTip%</button></span>%WinTransparent%%WinTransColor%%CLSID%<span id='AllWinStyles'>%WinStyles%</span>%SBText%%WinText%
 	<a></a>%D2%</pre></body>
@@ -1680,7 +1680,6 @@ GetCommandLineProc(PID, ByRef Cmd, ByRef Path, ByRef Bit) {
 		PtrSize := 4, PtrType := "UInt", pPtr := "UIntP", offsetCMD := 0x40
 	else
 		PtrSize := 8, PtrType := "Int64", pPtr := "Int64P", offsetCMD := 0x70
-
 	hModule := DllCall("GetModuleHandle", "str", "Ntdll", Ptr)
 	if (A_PtrSize < PtrSize)  {            ; скрипт 32, целевой процесс 64
 		if !QueryInformationProcess := DllCall("GetProcAddress", Ptr, hModule, AStr, "NtWow64QueryInformationProcess64", Ptr)
@@ -1711,7 +1710,6 @@ GetCommandLineProc(PID, ByRef Cmd, ByRef Path, ByRef Bit) {
 	DllCall(ReadProcessMemory, Ptr, hProc, PtrType, pPEB + PtrSize * 4, pPtr, pRUPP, PtrType, PtrSize, UIntP, bytes)
 	DllCall(ReadProcessMemory, Ptr, hProc, PtrType, pRUPP + offsetCMD, UShortP, szCMD, PtrType, 2, UIntP, bytes)
 	DllCall(ReadProcessMemory, Ptr, hProc, PtrType, pRUPP + offsetCMD + PtrSize, pPtr, pCMD, PtrType, PtrSize, UIntP, bytes)
-
 	VarSetCapacity(buff, szCMD, 0)
 	DllCall(ReadProcessMemory, Ptr, hProc, PtrType, pCMD, Ptr, &buff, PtrType, szCMD, UIntP, bytes)
 	Cmd := StrGet(&buff, "UTF-16")
@@ -1721,7 +1719,8 @@ GetCommandLineProc(PID, ByRef Cmd, ByRef Path, ByRef Bit) {
 		DllCall(ReadProcessMemory, Ptr, hProc, PtrType, pRUPP + offsetCMD - PtrSize, pPtr, pPATH, PtrType, PtrSize, UIntP, bytes)
 		VarSetCapacity(buff, szPATH, 0)
 		DllCall(ReadProcessMemory, Ptr, hProc, PtrType, pPATH, Ptr, &buff, PtrType, szPATH, UIntP, bytes)
-		Path := StrGet(&buff, "UTF-16"), Bit := (IsWow64 ? "32" : "64")
+		Path := StrGet(&buff, "UTF-16")
+		A_Is64bitOS && (Bit := (IsWow64 ? "32" : "64") " bit" DP)
 	}
 	DllCall("CloseHandle", Ptr, hProc)
 }
