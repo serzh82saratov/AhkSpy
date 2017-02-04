@@ -1,8 +1,8 @@
 	;  AhkSpy
-	
+
 	;  Автор - serzh82saratov
 	;  E-Mail: serzh82saratov@mail.ru
-	
+
 	;  Спасибо wisgest за помощь в создании HTML интерфейса
 	;  Также благодарность teadrinker, YMP и Irbis за их решения
 	;  Описание - http://forum.script-coding.com/viewtopic.php?pid=72459#p72459
@@ -17,7 +17,7 @@ ListLines, Off
 DetectHiddenWindows, On
 CoordMode, Pixel
 
-Global AhkSpyVersion := 2.27
+Global AhkSpyVersion := 2.28
 Gosub, CheckAhkVersion
 Menu, Tray, UseErrorLevel
 Menu, Tray, Icon, Shell32.dll, % A_OSVersion = "WIN_XP" ? 222 : 278
@@ -50,7 +50,7 @@ Global ThisMode := "Mouse"												;  Стартовый режим - Win|Mou
 , set_button_focus_ctrl := "<span contenteditable='false' unselectable='on'><button id='set_button_focus_ctrl' style='overflow: visible'>"
 
 TitleTextP2 := "     ( Shift+Tab - Freeze | RButton - CopySelected | Pause - Pause )     v" AhkSpyVersion
-BLGroup := ["Backlight allways","","Backlight hold shift button"]
+BLGroup := ["Backlight allways","Backlight disable","Backlight hold shift button"]
 HeightStart := 550			;  Высота окна при старте
 HeigtButton := 32			;  Высота кнопок
 wKey := 142					;  Ширина кнопок
@@ -72,6 +72,7 @@ Global m_run_AccViewer := ExtraFile("AccViewer Source")
 	? " " DB " <span contenteditable='false' unselectable='on'><button id='run_AhkSpyZoom'> zoom </button></span>" : ""
 
 FixIE(0)
+SeDebugPrivilege()
 
 Gui, +AlwaysOnTop +HWNDhGui +ReSize -DPIScale
 Gui, Color, %ColorBgPaused%
@@ -123,6 +124,7 @@ ShowMarker(0, 0, 0, 0, 0), ShowAccMarker(0, 0, 0, 0, 0), HideMarker(), HideAccMa
 
 Menu, Sys, Add, Backlight allways, Sys_Backlight
 Menu, Sys, Add, Backlight hold shift button, Sys_Backlight
+Menu, Sys, Add, Backlight disable, Sys_Backlight
 Menu, Sys, Check, % BLGroup[StateLight]
 Menu, Sys, Add
 Menu, Sys, Add, Window or control backlight, Sys_WClight
@@ -378,7 +380,7 @@ Repeat_Loop_Win:
 	Return
 
 Spot_Win(NotHTML=0)  {
-	Static PrWinPID, ComLine
+	Static PrWinPID, ComLine, WinProcessPath, ProcessBitSize, WinProcessName
 	If NotHTML
 		GoTo HTML_Win
 	MouseGetPos,,,WinID
@@ -389,13 +391,15 @@ Spot_Win(NotHTML=0)  {
 	WinGetPos, WinX, WinY, WinWidth, WinHeight, ahk_id %WinID%
 	WinX2 := WinX + WinWidth, WinY2 := WinY + WinHeight
 	WinGetClass, WinClass, ahk_id %WinID%
-	WinGet, WinProcessPath, ProcessPath, ahk_id %WinID%
-	Loop, %WinProcessPath%
-		WinProcessPath = %A_LoopFileLongPath%
-	SplitPath, WinProcessPath, WinProcessName
 	WinGet, WinPID, PID, ahk_id %WinID%
-	If (WinPID != PrWinPID)
-		ComLine := TransformHTML(GetCommandLineProc(WinPID)), PrWinPID := WinPID
+	If (WinPID != PrWinPID) {
+		; WinGet, WinProcessPath, ProcessPath, ahk_id %WinID%
+		; Loop, %WinProcessPath%
+			; WinProcessPath = %A_LoopFileLongPath%
+		GetCommandLineProc(WinPID, ComLine, WinProcessPath, ProcessBitSize)
+		ComLine := TransformHTML(ComLine), PrWinPID := WinPID
+		SplitPath, WinProcessPath, WinProcessName
+	}
 	If (WinClass ~= "(Cabinet|Explore)WClass")
 		CLSID := GetCLSIDExplorer(WinID)
 	WinGet, WinCountProcess, Count, ahk_pid %WinPID%
@@ -452,7 +456,7 @@ HTML_Win:
 	%set_button_pos%Pos:</button></span>  <span>x%WinX% y%WinY%</span>%DP%%set_button_pos%Size:</button></span>  <span>w%WinWidth% h%WinHeight%</span>%DP%<span id='param'>x&sup2;<span style='font-size: 0.7em'></span></span>%WinX2% <span id='param'>y&sup2;<span style='font-size: 0.7em'></span></span>%WinY2%%DP%%WinX%, %WinY%, %WinWidth%, %WinHeight%
 	<span id='param'>Client area size:</span>  w%caW% h%caH%%DP%<span id='param'>left</span> %caX% <span id='param'>top</span> %caY% <span id='param'>right</span> %caWinRight% <span id='param'>bottom</span> %caWinBottom%
 	<a></a>%D1% <span id='title'>( Other )</span> %D2%
-	<span id='param'>PID:</span>  %WinPID%%DP%<span id='param'>Count window this PID:</span> %WinCountProcess%%DP%<span contenteditable='false' unselectable='on'><button id='process_close'>process close</button></span>
+	<span id='param'>PID:</span>  %WinPID%%DP%%ProcessBitSize% bit%DP%<span id='param'>Count window this PID:</span> %WinCountProcess%%DP%<span contenteditable='false' unselectable='on'><button id='process_close'>process close</button></span>
 	<span id='param'>HWND:</span>  %WinID%%DP%<span contenteditable='false' unselectable='on'><button id='win_close'>win close</button></span>%DP%<span id='param'>Control count:</span>  %CountControl%
 	<span id='param'>Style:</span><span id='c_Style'>  %WinStyle%</span>%DP%<span id='param'>ExStyle:</span><span id='c_ExStyle'>  %WinExStyle%</span>%DP%<span contenteditable='false' unselectable='on'><button id='get_styles'>%ButStyleTip%</button></span>%WinTransparent%%WinTransColor%%CLSID%<span id='AllWinStyles'>%WinStyles%</span>%SBText%%WinText%
 	<a></a>%D2%</pre></body>
@@ -1660,9 +1664,83 @@ ExistSelectedText(byref Copy) {
 
 	;  http://forum.script-coding.com/viewtopic.php?pid=53516#p53516
 
-GetCommandLineProc(pid) {
-	ComObjGet("winmgmts:").ExecQuery("Select * from Win32_Process WHERE ProcessId = " pid)._NewEnum.next(X)
-	Return Trim(X.CommandLine)
+; GetCommandLineProc(pid) {
+	; ComObjGet("winmgmts:").ExecQuery("Select * from Win32_Process WHERE ProcessId = " pid)._NewEnum.next(X)
+	; Return Trim(X.CommandLine)
+; }
+
+	;  http://forum.script-coding.com/viewtopic.php?pid=111775#p111775
+
+GetCommandLineProc(PID, ByRef Cmd, ByRef Path, ByRef Bit) {
+	Static PROCESS_QUERY_INFORMATION := 0x400, PROCESS_VM_READ := 0x10, STATUS_SUCCESS := 0
+
+	hProc := DllCall("OpenProcess", UInt, PROCESS_QUERY_INFORMATION|PROCESS_VM_READ, Int, 0, UInt, PID, Ptr)
+	(A_Is64bitOS && DllCall("IsWow64Process", Ptr, hProc, UIntP, IsWow64))
+	if (!A_Is64bitOS || IsWow64)
+		PtrSize := 4, PtrType := "UInt", pPtr := "UIntP", offsetCMD := 0x40
+	else
+		PtrSize := 8, PtrType := "Int64", pPtr := "Int64P", offsetCMD := 0x70
+
+	hModule := DllCall("GetModuleHandle", "str", "Ntdll", Ptr)
+	if (A_PtrSize < PtrSize)  {            ; скрипт 32, целевой процесс 64
+		if !QueryInformationProcess := DllCall("GetProcAddress", Ptr, hModule, AStr, "NtWow64QueryInformationProcess64", Ptr)
+			failed := "NtWow64QueryInformationProcess64"
+		if !ReadProcessMemory := DllCall("GetProcAddress", Ptr, hModule, AStr, "NtWow64ReadVirtualMemory64", Ptr)
+			failed := "NtWow64ReadVirtualMemory64"
+		info := 0, szPBI := 48, offsetPEB := 8
+	}
+	else  {
+		if !QueryInformationProcess := DllCall("GetProcAddress", Ptr, hModule, AStr, "NtQueryInformationProcess", Ptr)
+			failed := "NtQueryInformationProcess"
+		ReadProcessMemory := "ReadProcessMemory"
+		if (A_PtrSize > PtrSize)            ; скрипт 64, целевой процесс 32
+			info := 26, szPBI := 8, offsetPEB := 0
+		else                                ; скрипт и целевой процесс одной битности
+			info := 0, szPBI := PtrSize * 6, offsetPEB := PtrSize
+	}
+	if failed  {
+		DllCall("CloseHandle", Ptr, hProc)
+		Return
+	}
+	VarSetCapacity(PBI, 48, 0)
+	if DllCall(QueryInformationProcess, Ptr, hProc, UInt, info, Ptr, &PBI, UInt, szPBI, UIntP, bytes) != STATUS_SUCCESS  {
+		DllCall("CloseHandle", Ptr, hProc)
+		Return
+	}
+	pPEB := NumGet(&PBI + offsetPEB, PtrType)
+	DllCall(ReadProcessMemory, Ptr, hProc, PtrType, pPEB + PtrSize * 4, pPtr, pRUPP, PtrType, PtrSize, UIntP, bytes)
+	DllCall(ReadProcessMemory, Ptr, hProc, PtrType, pRUPP + offsetCMD, UShortP, szCMD, PtrType, 2, UIntP, bytes)
+	DllCall(ReadProcessMemory, Ptr, hProc, PtrType, pRUPP + offsetCMD + PtrSize, pPtr, pCMD, PtrType, PtrSize, UIntP, bytes)
+
+	VarSetCapacity(buff, szCMD, 0)
+	DllCall(ReadProcessMemory, Ptr, hProc, PtrType, pCMD, Ptr, &buff, PtrType, szCMD, UIntP, bytes)
+	Cmd := StrGet(&buff, "UTF-16")
+
+	if (Cmd)  {
+		DllCall(ReadProcessMemory, Ptr, hProc, PtrType, pRUPP + offsetCMD - PtrSize*2, UShortP, szPATH, PtrType, 2, UIntP, bytes)
+		DllCall(ReadProcessMemory, Ptr, hProc, PtrType, pRUPP + offsetCMD - PtrSize, pPtr, pPATH, PtrType, PtrSize, UIntP, bytes)
+		VarSetCapacity(buff, szPATH, 0)
+		DllCall(ReadProcessMemory, Ptr, hProc, PtrType, pPATH, Ptr, &buff, PtrType, szPATH, UIntP, bytes)
+		Path := StrGet(&buff, "UTF-16"), Bit := (IsWow64 ? "32" : "64")
+	}
+	DllCall("CloseHandle", Ptr, hProc)
+}
+
+SeDebugPrivilege() {
+	Static PROCESS_QUERY_INFORMATION := 0x400, TOKEN_ADJUST_PRIVILEGES := 0x20, SE_PRIVILEGE_ENABLED := 0x2
+
+	hProc := DllCall("OpenProcess", UInt, PROCESS_QUERY_INFORMATION, Int, false, UInt, DllCall("GetCurrentProcessId"), Ptr)
+	DllCall("Advapi32\OpenProcessToken", Ptr, hProc, UInt, TOKEN_ADJUST_PRIVILEGES, PtrP, token)
+	DllCall("Advapi32\LookupPrivilegeValue", Ptr, 0, Str, "SeDebugPrivilege", Int64P, luid)
+	VarSetCapacity(TOKEN_PRIVILEGES, 16, 0)
+	NumPut(1, TOKEN_PRIVILEGES, "UInt")
+	NumPut(luid, TOKEN_PRIVILEGES, 4, "Int64")
+	NumPut(SE_PRIVILEGE_ENABLED, TOKEN_PRIVILEGES, 12, "UInt")
+	DllCall("Advapi32\AdjustTokenPrivileges", Ptr, token, Int, false, Ptr, &TOKEN_PRIVILEGES, UInt, 0, Ptr, 0, Ptr, 0)
+	res := A_LastError
+	DllCall("CloseHandle", Ptr, token)
+	DllCall("CloseHandle", Ptr, hProc)
+	Return res  ; в случае удачи 0
 }
 
 	;  http://www.autohotkey.com/board/topic/69254-func-api-getwindowinfo-ahk-l/#entry438372
