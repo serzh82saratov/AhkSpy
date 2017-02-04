@@ -380,7 +380,7 @@ Repeat_Loop_Win:
 	Return
 
 Spot_Win(NotHTML=0)  {
-	Static PrWinPID, ComLine, WinProcessPath, ProcessBitSize, WinProcessName
+	Static PrWinPID, ComLine, WinProcessPath, ProcessBitSize, WinProcessName, WinCountProcess
 	If NotHTML
 		GoTo HTML_Win
 	MouseGetPos,,,WinID
@@ -399,10 +399,10 @@ Spot_Win(NotHTML=0)  {
 		GetCommandLineProc(WinPID, ComLine, WinProcessPath, ProcessBitSize)
 		ComLine := TransformHTML(ComLine), PrWinPID := WinPID
 		SplitPath, WinProcessPath, WinProcessName
+		WinGet, WinCountProcess, Count, ahk_pid %WinPID%
 	}
 	If (WinClass ~= "(Cabinet|Explore)WClass")
 		CLSID := GetCLSIDExplorer(WinID)
-	WinGet, WinCountProcess, Count, ahk_pid %WinPID%
 	WinGet, WinStyle, Style, ahk_id %WinID%
 	WinGet, WinExStyle, ExStyle, ahk_id %WinID%
 	WinGet, WinTransparent, Transparent, ahk_id %WinID%
