@@ -17,7 +17,7 @@ ListLines, Off
 DetectHiddenWindows, On
 CoordMode, Pixel
 
-Global AhkSpyVersion := 2.30
+Global AhkSpyVersion := 2.31
 Gosub, CheckAhkVersion
 Menu, Tray, UseErrorLevel
 Menu, Tray, Icon, Shell32.dll, % A_OSVersion = "WIN_XP" ? 222 : 278
@@ -260,9 +260,7 @@ PausedScript:
 	FontSize := InStr(A_ThisHotkey, "Up") ? ++FontSize : --FontSize
 	FontSize := FontSize < 1 ? 1 : FontSize > 32 ? 32 : FontSize
 	oDoc.getElementById("pre").style.fontSize := FontSize
-	toTitle := "FontSize: " FontSize
-	SendMessage, 0xC, 0, &toTitle, , ahk_id %hGui%
-	SetTimer, TitleShow, -1000
+	TitleText("FontSize: " FontSize)
 	IniWrite(FontSize, "FontSize")
 	Return
 
@@ -332,9 +330,10 @@ RButton::
 		CopyText := RegExReplace(oMS.ELSel.OuterText, "i)(x|y|w|h|#|\s|" chr(178) ")+", " ")
 		, CopyText := TRim(CopyText, " "), CopyText := RegExReplace(CopyText, "(\s|,)+", ", ")
 	Clipboard := CopyText
+	TitleText(CopyText)
 	Return
 
-+RButton:: ClipAdd(oMS.ELSel.OuterText), ToolTip("add", 300)
++RButton:: ClipAdd(CopyText := oMS.ELSel.OuterText), ToolTip("add", 300), TitleText(CopyText)
 
 #If (Sleep != 1  && oMS.ELSel) && (oMS.ELSel.OuterText != "" || MS_Cancel())  ;	Mode = Hotkey
 
@@ -345,6 +344,7 @@ RButton::
 		ClipAdd(CopyText), ToolTip("add", 300)
 	Else
 		Clipboard := CopyText, ToolTip("copy", 300)
+	TitleText(CopyText)
 	Return
 
 #If WinActive("ahk_id" hGui) && ExistSelectedText(CopyText)
@@ -357,13 +357,10 @@ CopyText:
 		CopyText := RegExReplace(CopyText, "i)(x|y|w|h|#|\s|" chr(178) ")+", " ")
 		, CopyText := TRim(CopyText, " "), CopyText := RegExReplace(CopyText, "(\s|,)+", ", ")
 	Clipboard := CopyText
-	StringReplace, toTitle, CopyText, `r`n, % " ", 1
-	SendMessage, 0xC, 0, &toTitle, , ahk_id %hGui%
-	SetTimer, TitleShow, -1000
-	oDoc.selection.createRange().select()
+	TitleText(CopyText)
 	Return
 
-+RButton:: ClipAdd(CopyText), ToolTip("add", 300)
++RButton:: ClipAdd(CopyText), ToolTip("add", 300), TitleText(CopyText)
 
 #If (Sleep != 1 && !DllCall("IsWindowVisible", "Ptr", oOther.hZoom))
 
@@ -1709,6 +1706,12 @@ ExistSelectedText(byref Copy) {
 	StringReplace, Copy, Copy, #!#  copy  #!#, #!#, 1
 	StringReplace, Copy, Copy, #!#  pause  #!#, #!#
 	Return 1
+}
+
+TitleText(Text, Time = 1000) {
+	StringReplace, Text, Text, `r`n, % " ", 1
+	SendMessage, 0xC, 0, &Text, , ahk_id %hGui%
+	SetTimer, TitleShow, -%Time%
 }
 
 	;  http://forum.script-coding.com/viewtopic.php?pid=53516#p53516
