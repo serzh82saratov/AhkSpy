@@ -17,7 +17,7 @@ ListLines, Off
 DetectHiddenWindows, On
 CoordMode, Pixel
 
-Global AhkSpyVersion := 2.32
+Global AhkSpyVersion := 2.33
 Gosub, CheckAhkVersion
 Menu, Tray, UseErrorLevel
 Menu, Tray, Icon, Shell32.dll, % A_OSVersion = "WIN_XP" ? 222 : 278
@@ -238,7 +238,7 @@ Break::
 Pause::
 PausedScript:
 	isPaused := !isPaused
-	oDoc.body.style.background := (ColorBg := isPaused ? ColorBgPaused : ColorBgOriginal)
+	oDoc.body.style.backgroundColor := (ColorBg := isPaused ? ColorBgPaused : ColorBgOriginal)
 	Try SetTimer, Loop_%ThisMode%, % isPaused ? "Off" : "On"
 	If (ThisMode = "Hotkey" && WinActive("ahk_id" hGui))
 		Hotkey_Hook(!isPaused)
@@ -427,17 +427,17 @@ Spot_Win(NotHTML=0)  {
 			WinProcessPath = %A_LoopFileLongPath%
 		SplitPath, WinProcessPath, WinProcessName
 	}
-	If (WinClass ~= "(Cabinet|Explore)WClass")
+	; If (WinClass ~= "(Cabinet|Explore)WClass")
 		CLSID := GetCLSIDExplorer(WinID)
 	WinGet, WinCountProcess, Count, ahk_pid %WinPID%
 	WinGet, WinStyle, Style, ahk_id %WinID%
 	WinGet, WinExStyle, ExStyle, ahk_id %WinID%
 	WinGet, WinTransparent, Transparent, ahk_id %WinID%
 	If WinTransparent !=
-		WinTransparent := "`n<span id='param'>Transparent:  </span>" WinTransparent
+		WinTransparent := "`n<span id='param'>Transparent:  </span><span name='MS:'>"  WinTransparent "</span>"
 	WinGet, WinTransColor, TransColor, ahk_id %WinID%
 	If WinTransColor !=
-		WinTransColor := (WinTransparent = "" ? "`n" : DP) "<span id='param'>TransColor:  </span>" WinTransColor
+		WinTransColor := (WinTransparent = "" ? "`n" : DP) "<span id='param'>TransColor:  </span><span name='MS:'>" WinTransColor "</span>"
 	WinGet, CountControl, ControlListHwnd, ahk_id %WinID%
 	RegExReplace(CountControl, "m`a)$", "", CountControl)
 	GetClientPos(WinID, caX, caY, caW, caH)
@@ -1824,7 +1824,7 @@ SelectFilePath(FilePath) {
 GetCLSIDExplorer(hwnd) {
 	for window in ComObjCreate("Shell.Application").Windows
 		If (window.hwnd = hwnd)
-			Return (CLSID := window.Document.Folder.Self.Path) ~= "^::\{" ? "`n<span id='param'>CLSID: </span>" CLSID : ""
+			Return (CLSID := window.Document.Folder.Self.Path) ~= "^::\{" ? "`n<span id='param'>CLSID: </span><span name='MS:'>" CLSID "</span>": ""
 }
 
 	;  http://msdn.microsoft.com/en-us/library/windows/desktop/ms632600(v=vs.85).aspx
@@ -2157,7 +2157,7 @@ FindSearch(This, Back = 0) {
 
 MS_Cancel() {
 	If oMS.ELSel
-		oMS.ELSel.style.background := (isPaused ? ColorBgPaused : ColorBgOriginal), oMS.ELSel := ""
+		oMS.ELSel.style.backgroundColor := "", oMS.ELSel := ""
 }
 
 MS_SelectionCheck() {
