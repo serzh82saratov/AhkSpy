@@ -17,7 +17,7 @@ ListLines, Off
 DetectHiddenWindows, On
 CoordMode, Pixel
 
-Global AhkSpyVersion := 2.31
+Global AhkSpyVersion := 2.32
 Gosub, CheckAhkVersion
 Menu, Tray, UseErrorLevel
 Menu, Tray, Icon, Shell32.dll, % A_OSVersion = "WIN_XP" ? 222 : 278
@@ -1096,7 +1096,7 @@ Write_Hotkey(K)  {
 
 	%D1% <span id='title'>( Command syntax )</span> %DB% <span contenteditable='false' unselectable='on'><button id='copy_selected'>copy selected</button></span> %D2%
 
-	<span><span name='MS:'>%Prefix%%Hotkey%::</span>%FComment%</span>%LRPStr%<span>  %DP%  <span><span name='MS:'>%Prefix%%Hotkey%</span>%Comment%</span>
+	<span><span name='MS:'>%Prefix%%Hotkey%::</span>%FComment%</span>%LRPStr%<span>  %DP%  <span><span name='MS:'>%Prefix%%Hotkey%</span>%FComment%</span>
 	<span name='MS:P'>        </span>
 	<span><span name='MS:'>Send %Prefix%{%SendHotkey%}</span>%Comment%</span>  %DP%  <span><span name='MS:'>ControlSend, ahk_parent, %ControlSend%, WinTitle</span>%Comment%</span>
 	<span name='MS:P'>        </span>
