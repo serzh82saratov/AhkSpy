@@ -17,7 +17,7 @@ ListLines, Off
 DetectHiddenWindows, On
 CoordMode, Pixel
 
-Global AhkSpyVersion := 2.39
+Global AhkSpyVersion := 2.40
 Gosub, CheckAhkVersion
 Menu, Tray, UseErrorLevel
 Menu, Tray, Icon, Shell32.dll, % A_OSVersion = "WIN_XP" ? 222 : 278
@@ -406,7 +406,7 @@ Repeat_Loop_Win:
 		SetTimer, Loop_Win, -%RangeTimer%
 	Return
 
-Spot_Win(NotHTML=0)  {
+Spot_Win(NotHTML = 0)  {
 	Static PrWinPID, ComLine, WinProcessPath, ProcessBitSize, WinProcessName
 	If NotHTML
 		GoTo HTML_Win
@@ -445,7 +445,7 @@ Spot_Win(NotHTML=0)  {
 	Loop
 	{
 		StatusBarGetText, SBFieldText, %A_Index%, ahk_id %WinID%
-		If ErrorLevel
+		If SBFieldText =
 			Break
 		SBFieldText := TransformHTML(SBFieldText "`r`n")
 		SBText = %SBText%<span id='param'>(%A_Index%):</span> <span name='MS:'>%SBFieldText%</span>
@@ -544,7 +544,7 @@ Repeat_Loop_Mouse:
 		SetTimer, Loop_Mouse, -%RangeTimer%
 	Return
 
-Spot_Mouse(NotHTML=0)  {
+Spot_Mouse(NotHTML = 0)  {
 	Static
 	If NotHTML
 		GoTo HTML_Mouse
@@ -1592,7 +1592,7 @@ FixIE(Fix) {
 		RegDelete, HKCU, %Key%, %ExeName%
 }
 
-RunPath(Link, WorkingDir="", Option="") {
+RunPath(Link, WorkingDir = "", Option = "") {
 	Run %Link%, %WorkingDir%, %Option%
 	Minimize()
 }
@@ -1615,7 +1615,7 @@ RunRealPath(Path) {
 	Run, %Path%, %Dir%
 }
 
-ShowMarker(x, y, w, h, b:=4) {
+ShowMarker(x, y, w, h, b := 4) {
 	w < 8 || h < 8 ? b := 2 : 0
 	Try Gui, M: Show, NA x%x% y%y% w%w% h%h%
 	Catch
@@ -1625,7 +1625,7 @@ ShowMarker(x, y, w, h, b:=4) {
 		. " " w-b "-" b " " w-b "-" h-b " " b "-" h-b " " b "-" b, ahk_id %hMarkerGui%
 }
 
-ShowAccMarker(x, y, w, h, b:=2) {
+ShowAccMarker(x, y, w, h, b := 2) {
 	Try Gui, AcM: Show, NA x%x% y%y% w%w% h%h%
 	Catch
 		Return HideAccMarker(), (ShowMarker := ShowMarker ? 1 : 0)
@@ -1703,10 +1703,10 @@ ExistSelectedText(byref Copy) {
 	; html := oDoc.selection.createRange().htmlText
 	; While pos := RegExMatch(html, "i)<SPAN id=param>(.)<SPAN style=""FONT-SIZE: 0.7em"">(.)</SPAN></SPAN>(\d+)", m, pos)
 		; Copy := StrReplace(Copy, m1 m2 m3, m1 m3, , 1), pos++
-	Copy := RegExReplace(Trim(Copy), Chr(0x25aa) Chr(0x25aa) "+", "#!#")
-	StringReplace, Copy, Copy, % Chr(0x25aa), #, 1
-	StringReplace, Copy, Copy, #!#  copy  #!#, #!#, 1
-	StringReplace, Copy, Copy, #!#  pause  #!#, #!#
+	; Copy := RegExReplace(Copy, Chr(0x25aa) Chr(0x25aa) "+", "#!#")
+	; StringReplace, Copy, Copy, % Chr(0x25aa), #, 1
+	; StringReplace, Copy, Copy, #!#  copy  #!#, #!#, 1
+	; StringReplace, Copy, Copy, #!#  pause  #!#, #!#
 	Return 1
 }
 
@@ -1846,9 +1846,12 @@ GetCLSIDExplorer(hwnd) {
 
 ViewStyles(elem) {
 	elem.innerText := (w_ShowStyles := !w_ShowStyles) ? "hide styles" : "show styles"
-	oDoc.getElementById("AllWinStyles").innerHTML := w_ShowStyles
-	? RegExReplace(GetStyles(oDoc.getElementById("c_Style").innerText
-	, oDoc.getElementById("c_ExStyle").innerText), "\n", "<br>") : ""
+	If w_ShowStyles
+	{
+		Styles := GetStyles(oDoc.getElementById("c_Style").innerText, oDoc.getElementById("c_ExStyle").innerText)
+		StringReplace, Styles, Styles, `r`n, <br>, 1
+	}
+	oDoc.getElementById("AllWinStyles").innerHTML := Styles
 	HTML_Win := oDoc.body.innerHTML
 }
 
@@ -1953,7 +1956,7 @@ NextLink(s = "") {
 	oDoc.body.scrollTop := curpos + res
 }
 
-Update(in=1) {
+Update(in = 1) {
 	Static att, Ver, req
 		, url1 := "https://raw.githubusercontent.com/serzh82saratov/AhkSpy/master/Readme.txt"
 		, url2 := "https://raw.githubusercontent.com/serzh82saratov/AhkSpy/master/AhkSpy.ahk"
@@ -1996,7 +1999,7 @@ Update(in=1) {
 		Return
 }
 
-HighLight(elem, time="", RemoveFormat=1) {
+HighLight(elem, time = "", RemoveFormat = 1) {
 	Try SetTimer, UnHighLight, % "-" time
 	R := oDoc.body.createTextRange()
 	RemoveFormat ? R.execCommand("RemoveFormat") : 0
