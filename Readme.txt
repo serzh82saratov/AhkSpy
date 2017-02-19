@@ -1,3 +1,3 @@
-version 2.37
+version 2.38
 Have questions?
 http://forum.script-coding.com/viewtopic.php?id=8336
