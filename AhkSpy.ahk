@@ -17,7 +17,7 @@ ListLines, Off
 DetectHiddenWindows, On
 CoordMode, Pixel
 
-Global AhkSpyVersion := 2.37
+Global AhkSpyVersion := 2.38
 Gosub, CheckAhkVersion
 Menu, Tray, UseErrorLevel
 Menu, Tray, Icon, Shell32.dll, % A_OSVersion = "WIN_XP" ? 222 : 278
@@ -333,7 +333,7 @@ RButton::
 	Return
 
 +RButton:: ClipAdd(CopyText := oMS.ELSel.OuterText), ToolTip("add", 300), TitleText(CopyText)
-^+RButton:: ClipAdd(CopyCommaParam(CopyText := oMS.ELSel.OuterText)), ToolTip("add", 300), TitleText(CopyText)
+^+RButton:: ClipAdd(CopyText := CopyCommaParam(oMS.ELSel.OuterText)), ToolTip("add", 300), TitleText(CopyText)
 
 #If (Sleep != 1  && oMS.ELSel) && (oMS.ELSel.OuterText != "" || MS_Cancel())  ;	Mode = Hotkey
 
@@ -360,7 +360,7 @@ CopyText:
 	Return
 
 +RButton:: ClipAdd(CopyText), ToolTip("add", 300), TitleText(CopyText)
-^+RButton:: ClipAdd(CopyCommaParam(CopyText)), ToolTip("add", 300), TitleText(CopyText)
+^+RButton:: ClipAdd(CopyText := CopyCommaParam(CopyText)), ToolTip("add", 300), TitleText(CopyText)
 
 #If (Sleep != 1 && !DllCall("IsWindowVisible", "Ptr", oOther.hZoom))
 
