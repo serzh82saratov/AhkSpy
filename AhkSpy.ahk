@@ -17,7 +17,7 @@ ListLines, Off
 DetectHiddenWindows, On
 CoordMode, Pixel
 
-Global AhkSpyVersion := 2.35
+Global AhkSpyVersion := 2.36
 Gosub, CheckAhkVersion
 Menu, Tray, UseErrorLevel
 Menu, Tray, Icon, Shell32.dll, % A_OSVersion = "WIN_XP" ? 222 : 278
@@ -201,7 +201,7 @@ Hotkey_Init("Write_Hotkey", "MLRJ")
 Gosub, Mode_%ThisMode%
 
 If (m_run_AhkSpyZoom != "" && MemoryStateZoom && IniRead("ZoomShow", 0))
-	Events.AhkSpyZoomShow()
+	AhkSpyZoomShow()
 
 #Include *i %A_ScriptDir%\AhkSpyInclude.ahk
 Return
@@ -1902,6 +1902,20 @@ MouseStep(x, y) {
 	}
 }
 
+AhkSpyZoomShow() {
+	WindowVisible := DllCall("IsWindowVisible", "Ptr", oOther.hZoom)
+;		If (!isPaused && !WindowVisible)
+;			SendInput {LAlt Down}{Escape}{LAlt Up}
+	If !WinExist("AhkSpyZoom ahk_id" oOther.hZoom) && IniWrite(1, "ZoomShow")
+		Run % ExtraFile("AhkSpyZoom") " " hGui " " ActiveNoPause
+	Else If WindowVisible
+		ZoomMsg(3), IniWrite(0, "ZoomShow")
+	Else
+		ZoomMsg(4), IniWrite(1, "ZoomShow")
+	ZoomMsg(7, isPaused), ZoomMsg(8, ActiveNoPause)
+	ZoomMsg(Sleep != 1 && !isPaused && (!WinActive("ahk_id" hGui) || ActiveNoPause) ? 0 : 1)
+}
+	
 IsIEFocus() {
 	ControlGetFocus, Focus
 	Return InStr(Focus, "Internet")
@@ -2343,7 +2357,7 @@ Class Events {
 				BlockInput, MouseMoveOff
 			}
 			Else If thisid = run_AhkSpyZoom
-				Events.AhkSpyZoomShow()
+				AhkSpyZoomShow()
 		}
 		Else If (ThisMode = "Hotkey" && !Hotkey_Arr("Hook") && !isPaused && tagname ~= "PRE|SPAN")
 			Hotkey_Hook(1)
@@ -2371,8 +2385,16 @@ Class Events {
 			Else If thisid = get_styles
 				ViewStyles(oevent)
 			Else If thisid = run_AhkSpyZoom
-				Events.AhkSpyZoomShow()
+				AhkSpyZoomShow()
+			Else If thisid = locale_change
+				ToolTip(ChangeLocal(hActiveX) GetLangName(hActiveX), 500)
 		}
+	}
+	num_scroll(thisid) {
+		(OnHook := Hotkey_Arr("Hook")) ? Hotkey_Hook(0) : 0
+		SendInput, {%thisid%}
+		(OnHook ? Hotkey_Hook(1) : 0)
+		ToolTip(thisid " " (GetKeyState(thisid, "T") ? "On" : "Off"), 500)
 	}
 	onfocus() {
 		Sleep 100
@@ -2382,25 +2404,6 @@ Class Events {
 		Sleep 100
 		If (WinActive("ahk_id" hGui) && !isPaused && ThisMode = "Hotkey")
 			Hotkey_Hook(1)
-	}
-	num_scroll(thisid) {
-		(OnHook := Hotkey_Arr("Hook")) ? Hotkey_Hook(0) : 0
-		SendInput, {%thisid%}
-		(OnHook ? Hotkey_Hook(1) : 0)
-		ToolTip(thisid " " (GetKeyState(thisid, "T") ? "On" : "Off"), 500)
-	}
-	AhkSpyZoomShow() {
-		WindowVisible := DllCall("IsWindowVisible", "Ptr", oOther.hZoom)
-;		If (!isPaused && !WindowVisible)
-;			SendInput {LAlt Down}{Escape}{LAlt Up}
-		If !WinExist("AhkSpyZoom ahk_id" oOther.hZoom) && IniWrite(1, "ZoomShow")
-			Run % ExtraFile("AhkSpyZoom") " " hGui " " ActiveNoPause
-		Else If WindowVisible
-			ZoomMsg(3), IniWrite(0, "ZoomShow")
-		Else
-			ZoomMsg(4), IniWrite(1, "ZoomShow")
-		ZoomMsg(7, isPaused), ZoomMsg(8, ActiveNoPause)
-		ZoomMsg(Sleep != 1 && !isPaused && (!WinActive("ahk_id" hGui) || ActiveNoPause) ? 0 : 1)
 	}
     onmouseover() {
 		If oMS.Selection
