@@ -17,7 +17,7 @@ ListLines, Off
 DetectHiddenWindows, On
 CoordMode, Pixel
 
-Global AhkSpyVersion := 2.38
+Global AhkSpyVersion := 2.39
 Gosub, CheckAhkVersion
 Menu, Tray, UseErrorLevel
 Menu, Tray, Icon, Shell32.dll, % A_OSVersion = "WIN_XP" ? 222 : 278
@@ -49,7 +49,7 @@ Global ThisMode := "Mouse"												;  Стартовый режим - Win|Mou
 , set_button_pos := "<span contenteditable='false' unselectable='on'><button id='set_button_pos' style='overflow: visible'>"
 , set_button_mouse_pos := "<span contenteditable='false' unselectable='on'><button id='set_button_mouse_pos' style='overflow: visible'>"
 , set_button_focus_ctrl := "<span contenteditable='false' unselectable='on'><button id='set_button_focus_ctrl' style='overflow: visible'>"
-, ClipAdd_Begin := 0, ClipAdd_Delimiter := "`r`n"
+, ClipAdd_Before := 0, ClipAdd_Delimiter := "`r`n"
 
 TitleTextP2 := "     ( Shift+Tab - Freeze | RButton - CopySelected | Pause - Pause )     v" AhkSpyVersion
 BLGroup := ["Backlight allways","Backlight disable","Backlight hold shift button"]
@@ -445,13 +445,13 @@ Spot_Win(NotHTML=0)  {
 	Loop
 	{
 		StatusBarGetText, SBFieldText, %A_Index%, ahk_id %WinID%
-		If SBFieldText =
+		If ErrorLevel
 			Break
-		SBFieldText := TransformHTML(SBFieldText)
-		SBText = %SBText%<span id='param'>(%A_Index%):</span> <span name='MS:'>%SBFieldText%</span><br>
+		SBFieldText := TransformHTML(SBFieldText "`r`n")
+		SBText = %SBText%<span id='param'>(%A_Index%):</span> <span name='MS:'>%SBFieldText%</span>
 	}
 	If SBText !=
-		SBText := "`n" D1 " <span id='title'>( StatusBarText )</span> " DB " " copy_button " " D2 "`n<span>" SubStr(SBText, 1, -4) "</span>"
+		SBText := "`n" D1 " <span id='title'>( StatusBarText )</span> " DB " " copy_button " " D2 "`n<span>" (SubStr(SBText, 1, -12) "</span>") "</span>"
 	WinGetText, WinText, ahk_id %WinID%
 	If WinText !=
 		WinText := "`n" D1 " <a></a><span id='title'>( Window Text )</span> " D2 "`n<span name='MS:'>" TransformHTML(WinText) "</span>"
@@ -624,7 +624,7 @@ HTML_Mouse:
 	<span id='param'>RGB: </span> <span name='MS:'>%ColorRGB%</span>%DP%<span name='MS:'>#%sColorRGB%</span>%DP%<span id='param'>BGR: </span> <span name='MS:'>%ColorBGR%</span>%DP%<span name='MS:'>#%sColorBGR%</span>
 	%D1% <span id='title'>( Window: Class & Process & HWND )</span> %D2%
 	<span><span id='param' name='MS:S'>ahk_class</span> <span name='MS:'>%WinClass%</span></span> <span><span id='param' name='MS:S'>ahk_exe</span> <span name='MS:'>%ProcessName%</span></span> <span><span id='param' name='MS:S'>ahk_id</span> <span name='MS:'>%WinID%</span></span>
-	%D1% <span id='title'>( Control )</span> %D2%<a></a>
+	%D1% <span id='title'>( Control )</span> %D2%
 	<span id='param'>Class NN:</span>  <span name='MS:'>%ControlNN%</span>%DP%<span id='param'>Win class:</span>  <span name='MS:'>%CtrlClass%</span>
 	%set_button_pos%Pos:</button></span>  <span name='MS:'>x%CtrlX% y%CtrlY%</span>%DP%%set_button_pos%Size:</button></span>  <span name='MS:'>w%CtrlW% h%CtrlH%</span>%DP%<span name='MS:'><span id='param' name='MS:S'>x&sup2;</span>%CtrlX2% <span id='param' name='MS:S'>y&sup2;</span>%CtrlY2%</span>
 	<span id='param'>Pos relative client area:</span>  <span name='MS:'>x%CtrlCAX% y%CtrlCAY%</span>%DP%<span name='MS:'><span id='param' name='MS:S'>x&sup2;</span>%CtrlCAX2% <span id='param' name='MS:S'>y&sup2;</span>%CtrlCAY2%</span>
@@ -1094,7 +1094,7 @@ Write_Hotkey(K)  {
 
 	%LRMStr%
 
-	%D1% <span id='title'>( Command syntax )</span> %DB% <span contenteditable='false' unselectable='on'><button id='copy_selected'>copy selected</button></span> %D2%
+	%D1% <span id='title'>( Command syntax )</span> %D2%
 
 	<span><span name='MS:'>%Prefix%%Hotkey%::</span>%FComment%</span>%LRPStr%<span>  %DP%  <span><span name='MS:'>%Prefix%%Hotkey%</span>%FComment%</span>
 	<span name='MS:P'>        </span>
@@ -1110,7 +1110,7 @@ Write_Hotkey(K)  {
 
 	<span name='MS:'>%ThisKey%</span>   %DP%   <span name='MS:'>%VKCode%%SCCode%</span>   %DP%   <span name='MS:'>%VKCode%</span>   %DP%   <span name='MS:'>%SCCode%</span>
 
-	%D1% <span id='title'>( GetKeyNameOrCode )</span> %DB% <span contenteditable='false' unselectable='on'><button id='paste_keyname'>paste</button></span> %D2%
+	%D1% <a></a><span id='title'>( GetKeyNameOrCode )</span> %DB% <span contenteditable='false' unselectable='on'><button id='paste_keyname'>paste</button></span> %D2%
 
 	<span contenteditable='false' unselectable='on'><input id='edithotkey' value='%inp_hk%'><button id='keyname'> &#8250 &#8250 &#8250 </button><input id='editkeyname' value='%inp_kn%'></input></span>
 
@@ -1127,7 +1127,8 @@ Write_Hotkey(K)  {
 	#pause_button, #numlock, #paste_keyname, #scrolllock, #locale_change, #copy_selected {font-size: 0.9em; border: 1px dashed black;}
 	</style>
 	)
-	  ;	   %DP%   <span><span name='MS:'>%Keys2%:: %Keys1%</span><span id='param' name='MS:S'>%KeysComm%</span></span>
+	  ;	 %DB% <span contenteditable='false' unselectable='on'><button id='copy_selected'>copy selected</button></span>
+	  ;	 %DP%   <span><span name='MS:'>%Keys2%:: %Keys1%</span><span id='param' name='MS:S'>%KeysComm%</span></span>
 	Write_HotkeyHTML()
 }
 
@@ -1686,8 +1687,9 @@ InArr(Val, Arr*) {
 }
 
 TransformHTML(str) {
+	StringReplace, str, str, `r`n, `n, 1
+	StringReplace, str, str, `n, `r`n, 1
 	Transform, str, HTML, %str%, 3
-	StringReplace, str, str,`n,, 1
 	Return str
 }
 
@@ -1715,7 +1717,7 @@ TitleText(Text, Time = 1000) {
 }
 
 ClipAdd(Text) {
-	If ClipAdd_Begin
+	If ClipAdd_Before
 		Clipboard := Text ClipAdd_Delimiter Clipboard
 	Else
 		Clipboard := Clipboard ClipAdd_Delimiter Text
@@ -1842,6 +1844,14 @@ GetCLSIDExplorer(hwnd) {
 			Return (CLSID := window.Document.Folder.Self.Path) ~= "^::\{" ? "`n<span id='param'>CLSID: </span><span name='MS:'>" CLSID "</span>": ""
 }
 
+ViewStyles(elem) {
+	elem.innerText := (w_ShowStyles := !w_ShowStyles) ? "hide styles" : "show styles"
+	oDoc.getElementById("AllWinStyles").innerHTML := w_ShowStyles
+	? RegExReplace(GetStyles(oDoc.getElementById("c_Style").innerText
+	, oDoc.getElementById("c_ExStyle").innerText), "\n", "<br>") : ""
+	HTML_Win := oDoc.body.innerHTML
+}
+
 	;  http://msdn.microsoft.com/en-us/library/windows/desktop/ms632600(v=vs.85).aspx
 	;  http://msdn.microsoft.com/en-us/library/windows/desktop/ff700543(v=vs.85).aspx
 
@@ -1864,14 +1874,14 @@ GetStyles(Style, ExStyle) {
 		, "WS_EX_WINDOWEDGE":"0x00000100"}
 
 	For K, V In Styles
-		Ret .= Style & V ? "<span name='MS:'>" K " := <span id='param' name='MS:'>" V "</span></span>`n" : ""
+		Ret .= Style & V ? "<span name='MS:'>" K " := <span id='param' name='MS:'>" V "</span></span>`r`n" : ""
 	For K, V In ExStyles
-		RetEx .= ExStyle & V ? "<span name='MS:'>" K " := <span id='param' name='MS:'>" V "</span></span>`n" : ""
+		RetEx .= ExStyle & V ? "<span name='MS:'>" K " := <span id='param' name='MS:'>" V "</span></span>`r`n" : ""
 	If Ret !=
-		Res .= D1 " <span id='title'>( Styles )</span> " D2 "`n" Ret
+		Res .= D1 " <span id='title'>( Styles )</span> " D2 "`r`n" Ret
 	If RetEx !=
-		Res .= D1 " <span id='title'>( ExStyles )</span> " D2 "`n" RetEx
-	Return (Res = "" ? "" : "`n") . RTrim(Res, "`n")
+		Res .= D1 " <span id='title'>( ExStyles )</span> " D2 "`r`n" RetEx
+	Return (Res = "" ? "" : "`r`n") . RTrim(Res, "`r`n")
 }
 
 GetLangName(hWnd) {
@@ -1984,14 +1994,6 @@ Update(in=1) {
 		Error := (++att = 20 || Status != "")
 		SetTimer, % Error ? "UpdateAhkSpy" : "Upd_Verifi", % Error ? -60000 : -3000
 		Return
-}
-
-ViewStyles(elem) {
-	elem.innerText := (w_ShowStyles := !w_ShowStyles) ? "hide styles" : "show styles"
-	oDoc.getElementById("AllWinStyles").innerHTML := w_ShowStyles
-	? RegExReplace(GetStyles(oDoc.getElementById("c_Style").innerText
-	, oDoc.getElementById("c_ExStyle").innerText), "\n", "<br>") : ""
-	HTML_Win := oDoc.body.innerHTML
 }
 
 HighLight(elem, time="", RemoveFormat=1) {
