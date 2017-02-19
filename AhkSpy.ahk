@@ -17,7 +17,7 @@ ListLines, Off
 DetectHiddenWindows, On
 CoordMode, Pixel
 
-Global AhkSpyVersion := 2.36
+Global AhkSpyVersion := 2.37
 Gosub, CheckAhkVersion
 Menu, Tray, UseErrorLevel
 Menu, Tray, Icon, Shell32.dll, % A_OSVersion = "WIN_XP" ? 222 : 278
@@ -326,14 +326,14 @@ RButton::
 ^RButton::
 	ToolTip("copy", 300)
 	CopyText := oMS.ELSel.OuterText
-	If (A_ThisHotkey = "^RButton" && CopyText ~= "(x|y|w|h|" chr(178) ")-*\d+")
-		CopyText := RegExReplace(oMS.ELSel.OuterText, "i)(x|y|w|h|#|\s|" chr(178) ")+", " ")
-		, CopyText := TRim(CopyText, " "), CopyText := RegExReplace(CopyText, "(\s|,)+", ", ")
+	If (A_ThisHotkey = "^RButton")
+		CopyText := CopyCommaParam(CopyText)
 	Clipboard := CopyText
 	TitleText(CopyText)
 	Return
 
 +RButton:: ClipAdd(CopyText := oMS.ELSel.OuterText), ToolTip("add", 300), TitleText(CopyText)
+^+RButton:: ClipAdd(CopyCommaParam(CopyText := oMS.ELSel.OuterText)), ToolTip("add", 300), TitleText(CopyText)
 
 #If (Sleep != 1  && oMS.ELSel) && (oMS.ELSel.OuterText != "" || MS_Cancel())  ;	Mode = Hotkey
 
@@ -353,14 +353,14 @@ RButton::
 RButton::
 CopyText:
 	ToolTip("copy", 300)
-	If (A_ThisHotkey = "^RButton" && CopyText ~= "(x|y|w|h|" chr(178) ")-*\d+")
-		CopyText := RegExReplace(CopyText, "i)(x|y|w|h|#|\s|" chr(178) ")+", " ")
-		, CopyText := TRim(CopyText, " "), CopyText := RegExReplace(CopyText, "(\s|,)+", ", ")
+	If (A_ThisHotkey = "^RButton")
+		CopyText := CopyCommaParam(CopyText)
 	Clipboard := CopyText
 	TitleText(CopyText)
 	Return
 
 +RButton:: ClipAdd(CopyText), ToolTip("add", 300), TitleText(CopyText)
+^+RButton:: ClipAdd(CopyCommaParam(CopyText)), ToolTip("add", 300), TitleText(CopyText)
 
 #If (Sleep != 1 && !DllCall("IsWindowVisible", "Ptr", oOther.hZoom))
 
@@ -1714,6 +1714,21 @@ TitleText(Text, Time = 1000) {
 	SetTimer, TitleShow, -%Time%
 }
 
+ClipAdd(Text) {
+	If ClipAdd_Begin
+		Clipboard := Text ClipAdd_Delimiter Clipboard
+	Else
+		Clipboard := Clipboard ClipAdd_Delimiter Text
+}
+
+CopyCommaParam(Text) {
+ 	If !(Text ~= "(x|y|w|h|" chr(178) ")-*\d+")
+		Return Text
+	Text := RegExReplace(Text, "i)(x|y|w|h|#|\s|" chr(178) ")+", " ")
+	Text := TRim(Text, " "), Text := RegExReplace(Text, "(\s|,)+", ", ")
+	Return Text
+}
+
 	;  http://forum.script-coding.com/viewtopic.php?pid=53516#p53516
 
 ; GetCommandLineProc(pid) {
@@ -1859,13 +1874,6 @@ GetStyles(Style, ExStyle) {
 	Return (Res = "" ? "" : "`n") . RTrim(Res, "`n")
 }
 
-ClipAdd(Text) {
-	If ClipAdd_Begin
-		Clipboard := Text ClipAdd_Delimiter Clipboard
-	Else
-		Clipboard := Clipboard ClipAdd_Delimiter Text
-}
-
 GetLangName(hWnd) {
 	Static LOCALE_SENGLANGUAGE := 0x1001
 	Locale := DllCall("GetKeyboardLayout", Ptr, DllCall("GetWindowThreadProcessId", Ptr, hWnd, UInt, 0, Ptr), Ptr) & 0xFFFF
@@ -1915,7 +1923,7 @@ AhkSpyZoomShow() {
 	ZoomMsg(7, isPaused), ZoomMsg(8, ActiveNoPause)
 	ZoomMsg(Sleep != 1 && !isPaused && (!WinActive("ahk_id" hGui) || ActiveNoPause) ? 0 : 1)
 }
-	
+
 IsIEFocus() {
 	ControlGetFocus, Focus
 	Return InStr(Focus, "Internet")
