@@ -17,7 +17,7 @@ ListLines, Off
 DetectHiddenWindows, On
 CoordMode, Pixel
 
-Global AhkSpyVersion := 2.33
+Global AhkSpyVersion := 2.34
 Gosub, CheckAhkVersion
 Menu, Tray, UseErrorLevel
 Menu, Tray, Icon, Shell32.dll, % A_OSVersion = "WIN_XP" ? 222 : 278
@@ -427,7 +427,7 @@ Spot_Win(NotHTML=0)  {
 			WinProcessPath = %A_LoopFileLongPath%
 		SplitPath, WinProcessPath, WinProcessName
 	}
-	; If (WinClass ~= "(Cabinet|Explore)WClass")
+	If (WinClass ~= "(Cabinet|Explore)WClass")
 		CLSID := GetCLSIDExplorer(WinID)
 	WinGet, WinCountProcess, Count, ahk_pid %WinPID%
 	WinGet, WinStyle, Style, ahk_id %WinID%
