@@ -17,7 +17,7 @@ ListLines, Off
 DetectHiddenWindows, On
 CoordMode, Pixel
 
-Global AhkSpyVersion := 2.40
+Global AhkSpyVersion := 2.41
 Gosub, CheckAhkVersion
 Menu, Tray, UseErrorLevel
 Menu, Tray, Icon, Shell32.dll, % A_OSVersion = "WIN_XP" ? 222 : 278
@@ -135,7 +135,7 @@ Menu, Sys, % StateLightMarker ? "Check" : "UnCheck", Window or control backlight
 Menu, Sys, Add, Acc object backlight, Sys_Acclight
 Menu, Sys, % StateLightAcc ? "Check" : "UnCheck", Acc object backlight
 Menu, Sys, Add
-Menu, Sys, Add, Spot together (low speed), Spot_together
+Menu, Sys, Add, Spot together (low speed), Spot_Together
 Menu, Sys, % StateAllwaysSpot ? "Check" : "UnCheck", Spot together (low speed)
 Menu, Sys, Add, Work with the active window, Active_No_Pause
 Menu, Sys, % ActiveNoPause ? "Check" : "UnCheck", Work with the active window
@@ -406,7 +406,7 @@ Repeat_Loop_Win:
 		SetTimer, Loop_Win, -%RangeTimer%
 	Return
 
-Spot_Win(NotHTML = 0)  {
+Spot_Win(NotHTML = 0) {
 	Static PrWinPID, ComLine, WinProcessPath, ProcessBitSize, WinProcessName
 	If NotHTML
 		GoTo HTML_Win
@@ -504,7 +504,7 @@ HTML_Win:
 	Return 1
 }
 
-Write_Win()  {
+Write_Win() {
 	oDoc.body.innerHTML := HTML_Win, oDoc.getElementById("pre").style.fontSize := FontSize
 	Return 1
 }
@@ -544,7 +544,7 @@ Repeat_Loop_Mouse:
 		SetTimer, Loop_Mouse, -%RangeTimer%
 	Return
 
-Spot_Mouse(NotHTML = 0)  {
+Spot_Mouse(NotHTML = 0) {
 	Static
 	If NotHTML
 		GoTo HTML_Mouse
@@ -648,14 +648,14 @@ HTML_Mouse:
 	Return 1
 }
 
-Write_Mouse()  {
+Write_Mouse() {
 	oDoc.body.innerHTML := HTML_Mouse, oDoc.getElementById("pre").style.fontSize := FontSize
 	Return 1
 }
 
 	; _________________________________________________ Get Info Control _________________________________________________
 
-GetInfo_SysListView(hwnd, ByRef ClassNN)  {
+GetInfo_SysListView(hwnd, ByRef ClassNN) {
 	ClassNN := "SysListView32"
 	ControlGet, ListText, List,,, ahk_id %hwnd%
 	ControlGet, RowCount, List, Count,, ahk_id %hwnd%
@@ -669,26 +669,26 @@ GetInfo_SysListView(hwnd, ByRef ClassNN)  {
 			. "`n" D1 " <span id='param'>( Content )</span> " D2 "`n<span name='MS:'>" TransformHTML(ListText) "</span>"
 }
 
-GetInfo_SysTreeView(hwnd, ByRef ClassNN)  {
+GetInfo_SysTreeView(hwnd, ByRef ClassNN) {
 	ClassNN := "SysTreeView32"
 	SendMessage 0x1105, 0, 0, , ahk_id %hwnd%   ; TVM_GETCOUNT
 	ItemCount := ErrorLevel
 	Return	"`n<span id='param' name='MS:N'>Item count:</span> <span name='MS:'>" ItemCount "</span>"
 }
 
-GetInfo_ListBox(hwnd, ByRef ClassNN)  {
+GetInfo_ListBox(hwnd, ByRef ClassNN) {
 	ClassNN = ListBox
 	Return GetInfo_ComboBox(hwnd, "")
 }
-GetInfo_TListBox(hwnd, ByRef ClassNN)  {
+GetInfo_TListBox(hwnd, ByRef ClassNN) {
 	ClassNN = TListBox
 	Return GetInfo_ComboBox(hwnd, "")
 }
-GetInfo_TComboBox(hwnd, ByRef ClassNN)  {
+GetInfo_TComboBox(hwnd, ByRef ClassNN) {
 	ClassNN = TComboBox
 	Return GetInfo_ComboBox(hwnd, "")
 }
-GetInfo_ComboBox(hwnd, ByRef ClassNN)  {
+GetInfo_ComboBox(hwnd, ByRef ClassNN) {
 	ClassNN = ComboBox
 	ControlGet, ListText, List,,, ahk_id %hwnd%
 	SendMessage, 0x147, 0, 0, , ahk_id %hwnd%   ; CB_GETCURSEL
@@ -700,15 +700,15 @@ GetInfo_ComboBox(hwnd, ByRef ClassNN)  {
 			. "`n" D1 " <span id='param'>( Content )</span> " D2 "`n<span name='MS:'>" TransformHTML(ListText) "</span>"
 }
 
-GetInfo_CtrlNotifySink(hwnd, ByRef ClassNN)  {
+GetInfo_CtrlNotifySink(hwnd, ByRef ClassNN) {
 	ClassNN = CtrlNotifySink
 	Return GetInfo_Scintilla(hwnd, "")
 }
-GetInfo_Edit(hwnd, ByRef ClassNN)  {
+GetInfo_Edit(hwnd, ByRef ClassNN) {
 	ClassNN = Edit
 	Return GetInfo_Scintilla(hwnd, "")
 }
-GetInfo_Scintilla(hwnd, ByRef ClassNN)  {
+GetInfo_Scintilla(hwnd, ByRef ClassNN) {
 	ClassNN = Scintilla
 	ControlGet, LineCount, LineCount,,, ahk_id %hwnd%
 	ControlGet, CurrentCol, CurrentCol,,, ahk_id %hwnd%
@@ -739,7 +739,7 @@ Control_GetFont(hwnd, byref FontName, byref FontSize) {
 	DllCall("SetLastError", UInt, S), FontSize := A_LastError
 }
 
-GetInfo_msctls_progress(hwnd, ByRef ClassNN)  {
+GetInfo_msctls_progress(hwnd, ByRef ClassNN) {
 	ClassNN := "msctls_progress32"
 	SendMessage, 0x0400+7,"TRUE",,, ahk_id %hwnd%	;  PBM_GETRANGE
 	PBM_GETRANGEMIN := ErrorLevel
@@ -752,7 +752,7 @@ GetInfo_msctls_progress(hwnd, ByRef ClassNN)  {
 			. "  <span id='param' name='MS:N'>Max:</span> <span name='MS:'>" PBM_GETRANGEMAX "</span>"
 }
 
-GetInfo_msctls_trackbar(hwnd, ByRef ClassNN)  {
+GetInfo_msctls_trackbar(hwnd, ByRef ClassNN) {
 	ClassNN := "msctls_trackbar32"
 	SendMessage, 0x0400+1,,,, ahk_id %hwnd%			;  TBM_GETRANGEMIN
 	TBM_GETRANGEMIN := ErrorLevel
@@ -769,7 +769,7 @@ GetInfo_msctls_trackbar(hwnd, ByRef ClassNN)  {
 			. "<span id='param' name='MS:N'>Max:</span> <span name='MS:'>" TBM_GETRANGEMAX "</span>"
 }
 
-GetInfo_msctls_updown(hwnd, ByRef ClassNN)  {
+GetInfo_msctls_updown(hwnd, ByRef ClassNN) {
 	ClassNN := "msctls_updown32"
 	SendMessage, 0x0400+102,,,, ahk_id %hwnd%		;  UDM_GETRANGE
 	UDM_GETRANGE := ErrorLevel
@@ -780,7 +780,7 @@ GetInfo_msctls_updown(hwnd, ByRef ClassNN)  {
 			. "  <span id='param' name='MS:N'>Max: </span><span name='MS:'>" UDM_GETRANGE & 0xFFFF "</span>"
 }
 
-GetInfo_SysTabControl(hwnd, ByRef ClassNN)  {
+GetInfo_SysTabControl(hwnd, ByRef ClassNN) {
 	ClassNN := "SysTabControl32"
 	ControlGet, SelTab, Tab,,, ahk_id %hwnd%
 	SendMessage, 0x1300+44,,,, ahk_id %hwnd%		;  TCM_GETROWCOUNT
@@ -792,7 +792,7 @@ GetInfo_SysTabControl(hwnd, ByRef ClassNN)  {
 			. "<span id='param' name='MS:N'>Selected item:</span> <span name='MS:'>" SelTab "</span>"
 }
 
-GetInfo_ToolbarWindow(hwnd, ByRef ClassNN)  {
+GetInfo_ToolbarWindow(hwnd, ByRef ClassNN) {
 	ClassNN := "ToolbarWindow32"
 	SendMessage, 0x0418,,,, ahk_id %hwnd%		;  TB_BUTTONCOUNT
 	BUTTONCOUNT := ErrorLevel
@@ -803,12 +803,12 @@ GetInfo_ToolbarWindow(hwnd, ByRef ClassNN)  {
 
 	;  http://www.autohotkey.com/board/topic/84258-iwb2-learner-iwebbrowser2/
 
-GetInfo_AtlAxWin(hwnd, ByRef ClassNN)  {
+GetInfo_AtlAxWin(hwnd, ByRef ClassNN) {
 	ClassNN = AtlAxWin
 	Return GetInfo_InternetExplorer_Server(hwnd, "")
 }
 
-GetInfo_InternetExplorer_Server(hwnd, ByRef ClassNN)  {
+GetInfo_InternetExplorer_Server(hwnd, ByRef ClassNN) {
 	Static IID_IWebBrowserApp := "{0002DF05-0000-0000-C000-000000000046}"
 	, ratios := [], IID_IHTMLWindow2 := "{332C4427-26CB-11D0-B483-00C04FD90119}"
 
@@ -824,6 +824,7 @@ GetInfo_InternetExplorer_Server(hwnd, ByRef ClassNN)  {
 		ratios[hwnd] := ratio
 	}
 	ratio := ratios[hwnd]
+	;  Автор - serzh82saratov
 	pelt := pwin.document.elementFromPoint(rmCtrlX / ratio, rmCtrlY / ratio)
 	Tag := pelt.TagName
 	If (Tag = "IFRAME" || Tag = "FRAME") {
@@ -833,27 +834,27 @@ GetInfo_InternetExplorer_Server(hwnd, ByRef ClassNN)  {
 			iFrame := ComObj(9, ComObjQuery(pelt.contentWindow, IID_IHTMLWindow2, IID_IHTMLWindow2), 1)
 		WB2 := ComObject(9, ComObjQuery(pelt.contentWindow, IID_IWebBrowserApp, IID_IWebBrowserApp), 1)
 		If ((Var := WB2.LocationName) != "")
-			Frame .= "`n<span id='param'>Title:  </span><span name='MS:'>" Var "</span>"
+			Frame .= "`n<span id='param' name='MS:N'>Title:  </span><span name='MS:'>" Var "</span>"
 		If ((Var := WB2.LocationURL) != "")
-			Frame .= "`n<span id='param'>URL:  </span><span name='MS:'>" Var "</span>"
+			Frame .= "`n<span id='param' name='MS:N'>URL:  </span><span name='MS:'>" Var "</span>"
 		If (iFrame.length)
-			Frame .= "`n<span id='param'>Count frames:  </span><span name='MS:'>" iFrame.length "</span>"
+			Frame .= "`n<span id='param' name='MS:N'>Count frames:  </span><span name='MS:'>" iFrame.length "</span>"
 		If (Tag != "")
-			Frame .= "`n<span id='param'>TagName:  </span><span name='MS:'>" Tag "</span>"
+			Frame .= "`n<span id='param' name='MS:N'>TagName:  </span><span name='MS:'>" Tag "</span>"
 		If ((Var := pelt.id) != "")
-			Frame .= "`n<span id='param'>ID:  </span><span name='MS:'>" Var "</span>"
+			Frame .= "`n<span id='param' name='MS:N'>ID:  </span><span name='MS:'>" Var "</span>"
 		If ((Var := pelt.ClassName) != "")
-			Frame .= "`n<span id='param'>Class:  </span><span name='MS:'>" Var "</span>"
+			Frame .= "`n<span id='param' name='MS:N'>Class:  </span><span name='MS:'>" Var "</span>"
 		If ((Var := pelt.sourceIndex) != "")
-			Frame .= "`n<span id='param'>Index:  </span><span name='MS:'>" Var "</span>"
+			Frame .= "`n<span id='param' name='MS:N'>Index:  </span><span name='MS:'>" Var "</span>"
 		If ((Var := pelt.name) != "")
-			Frame .= "`n<span id='param'>Name:  </span><span name='MS:'>" TransformHTML(Var) "</span>"
+			Frame .= "`n<span id='param' name='MS:N'>Name:  </span><span name='MS:'>" TransformHTML(Var) "</span>"
 
-		If ((Var := pelt.OuterHtml) != "")  {
+		If ((Var := pelt.OuterHtml) != "") {
 			code = `n%D1% <a></a><span id='param'>( Outer HTML )</span> %D2%`n
 			Frame .= code "<span name='MS:'>" TransformHTML(Var) "</span>"
 		}
-		If ((Var := pelt.OuterText) != "")  {
+		If ((Var := pelt.OuterText) != "") {
 			code = `n%D1% <a></a><span id='param'>( Outer Text )</span> %D2%`n
 			Frame .= code "<span name='MS:'>" TransformHTML(Var) "</span>"
 		}
@@ -870,28 +871,28 @@ GetInfo_InternetExplorer_Server(hwnd, ByRef ClassNN)  {
 
 	WB2 := ComObject(9, ComObjQuery(pwin, IID_IWebBrowserApp, IID_IWebBrowserApp), 1)
 	If ((Location := WB2.LocationName) != "")
-		Location = `n<span id='param'>Title:  </span><span name='MS:'>%Location%</span>
+		Location = `n<span id='param' name='MS:N'>Title:  </span><span name='MS:'>%Location%</span>
 	If ((URL := WB2.LocationURL) != "")
-		URL = `n<span id='param'>URL:  </span><span name='MS:'>%URL%</span>
+		URL = `n<span id='param' name='MS:N'>URL:  </span><span name='MS:'>%URL%</span>
 	If ((Var := pelt.id) != "")
-		Info .= "`n<span id='param'>ID:  </span name='MS:'>" Var "</span>"
+		Info .= "`n<span id='param' name='MS:N'>ID:  </span><span name='MS:'>" Var "</span>"
 	If ((Var := pelt.ClassName) != "")
-		Info .= "`n<span id='param'>Class:  </span><span name='MS:'>" Var "</span>"
+		Info .= "`n<span id='param' name='MS:N'>Class:  </span><span name='MS:'>" Var "</span>"
 	If ((Var := pelt.sourceIndex) != "")
-		Info .= "`n<span id='param'>Index:  </span><span name='MS:'>" Var "</span>"
+		Info .= "`n<span id='param' name='MS:N'>Index:  </span><span name='MS:'>" Var "</span>"
 	If ((Var := pelt.name) != "")
-		Info .= "`n<span id='param'>Name:  </span><span name='MS:'>" TransformHTML(Var) "</span>"
+		Info .= "`n<span id='param' name='MS:N'>Name:  </span><span name='MS:'>" TransformHTML(Var) "</span>"
 
-	If ((Var := pelt.OuterHtml) != "")  {
+	If ((Var := pelt.OuterHtml) != "") {
 		code = `n%D1% <a></a><span id='param'>( Outer HTML )</span> %D2%`n
 		Info .= code "<span name='MS:'>" TransformHTML(Var) "</span>"
 	}
-	If ((Var := pelt.OuterText) != "")  {
+	If ((Var := pelt.OuterText) != "") {
 		code = `n%D1% <a></a><span id='param'>( Outer Text )</span> %D2%`n
 		Info .= code "<span name='MS:'>" TransformHTML(Var) "</span>"
 	}
 	If Info !=
-		Info := "`n" D1 " <span id='param'>( Tag name: </span><span name='MS:'>" pelt.TagName "</span><span id='param'> )" (Frame ? " " # " ( in frame )" : "") "</span> " D2 Info
+		Info := "`n" D1 " <span id='param' name='MS:N'>( Tag name: </span><span name='MS:'>" pelt.TagName "</span><span id='param'> )" (Frame ? " " # " ( in frame )" : "") "</span> " D2 Info
 	If (ThisMode = "Mouse") && (StateLight = 1 || (StateLight = 3 && GetKeyState("Shift", "P")))
 	{
 		x1 := pbrt.left * ratio, y1 := pbrt.top * ratio
@@ -904,7 +905,7 @@ GetInfo_InternetExplorer_Server(hwnd, ByRef ClassNN)  {
 	Return Location URL Info Frame
 }
 
-WBGet(hwnd)  {
+WBGet(hwnd) {
 	Static Msg := DllCall("RegisterWindowMessage", "Str", "WM_HTML_GETOBJECT")
 		, IID_IHTMLWindow2 := "{332C4427-26CB-11D0-B483-00C04FD90119}"
 	SendMessage, Msg, , , , ahk_id %hwnd%
@@ -916,7 +917,7 @@ WBGet(hwnd)  {
 
 	;  http://www.autohotkey.com/board/topic/77888-accessible-info-viewer-alpha-release-2012-09-20/
 
-AccInfoUnderMouse(x, y, wx, wy, cx, cy)  {
+AccInfoUnderMouse(x, y, wx, wy, cx, cy) {
 	Static h
 	If Not h
 		h := DllCall("LoadLibrary","Str","oleacc","Ptr")
@@ -935,74 +936,78 @@ AccInfoUnderMouse(x, y, wx, wy, cx, cy)  {
 		. DP "<span id='param'>Window: </span><span name='MS:'>x" AccCoord[1] - wx " y" AccCoord[2] - wy "</span>"
 		. (cx != "" ? DP "<span id='param'>Control: </span><span name='MS:'>x" (AccCoord[1] - wx - cx) " y" (AccCoord[2] - wy - cy) "</span>" : "")
 
-	If ((Name := Acc.accName(child)) != "")  {
+	If ((Name := Acc.accName(child)) != "") {
 		code = %code%`n%D1% <span id='param'>( Name )</span> %D2%`n
 		code .= "<span name='MS:'>" TransformHTML(Name) "</span>"
 	}
-	If ((Value := Acc.accValue(child)) != "")  {
+	If ((Value := Acc.accValue(child)) != "") {
 		code = %code%`n%D1% <span id='param'>( Value )</span> %D2%`n
 		code .= "<span name='MS:'>" TransformHTML(Value) "</span>"
 	}
-	If ((State := AccGetStateText(StateCode := Acc.accState(child))) != "")  {
+	If ((State := AccGetStateText(StateCode := Acc.accState(child))) != "") {
 		code = %code%`n%D1% <span id='param'>( State )</span> %D2%`n
 		code .= "<span name='MS:'>" TransformHTML(State) "</span>"
 			. DP "<span id='param' name='MS:N'>code: </span><span name='MS:'>" StateCode "</span>"
 	}
-	If ((Role := AccRole(Acc, child)) != "")  {
+	If ((Role := AccRole(Acc, child)) != "") {
 		code = %code%`n%D1% <span id='param'>( Role )</span> %D2%`n
 		code .= "<span name='MS:'>" TransformHTML(Role) "</span>"
 			. DP "<span id='param' name='MS:N'>code: </span><span name='MS:'>" Acc.accRole(child) "</span>"
 	}
-	If (child &&(ObjRole := AccRole(Acc)) != "")  {
+	If (child &&(ObjRole := AccRole(Acc)) != "") {
 		code = %code%`n%D1% <span id='param'>( Role - parent )</span> %D2%`n
 		code .= "<span name='MS:'>" TransformHTML(ObjRole) "</span>"
 			. DP "<span id='param' name='MS:N'>code: </span><span name='MS:'>" Acc.accRole(0) "</span>"
 	}
-	If ((Action := Acc.accDefaultAction(child)) != "")  {
+	If ((Action := Acc.accDefaultAction(child)) != "") {
 		code = %code%`n%D1% <span id='param'>( Action )</span> %D2%`n
 		code .= "<span name='MS:'>" TransformHTML(Action) "</span>"
 	}
-	If ((Selection := Acc.accSelection) > 0)  {
+	If ((Selection := Acc.accSelection) > 0) {
 		code = %code%`n%D1% <span id='param'>( Selection - parent )</span> %D2%`n
 		code .= "<span name='MS:'>" TransformHTML(Selection) "</span>"
 	}
-	If ((Focus := Acc.accFocus) > 0)  {
+	If ((Focus := Acc.accFocus) > 0) {
 		code = %code%`n%D1% <span id='param'>( Focus - parent )</span> %D2%`n
 		code .= "<span name='MS:'>" TransformHTML(Focus) "</span>"
 	}
-	If ((Description := Acc.accDescription(child)) != "")  {
+	If ((Description := Acc.accDescription(child)) != "") {
 		code = %code%`n%D1% <span id='param'>( Description )</span> %D2%`n
 		code .= "<span name='MS:'>" TransformHTML(Description) "</span>"
 	}
-	If ((ShortCut := Acc.accKeyboardShortCut(child)) != "")  {
+	If ((ShortCut := Acc.accKeyboardShortCut(child)) != "") {
 		code = %code%`n%D1% <span id='param'>( ShortCut )</span> %D2%`n
 		code .= "<span name='MS:'>" TransformHTML(ShortCut) "</span>"
 	}
-	If ((Help := Acc.accHelp(child)) != "")  {
+	If ((Help := Acc.accHelp(child)) != "") {
 		code = %code%`n%D1% <span id='param'>( Help )</span> %D2%`n
 		code .= "<span name='MS:'>" TransformHTML(Help) "</span>"
 	}
-	If ((HelpTopic := Acc.AccHelpTopic(child)))  {
+	If ((HelpTopic := Acc.AccHelpTopic(child))) {
 		code = %code%`n%D1% <span id='param'>( HelpTopic )</span> %D2%`n
 		code .= "<span name='MS:'>" TransformHTML(HelpTopic) "</span>"
 	}
 	Return code
 }
-AccRole(Acc, ChildId=0)  {
+
+AccRole(Acc, ChildId=0) {
 	Return ComObjType(Acc, "Name") = "IAccessible" ? AccGetRoleText(Acc.accRole(ChildId)) : ""
 }
-AccGetRoleText(nRole)  {
+
+AccGetRoleText(nRole) {
 	nSize := DllCall("oleacc\GetRoleText", "UInt", nRole, "Ptr", 0, "UInt", 0)
 	VarSetCapacity(sRole, (A_IsUnicode?2:1)*nSize)
 	DllCall("oleacc\GetRoleText", "UInt", nRole, "str", sRole, "UInt", nSize+1)
 	Return sRole
 }
-AccGetStateText(nState)  {
+
+AccGetStateText(nState) {
 	nSize := DllCall("oleacc\GetStateText", "UInt", nState, "Ptr", 0, "UInt", 0)
 	VarSetCapacity(sState, (A_IsUnicode?2:1)*nSize)
 	DllCall("oleacc\GetStateText", "UInt", nState, "str", sState, "UInt", nSize+1)
 	Return sState
 }
+
 AccGetLocation(Acc, Child=0) {
 	Acc.accLocation(ComObj(0x4003,&x:=0), ComObj(0x4003,&y:=0), ComObj(0x4003,&w:=0), ComObj(0x4003,&h:=0), Child)
 	Return "<span name='MS:'>x" (AccCoord[1]:=NumGet(x,0,"int")) " y" (AccCoord[2]:=NumGet(y,0,"int")) "</span>"
@@ -1032,7 +1037,7 @@ Mode_Hotkey:
 		FindSearch(1)
 	Return
 
-Write_Hotkey(K)  {
+Write_Hotkey(K) {
 	Static PrHK1, PrHK2, PrKeysComm, KeysComm, Name  ;	, PrKeys1, PrKeys2
 
 	Mods := K.Mods, KeyName := K.Name
@@ -1132,7 +1137,7 @@ Write_Hotkey(K)  {
 	Write_HotkeyHTML()
 }
 
-Write_HotkeyHTML()  {
+Write_HotkeyHTML() {
 	oDoc.body.innerHTML := HTML_Hotkey, oDoc.getElementById("pre").style.fontSize := FontSize
 	ComObjConnect(o_edithotkey := oDoc.getElementById("edithotkey"), Events)
 	ComObjConnect(o_editkeyname := oDoc.getElementById("editkeyname"), Events)
@@ -1414,7 +1419,7 @@ Sys_OpenScriptDir:
 	Minimize()
 	Return
 
-Spot_together:
+Spot_Together:
 	StateAllwaysSpot := IniWrite(!StateAllwaysSpot, "AllwaysSpot")
 	Menu, Sys, % StateAllwaysSpot ? "Check" : "UnCheck", Spot together (low speed)
 	Return
@@ -1711,7 +1716,7 @@ ExistSelectedText(byref Copy) {
 }
 
 TitleText(Text, Time = 1000) {
-	StringReplace, Text, Text, `r`n, % " ", 1
+	StringReplace, Text, Text, `r`n, % Chr(8629), 1
 	SendMessage, 0xC, 0, &Text, , ahk_id %hGui%
 	SetTimer, TitleShow, -%Time%
 }
@@ -1751,7 +1756,7 @@ GetCommandLineProc(PID, ByRef Cmd, ByRef Bit) {
 	else
 		PtrSize := 8, PtrType := "Int64", pPtr := "Int64P", offsetCMD := 0x70
 	hModule := DllCall("GetModuleHandle", "str", "Ntdll", Ptr)
-	if (A_PtrSize < PtrSize)  {            ; скрипт 32, целевой процесс 64
+	if (A_PtrSize < PtrSize) {            ; скрипт 32, целевой процесс 64
 		if !QueryInformationProcess := DllCall("GetProcAddress", Ptr, hModule, AStr, "NtWow64QueryInformationProcess64", Ptr)
 			failed := "NtWow64QueryInformationProcess64"
 		if !ReadProcessMemory := DllCall("GetProcAddress", Ptr, hModule, AStr, "NtWow64ReadVirtualMemory64", Ptr)
@@ -2219,6 +2224,8 @@ MS_Select(EL) {
 		oMS.ELSel := EL, EL.style.background := ColorSelMouseHover
 }
 
+	; _________________________________________________ Doc Events _________________________________________________
+
 	;  http://forum.script-coding.com/viewtopic.php?pid=82283#p82283
 
 Class Events {
@@ -2375,7 +2382,7 @@ Class Events {
 		Else If (ThisMode = "Hotkey" && !Hotkey_Arr("Hook") && !isPaused && tagname ~= "PRE|SPAN")
 			Hotkey_Hook(1)
 	}
-	ondblclick()  {
+	ondblclick() {
 		oevent := oDoc.parentWindow.event.srcElement
 		If (oevent.isContentEditable && oevent.tagname != "input" && (rng := oDoc.selection.createRange()).text != "")
 		{
