@@ -17,7 +17,7 @@ ListLines, Off
 DetectHiddenWindows, On
 CoordMode, Pixel
 
-Global AhkSpyVersion := 2.42
+Global AhkSpyVersion := 2.43
 Gosub, CheckAhkVersion
 Menu, Tray, UseErrorLevel
 Menu, Tray, Icon, Shell32.dll, % A_OSVersion = "WIN_XP" ? 222 : 278
@@ -1852,10 +1852,12 @@ ViewStyles(elem) {
 	If w_ShowStyles
 	{
 		Styles := GetStyles(oDoc.getElementById("c_Style").innerText, oDoc.getElementById("c_ExStyle").innerText)
-		StringReplace, Styles, Styles, `r`n, <br>, 1
+		HTML_Win := oDoc.body.innerHTML
+		StringReplace, HTML_Win, HTML_Win, <span id=AllWinStyles>, <span id='AllWinStyles'>%Styles%
+		oDoc.body.innerHTML := HTML_Win
 	}
-	oDoc.getElementById("AllWinStyles").innerHTML := Styles
-	HTML_Win := oDoc.body.innerHTML
+	Else 
+		oDoc.getElementById("AllWinStyles").innerHTML := "", HTML_Win := oDoc.body.innerHTML
 }
 
 	;  http://msdn.microsoft.com/en-us/library/windows/desktop/ms632600(v=vs.85).aspx
