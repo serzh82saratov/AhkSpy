@@ -17,7 +17,7 @@ ListLines, Off
 DetectHiddenWindows, On
 CoordMode, Pixel
 
-Global AhkSpyVersion := 2.41
+Global AhkSpyVersion := 2.42
 Gosub, CheckAhkVersion
 Menu, Tray, UseErrorLevel
 Menu, Tray, Icon, Shell32.dll, % A_OSVersion = "WIN_XP" ? 222 : 278
@@ -480,13 +480,12 @@ HTML_Win:
 	%D1% <span id='title'>( CommandLine )</span> %DB% <span contenteditable='false' unselectable='on'><button id='w_command_line'>launch</button> <button id='paste_command_line'>paste</button></span> %D2%
 	<span id='c_command_line' name='MS:'>%ComLine%</span>
 	%D1% <span id='title'>( Position )</span> %D2%
-	%set_button_pos%Pos:</button></span>  <span name='MS:'>x%WinX% y%WinY%</span>%DP%%set_button_pos%Size:</button></span>  <span name='MS:'>w%WinWidth% h%WinHeight%</span>%DP%<span name='MS:'><span id='param' name='MS:S'>x&sup2;</span>%WinX2% <span id='param' name='MS:S'>y&sup2;</span>%WinY2%</span>%DP%<span name='MS:'>%WinX%, %WinY%, %WinWidth%, %WinHeight%</span>
+	%set_button_pos%Pos:</button></span>  <span name='MS:'>x%WinX% y%WinY%</span>%DP%<span name='MS:'>x&sup2;%WinX2% y&sup2;%WinY2%</span>%DP%%set_button_pos%Size:</button></span>  <span name='MS:'>w%WinWidth% h%WinHeight%</span>%DP%<span name='MS:'>%WinX%, %WinY%, %WinX2%, %WinY2%</span>%DP%<span name='MS:'>%WinX%, %WinY%, %WinWidth%, %WinHeight%</span>
 	<span id='param'>Client area size:</span>  <span name='MS:'>w%caW% h%caH%</span>%DP%<span id='param'>left</span> %caX% <span id='param'>top</span> %caY% <span id='param'>right</span> %caWinRight% <span id='param'>bottom</span> %caWinBottom%
 	<a></a>%D1% <span id='title'>( Other )</span> %D2%
 	<span id='param' name='MS:N'>PID:</span>  <span name='MS:'>%WinPID%</span>%DP%%ProcessBitSize%<span id='param'>Window count this PID:</span> %WinCountProcess%%DP%<span contenteditable='false' unselectable='on'><button id='process_close'>process close</button></span>
 	<span id='param' name='MS:N'>HWND:</span>  <span name='MS:'>%WinID%</span>%DP%<span contenteditable='false' unselectable='on'><button id='win_close'>win close</button></span>%DP%<span id='param'>Control count:</span>  %CountControl%
-	<span id='param'>Style:  </span><span id='c_Style' name='MS:'>%WinStyle%</span>%DP%<span id='param'>ExStyle:  </span><span id='c_ExStyle' name='MS:'>%WinExStyle%</span>%DP%<span contenteditable='false' unselectable='on'><button id='get_styles'>%ButStyleTip%</button></span>%WinTransparent%%WinTransColor%%CLSID%<span id='AllWinStyles'>%WinStyles%</span>%SBText%%WinText%
-	<a></a>%D2%</pre></body>
+	<span id='param'>Style:  </span><span id='c_Style' name='MS:'>%WinStyle%</span>%DP%<span id='param'>ExStyle:  </span><span id='c_ExStyle' name='MS:'>%WinExStyle%</span>%DP%<span contenteditable='false' unselectable='on'><button id='get_styles'>%ButStyleTip%</button></span>%WinTransparent%%WinTransColor%%CLSID%<span id='AllWinStyles'>%WinStyles%</span>%SBText%%WinText%<a></a>%D2%</pre></body>
 
 	<style>
 	body {background-color: '#%ColorBg%'; color: '%ColorFont%'}
@@ -626,8 +625,8 @@ HTML_Mouse:
 	<span><span id='param' name='MS:S'>ahk_class</span> <span name='MS:'>%WinClass%</span></span> <span><span id='param' name='MS:S'>ahk_exe</span> <span name='MS:'>%ProcessName%</span></span> <span><span id='param' name='MS:S'>ahk_id</span> <span name='MS:'>%WinID%</span></span>
 	%D1% <span id='title'>( Control )</span> %D2%
 	<span id='param'>Class NN:</span>  <span name='MS:'>%ControlNN%</span>%DP%<span id='param'>Win class:</span>  <span name='MS:'>%CtrlClass%</span>
-	%set_button_pos%Pos:</button></span>  <span name='MS:'>x%CtrlX% y%CtrlY%</span>%DP%%set_button_pos%Size:</button></span>  <span name='MS:'>w%CtrlW% h%CtrlH%</span>%DP%<span name='MS:'><span id='param' name='MS:S'>x&sup2;</span>%CtrlX2% <span id='param' name='MS:S'>y&sup2;</span>%CtrlY2%</span>
-	<span id='param'>Pos relative client area:</span>  <span name='MS:'>x%CtrlCAX% y%CtrlCAY%</span>%DP%<span name='MS:'><span id='param' name='MS:S'>x&sup2;</span>%CtrlCAX2% <span id='param' name='MS:S'>y&sup2;</span>%CtrlCAY2%</span>
+	%set_button_pos%Pos:</button></span>  <span name='MS:'>x%CtrlX% y%CtrlY%</span>%DP%<span name='MS:'>x&sup2;%CtrlX2% y&sup2;%CtrlY2%</span>%DP%%set_button_pos%Size:</button></span>  <span name='MS:'>w%CtrlW% h%CtrlH%</span>%DP%<span name='MS:'>%CtrlX%, %CtrlY%, %CtrlX2%, %CtrlY2%</span>%DP%<span name='MS:'>%CtrlX%, %CtrlY%, %CtrlW%, %CtrlH%</span>
+	<span id='param'>Pos relative client area:</span>  <span name='MS:'>x%CtrlCAX% y%CtrlCAY%</span>%DP%<span name='MS:'>x&sup2;%CtrlCAX2% y&sup2;%CtrlCAY2%</span>%DP%<span name='MS:'>%CtrlCAX%, %CtrlCAY%, %CtrlCAX2%, %CtrlCAY2%</span>
 	%set_button_mouse_pos%Mouse relative control:</button></span>  <span name='MS:'>x%rmCtrlX% y%rmCtrlY%</span>%WithRespectControl%%DP%<span id='param'>Client area:</span>  <span name='MS:'>x%caX% y%caY% w%caW% h%caH%</span>
 	<span id='param'>HWND:</span>  <span name='MS:'>%ControlID%</span>%DP%<span id='param'>Style:</span>  <span name='MS:'>%CtrlStyle%</span>%DP%<span id='param'>ExStyle:</span>  <span name='MS:'>%CtrlExStyle%</span>
 	%set_button_focus_ctrl%Focus control:</button></span>  <span name='MS:'>%CtrlFocus%</span>%DP%<span id='param'>Cursor type:</span>  <span name='MS:'>%A_Cursor%</span>%DP%<span id='param'>Caret pos:</span>  <span name='MS:'>x%A_CaretX% y%A_CaretY%</span>%CtrlInfo%%CtrlText%%AccText%
@@ -665,7 +664,7 @@ GetInfo_SysListView(hwnd, ByRef ClassNN) {
 	Return	"`n<span id='param' name='MS:N'>Row count:</span> <span name='MS:'>" RowCount "</span>" DP
 			. "<span id='param' name='MS:N'>Column count:</span> <span name='MS:'>" ColCount "</span>`n"
 			. "<span id='param' name='MS:N'>Selected count:</span> <span name='MS:'>" SelectedCount "</span>" DP
-			. "<span id='param'ControlGet>Focused row:</span> <span name='MS:'>" FocusedCount "</span>"
+			. "<span id='param' name='MS:N'>Focused row:</span> <span name='MS:'>" FocusedCount "</span>"
 			. "`n" D1 " <span id='param'>( Content )</span> " D2 "`n<span name='MS:'>" TransformHTML(ListText) "</span>"
 }
 
@@ -824,7 +823,6 @@ GetInfo_InternetExplorer_Server(hwnd, ByRef ClassNN) {
 		ratios[hwnd] := ratio
 	}
 	ratio := ratios[hwnd]
-	;  Автор - serzh82saratov
 	pelt := pwin.document.elementFromPoint(rmCtrlX / ratio, rmCtrlY / ratio)
 	Tag := pelt.TagName
 	If (Tag = "IFRAME" || Tag = "FRAME") {
@@ -1708,8 +1706,8 @@ ExistSelectedText(byref Copy) {
 	; html := oDoc.selection.createRange().htmlText
 	; While pos := RegExMatch(html, "i)<SPAN id=param>(.)<SPAN style=""FONT-SIZE: 0.7em"">(.)</SPAN></SPAN>(\d+)", m, pos)
 		; Copy := StrReplace(Copy, m1 m2 m3, m1 m3, , 1), pos++
-	; Copy := RegExReplace(Copy, Chr(0x25aa) Chr(0x25aa) "+", "#!#")
-	; StringReplace, Copy, Copy, % Chr(0x25aa), #, 1
+	Copy := RegExReplace(Copy, Chr(9642) "+", Chr(9642))
+	; StringReplace, Copy, Copy, % Chr(9642), #, 1
 	; StringReplace, Copy, Copy, #!#  copy  #!#, #!#, 1
 	; StringReplace, Copy, Copy, #!#  pause  #!#, #!#
 	Return 1
@@ -1729,9 +1727,9 @@ ClipAdd(Text) {
 }
 
 CopyCommaParam(Text) {
- 	If !(Text ~= "(x|y|w|h|" chr(178) ")-*\d+")
+ 	If !(Text ~= "(x|y|w|h|" Chr(178) ")-*\d+")
 		Return Text
-	Text := RegExReplace(Text, "i)(x|y|w|h|#|\s|" chr(178) ")+", " ")
+	Text := RegExReplace(Text, "i)(x|y|w|h|#|\s|" Chr(178) "|" Chr(9642) ")+", " ")
 	Text := TRim(Text, " "), Text := RegExReplace(Text, "(\s|,)+", ", ")
 	Return Text
 }
@@ -1895,7 +1893,7 @@ GetStyles(Style, ExStyle) {
 GetLangName(hWnd) {
 	Static LOCALE_SENGLANGUAGE := 0x1001
 	Locale := DllCall("GetKeyboardLayout", Ptr, DllCall("GetWindowThreadProcessId", Ptr, hWnd, UInt, 0, Ptr), Ptr) & 0xFFFF
-	Size := (DllCall("GetLocaleInfo", UInt, Locale, UInt, LOCALE_SENGLANGUAGE, UInt, 0, UInt, 0) * 2)
+	Size := DllCall("GetLocaleInfo", UInt, Locale, UInt, LOCALE_SENGLANGUAGE, UInt, 0, UInt, 0) * 2
 	VarSetCapacity(lpLCData, Size, 0)
 	DllCall("GetLocaleInfo", UInt, Locale, UInt, LOCALE_SENGLANGUAGE, Str, lpLCData, UInt, Size)
 	Return lpLCData
@@ -2295,8 +2293,8 @@ Class Events {
 			Else If thisid = set_button_pos
 			{
 				HayStack := oevent.OuterText = "Pos:"
-				? oDoc.all.item(oevent.sourceIndex + 1).OuterText " " oDoc.all.item(oevent.sourceIndex + 5).OuterText
-				: oDoc.all.item(oevent.sourceIndex - 3).OuterText " " oDoc.all.item(oevent.sourceIndex + 1).OuterText
+				? oDoc.all.item(oevent.sourceIndex + 1).OuterText " " oDoc.all.item(oevent.sourceIndex + 7).OuterText
+				: oDoc.all.item(oevent.sourceIndex - 5).OuterText " " oDoc.all.item(oevent.sourceIndex + 1).OuterText
 				RegExMatch(HayStack, "(-*\d+[\.\d+]*).*\s+.*?(-*\d+[\.\d+]*).*\s+.*?(-*\d+[\.\d+]*).*\s+.*?(-*\d+[\.\d+]*)", p)
 				If (p1 + 0 = "" || p2 + 0 = "" || p3 + 0 = "" || p4 + 0 = "")
 					Return ToolTip("Invalid parametrs", 500)
