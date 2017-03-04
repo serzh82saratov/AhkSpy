@@ -17,7 +17,7 @@ ListLines, Off
 DetectHiddenWindows, On
 CoordMode, Pixel
 
-Global AhkSpyVersion := 2.43
+Global AhkSpyVersion := 2.44
 Gosub, CheckAhkVersion
 Menu, Tray, UseErrorLevel
 Menu, Tray, Icon, Shell32.dll, % A_OSVersion = "WIN_XP" ? 222 : 278
@@ -454,7 +454,7 @@ Spot_Win(NotHTML = 0) {
 		SBText := "`n" D1 " <span id='title'>( StatusBarText )</span> " DB " " copy_button " " D2 "`n<span>" (SubStr(SBText, 1, -12) "</span>") "</span>"
 	WinGetText, WinText, ahk_id %WinID%
 	If WinText !=
-		WinText := "`n" D1 " <a></a><span id='title'>( Window Text )</span> " D2 "`n<span name='MS:'>" TransformHTML(WinText) "</span>"
+		WinText := "`n" D1 " <a></a><span id='title'>( Window Text )</span> " D2 "`n<span name='MS:'>" TransformHTML(RTrim(WinText, "`r`n")) "</span>"
 	CoordMode, Mouse
 	MouseGetPos, WinXS, WinYS
 	PixelGetColor, ColorRGB, %WinXS%, %WinYS%, RGB
@@ -485,7 +485,8 @@ HTML_Win:
 	<a></a>%D1% <span id='title'>( Other )</span> %D2%
 	<span id='param' name='MS:N'>PID:</span>  <span name='MS:'>%WinPID%</span>%DP%%ProcessBitSize%<span id='param'>Window count this PID:</span> %WinCountProcess%%DP%<span contenteditable='false' unselectable='on'><button id='process_close'>process close</button></span>
 	<span id='param' name='MS:N'>HWND:</span>  <span name='MS:'>%WinID%</span>%DP%<span contenteditable='false' unselectable='on'><button id='win_close'>win close</button></span>%DP%<span id='param'>Control count:</span>  %CountControl%
-	<span id='param'>Style:  </span><span id='c_Style' name='MS:'>%WinStyle%</span>%DP%<span id='param'>ExStyle:  </span><span id='c_ExStyle' name='MS:'>%WinExStyle%</span>%DP%<span contenteditable='false' unselectable='on'><button id='get_styles'>%ButStyleTip%</button></span>%WinTransparent%%WinTransColor%%CLSID%<span id='AllWinStyles'>%WinStyles%</span>%SBText%%WinText%<a></a>%D2%</pre></body>
+	<span id='param'>Style:  </span><span id='c_Style' name='MS:'>%WinStyle%</span>%DP%<span id='param'>ExStyle:  </span><span id='c_ExStyle' name='MS:'>%WinExStyle%</span>%DP%<span contenteditable='false' unselectable='on'><button id='get_styles'>%ButStyleTip%</button></span>%WinTransparent%%WinTransColor%%CLSID%<span id='AllWinStyles'>%WinStyles%</span>%SBText%%WinText%
+	<a></a>%D2%</pre></body>
 
 	<style>
 	body {background-color: '#%ColorBg%'; color: '%ColorFont%'}
