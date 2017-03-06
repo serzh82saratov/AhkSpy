@@ -17,7 +17,7 @@ ListLines, Off
 DetectHiddenWindows, On
 CoordMode, Pixel
 
-Global AhkSpyVersion := 2.45
+Global AhkSpyVersion := 2.46
 Gosub, CheckAhkVersion
 Menu, Tray, UseErrorLevel
 Menu, Tray, Icon, Shell32.dll, % A_OSVersion = "WIN_XP" ? 222 : 278
@@ -1194,7 +1194,7 @@ Hotkey_Main(In) {
 	K.LRMods := K.MLCtrl K.MRCtrl K.MLAlt K.MRAlt K.MLShift K.MRShift K.MLWin K.MRWin
 	K.TK := GetKeyName(K.VK K.SC), K.TK := K.TK = "" ? K.VK K.SC : (StrLen(K.TK) = 1 ? Format("{:U}", K.TK) : K.TK)
 	(IsMod) ? (K.HK := K.Pref := K.LRPref := K.Name := K.IsCode := "", ModsOnly := K.Mods = "" ? 0 : 1)
-	: (K.IsCode := (SendCode != "none" && StrLen(K.TK) = 1 && !Instr("1234567890-=", K.TK))
+	: (K.IsCode := (SendCode != "none" && StrLen(K.TK) = 1)  ;	 && !Instr("1234567890-=", K.TK)
 	, K.HK := K.IsCode ? K[SendCode] : K.TK
 	, K.Name := K.HK = "vkBF" ? "/" : K.TK
 	, K.Pref := K.PCtrl K.PAlt K.PShift K.PWin
@@ -1678,6 +1678,7 @@ IniRead(Key, Error := " ") {
 	IniRead, Value, %A_AppData%\AhkSpy.ini, AhkSpy, %Key%, %Error%
 	Return Value
 }
+
 IniWrite(Value, Key) {
 	IniWrite, %Value%, %A_AppData%\AhkSpy.ini, AhkSpy, %Key%
 	Return Value
