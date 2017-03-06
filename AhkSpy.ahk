@@ -17,7 +17,7 @@ ListLines, Off
 DetectHiddenWindows, On
 CoordMode, Pixel
 
-Global AhkSpyVersion := 2.44
+Global AhkSpyVersion := 2.45
 Gosub, CheckAhkVersion
 Menu, Tray, UseErrorLevel
 Menu, Tray, Icon, Shell32.dll, % A_OSVersion = "WIN_XP" ? 222 : 278
@@ -40,7 +40,7 @@ Global ThisMode := "Mouse"												;  Стартовый режим - Win|Mou
 , ThisMode := IniRead("StartMode", "Mouse"), ThisMode := ThisMode = "LastMode" ? IniRead("LastMode", "Mouse") : ThisMode
 , ActiveNoPause := IniRead("ActiveNoPause", 0), MemoryPos := IniRead("MemoryPos", 0), MemorySize := IniRead("MemorySize", 0)
 , MemoryZoomSize := IniRead("MemoryZoomSize", 0), MemoryStateZoom := IniRead("MemoryStateZoom", 0)
-, StateLight := IniRead("StateLight", 1), StateLightAcc := IniRead("StateLightAcc", 1)
+, StateLight := IniRead("StateLight", 1), StateLightAcc := IniRead("StateLightAcc", 1), SendCode := IniRead("SendCode", "vk")
 , StateLightMarker := IniRead("StateLightMarker", 1), StateUpdate := IniRead("StateUpdate", 1)
 , StateAllwaysSpot := IniRead("AllwaysSpot", 0), ScrollPos := {}, AccCoord := [], oOther := {}, oFind := {}, Edits := [], oMS := {}
 , hGui, hActiveX, hMarkerGui, hMarkerAccGui, hFindGui, oDoc, ShowMarker, isFindView, isIE, isPaused, w_ShowStyles, MsgAhkSpyZoom, Sleep
@@ -1046,9 +1046,8 @@ Write_Hotkey(K) {
 
 	If (K.NFP && Mods KeyName != "")
 		NotPhysical	:= " " DP "<span style='color:" ColorDelimiter "'> Not a physical press </span>"
-	IsVk := Hotkey ~= "^vk" ? 1 : 0
 
-	HK1 := IsVk ? Hotkey : ThisKey
+	HK1 := K.IsCode ? Hotkey : ThisKey
 	HK2 := HK1 = PrHK1 ? PrHK2 : PrHK1, PrHK1 := HK1, PrHK2 := HK2
 	HKComm1 := "    `;  """ (StrLen(Name := GetKeyName(HK2)) = 1 ? Format("{:U}", Name) : Name)
 	HKComm2 := (StrLen(Name := GetKeyName(HK1)) = 1 ? Format("{:U}", Name) : Name) """"
@@ -1060,7 +1059,7 @@ Write_Hotkey(K) {
 	; Else
 		; Keys1 := PrKeys1, Keys2 := PrKeys2
 
-	If IsVk
+	If K.IsCode
 		Comment := "<span id='param' name='MS:S'>    `;  """ KeyName """</span>"
 	If (Hotkey != "")
 		FComment := "<span id='param' name='MS:S'>    `;  """ Mods KeyName """</span>"
@@ -1098,7 +1097,7 @@ Write_Hotkey(K) {
 
 	%LRMStr%
 
-	%D1% <span id='title'>( Command syntax )</span> %D2%
+	%D1% <span id='title'>( Command syntax )</span> %DB% <span contenteditable='false' unselectable='on'> <button id='SendCode'> %SendCode% code </button></span> %D2%
 
 	<span><span name='MS:'>%Prefix%%Hotkey%::</span>%FComment%</span>%LRPStr%<span>  %DP%  <span><span name='MS:'>%Prefix%%Hotkey%</span>%FComment%</span>
 	<span name='MS:P'>        </span>
@@ -1128,7 +1127,7 @@ Write_Hotkey(K) {
 	#edithotkey {font-size: '1.2em'; text-align: center; border: 1px dashed black; height: 1.45em;}
 	#keyname {font-size: '1.2em'; border: 1px dashed black;  background-color: '%ColorParam%'; position: relative; top: 0px; left: 2px; height: 1.45em; width: 3em;}
 	#editkeyname {font-size: '1.2em'; text-align: center; border: 1px dashed black; position: relative; left: 4px; top: 0px; height: 1.45em;}
-	#pause_button, #numlock, #paste_keyname, #scrolllock, #locale_change, #copy_selected {font-size: 0.9em; border: 1px dashed black;}
+	#pause_button, #numlock, #paste_keyname, #scrolllock, #locale_change, #copy_selected, #SendCode {font-size: 0.9em; border: 1px dashed black;}
 	</style>
 	)
 	  ;	 %DB% <span contenteditable='false' unselectable='on'><button id='copy_selected'>copy selected</button></span>
@@ -1193,11 +1192,11 @@ Hotkey_Main(In) {
 	K.VK := In.VK, K.SC := In.SC
 	K.Mods := K.MCtrl K.MAlt K.MShift K.MWin
 	K.LRMods := K.MLCtrl K.MRCtrl K.MLAlt K.MRAlt K.MLShift K.MRShift K.MLWin K.MRWin
-	K.TK := GetKeyName(K.VK K.SC), K.TK := K.TK = "" ? K.VK K.SC : K.TK
-	(IsMod) ? (K.HK := K.Pref := K.LRPref := K.Name := "", ModsOnly := K.Mods = "" ? 0 : 1)
-	: (K.HK := StrLen(K.TK) = 1 && !Instr("1234567890-=", K.TK) ? K.VK : K.TK
+	K.TK := GetKeyName(K.VK K.SC), K.TK := K.TK = "" ? K.VK K.SC : (StrLen(K.TK) = 1 ? Format("{:U}", K.TK) : K.TK)
+	(IsMod) ? (K.HK := K.Pref := K.LRPref := K.Name := K.IsCode := "", ModsOnly := K.Mods = "" ? 0 : 1)
+	: (K.IsCode := (SendCode != "none" && StrLen(K.TK) = 1 && !Instr("1234567890-=", K.TK))
+	, K.HK := K.IsCode ? K[SendCode] : K.TK
 	, K.Name := K.HK = "vkBF" ? "/" : K.TK
-	, (StrLen(K.Name) = 1 ? (K.TK := K.Name := Format("{:U}", K.Name)) : 0)
 	, K.Pref := K.PCtrl K.PAlt K.PShift K.PWin
 	, K.LRPref := K.PLCtrl K.PRCtrl K.PLAlt K.PRAlt K.PLShift K.PRShift K.PLWin K.PRWin
 	, ModsOnly := 0)
@@ -1211,7 +1210,7 @@ Hotkey_PressMouse:
 	K.LRMods := K.MLCtrl K.MRCtrl K.MLAlt K.MRAlt K.MLShift K.MRShift K.MLWin K.MRWin
 	K.Pref := K.PCtrl K.PAlt K.PShift K.PWin
 	K.LRPref := K.PLCtrl K.PRCtrl K.PLAlt K.PRAlt K.PLShift K.PRShift K.PLWin K.PRWin
-	K.HK := K.Name := K.TK := A_ThisHotkey, ModsOnly := K.NFP := K.UP := 0, K.IsMod := K.SC := ""
+	K.HK := K.Name := K.TK := A_ThisHotkey, ModsOnly := K.NFP := K.UP := K.IsCode := 0, K.IsMod := K.SC := ""
 	K.IsJM := A_ThisLabel = "Hotkey_PressJoy" ? 1 : 2
 	K.VK := A_ThisLabel = "Hotkey_PressJoy" ? "" : Format("vk{:X}", GetKeyVK(A_ThisHotkey))
 	Func(Hotkey_Arr("Func")).Call(K)
@@ -2279,6 +2278,8 @@ Class Events {
 				Process, Close, % oOther.WinPID
 			Else If thisid = win_close
 				WinClose, % "ahk_id" oOther.WinID
+			Else If (thisid = "SendCode")
+				Events.SendCode()
 			Else If (thisid = "numlock" || thisid = "scrolllock")
 				Events.num_scroll(thisid)
 			Else If thisid = locale_change
@@ -2401,6 +2402,8 @@ Class Events {
 			oDoc.body.focus()
 			If (thisid = "numlock" || thisid = "scrolllock")
 				Events.num_scroll(thisid)
+			Else If (thisid = "SendCode")
+				Events.SendCode()
 			Else If thisid = pause_button
 				Gosub, PausedScript
 			Else If thisid = get_styles
@@ -2410,6 +2413,10 @@ Class Events {
 			Else If thisid = locale_change
 				ToolTip(ChangeLocal(hActiveX) GetLangName(hActiveX), 500)
 		}
+	}
+	SendCode() {
+		IniWrite(SendCode := {vk:"sc",sc:"none",none:"vk"}[SendCode], "SendCode")
+		oDoc.getElementById("SendCode").innerText := SendCode " code"
 	}
 	num_scroll(thisid) {
 		(OnHook := Hotkey_Arr("Hook")) ? Hotkey_Hook(0) : 0
