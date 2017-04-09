@@ -17,7 +17,7 @@ ListLines, Off
 DetectHiddenWindows, On
 CoordMode, Pixel
 
-Global AhkSpyVersion := 2.47
+Global AhkSpyVersion := 2.48
 Gosub, CheckAhkVersion
 Menu, Tray, UseErrorLevel
 Menu, Tray, Icon, Shell32.dll, % A_OSVersion = "WIN_XP" ? 222 : 278
@@ -248,6 +248,7 @@ PausedScript:
 	Menu, Sys, % isPaused ? "Check" : "UnCheck", Pause
 	ZoomMsg(isPaused || (!ActiveNoPause && WinActive("ahk_id" hGui)) ? 1 : 0)
 	ZoomMsg(7, isPaused)
+	isPaused ? TaskbarProgress(4, hGui, 100) : TaskbarProgress(0, hGui)
 	Return
 
 ~RShift Up::
@@ -322,7 +323,7 @@ Tab:: oDoc.selection.createRange().text := "    "			;  &emsp
 
 #RButton:: ClipPaste()
 
-#If (Sleep != 1  && oMS.ELSel && ThisMode != "Hotkey") && (oMS.ELSel.OuterText != "" || MS_Cancel())
+#If (Sleep != 1 && ThisMode != "Hotkey" && oMS.ELSel) && (oMS.ELSel.OuterText != "" || MS_Cancel())
 
 RButton::
 ^RButton::
@@ -337,7 +338,7 @@ RButton::
 +RButton:: ClipAdd(CopyText := oMS.ELSel.OuterText), ToolTip("add", 300), TitleText(CopyText)
 ^+RButton:: ClipAdd(CopyText := CopyCommaParam(oMS.ELSel.OuterText)), ToolTip("add", 300), TitleText(CopyText)
 
-#If (Sleep != 1  && oMS.ELSel) && (oMS.ELSel.OuterText != "" || MS_Cancel())  ;	Mode = Hotkey
+#If (Sleep != 1 && oMS.ELSel) && (oMS.ELSel.OuterText != "" || MS_Cancel())  ;	Mode = Hotkey
 
 RButton::
 	CopyText := oMS.ELSel.OuterText
@@ -547,7 +548,6 @@ Repeat_Loop_Mouse:
 	Return
 
 Spot_Mouse(NotHTML = 0) {
-	Static
 	If NotHTML
 		GoTo HTML_Mouse
 	WinGet, ProcessName_A, ProcessName, A
@@ -557,10 +557,8 @@ Spot_Mouse(NotHTML = 0) {
 	MouseGetPos, MXS, MYS, WinID, tControlNN
 	CoordMode, Mouse, Window
 	MouseGetPos, MXWA, MYWA, , tControlID, 2
-
 	If (WinID = hGui || WinID = oOther.hZoom)
 		Return HideMarker(), HideAccMarker()
-
 	CtrlInfo := "", isIE := 0
 	ControlNN := tControlNN, ControlID := tControlID
 	WinGetPos, WinX, WinY, , , ahk_id %WinID%
@@ -583,7 +581,6 @@ Spot_Mouse(NotHTML = 0) {
 	CtrlCAX2 := CtrlX2-caX, CtrlCAY2 := CtrlY2-caY
 	WithRespectClient := set_button_mouse_pos "Relative client:</button></span> <span name='MS:'>" Round(MXC / caW, 4) ", " Round(MYC / caH, 4)
 		. "</span>  <span id='param'>for</span>  <span name='MS:'>w" caW "  h" caH "</span>"
-	WithRespectControl := ControlNN = "" ? "" : DP "<span name='MS:'>" Round(rmCtrlX / CtrlW, 4) ", " Round(rmCtrlY / CtrlH, 4) "</span>"
 	ControlGetText, CtrlText, , ahk_id %ControlID%
 	If CtrlText !=
 		CtrlText := "`n" D1 " <a></a><span id='title'>( Control Text )</span> " D2 "`n<span name='MS:'>" TransformHTML(CtrlText) "</span>"
@@ -600,6 +597,7 @@ Spot_Mouse(NotHTML = 0) {
 			If CtrlInfo !=
 				CtrlInfo = `n%D1% <span id='title'>( Info - %ClassNN% )</span> %ml_run_iWB2Learner%%D2%%CtrlInfo%
 		}
+		WithRespectControl := DP "<span name='MS:'>" Round(rmCtrlX / CtrlW, 4) ", " Round(rmCtrlY / CtrlH, 4) "</span>"
 	}
 	Else
 		rmCtrlX := rmCtrlY := ""
@@ -1089,7 +1087,9 @@ Write_Hotkey(K) {
 
 	If (DUMods != "")
 		LRSend := "  " DP "  <span><span name='MS:'>Send " DUMods "</span>" Comment "</span>"
-
+	If SCCode !=
+		ThisKeySC := "   " DP "   <span name='MS:'>" VKCode "</span>   " DP "   <span name='MS:'>" SCCode "</span>"
+	   
 	HTML_Hotkey =
 	( Ltrim
 	<body id='body'> <pre id='pre'; contenteditable='true'>
@@ -1113,7 +1113,7 @@ Write_Hotkey(K) {
 	<span name='MS:P'>        </span>
 	%D1% <span id='title'>( Key )</span> %DB% <span contenteditable='false' unselectable='on'><button id='numlock'> num </button> <button id='scrolllock'> scroll </button> <button id='locale_change'> locale </button></span> %D2%
 
-	<span name='MS:'>%ThisKey%</span>   %DP%   <span name='MS:'>%VKCode%%SCCode%</span>   %DP%   <span name='MS:'>%VKCode%</span>   %DP%   <span name='MS:'>%SCCode%</span>
+	<span name='MS:'>%ThisKey%</span>   %DP%   <span name='MS:'>%VKCode%%SCCode%</span>%ThisKeySC%
 
 	%D1% <a></a><span id='title'>( GetKeyNameOrCode )</span> %DB% <span contenteditable='false' unselectable='on'><button id='paste_keyname'>paste</button></span> %D2%
 
@@ -1224,14 +1224,14 @@ Hotkey_MouseAndJoyInit(Options) {
 	Local S_FormatInteger, Option
 	#If Hotkey_Arr("Hook")
 	#If Hotkey_Arr("Hook") && !Hotkey_Main({Opt:"GetMod"})
-	#If Hotkey_Arr("Hook") && Hotkey_Main({Opt:"GetMod"})
+	#If Hotkey_Arr("Hook") && (Hotkey_Main({Opt:"GetMod"}) || GetKeyState("RButton", "P"))
 	#If
 	Option := InStr(Options, "M") ? "On" : "Off"
 	Hotkey, IF, Hotkey_Arr("Hook")
 	Loop, Parse, MouseKey, |
 		Hotkey, %A_LoopField%, Hotkey_PressMouse, % Option
 	Option := InStr(Options, "L") ? "On" : "Off"
-	Hotkey, IF, Hotkey_Arr("Hook") && Hotkey_Main({Opt:"GetMod"})
+	Hotkey, IF, Hotkey_Arr("Hook") && (Hotkey_Main({Opt:"GetMod"}) || GetKeyState("RButton"`, "P"))
 	Hotkey, LButton, Hotkey_PressMouse, % Option
 	Option := InStr(Options, "R") ? "On" : "Off"
 	Hotkey, IF, Hotkey_Arr("Hook")
@@ -1731,7 +1731,7 @@ ClipAdd(Text) {
 
 ClipPaste() {
  	If oMS.ELSel && (oMS.ELSel.OuterText != "" || MS_Cancel())
-		oMS.ELSel.innerHTML := TransformHTML(Clipboard)
+		oMS.ELSel.innerHTML := TransformHTML(Clipboard), oMS.ELSel.Name := "MS:"
 	Else
 		oDoc.execCommand("Paste")
 }
@@ -2014,6 +2014,20 @@ Update(in = 1) {
 		Return
 }
 
+TaskbarProgress(state, hwnd, pct = "") {
+	static tbl
+	if !tbl {
+		try tbl := ComObjCreate("{56FDF344-FD6D-11d0-958A-006097C9A090}", "{ea1afb91-9e28-4b86-90e9-9e9f8a5eefaf}")
+		catch
+			tbl := "error"
+	}
+	if tbl = error
+		Return
+	DllCall(NumGet(NumGet(tbl+0)+10*A_PtrSize), "ptr", tbl, "ptr", hwnd, "uint", state)
+	if pct !=
+		DllCall(NumGet(NumGet(tbl+0)+9*A_PtrSize), "ptr", tbl, "ptr", hwnd, "int64", pct, "int64", 100)
+}
+
 HighLight(elem, time = "", RemoveFormat = 1) {
 	Try SetTimer, UnHighLight, % "-" time
 	R := oDoc.body.createTextRange()
@@ -2113,7 +2127,7 @@ FindOption(Hwnd) {
 	ControlGet, Style, Style,, , ahk_id %Hwnd%
 	ControlGetText, Text, , ahk_id %Hwnd%
 	DllCall("DestroyWindow", "Ptr", Hwnd)
-	Gui, %A_Gui%: Add, Text, % "x" pX " y" pY " w" pW " h" pH " g" A_ThisFunc " " (Style & 0x1000 ? "c2F2F2F +0x201" : "+Border +0x1201"), % Text
+	Gui, %A_Gui%: Add, Text, % "x" pX " y" pY " w" pW " h" pH " g" A_ThisFunc " " (Style & 0x1000 ? "c2F2F2F +0x0201" : "+Border +0x1201"), % Text
 	InStr(Text, "sensitive") ? (oFind.Registr := !(Style & 0x1000)) : (oFind.Whole := !(Style & 0x1000))
 	FindSearch(1)
 	FindAll()
