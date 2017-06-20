@@ -17,7 +17,7 @@ ListLines, Off
 DetectHiddenWindows, On
 CoordMode, Pixel
 
-Global AhkSpyVersion := 2.49
+Global AhkSpyVersion := 2.50
 Gosub, CheckAhkVersion
 Menu, Tray, UseErrorLevel
 Menu, Tray, Icon, Shell32.dll, % A_OSVersion = "WIN_XP" ? 222 : 278
@@ -39,9 +39,9 @@ Global ThisMode := "Mouse"												;  Стартовый режим - Win|Mou
 , copy_button := "<span contenteditable='false' unselectable='on'><button id='copy_button'> copy </button></span>"
 , ThisMode := IniRead("StartMode", "Mouse"), ThisMode := ThisMode = "LastMode" ? IniRead("LastMode", "Mouse") : ThisMode
 , ActiveNoPause := IniRead("ActiveNoPause", 0), MemoryPos := IniRead("MemoryPos", 0), MemorySize := IniRead("MemorySize", 0)
-, MemoryZoomSize := IniRead("MemoryZoomSize", 0), MemoryStateZoom := IniRead("MemoryStateZoom", 0)
-, StateLight := IniRead("StateLight", 1), StateLightAcc := IniRead("StateLightAcc", 1), SendCode := IniRead("SendCode", "vk")
-, StateLightMarker := IniRead("StateLightMarker", 1), StateUpdate := IniRead("StateUpdate", 1)
+, MemoryZoomSize := IniRead("MemoryZoomSize", 0), MemoryStateZoom := IniRead("MemoryStateZoom", 0), StateLight := IniRead("StateLight", 1)
+, StateLightAcc := IniRead("StateLightAcc", 1), SendCode := IniRead("SendCode", "vk"), StateLightMarker := IniRead("StateLightMarker", 1)
+, StateUpdate := IniRead("StateUpdate", 1), SendMode := IniRead("SendMode", "send"), SendModeStr := Format("{:L}", SendMode) 
 , StateAllwaysSpot := IniRead("AllwaysSpot", 0), ScrollPos := {}, AccCoord := [], oOther := {}, oFind := {}, Edits := [], oMS := {}
 , hGui, hActiveX, hMarkerGui, hMarkerAccGui, hFindGui, oDoc, ShowMarker, isFindView, isIE, isPaused, w_ShowStyles, MsgAhkSpyZoom, Sleep
 , HTML_Win, HTML_Mouse, HTML_Hotkey, o_edithotkey, o_editkeyname, rmCtrlX, rmCtrlY, widthTB, HeigtButton, FullScreenMode
@@ -1063,12 +1063,13 @@ Write_Hotkey(K) {
 		Comment := "<span id='param' name='MS:S'>    `;  """ KeyName """</span>"
 	If (Hotkey != "")
 		FComment := "<span id='param' name='MS:S'>    `;  """ Mods KeyName """</span>"
+
 	If (LRMods != "")
 	{
 		LRMStr := "<span name='MS:'>" LRMods KeyName "</span>"
 		If (Hotkey != "")
 			LRPStr := "  " DP "  <span><span name='MS:'>" LRPref Hotkey "::</span><span id='param' name='MS:S'>    `;  """ LRMods KeyName """</span></span>"
-	}
+	} 
 	inp_hk := o_edithotkey.value, inp_kn := o_editkeyname.value
 
 	If Prefix !=
@@ -1086,7 +1087,7 @@ Write_Hotkey(K) {
 	ControlSend := DUMods = "" ? "{" SendHotkey "}" : DUMods
 
 	If (DUMods != "")
-		LRSend := "  " DP "  <span><span name='MS:'>Send " DUMods "</span>" Comment "</span>"
+		LRSend := "  " DP "  <span><span name='MS:'>" SendMode  " " DUMods "</span>" Comment "</span>"
 	If SCCode !=
 		ThisKeySC := "   " DP "   <span name='MS:'>" VKCode "</span>   " DP "   <span name='MS:'>" SCCode "</span>   "   
 		. DP "   <span name='MS:'>0x" SubStr(VKCode, 3) "</span>   " DP "   <span name='MS:'>0x" SubStr(SCCode, 3) "</span>"
@@ -1102,11 +1103,11 @@ Write_Hotkey(K) {
 
 	%LRMStr%
 
-	%D1% <span id='title'>( Command syntax )</span> %DB% <span contenteditable='false' unselectable='on'> <button id='SendCode'> %SendCode% code </button></span> %D2%
+	%D1% <span id='title'>( Command syntax )</span> %DB% <span contenteditable='false' unselectable='on'> <button id='SendCode'> %SendCode% code </button></span>  %DB% <span contenteditable='false' unselectable='on'> <button id='SendMode'> %SendModeStr% </button></span> %D2%
 
-	<span><span name='MS:'>%Prefix%%Hotkey%::</span>%FComment%</span>%LRPStr%<span>  %DP%  <span><span name='MS:'>%Prefix%%Hotkey%</span>%FComment%</span>
+	<span><span name='MS:'>%Prefix%%Hotkey%::</span>%FComment%</span>%LRPStr%
 	<span name='MS:P'>        </span>
-	<span><span name='MS:'>Send %Prefix%{%SendHotkey%}</span>%Comment%</span>  %DP%  <span><span name='MS:'>ControlSend, ahk_parent, %ControlSend%, WinTitle</span>%Comment%</span>
+	<span><span name='MS:'>%SendMode% %Prefix%{%SendHotkey%}</span>%Comment%</span>  %DP%  <span><span name='MS:'>ControlSend, ahk_parent, %ControlSend%, WinTitle</span>%Comment%</span>
 	<span name='MS:P'>        </span>
 	<span><span name='MS:'>%Prefix%{%SendHotkey%}</span>%Comment%</span>%LRSend%
 	<span name='MS:P'>        </span>
@@ -1132,7 +1133,7 @@ Write_Hotkey(K) {
 	#edithotkey {font-size: '1.2em'; text-align: center; border: 1px dashed black; height: 1.45em;}
 	#keyname {font-size: '1.2em'; border: 1px dashed black;  background-color: '%ColorParam%'; position: relative; top: 0px; left: 2px; height: 1.45em; width: 3em;}
 	#editkeyname {font-size: '1.2em'; text-align: center; border: 1px dashed black; position: relative; left: 4px; top: 0px; height: 1.45em;}
-	#pause_button, #numlock, #paste_keyname, #scrolllock, #locale_change, #copy_selected, #SendCode {font-size: 0.9em; border: 1px dashed black;}
+	#pause_button, #numlock, #paste_keyname, #scrolllock, #locale_change, #copy_selected, #SendCode , #SendMode {font-size: 0.9em; border: 1px dashed black;}
 	</style>
 	)
 	  ;	 %DB% <span contenteditable='false' unselectable='on'><button id='copy_selected'>copy selected</button></span>
@@ -2310,6 +2311,8 @@ Class Events {
 				WinClose, % "ahk_id" oOther.WinID
 			Else If (thisid = "SendCode")
 				Events.SendCode()
+			Else If (thisid = "SendMode")
+				Events.SendMode()
 			Else If (thisid = "numlock" || thisid = "scrolllock")
 				Events.num_scroll(thisid)
 			Else If thisid = locale_change
@@ -2434,6 +2437,8 @@ Class Events {
 				Events.num_scroll(thisid)
 			Else If (thisid = "SendCode")
 				Events.SendCode()
+			Else If (thisid = "SendMode")
+				Events.SendMode()
 			Else If thisid = pause_button
 				Gosub, PausedScript
 			Else If thisid = get_styles
@@ -2443,6 +2448,10 @@ Class Events {
 			Else If thisid = locale_change
 				ToolTip(ChangeLocal(hActiveX) GetLangName(hActiveX), 500)
 		}
+	}
+	SendMode() {
+		IniWrite(SendMode := {Send:"SendInput",SendInput:"SendPlay",SendPlay:"SendEvent",SendEvent:"Send"}[SendMode], "SendMode")
+		SendModeStr := Format("{:L}", SendMode), oDoc.getElementById("SendMode").innerText := SendModeStr
 	}
 	SendCode() {
 		IniWrite(SendCode := {vk:"sc",sc:"none",none:"vk"}[SendCode], "SendCode")
