@@ -17,7 +17,7 @@ ListLines, Off
 DetectHiddenWindows, On
 CoordMode, Pixel
 
-Global AhkSpyVersion := 2.50
+Global AhkSpyVersion := 2.51
 Gosub, CheckAhkVersion
 Menu, Tray, UseErrorLevel
 Menu, Tray, Icon, Shell32.dll, % A_OSVersion = "WIN_XP" ? 222 : 278
@@ -41,7 +41,7 @@ Global ThisMode := "Mouse"												;  Стартовый режим - Win|Mou
 , ActiveNoPause := IniRead("ActiveNoPause", 0), MemoryPos := IniRead("MemoryPos", 0), MemorySize := IniRead("MemorySize", 0)
 , MemoryZoomSize := IniRead("MemoryZoomSize", 0), MemoryStateZoom := IniRead("MemoryStateZoom", 0), StateLight := IniRead("StateLight", 1)
 , StateLightAcc := IniRead("StateLightAcc", 1), SendCode := IniRead("SendCode", "vk"), StateLightMarker := IniRead("StateLightMarker", 1)
-, StateUpdate := IniRead("StateUpdate", 1), SendMode := IniRead("SendMode", "send"), SendModeStr := Format("{:L}", SendMode) 
+, StateUpdate := IniRead("StateUpdate", 1), SendMode := IniRead("SendMode", "send"), SendModeStr := Format("{:L}", SendMode)
 , StateAllwaysSpot := IniRead("AllwaysSpot", 0), ScrollPos := {}, AccCoord := [], oOther := {}, oFind := {}, Edits := [], oMS := {}
 , hGui, hActiveX, hMarkerGui, hMarkerAccGui, hFindGui, oDoc, ShowMarker, isFindView, isIE, isPaused, w_ShowStyles, MsgAhkSpyZoom, Sleep
 , HTML_Win, HTML_Mouse, HTML_Hotkey, o_edithotkey, o_editkeyname, rmCtrlX, rmCtrlY, widthTB, HeigtButton, FullScreenMode
@@ -704,10 +704,15 @@ GetInfo_CtrlNotifySink(hwnd, ByRef ClassNN) {
 	ClassNN = CtrlNotifySink
 	Return GetInfo_Scintilla(hwnd, "")
 }
+
+	;  http://forum.script-coding.com/viewtopic.php?pid=117128#p117128
+	;  https://msdn.microsoft.com/en-us/library/windows/desktop/ms645478(v=vs.85).aspx
+
 GetInfo_Edit(hwnd, ByRef ClassNN) {
 	ClassNN = Edit
-	Return GetInfo_Scintilla(hwnd, "")
+	Return GetInfo_Scintilla(hwnd, "") "`n<span id='param' name='MS:N'>DlgCtrlID:</span> <span name='MS:'>" DllCall("GetDlgCtrlID", Ptr, hwnd) "</span>"
 }
+
 GetInfo_Scintilla(hwnd, ByRef ClassNN) {
 	ClassNN = Scintilla
 	ControlGet, LineCount, LineCount,,, ahk_id %hwnd%
@@ -1069,7 +1074,7 @@ Write_Hotkey(K) {
 		LRMStr := "<span name='MS:'>" LRMods KeyName "</span>"
 		If (Hotkey != "")
 			LRPStr := "  " DP "  <span><span name='MS:'>" LRPref Hotkey "::</span><span id='param' name='MS:S'>    `;  """ LRMods KeyName """</span></span>"
-	} 
+	}
 	inp_hk := o_edithotkey.value, inp_kn := o_editkeyname.value
 
 	If Prefix !=
@@ -1089,11 +1094,11 @@ Write_Hotkey(K) {
 	If (DUMods != "")
 		LRSend := "  " DP "  <span><span name='MS:'>" SendMode  " " DUMods "</span>" Comment "</span>"
 	If SCCode !=
-		ThisKeySC := "   " DP "   <span name='MS:'>" VKCode "</span>   " DP "   <span name='MS:'>" SCCode "</span>   "   
+		ThisKeySC := "   " DP "   <span name='MS:'>" VKCode "</span>   " DP "   <span name='MS:'>" SCCode "</span>   "
 		. DP "   <span name='MS:'>0x" SubStr(VKCode, 3) "</span>   " DP "   <span name='MS:'>0x" SubStr(SCCode, 3) "</span>"
 	Else
 		ThisKeySC := "   " DP "   <span name='MS:'>0x" SubStr(VKCode, 3) "</span>"
-	   
+
 	HTML_Hotkey =
 	( Ltrim
 	<body id='body'> <pre id='pre'; contenteditable='true'>
@@ -1228,14 +1233,14 @@ Hotkey_MouseAndJoyInit(Options) {
 	Local S_FormatInteger, Option
 	#If Hotkey_Arr("Hook")
 	#If Hotkey_Arr("Hook") && !Hotkey_Main({Opt:"GetMod"})
-	#If Hotkey_Arr("Hook") && (Hotkey_Main({Opt:"GetMod"}) || GetKeyState("RButton", "P"))
+	#If Hotkey_Arr("Hook") && GetKeyState("RButton", "P")
 	#If
 	Option := InStr(Options, "M") ? "On" : "Off"
 	Hotkey, IF, Hotkey_Arr("Hook")
 	Loop, Parse, MouseKey, |
 		Hotkey, %A_LoopField%, Hotkey_PressMouse, % Option
 	Option := InStr(Options, "L") ? "On" : "Off"
-	Hotkey, IF, Hotkey_Arr("Hook") && (Hotkey_Main({Opt:"GetMod"}) || GetKeyState("RButton"`, "P"))
+	Hotkey, IF, Hotkey_Arr("Hook") && GetKeyState("RButton"`, "P")
 	Hotkey, LButton, Hotkey_PressMouse, % Option
 	Option := InStr(Options, "R") ? "On" : "Off"
 	Hotkey, IF, Hotkey_Arr("Hook")
@@ -1266,29 +1271,34 @@ Hotkey_LowLevelKeyboardProc(nCode, wParam, lParam) {
 	Static Mods := {"vkA4":"LAlt","vkA5":"RAlt","vkA2":"LCtrl","vkA3":"RCtrl"
 	,"vkA0":"LShift","vkA1":"RShift","vk5B":"LWin","vk5C":"RWin"}, oMem := []
 	, HEAP_ZERO_MEMORY := 0x8, Size := 16, hHeap := DllCall("GetProcessHeap", Ptr)
-	Local pHeap, Wp, Lp, Ext, VK, SC, IsMod, Time, NFP
+	Local pHeap, Lp, Ext, VK, SC, SC1, SC2, IsMod, Time, NFP, KeyUp
 	Critical
 	If !Hotkey_Arr("Hook")
 		Return DllCall("CallNextHookEx", "Ptr", 0, "Int", nCode, "UInt", wParam, "UInt", lParam)
 	pHeap := DllCall("HeapAlloc", Ptr, hHeap, UInt, HEAP_ZERO_MEMORY, Ptr, Size, Ptr)
-	DllCall("RtlMoveMemory", Ptr, pHeap, Ptr, lParam, Ptr, Size), oMem.Push([wParam, pHeap])
+	DllCall("RtlMoveMemory", Ptr, pHeap, Ptr, lParam, Ptr, Size), oMem.Push(pHeap)
 	SetTimer, Hotkey_HookProcWork, -10
 	Return nCode < 0 ? DllCall("CallNextHookEx", "Ptr", 0, "Int", nCode, "UInt", wParam, "UInt", lParam) : 1
 
 	Hotkey_HookProcWork:
 		While (oMem[1] != "") {
 			If Hotkey_Arr("Hook") {
-				Wp := oMem[1][1], Lp := oMem[1][2]
+				Lp := oMem[1]
 				VK := Format("vk{:X}", NumGet(Lp + 0, "UInt"))
 				Ext := NumGet(Lp + 0, 8, "UInt")
-				SC := Format("sc{:X}", (Ext & 1) << 8 | NumGet(Lp + 0, 4, "UInt"))
-				NFP := (Ext >> 4) & 1 && SC != "sc100"			;  Не физическое нажатие
-				Time := NumGet(Lp + 12, "UInt")
+				SC1 := NumGet(Lp + 0, 4, "UInt")
+				NFP := (Ext >> 4) & 1				;  Не физическое нажатие
+				KeyUp := Ext >> 7
+				; Time := NumGet(Lp + 12, "UInt")
 				IsMod := Mods[VK]
-				If Hotkey_Arr("Hook") && (Wp = 0x100 || Wp = 0x104)		;  WM_KEYDOWN := 0x100, WM_SYSKEYDOWN := 0x104
+				If !SC1
+					SC2 := GetKeySC(VK), SC := SC2 = "" ? "" : Format("sc{:X}", SC2)
+				Else
+					SC := Format("sc{:X}", (Ext & 1) << 8 | SC1)
+				If !KeyUp
 					IsMod ? Hotkey_Main({VK:VK, SC:SC, Opt:"Down", IsMod:IsMod, NFP:NFP, Time:Time, UP:0})
 					: Hotkey_Main({VK:VK, SC:SC, NFP:NFP, Time:Time, UP:0})
-				Else If Hotkey_Arr("Hook") && (Wp = 0x101 || Wp = 0x105)		;  WM_KEYUP := 0x101, WM_SYSKEYUP := 0x105
+				Else
 					IsMod ? Hotkey_Main({VK:VK, SC:SC, Opt:"Up", IsMod:IsMod, NFP:NFP, Time:Time, UP:1})
 					: (Hotkey_Arr("Up") ? Hotkey_Main({VK:VK, SC:SC, NFP:NFP, Time:Time, UP:1}) : 0)
 			}
@@ -1872,7 +1882,7 @@ ViewStyles(elem) {
 		StringReplace, HTML_Win, HTML_Win, <span id=AllWinStyles>, <span id='AllWinStyles'>%Styles%
 		oDoc.body.innerHTML := HTML_Win
 	}
-	Else 
+	Else
 		oDoc.getElementById("AllWinStyles").innerHTML := "", HTML_Win := oDoc.body.innerHTML
 }
 
