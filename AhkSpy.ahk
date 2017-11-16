@@ -4,7 +4,7 @@
 	;  E-Mail: serzh82saratov@mail.ru
 
 	;  Спасибо wisgest за помощь в создании HTML интерфейса
-	;  Также благодарность teadrinker, YMP и Irbis за их решения
+	;  Также благодарность teadrinker, YMP, Malcev и Irbis за их решения
 	;  Описание - http://forum.script-coding.com/viewtopic.php?pid=72459#p72459
 	;  Обсуждение - http://forum.script-coding.com/viewtopic.php?pid=72244#p72244
 	;  GitHub - https://github.com/serzh82saratov/AhkSpy/blob/master/AhkSpy.ahk
@@ -17,7 +17,7 @@ ListLines, Off
 DetectHiddenWindows, On
 CoordMode, Pixel
 
-Global AhkSpyVersion := 2.51
+Global AhkSpyVersion := 2.52
 Gosub, CheckAhkVersion
 Menu, Tray, UseErrorLevel
 Menu, Tray, Icon, Shell32.dll, % A_OSVersion = "WIN_XP" ? 222 : 278
@@ -49,7 +49,7 @@ Global ThisMode := "Mouse"												;  Стартовый режим - Win|Mou
 , set_button_pos := "<span contenteditable='false' unselectable='on'><button id='set_button_pos' style='overflow: visible'>"
 , set_button_mouse_pos := "<span contenteditable='false' unselectable='on'><button id='set_button_mouse_pos' style='overflow: visible'>"
 , set_button_focus_ctrl := "<span contenteditable='false' unselectable='on'><button id='set_button_focus_ctrl' style='overflow: visible'>"
-, ClipAdd_Before := 0, ClipAdd_Delimiter := "`r`n"
+, WordWrap := IniRead("WordWrap", 0), ClipAdd_Before := 0, ClipAdd_Delimiter := "`r`n"
 
 TitleTextP2 := "     ( Shift+Tab - Freeze | RButton - CopySelected | Pause - Pause )     v" AhkSpyVersion
 BLGroup := ["Backlight allways","Backlight disable","Backlight hold shift button"]
@@ -94,7 +94,7 @@ DllCall("RegisterShellHookWindow", "Ptr", A_ScriptHwnd)
 OnMessage(DllCall("RegisterWindowMessage", "str", "SHELLHOOK"), "ShellProc")
 DllCall("PostMessage", "Ptr", A_ScriptHWND, "UInt", 0x50, "UInt", 0, "UInt", 0x409) ; eng layout
 
-Gui, TB: +HWNDhTBGui -Caption -DPIScale +Parent%hGui% +E0x08000000
+Gui, TB: +HWNDhTBGui -Caption -DPIScale +Parent%hGui% +E0x08000000 +0x40000000 -0x80000000
 Gui, TB: Font, % " s" (A_ScreenDPI = 120 ? 8 : 10), Verdana
 Gui, TB: Add, Button, x0 y0 h%HeigtButton% w%wKey% vBut1 gMode_Win, Window
 Gui, TB: Add, Button, x+0 yp hp wp vBut2 gMode_Mouse, Mouse && Control
@@ -102,7 +102,7 @@ Gui, TB: Add, Progress, x+0 yp hp w%wColor% vColorProgress cWhite, 100
 Gui, TB: Add, Button, x+0 yp hp w%wKey% vBut3 gMode_Hotkey, Button
 Gui, TB: Show, % "x0 y0 NA h" HeigtButton " w" widthTB := wKey*3+wColor
 
-Gui, F: +HWNDhFindGui -Caption -DPIScale +Parent%hGui%
+Gui, F: +HWNDhFindGui -Caption -DPIScale +Parent%hGui% +0x40000000 -0x80000000
 Gui, F: Color, %ColorBgPaused%
 Gui, F: Font, % " s" (A_ScreenDPI = 120 ? 10 : 12)
 Gui, F: Add, Edit, x1 y0 w180 h26 gFindNew WantTab HWNDhFindEdit
@@ -116,11 +116,11 @@ Gui, F: Add, Text, x+3 yp hp +0x201 w52 vFindMatches
 Gui, F: Add, Button, % "+0x300 +0xC00 y3 h20 w20 gFindHide x" widthTB - 21, X
 
 Gui, M: Margin, 0, 0
-Gui, M: -DPIScale +AlwaysOnTop +HWNDhMarkerGui +E0x08000000 +E0x20 -Caption +Owner
+Gui, M: -DPIScale +AlwaysOnTop +HWNDhMarkerGui +E0x08000000 +E0x20 -Caption +Owner +0x40000000 -0x80000000
 Gui, M: Color, E14B30
 WinSet, TransParent, 250, ahk_id %hMarkerGui%
 Gui, AcM: Margin, 0, 0
-Gui, AcM: -DPIScale +AlwaysOnTop +HWNDhMarkerAccGui +E0x08000000 +E0x20 -Caption +Owner
+Gui, AcM: -DPIScale +AlwaysOnTop +HWNDhMarkerAccGui +E0x08000000 +E0x20 -Caption +Owner +0x40000000 -0x80000000
 Gui, AcM: Color, 26419F
 WinSet, TransParent, 250, ahk_id %hMarkerAccGui%
 ShowMarker(0, 0, 0, 0, 0), ShowAccMarker(0, 0, 0, 0, 0), HideMarker(), HideAccMarker()
@@ -192,6 +192,8 @@ Menu, Sys, Add, Pause, PausedScript
 Menu, Sys, Add, Exit, Exit
 Menu, Sys, Add
 Menu, Sys, Add, Find to page, FindView
+Menu, Sys, Add, Word wrap, WordWrap
+Menu, Sys, % WordWrap ? "Check" : "UnCheck", Word wrap
 Menu, Sys, Color, % ColorBgOriginal
 Gui, Show, % "NA" (MemoryPos ? " x" IniRead("MemoryPosX", "Center") " y" IniRead("MemoryPosY", "Center") : "")
 . (MemorySize ? " h" IniRead("MemorySizeH", HeightStart) " w" IniRead("MemorySizeW", widthTB) : " h" HeightStart " w" widthTB)
@@ -454,10 +456,10 @@ Spot_Win(NotHTML = 0) {
 		SBText = %SBText%<span id='param'>(%A_Index%):</span> <span name='MS:'>%SBFieldText%</span>
 	}
 	If SBText !=
-		SBText := "`n" D1 " <span id='title'>( StatusBarText )</span> " DB " " copy_button " " D2 "`n<span>" (SubStr(SBText, 1, -12) "</span>") "</span>"
+		SBText := "`n" D1 " <span id='title'>( StatusBarText )</span> " DB " " copy_button " " D2 "`n<span>" (SubStr(SBText, 1, -13) "</span>") "</span>"
 	WinGetText, WinText, ahk_id %WinID%
 	If WinText !=
-		WinText := "`n" D1 " <a></a><span id='title'>( Window Text )</span> " D2 "`n<span name='MS:'>" TransformHTML(RTrim(WinText, "`r`n")) "</span>"
+		WinText := "`n" D1 " <span id='title'>( Window Text )</span> " D2 "<a></a>`n<span name='MS:'>" TransformHTML(RTrim(WinText, "`r`n")) "</span>"
 	CoordMode, Mouse
 	MouseGetPos, WinXS, WinYS
 	PixelGetColor, ColorRGB, %WinXS%, %WinYS%, RGB
@@ -466,6 +468,8 @@ Spot_Win(NotHTML = 0) {
 	GuiControl, TB: +Redraw, ColorProgress
 	If w_ShowStyles
 		WinStyles := GetStyles(WinStyle, WinExStyle), ButStyleTip := "hide styles"
+	If WordWrap
+		Break := "word-wrap: break-word;"
 
 HTML_Win:
 	ButStyleTip := !w_ShowStyles ? "show styles" : ButStyleTip
@@ -485,17 +489,18 @@ HTML_Win:
 	%D1% <span id='title'>( Position )</span> %D2%
 	%set_button_pos%Pos:</button></span>  <span name='MS:'>x%WinX% y%WinY%</span>%DP%<span name='MS:'>x&sup2;%WinX2% y&sup2;%WinY2%</span>%DP%%set_button_pos%Size:</button></span>  <span name='MS:'>w%WinWidth% h%WinHeight%</span>%DP%<span name='MS:'>%WinX%, %WinY%, %WinX2%, %WinY2%</span>%DP%<span name='MS:'>%WinX%, %WinY%, %WinWidth%, %WinHeight%</span>
 	<span id='param'>Client area size:</span>  <span name='MS:'>w%caW% h%caH%</span>%DP%<span id='param'>left</span> %caX% <span id='param'>top</span> %caY% <span id='param'>right</span> %caWinRight% <span id='param'>bottom</span> %caWinBottom%
-	<a></a>%D1% <span id='title'>( Other )</span> %D2%
+	%D1% <span id='title'>( Other )</span> %D2%<a></a>
 	<span id='param' name='MS:N'>PID:</span>  <span name='MS:'>%WinPID%</span>%DP%%ProcessBitSize%<span id='param'>Window count this PID:</span> %WinCountProcess%%DP%<span contenteditable='false' unselectable='on'><button id='process_close'>process close</button></span>
 	<span id='param' name='MS:N'>HWND:</span>  <span name='MS:'>%WinID%</span>%DP%<span contenteditable='false' unselectable='on'><button id='win_close'>win close</button></span>%DP%<span id='param'>Control count:</span>  %CountControl%
 	<span id='param'>Style:  </span><span id='c_Style' name='MS:'>%WinStyle%</span>%DP%<span id='param'>ExStyle:  </span><span id='c_ExStyle' name='MS:'>%WinExStyle%</span>%DP%<span contenteditable='false' unselectable='on'><button id='get_styles'>%ButStyleTip%</button></span>%WinTransparent%%WinTransColor%%CLSID%<span id='AllWinStyles'>%WinStyles%</span>%SBText%%WinText%
-	<a></a>%D2%</pre></body>
+	%D2%<a></a></pre></body>
 
 	<style>
-	body {background-color: '#%ColorBg%'; color: '%ColorFont%'}
-	pre {font-family: '%FontFamily%'; font-size: '%FontSize%'; position: absolute; top: 5px}
+	body {background-color: '#%ColorBg%'; color: '%ColorFont%';}
+	pre {font-family: '%FontFamily%'; font-size: '%FontSize%'; position: absolute; top: 5px; %Break%}
 	#title {color: '%ColorTitle%'}
 	#param {color: '%ColorParam%'}
+	#Delimiter {word-wrap: normal;}
 	#set_button_pos {color: '%ColorParam%';font-size: 1em;}
 	button {font-size: 0.9em; border: 1px dashed black}
 	</style>
@@ -509,6 +514,7 @@ HTML_Win:
 
 Write_Win() {
 	oDoc.body.innerHTML := HTML_Win, oDoc.getElementById("pre").style.fontSize := FontSize
+	oDoc.getElementById("pre").style.wordWrap := WordWrap ? "break-word" : "normal"
 	Return 1
 }
 
@@ -583,10 +589,10 @@ Spot_Mouse(NotHTML = 0) {
 		. "</span>  <span id='param'>for</span>  <span name='MS:'>w" caW "  h" caH "</span>"
 	ControlGetText, CtrlText, , ahk_id %ControlID%
 	If CtrlText !=
-		CtrlText := "`n" D1 " <a></a><span id='title'>( Control Text )</span> " D2 "`n<span name='MS:'>" TransformHTML(CtrlText) "</span>"
+		CtrlText := "`n" D1 " <span id='title'>( Control Text )</span> " D2 "<a></a>`n<span name='MS:'>" TransformHTML(CtrlText) "</span>"
 	AccText := AccInfoUnderMouse(MXS, MYS, WinX, WinY, CtrlX, CtrlY)
 	If AccText !=
-		AccText = `n%D1% <a></a><span id='title'>( AccInfo )</span> %m_run_AccViewer%%D2%%AccText%
+		AccText = `n%D1% <span id='title'>( AccInfo )</span> %m_run_AccViewer%%D2%<a></a>%AccText%
 	If ControlNN !=
 	{
 		rmCtrlX := MXS - WinX - CtrlX, rmCtrlY := MYS - WinY - CtrlY
@@ -612,6 +618,8 @@ Spot_Mouse(NotHTML = 0) {
 	ControlGetFocus, CtrlFocus, ahk_id %WinID%
 	WinGet, ProcessName, ProcessName, ahk_id %WinID%
 	WinGetClass, WinClass, ahk_id %WinID%
+	If WordWrap
+		Break := "word-wrap: break-word;"
 
 HTML_Mouse:
 	HTML_Mouse =
@@ -627,16 +635,17 @@ HTML_Mouse:
 	%D1% <span id='title'>( Control )</span> %D2%
 	<span id='param'>Class NN:</span>  <span name='MS:'>%ControlNN%</span>%DP%<span id='param'>Win class:</span>  <span name='MS:'>%CtrlClass%</span>
 	%set_button_pos%Pos:</button></span>  <span name='MS:'>x%CtrlX% y%CtrlY%</span>%DP%<span name='MS:'>x&sup2;%CtrlX2% y&sup2;%CtrlY2%</span>%DP%%set_button_pos%Size:</button></span>  <span name='MS:'>w%CtrlW% h%CtrlH%</span>%DP%<span name='MS:'>%CtrlX%, %CtrlY%, %CtrlX2%, %CtrlY2%</span>%DP%<span name='MS:'>%CtrlX%, %CtrlY%, %CtrlW%, %CtrlH%</span>
-	<span id='param'>Pos relative client area:</span>  <span name='MS:'>x%CtrlCAX% y%CtrlCAY%</span>%DP%<span name='MS:'>x&sup2;%CtrlCAX2% y&sup2;%CtrlCAY2%</span>%DP%<span name='MS:'>%CtrlCAX%, %CtrlCAY%, %CtrlCAX2%, %CtrlCAY2%</span>
+	<span id='param'>Pos relative client area:</span>  <span name='MS:'>x%CtrlCAX% y%CtrlCAY%</span>%DP%<span name='MS:'>x&sup2;%CtrlCAX2% y&sup2;%CtrlCAY2%</span>%DP%<span name='MS:'>%CtrlCAX%, %CtrlCAY%, %CtrlCAX2%, %CtrlCAY2%</span>%DP%<span name='MS:'>%CtrlCAX%, %CtrlCAY%, %CtrlW%, %CtrlH%</span>
 	%set_button_mouse_pos%Mouse relative control:</button></span>  <span name='MS:'>x%rmCtrlX% y%rmCtrlY%</span>%WithRespectControl%%DP%<span id='param'>Client area:</span>  <span name='MS:'>x%caX% y%caY% w%caW% h%caH%</span>
 	<span id='param'>HWND:</span>  <span name='MS:'>%ControlID%</span>%DP%<span id='param'>Style:</span>  <span name='MS:'>%CtrlStyle%</span>%DP%<span id='param'>ExStyle:</span>  <span name='MS:'>%CtrlExStyle%</span>
 	%set_button_focus_ctrl%Focus control:</button></span>  <span name='MS:'>%CtrlFocus%</span>%DP%<span id='param'>Cursor type:</span>  <span name='MS:'>%A_Cursor%</span>%DP%<span id='param'>Caret pos:</span>  <span name='MS:'>x%A_CaretX% y%A_CaretY%</span>%CtrlInfo%%CtrlText%%AccText%
-	<a></a>%D2%</pre></body>
+	%D2%<a></a></pre></body>
 
 	<style>
-	pre {font-family: '%FontFamily%'; font-size: '%FontSize%'; position: absolute; top: 5px}
+	pre {font-family: '%FontFamily%'; font-size: '%FontSize%'; position: absolute; top: 5px; %Break%}
 	body {background-color: '#%ColorBg%'; color: '%ColorFont%'}
 	#title {color: '%ColorTitle%'}
+	#Delimiter {word-wrap: normal;}
 	#param {color: '%ColorParam%'}
 	#set_button_pos {color: '%ColorParam%';font-size: 1em;}
 	#set_button_mouse_pos, #set_button_focus_ctrl {color: '%ColorParam%';font-size: 1em;}
@@ -650,6 +659,7 @@ HTML_Mouse:
 
 Write_Mouse() {
 	oDoc.body.innerHTML := HTML_Mouse, oDoc.getElementById("pre").style.fontSize := FontSize
+	oDoc.getElementById("pre").style.wordWrap := WordWrap ? "break-word" : "normal"
 	Return 1
 }
 
@@ -855,15 +865,15 @@ GetInfo_InternetExplorer_Server(hwnd, ByRef ClassNN) {
 			Frame .= "`n<span id='param' name='MS:N'>Name:  </span><span name='MS:'>" TransformHTML(Var) "</span>"
 
 		If ((Var := pelt.OuterHtml) != "") {
-			code = `n%D1% <a></a><span id='param'>( Outer HTML )</span> %D2%`n
+			code = `n%D1% <span id='param'>( Outer HTML )</span> %D2%<a></a>`n
 			Frame .= code "<span name='MS:'>" TransformHTML(Var) "</span>"
 		}
 		If ((Var := pelt.OuterText) != "") {
-			code = `n%D1% <a></a><span id='param'>( Outer Text )</span> %D2%`n
+			code = `n%D1% <span id='param'>( Outer Text )</span> %D2%<a></a>`n
 			Frame .= code "<span name='MS:'>" TransformHTML(Var) "</span>"
 		}
 		If Frame !=
-			Frame = `n%D1% <a></a><span id='title'>( FrameInfo )</span> %D2%%Frame%
+			Frame = `n%D1% <span id='title'>( FrameInfo )</span> %D2%<a></a>%Frame%
 		_pbrt := pelt.getBoundingClientRect()
 		pelt := iFrame.document.elementFromPoint((rmCtrlX / ratio) - _pbrt.left, (rmCtrlY / ratio) - _pbrt.top)
 		__pbrt := pelt.getBoundingClientRect(), pbrt := {}
@@ -888,11 +898,11 @@ GetInfo_InternetExplorer_Server(hwnd, ByRef ClassNN) {
 		Info .= "`n<span id='param' name='MS:N'>Name:  </span><span name='MS:'>" TransformHTML(Var) "</span>"
 
 	If ((Var := pelt.OuterHtml) != "") {
-		code = `n%D1% <a></a><span id='param'>( Outer HTML )</span> %D2%`n
+		code = `n%D1% <span id='param'>( Outer HTML )</span> %D2%<a></a>`n
 		Info .= code "<span name='MS:'>" TransformHTML(Var) "</span>"
 	}
 	If ((Var := pelt.OuterText) != "") {
-		code = `n%D1% <a></a><span id='param'>( Outer Text )</span> %D2%`n
+		code = `n%D1% <span id='param'>( Outer Text )</span> %D2%<a></a>`n
 		Info .= code "<span name='MS:'>" TransformHTML(Var) "</span>"
 	}
 	If Info !=
@@ -1098,6 +1108,8 @@ Write_Hotkey(K) {
 		. DP "   <span name='MS:'>0x" SubStr(VKCode, 3) "</span>   " DP "   <span name='MS:'>0x" SubStr(SCCode, 3) "</span>"
 	Else
 		ThisKeySC := "   " DP "   <span name='MS:'>0x" SubStr(VKCode, 3) "</span>"
+	If WordWrap
+		Break := "word-wrap: break-word;"
 
 	HTML_Hotkey =
 	( Ltrim
@@ -1124,17 +1136,18 @@ Write_Hotkey(K) {
 
 	<span name='MS:'>%ThisKey%</span>   %DP%   <span name='MS:'>%VKCode%%SCCode%</span>%ThisKeySC%
 
-	%D1% <a></a><span id='title'>( GetKeyNameOrCode )</span> %DB% <span contenteditable='false' unselectable='on'><button id='paste_keyname'>paste</button></span> %D2%
+	%D1% <span id='title'>( GetKeyNameOrCode )</span> %DB% <span contenteditable='false' unselectable='on'><button id='paste_keyname'>paste</button></span> %D2%<a></a>
 
 	<span contenteditable='false' unselectable='on'><input id='edithotkey' value='%inp_hk%'><button id='keyname'> &#8250 &#8250 &#8250 </button><input id='editkeyname' value='%inp_kn%'></input></span>
 
 	%D2%</pre></body>
 
 	<style>
-	pre {font-family: '%FontFamily%'; font-size: '%FontSize%'; position: absolute; top: 5px;}
+	pre {font-family: '%FontFamily%'; font-size: '%FontSize%'; position: absolute; top: 5px; %Break%}
 	body {background-color: '#%ColorBg%'; color: '%ColorFont%'}
 	#title {color: '%ColorTitle%';}
 	#param {color: '%ColorParam%';}
+	#Delimiter {word-wrap: normal;}
 	#edithotkey {font-size: '1.2em'; text-align: center; border: 1px dashed black; height: 1.45em;}
 	#keyname {font-size: '1.2em'; border: 1px dashed black;  background-color: '%ColorParam%'; position: relative; top: 0px; left: 2px; height: 1.45em; width: 3em;}
 	#editkeyname {font-size: '1.2em'; text-align: center; border: 1px dashed black; position: relative; left: 4px; top: 0px; height: 1.45em;}
@@ -1150,6 +1163,7 @@ Write_HotkeyHTML() {
 	oDoc.body.innerHTML := HTML_Hotkey, oDoc.getElementById("pre").style.fontSize := FontSize
 	ComObjConnect(o_edithotkey := oDoc.getElementById("edithotkey"), Events)
 	ComObjConnect(o_editkeyname := oDoc.getElementById("editkeyname"), Events)
+	oDoc.getElementById("pre").style.wordWrap := WordWrap ? "break-word" : "normal"
 }
 
 	; _________________________________________________ Hotkey Functions _________________________________________________
@@ -1476,6 +1490,12 @@ MemoryStateZoom:
 	IniWrite(DllCall("IsWindowVisible", "Ptr", oOther.hZoom) ? 1 : 0, "ZoomShow")
 	Return
 
+WordWrap:
+	IniWrite(WordWrap := !WordWrap, "WordWrap")
+	Menu, Sys, % WordWrap ? "Check" : "UnCheck", Word wrap
+	oDoc.getElementById("pre").style.wordWrap := WordWrap ? "break-word" : "normal"
+	Return
+
 	; _________________________________________________ Functions _________________________________________________
 
 ShellProc(nCode, wParam) {
@@ -1636,6 +1656,7 @@ RunRealPath(Path) {
 
 ShowMarker(x, y, w, h, b := 4) {
 	w < 8 || h < 8 ? b := 2 : 0
+	Gui, M: +AlwaysOnTop
 	Try Gui, M: Show, NA x%x% y%y% w%w% h%h%
 	Catch
 		Return HideMarker(), ShowMarker := 0
@@ -1645,6 +1666,7 @@ ShowMarker(x, y, w, h, b := 4) {
 }
 
 ShowAccMarker(x, y, w, h, b := 2) {
+	Gui, AcM: +AlwaysOnTop
 	Try Gui, AcM: Show, NA x%x% y%y% w%w% h%h%
 	Catch
 		Return HideAccMarker(), (ShowMarker := ShowMarker ? 1 : 0)
