@@ -77,7 +77,7 @@ Global m_run_AccViewer := ExtraFile("AccViewer Source")
 	? DB " <span contenteditable='false' unselectable='on'><button id='run_iWB2Learner'> run iwb2 learner </button></span> " : ""
 
 TitleTextP2 := "     ( Shift+Tab - Freeze | RButton - CopySelected | Pause - Pause )     v" AhkSpyVersion
-BLGroup := ["Backlight allways","Backlight disable","Backlight hold shift button"]	
+BLGroup := ["Backlight allways","Backlight disable","Backlight hold shift button"]
 
 FixIE()
 SeDebugPrivilege()
@@ -481,7 +481,7 @@ HTML_Win:
 	If WordWrap
 		Break := "word-wrap: break-word; overflow-x: hidden;"
 	ButtonStyle := !w_ShowStyles ? "show styles" : ButtonStyle
-	
+
 	HTML_Win =
 	( Ltrim
 	<body id='body'>
@@ -491,7 +491,7 @@ HTML_Win:
 	%_PRE1%<span id='wintitle2'><span class='param' name='MS:S'>ahk_class </span><span name='MS:'>%WinClass%</span></span>%_PRE2%
 	%_T1% ( ProcessName ) </span>%_BT1% id='copy_alltitle'> copy all %_BT2%%_T2%
 	%_PRE1%<span id='wintitle3'><span class='param' name='MS:S'>ahk_exe </span><span name='MS:'>%WinProcessName%</span></span>%_PRE2%
-	%_T1% ( ProcessPath ) </span>%_BT1% id='w_folder'> in folder %_BT2%%_DB%%_BT1% id='paste_process_path'> paste %_BT2%%_T2%
+	%_T1% ( ProcessPath ) </span>%_BT1% id='infolder'> in folder %_BT2%%_DB%%_BT1% id='paste_process_path'> paste %_BT2%%_T2%
 	%_PRE1%<span><span class='param' name='MS:S'>ahk_exe </span><span id='copy_processpath' name='MS:'>%WinProcessPath%</span></span>%_PRE2%
 	%_T1% ( CommandLine ) </span>%_BT1% id='w_command_line'> launch %_BT2%%_DB%%_BT1% id='paste_command_line'> paste %_BT2%%_T2%
 	%_PRE1%<span id='c_command_line' name='MS:'>%ComLine%</span>%_PRE2%
@@ -508,17 +508,17 @@ HTML_Win:
 	<style>
 	* {
 		margin: 0;
-		background: none; 
-		font-family: %FontFamily%; 
+		background: none;
+		font-family: %FontFamily%;
 		font-weight: 500;
 	}
-	body { 
+	body {
 		margin: 0.3em;
 		background-color: #%ColorBg%;
 		font-size: %FontSize%px;
 		%Break%
 	}
-	.br { 
+	.br {
 		height:0.2em;
 	}
 	.box {
@@ -526,51 +526,51 @@ HTML_Win:
 		overflow: hidden;
 		width: 100`%;
 		height: 1.5em;
-		background: transparent;  
+		background: transparent;
 		left: 0px;
-	} 
+	}
 	.line {
-		position: absolute; 
+		position: absolute;
 		width: 100`%;
-		top: 1px;       
+		top: 1px;
 	}
 	.con {
-		position: absolute; 
-		left: 30`%;    
+		position: absolute;
+		left: 30`%;
 	}
 	.hr {
 		position: absolute;
 		width: 100`%;
 		border-bottom: 0.2em dashed red;
-		height: 0.5em; 
+		height: 0.5em;
 	}
 	.title {
 		color: #%ColorTitle%;
 		margin-right: 50px;
 		white-space: pre;
-		background-color: #%ColorBg%; 
+		background-color: #%ColorBg%;
 	}
 	pre {
 		margin-bottom: 0.1em;
-		margin-top: 0.1em; 
+		margin-top: 0.1em;
 		line-height: 1.3em;
 	}
-	.LPRE {
+	.LPRE2 {
 		max-width: 99`%;
 		max-height: 50em;
 		overflow: auto;
 	}
 	.button {
-		position: relative; 
-		border: 1px dotted; 
-		border-color: black; 
+		position: relative;
+		border: 1px dotted;
+		border-color: black;
 		white-space: pre;
 		cursor: hand;
 		background-color: #%ColorBg%;
 	}
 	.BB {
-		display: inline-block; 
-	} 
+		display: inline-block;
+	}
 	.param {color: #%ColorParam%;}
 	</style>
 	)
@@ -582,6 +582,8 @@ HTML_Win:
 }
 
 Write_Win() {
+	If oDoc.documentElement.scrollLeft
+		oDoc.documentElement.scrollLeft := 0
 	oDoc.body.innerHTML := HTML_Win
 	Return 1
 }
@@ -1568,7 +1570,7 @@ WordWrap:
 	oDoc.Body.style.overflowX := (WordWrap ? "hidden" : "auto")
 	oDoc.Body.style.wordWrap := (WordWrap ? "break-word" : "normal")
 	If WordWrap
-		oDoc.documentElement.scrollLeft := 0 
+		oDoc.documentElement.scrollLeft := 0
 	oDoc.Script.WordWrap := WordWrap
 	Return
 
@@ -1702,9 +1704,9 @@ FixIE() {
 		ExeName := A_ScriptName
 	Else
 		SplitPath, A_AhkPath, ExeName
-	RegRead, value, HKCU, %Key%, %ExeName% 
+	RegRead, value, HKCU, %Key%, %ExeName%
 	If (value != ver)
-		RegWrite, REG_DWORD, HKCU, %Key%, %ExeName%, %ver% 
+		RegWrite, REG_DWORD, HKCU, %Key%, %ExeName%, %ver%
 }
 
 RunPath(Link, WorkingDir = "", Option = "") {
@@ -1974,7 +1976,7 @@ GetCLSIDExplorer(hwnd) {
 
 ViewStyles(elem) {
 	elem.innerText := (w_ShowStyles := !w_ShowStyles) ? " hide styles " : " show styles "
-	If w_ShowStyles 
+	If w_ShowStyles
 		Styles := GetStyles(oDoc.getElementById("c_Style").innerText, oDoc.getElementById("c_ExStyle").innerText)
 	oDoc.getElementById("WinStyles").innerHTML := Styles
 }
@@ -2146,10 +2148,10 @@ HighLight(elem, time = "", RemoveFormat = 1) {
 	R.moveToElementText(elem)
 	R.collapse(1), R.select()
 	R.moveToElementText(elem)
-	R.execCommand("ForeColor", 0, "FFFFFF") 
-	R.execCommand("BackColor", 0, "3399FF") 
+	R.execCommand("ForeColor", 0, "FFFFFF")
+	R.execCommand("BackColor", 0, "3399FF")
 	Return
-	
+
 	UnHighLight:
 		oDoc.body.createTextRange().execCommand("RemoveFormat")
 		Return
@@ -2348,7 +2350,7 @@ MS_IsSelect(EL) {
 		Return 1
 }
 
-MS_Select(EL) { 
+MS_Select(EL) {
 	If InStr(EL.Name, ":S")
 		oMS.ELSel := EL.ParentElement, oMS.ELSel.style.background := "#" ColorSelMouseHover
 	Else If InStr(EL.Name, ":N")
@@ -2367,7 +2369,7 @@ html =
 <script type="text/javascript">
 	var prWidth, WordWrap;
 	function shift(p) {
-		var col, Width, clientWidth, scrollLeft, Offset; 
+		var col, Width, clientWidth, scrollLeft, Offset;
 		clientWidth = document.documentElement.clientWidth; 
 		if (clientWidth < 0)
 			return
@@ -2389,10 +2391,10 @@ html =
 	}
 	onresize = function() {
 		shift(0);
-	} 
+	}
 	onscroll = function() {
 		if (WordWrap == 1)
-			return 
+			return
 		shift(1);
 	}
 	function OnButtonDown (el) {
@@ -2410,17 +2412,17 @@ html =
 		el.style.zIndex = "0";
 		el.style.backgroundColor = "#%ColorBg%";
 		el.style.color = (el.name != "pre" ? "black" : "#%ColorParam%");
-		el.style.border = "1px dotted black";  
+		el.style.border = "1px dotted black";
 	}
 	function OnButtonOver (el) {
 		el.style.zIndex = "2";
-		el.style.border = "1px solid black"; 
+		el.style.border = "1px solid black";
 	}
 	function FocusOff (el) {
 	//	alert(el.value);
 		el.style.backgroundColor = "#%ColorBg%";
 	}
-	function FocusOn (el) { 
+	function FocusOn (el) {
 		el.style.backgroundColor = "#FFF";
 	}
 </script>
@@ -2483,7 +2485,7 @@ Class Events {
 	onselectstart() {
 		SetTimer, MS_Cancel, -8
     }
-	
+
 	SendMode() {
 		IniWrite(SendMode := {Send:"SendInput",SendInput:"SendPlay",SendPlay:"SendEvent",SendEvent:"Send"}[SendMode], "SendMode")
 		SendModeStr := Format("{:L}", SendMode), oDoc.getElementById("SendMode").innerText := SendModeStr
@@ -2528,7 +2530,7 @@ ButtonClick(oevent) {
 	}
 	Else If thisid = pause_button
 		Gosub, PausedScript
-	Else If thisid = w_folder
+	Else If thisid = infolder
 	{
 		If FileExist(FilePath := oDoc.getElementById("copy_processpath").OuterText)
 			SelectFilePath(FilePath), Minimize()
