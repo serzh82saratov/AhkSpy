@@ -45,14 +45,14 @@ Global MemoryFontSize := IniRead("MemoryFontSize", 0)
   wColor := wKey//2														;  Ширина цветного фрагмента
   RangeTimer := 100														;  Период опроса данных, увеличьте на слабом ПК
 
-Global ThisMode := IniRead("StartMode", "Mouse"), ThisMode := ThisMode = "LastMode" ? IniRead("LastMode", "Mouse") : ThisMode
+Global ThisMode := IniRead("StartMode", "Control"), ThisMode := ThisMode = "LastMode" ? IniRead("LastMode", "Control") : ThisMode
 , ActiveNoPause := IniRead("ActiveNoPause", 0), MemoryPos := IniRead("MemoryPos", 0), MemorySize := IniRead("MemorySize", 0)
 , MemoryZoomSize := IniRead("MemoryZoomSize", 0), MemoryStateZoom := IniRead("MemoryStateZoom", 0), StateLight := IniRead("StateLight", 1)
 , StateLightAcc := IniRead("StateLightAcc", 1), SendCode := IniRead("SendCode", "vk"), StateLightMarker := IniRead("StateLightMarker", 1)
 , StateUpdate := IniRead("StateUpdate", 1), SendMode := IniRead("SendMode", "send"), SendModeStr := Format("{:L}", SendMode)
 , StateAllwaysSpot := IniRead("AllwaysSpot", 0), ScrollPos := {}, AccCoord := [], oOther := {}, oFind := {}, Edits := [], oMS := {}
 , hGui, hActiveX, hMarkerGui, hMarkerAccGui, hFindGui, oDoc, ShowMarker, isFindView, isIE, isPaused, w_ShowStyles, MsgAhkSpyZoom, Sleep
-, HTML_Win, HTML_Mouse, HTML_Hotkey, rmCtrlX, rmCtrlY, widthTB, FullScreenMode, hColorProgress
+, HTML_Win, HTML_Control, HTML_Hotkey, rmCtrlX, rmCtrlY, widthTB, FullScreenMode, hColorProgress
 , ClipAdd_Before := 0, ClipAdd_Delimiter := "`r`n", oDocEl, oJScript, oBody, isConfirm, isAhkSpy := 1, WordWrap := IniRead("WordWrap", 0)
 , MoveTitles := IniRead("MoveTitles", 1), PreOverflowHide := IniRead("PreOverflowHide", 1), DetectHiddenText := IniRead("DetectHiddenText", "on")
 
@@ -113,7 +113,7 @@ DllCall("PostMessage", "Ptr", A_ScriptHWND, "UInt", 0x50, "UInt", 0, "UInt", 0x4
 Gui, TB: +HWNDhTBGui -Caption -DPIScale +Parent%hGui% +E0x08000000 +0x40000000 -0x80000000
 Gui, TB: Font, % " s" (A_ScreenDPI = 120 ? 8 : 10), Verdana
 Gui, TB: Add, Button, x0 y0 h%HeigtButton% w%wKey% vBut1 gMode_Win, Window
-Gui, TB: Add, Button, x+0 yp hp wp vBut2 gMode_Mouse, Mouse && Control
+Gui, TB: Add, Button, x+0 yp hp wp vBut2 gMode_Control, Control
 Gui, TB: Add, Progress, x+0 yp hp w%wColor% vColorProgress HWNDhColorProgress cWhite, 100
 Gui, TB: Add, Button, x+0 yp hp w%wKey% vBut3 gMode_Hotkey, Button
 Gui, TB: Show, % "x0 y0 NA h" HeigtButton " w" widthTB := wKey*3+wColor
@@ -167,12 +167,12 @@ Else
 	StateUpdate := IniWrite(0, "StateUpdate")
 
 Menu, Startmode, Add, Window, SelStartMode
-Menu, Startmode, Add, Mouse && Control, SelStartMode
+Menu, Startmode, Add, Control, SelStartMode
 Menu, Startmode, Add, Button, SelStartMode
 Menu, Startmode, Add
 Menu, Startmode, Add, Last Mode, SelStartMode
 Menu, Sys, Add, Start mode, :Startmode
-Menu, Startmode, Check, % {"Win":"Window","Mouse":"Mouse && Control","Hotkey":"Button","LastMode":"Last Mode"}[IniRead("StartMode", "Mouse")]
+Menu, Startmode, Check, % {"Win":"Window","Control":"Control","Hotkey":"Button","LastMode":"Last Mode"}[IniRead("StartMode", "Control")]
 
 Menu, Help, Add, Open script dir, Help_OpenScriptDir
 Menu, Help, Add, Open user dir, Help_OpenUserDir
@@ -246,7 +246,7 @@ Return
 
 +Tab:: 
 SpotProc:
-	(ThisMode = "Mouse" ? (Spot_Mouse() (StateAllwaysSpot ? Spot_Win() : 0) Write_Mouse()) : (Spot_Win() (StateAllwaysSpot ? Spot_Mouse() : 0) Write_Win()))
+	(ThisMode = "Control" ? (Spot_Control() (StateAllwaysSpot ? Spot_Win() : 0) Write_Control()) : (Spot_Win() (StateAllwaysSpot ? Spot_Control() : 0) Write_Win()))
 	If !WinActive("ahk_id" hGui)
 	{
 		ZoomMsg(1)
@@ -277,7 +277,7 @@ PausedScript:
 	If (ThisMode = "Hotkey" && WinActive("ahk_id" hGui))
 		Hotkey_Hook(!isPaused)
 	If (isPaused && !WinActive("ahk_id" hGui))
-		(ThisMode = "Mouse" ? Spot_Win() : ThisMode = "Win" ? Spot_Mouse() : 0)
+		(ThisMode = "Control" ? Spot_Win() : ThisMode = "Win" ? Spot_Control() : 0)
 	HideMarker(), HideAccMarker()
 	Menu, Sys, % (isPaused ? "Check" : "UnCheck"), Pause
 	ZoomMsg(isPaused || (!ActiveNoPause && WinActive("ahk_id" hGui)) ? 1 : 0)
@@ -441,7 +441,7 @@ Loop_Win:
 	If ((WinActive("ahk_id" hGui) && !ActiveNoPause) || Sleep = 1)
 		GoTo Repeat_Loop_Win
 	If Spot_Win()
-		Write_Win(), StateAllwaysSpot ? Spot_Mouse() : 0
+		Write_Win(), StateAllwaysSpot ? Spot_Control() : 0
 Repeat_Loop_Win:
 	If !isPaused
 		SetTimer, Loop_Win, -%RangeTimer%
@@ -612,50 +612,50 @@ HTML_Win:
 }
 
 Write_Win() {
+	oBody.innerHTML := HTML_Win  
 	If oDocEl.scrollLeft
 		oDocEl.scrollLeft := 0
-	oBody.innerHTML := HTML_Win  
 	Return 1
 }
 
-	; _________________________________________________ Mode_Mouse _________________________________________________
+	; _________________________________________________ Mode_Control _________________________________________________
 
-Mode_Mouse:
+Mode_Control:
 	If A_GuiControl
 		GuiControl, 1:Focus, oDoc
 	oBody.createTextRange().execCommand("RemoveFormat")
 	GuiControl, TB: -0x0001, But2
 	If (ThisMode = "Hotkey")
 		Hotkey_Hook(0)
-	If ThisMode = Mouse
+	If ThisMode = Control
 		oDocEl.scrollLeft := 0
 	Try SetTimer, Loop_%ThisMode%, Off
 	ScrollPos[ThisMode,1] := oDocEl.scrollLeft, ScrollPos[ThisMode,2] := oDocEl.scrollTop
-	If ThisMode != Mouse
+	If ThisMode != Control
 		HTML_%ThisMode% := oBody.innerHTML
-	ThisMode := "Mouse"
-	If (HTML_Mouse = "")
-		Spot_Mouse(1)
-	TitleText := "AhkSpy - Mouse & Control" TitleTextP2
+	ThisMode := "Control"
+	If (HTML_Control = "")
+		Spot_Control(1)
+	TitleText := "AhkSpy - Control" TitleTextP2
 	SendMessage, 0xC, 0, &TitleText, , ahk_id %hGui%
-	Write_Mouse(), oDocEl.scrollLeft := ScrollPos[ThisMode,1], oDocEl.scrollTop := ScrollPos[ThisMode,2]
+	Write_Control(), oDocEl.scrollLeft := ScrollPos[ThisMode,1], oDocEl.scrollTop := ScrollPos[ThisMode,2]
 	IniWrite(ThisMode, "LastMode")
 	If isFindView
 		FindSearch(1)
 
-Loop_Mouse:
+Loop_Control:
 	If (WinActive("ahk_id" hGui) && !ActiveNoPause) || Sleep = 1
-		GoTo Repeat_Loop_Mouse
-	If Spot_Mouse()
-		Write_Mouse(), StateAllwaysSpot ? Spot_Win() : 0
-Repeat_Loop_Mouse:
+		GoTo Repeat_Loop_Control
+	If Spot_Control()
+		Write_Control(), StateAllwaysSpot ? Spot_Win() : 0
+Repeat_Loop_Control:
 	If !isPaused
-		SetTimer, Loop_Mouse, -%RangeTimer%
+		SetTimer, Loop_Control, -%RangeTimer%
 	Return
 
-Spot_Mouse(NotHTML = 0) {
+Spot_Control(NotHTML = 0) {
 	If NotHTML
-		GoTo HTML_Mouse
+		GoTo HTML_Control
 	WinGet, ProcessName_A, ProcessName, A
 	WinGet, HWND_A, ID, A
 	WinGetClass, WinClass_A, A
@@ -703,16 +703,16 @@ Spot_Mouse(NotHTML = 0) {
 			If CtrlInfo !=
 			{
 				If isIE
-					CtrlInfo = %_T1% ( Info - %ClassName% ) </span>%_ButiWB2Learner%%_T2%%CtrlInfo%
+					CtrlInfo = %_T1% ( Info - %ClassName% ) </span><a></a>%_ButiWB2Learner%%_T2%%CtrlInfo%
 				Else
-					CtrlInfo = %_T1% ( Info - %ClassName% ) </span>%_T2%%_PRE1%%CtrlInfo%%_PRE2%
+					CtrlInfo = %_T1% ( Info - %ClassName% ) </span><a></a>%_T2%%_PRE1%%CtrlInfo%%_PRE2%
 			}
 		}
 		WithRespectControl := _DP "<span name='MS:'>" Round(rmCtrlX / CtrlW, 4) ", " Round(rmCtrlY / CtrlH, 4) "</span>"
 	}
 	Else
 		rmCtrlX := rmCtrlY := ""
-	If (!isIE && ThisMode = "Mouse" && (StateLight = 1 || (StateLight = 3 && GetKeyState("Shift", "P"))))
+	If (!isIE && ThisMode = "Control" && (StateLight = 1 || (StateLight = 3 && GetKeyState("Shift", "P"))))
 	{
 		StateLightMarker ? ShowMarker(WinX+CtrlX, WinY+CtrlY, CtrlW, CtrlH) : 0
 		StateLightAcc ? ShowAccMarker(AccCoord[1], AccCoord[2], AccCoord[3], AccCoord[4]) : 0
@@ -724,8 +724,8 @@ Spot_Mouse(NotHTML = 0) {
 	WinGet, ProcessName, ProcessName, ahk_id %WinID%
 	WinGetClass, WinClass, ahk_id %WinID%
 
-HTML_Mouse:
-	HTML_Mouse =
+HTML_Control:
+	HTML_Control =
 	( Ltrim
 	<body id='body'>
 	%_T1% ( Mouse ) </span>%_BT1% id='pause_button'> pause %_BT2%%_DB%%_DB%%_BT1% id='run_zoom'> zoom %_BT2%%_T2%%_BR%
@@ -814,10 +814,10 @@ HTML_Mouse:
 	Return 1
 }
 
-Write_Mouse() {
+Write_Control() {
+	oBody.innerHTML := HTML_Control
 	If oDocEl.scrollLeft
 		oDocEl.scrollLeft := 0
-	oBody.innerHTML := HTML_Mouse
 	Return 1
 }
 
@@ -1065,7 +1065,7 @@ GetInfo_InternetExplorer_Server(hwnd, ByRef ClassNN) {
 	x2 := pbrt.right * ratio, y2 := pbrt.bottom * ratio
 	ObjRelease(pwin), ObjRelease(pelt), ObjRelease(WB2), ObjRelease(iFrame), ObjRelease(pbrt)
 	
-	If (ThisMode = "Mouse") && (StateLight = 1 || (StateLight = 3 && GetKeyState("Shift", "P")))
+	If (ThisMode = "Control") && (StateLight = 1 || (StateLight = 3 && GetKeyState("Shift", "P")))
 	{
 		WinGetPos, sX, sY, , , ahk_id %hwnd%
 		StateLightMarker ? ShowMarker(sX + x1, sY + y1, x2 - x1, y2 - y1) : 0
@@ -1101,9 +1101,11 @@ AccInfoUnderMouse(x, y, wx, wy, cx, cy) {
 		, "Ptr", VarSetCapacity(varChild,8+2*A_PtrSize,0)*0+&varChild) = 0
 	Acc := ComObjEnwrap(9,pacc,1), child := NumGet(varChild,8,"UInt")
 	If !IsObject(Acc)
-		Return
+		Return 
+	Count := (Var := Acc.accChildCount) != "" ? "<span name='MS:'>" Var "</span>" : "N/A" 
 	Var := child ? "Child" _DP "<span class='param' name='MS:N'>Id:  </span><span name='MS:'>" child "</span>"
-		: "Parent" _DP "<span class='param' name='MS:N'>ChildCount:  </span>" ((C := Acc.accChildCount) != "" ? "<span name='MS:'>" C "</span>" : "N/A")
+		. _DP "<span class='param' name='MS:N'>Parent child count:  </span>" Count
+		: "Parent" _DP "<span class='param' name='MS:N'>ChildCount:  </span>" Count
 	code := _PRE1 "<span class='param'>Type:</span>  " Var _PRE2
 	code .= _T1P " ( Position relative ) </span>" _T2 _PRE1 "<span class='param'>Screen: </span>" AccGetLocation(Acc, child)
 		. "`n<span class='param'>Mouse: </span><span name='MS:'>x" x - AccCoord[1] " y" y - AccCoord[2] "</span>"
@@ -1195,7 +1197,7 @@ Write_HotkeyHTML(K) {
 	ThisKey := K.TK, VKCode := K.VK, SCCode := K.SC
 
 	If (K.NFP && Mods KeyName != "")
-		NotPhysical	:= " " _DP "<span style='color:#" ColorDelimiter "'> Not a physical press </span>"
+		NotPhysical	:= " " _DP "<span style='color:#" ColorDelimiter "'> Emulated</span>"
 
 	HK1 := K.IsCode ? Hotkey : ThisKey
 	HK2 := HK1 = PrHK1 ? PrHK2 : PrHK1, PrHK1 := HK1, PrHK2 := HK2
@@ -1261,7 +1263,7 @@ Write_HotkeyHTML(K) {
 	<br><span id='hotkeybox'>
 	%_INPHK% id='edithotkey' value='%inp_hotkey%'><button id='keyname'> &#8250 &#8250 &#8250 </button>%_INPHK% id='editkeyname' value='%inp_keyname%'></input>
 	</span> 
-	%_PRE1%%_PRE2%
+	<br> 
 	%_T0% 
 	</body>
 	
@@ -1362,9 +1364,9 @@ Write_HotkeyHTML(K) {
 }
 
 Write_Hotkey() {
+	oBody.innerHTML := HTML_Hotkey 
 	If oDocEl.scrollLeft
 		oDocEl.scrollLeft := 0
-	oBody.innerHTML := HTML_Hotkey
 }
 
 	; _________________________________________________ Hotkey Functions _________________________________________________
@@ -1616,10 +1618,10 @@ CheckUpdate:
 
 SelStartMode:
 	Menu, Startmode, UnCheck, Window
-	Menu, Startmode, UnCheck, Mouse && Control
+	Menu, Startmode, UnCheck, Control
 	Menu, Startmode, UnCheck, Button
 	Menu, Startmode, UnCheck, Last Mode
-	IniWrite({"Window":"Win","Mouse && Control":"Mouse","Button":"Hotkey","Last Mode":"LastMode"}[A_ThisMenuItem], "StartMode")
+	IniWrite({"Window":"Win","Control":"Control","Button":"Hotkey","Last Mode":"LastMode"}[A_ThisMenuItem], "StartMode")
 	Menu, Startmode, Check, % A_ThisMenuItem
 	Return
 
@@ -1818,7 +1820,7 @@ Minimize() {
 
 ZoomSpot() {
 	If (!isPaused && Sleep != 1 && WinActive("ahk_id" hGui))
-		(ThisMode = "Mouse" ? (Spot_Mouse() (StateAllwaysSpot ? Spot_Win() : 0) Write_Mouse()) : (Spot_Win() (StateAllwaysSpot ? Spot_Mouse() : 0) Write_Win()))
+		(ThisMode = "Control" ? (Spot_Control() (StateAllwaysSpot ? Spot_Win() : 0) Write_Control()) : (Spot_Win() (StateAllwaysSpot ? Spot_Control() : 0) Write_Win()))
 }
 
 MsgZoom(wParam, lParam) {
@@ -2275,7 +2277,7 @@ MouseStep(x, y) {
 	MouseMove, x, y, 0, R
 	If (Sleep != 1 && !isPaused && ThisMode != "Hotkey" && WinActive("ahk_id" hGui))
 	{
-		(ThisMode = "Mouse" ? (Spot_Mouse() (StateAllwaysSpot ? Spot_Win() : 0) Write_Mouse()) : (Spot_Win() (StateAllwaysSpot ? Spot_Mouse() : 0) Write_Win()))
+		(ThisMode = "Control" ? (Spot_Control() (StateAllwaysSpot ? Spot_Win() : 0) Write_Control()) : (Spot_Win() (StateAllwaysSpot ? Spot_Control() : 0) Write_Win()))
 		ZoomMsg(2)
 	}
 }
