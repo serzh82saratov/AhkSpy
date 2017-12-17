@@ -3028,13 +3028,16 @@ SingleInstance(Icon = 0) {
 					IfMsgBox, Yes
 					{
 						WinClose, ahk_id %this_id%
-						Start := A_TickCount
+						Sleep 200
+						WinGet, WinPID, PID, ahk_id %this_id%
+						Process, Close, %WinPID%
+						Start := A_TickCount + 200
 						Continue
 					}
 					OnExit
 					ExitApp
 				}
-				Sleep 10
+				Sleep 1
 			}
 		}
 	}
@@ -3058,7 +3061,6 @@ CoordMode, Mouse, Screen
 OnExit("ZoomOnClose")
 
 Global oZoom := {}, isZoom := 1, hAhkSpy, MsgAhkSpyZoom, ActiveNoPause, isAeroEnabled
-DllCall("Dwmapi\DwmIsCompositionEnabled", "Int*", isAeroEnabled)
 OnMessage(0x0020, "WM_SETCURSOR")
 OnMessage(0x201, "LBUTTONDOWN") ; WM_LBUTTONDOWN
 OnMessage(0xA1, "LBUTTONDOWN") ; WM_NCLBUTTONDOWN
@@ -3095,9 +3097,7 @@ Z_MouseStep(x, y) {
 	MouseMove, x, y, 0, R
 	If oZoom.Pause
 	{
-		SetTimer, Magnify, Off
-		oZoom.Pause := 0, Magnify(), oZoom.Pause := 1
-		SetTimer, Magnify, -30
+		oZoom.Pause := 0, Magnify(1), oZoom.Pause := 1  
 	}
 	PostMessage, % MsgAhkSpyZoom, 1, 0, , ahk_id %hAhkSpy%
 }
@@ -3150,7 +3150,7 @@ ZoomCreate() {
 	oZoom.vSliderZoom := hSliderZoom
 }
 
-Magnify() {
+Magnify(one = 0) {
 	If (oZoom.Show && !oZoom.Pause && oZoom.SIZING != 2)
 	{
 		MouseGetPos, mX, mY, WinID
@@ -3165,12 +3165,13 @@ Magnify() {
 			SetTimer, Memory, -30
 		}
 	}
-	SetTimer, Magnify, -1
+	If !one
+		SetTimer, Magnify, -1
 }
 
 SetSize() {
 	Static Top := 45, Left := 4, Right := 4, Bottom := 4, PrWidth, PrHeight
-	SetTimer, Magnify, Off
+	MagnifyOff()
 	GetClientSize(oZoom.hGui, GuiWidth, GuiHeight)
 	Width := GuiWidth - Left - Right
 	Height := GuiHeight - Top - Bottom
@@ -3225,9 +3226,9 @@ SetSize() {
 	SetTimer, Magnify, -10
 }
 
-SetWindowPos(hWnd, x, y, w, h, SWP_NOSIZE := 0) {
+SetWindowPos(hWnd, x, y, w, h, SWP_NOSIZE := 0, SWP_NOREDRAW := 0x0008) {
 	Static SWP_ASYNCWINDOWPOS := 0x4000, SWP_DEFERERASE := 0x2000, SWP_NOACTIVATE := 0x0010, SWP_NOCOPYBITS := 0x0100
-		, SWP_NOOWNERZORDER := 0x0200, SWP_NOREDRAW := 0x0008, SWP_NOSENDCHANGING := 0x0400
+		, SWP_NOOWNERZORDER := 0x0200, SWP_NOSENDCHANGING := 0x0400  ;	, SWP_NOREDRAW := 0x0008
 	DllCall("SetWindowPos"
 		, "Ptr", hWnd
 		, "Ptr", 0
@@ -3257,7 +3258,7 @@ SliderZoom()  {
 ChangeZoom(Val)  {
 	If (Val < 1 || Val > 50)
 		Return
-	SetTimer, Magnify, Off
+	MagnifyOff()
 	GuiControl, ZoomTB:, % oZoom.vTextZoom, % oZoom.Zoom := Val
 	GuiControl, ZoomTB:, % oZoom.vSliderZoom, % oZoom.Zoom
 	IniWrite(oZoom.Zoom, "MagnifyZoom")
@@ -3280,6 +3281,7 @@ ZoomHide() {
 	GuiControl, ZoomTB:, Focus, % oZoom.vTextZoom
 	Gui, Zoom: Show, Hide
 	IniWrite(0, "ZoomShow")
+	MagnifyOff()
 }
 
 ZoomShow() {
@@ -3288,6 +3290,7 @@ ZoomShow() {
 	GuiControl, ZoomTB:, Focus, % oZoom.vTextZoom
 	IniWrite(1, "ZoomShow")
 	Gui, Zoom: Show, NA
+	GoSub, isAeroEnabled
 }
 
 ZoomMove() {
@@ -3295,13 +3298,13 @@ ZoomMove() {
 		Return
 	WinGetPos, WinX, WinY, WinWidth, WinHeight, ahk_id %hAhkSpy%
 	; Gui, Zoom:Show, % "NA x" WinX + WinWidth " y" WinY  
-	
-	SetWindowPos(oZoom.hGui, WinX + WinWidth, WinY, "", "", 0x0001)
+	; SetWindowPos(oZoom.hGui, WinX + WinWidth, WinY, 0, 0, 0x0001, 0)
+	 SetWindowPos(oZoom.hGui, WinX + WinWidth, WinY, 0, 0, 0x0001)
 }
-
+	
 WM_Paint() {
 	If A_GuiControl =
-		SetTimer, Redraw, -10
+		SetTimer, Redraw, -10 
 }
 
 Memory() {
@@ -3389,20 +3392,18 @@ ZoomOnClose() {
 	RestoreCursors()
 	ExitApp
 }
-
+MagnifyOff() {
+	SetTimer, Magnify, Off
+}
 	; wParam: 0 снять паузу, 1 пауза, 2 однократный зум, 3 hide, 4 show, 5 MemoryZoomSize, 6 MinSize, 7 пауза AhkSpy, 8 ActiveNoPause, 9 Suspend
 
 Z_MsgZoom(wParam, lParam) {   
-	If wParam = 0
+	If (wParam = 0 && oZoom.Show)
 		oZoom.Pause := 0, Magnify()
-	Else If wParam = 1
-		oZoom.Pause := 1
-	Else If wParam = 2
-	{
-		SetTimer, Magnify, Off
-		S_Pause := oZoom.Pause, oZoom.Pause := 0, Magnify(), oZoom.Pause := S_Pause
-		SetTimer, Magnify, -10
-	}
+	Else If wParam = 1 
+		MagnifyOff(), oZoom.Pause := 1 
+	Else If (wParam = 2 && oZoom.Show)
+		S_Pause := oZoom.Pause, oZoom.Pause := 0, Magnify(1), oZoom.Pause := S_Pause 
 	Else If wParam = 3
 		ZoomHide()
 	Else If wParam = 4
@@ -3427,11 +3428,11 @@ Z_MsgZoom(wParam, lParam) {
 
 EVENT_OBJECT_DESTROY(hWinEventHook, event, hwnd) {
 	; If (idObject || idChild || hwnd != hAhkSpy)
-	If (hwnd = hAhkSpy) 
+	If (hwnd = hAhkSpy)
 		ExitApp
 }
 
-EVENT_OBJECT_LOCATIONCHANGE(hWinEventHook, event, hwnd) {
+EVENT_OBJECT_LOCATIONCHANGE(hWinEventHook, event, hwnd) { 
 	If (hwnd != hAhkSpy)  
 		Return
 	ZoomMove()
@@ -3443,6 +3444,10 @@ EVENT_SYSTEM_MINIMIZESTART(hWinEventHook, event, hwnd) {
 	If (hwnd = hAhkSpy)  
 		oZoom.Pause := 1
 }
+
+isAeroEnabled:
+	DllCall("Dwmapi\DwmIsCompositionEnabled", "Int*", isAeroEnabled) 
+	Return
 
 	; _________________________________________________ Sizing _________________________________________________
 
