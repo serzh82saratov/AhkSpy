@@ -55,6 +55,7 @@ Global ThisMode := IniRead("StartMode", "Control"), ThisMode := ThisMode = "Last
 , HTML_Win, HTML_Control, HTML_Hotkey, rmCtrlX, rmCtrlY, widthTB, FullScreenMode, hColorProgress
 , ClipAdd_Before := 0, ClipAdd_Delimiter := "`r`n", oDocEl, oJScript, oBody, isConfirm, isAhkSpy := 1, WordWrap := IniRead("WordWrap", 0)
 , MoveTitles := IniRead("MoveTitles", 1), PreOverflowHide := IniRead("PreOverflowHide", 1), DetectHiddenText := IniRead("DetectHiddenText", "on")
+, MenuIdView := IniRead("MenuIdView", 0)
 
 , _DB := "<span style='position: relative; margin-right: 1em;'></span>"
 , _BT1 := "<span class='button' unselectable='on' oncontextmenu='return false' onmouseleave='OnButtonOut (this)' onmousedown='OnButtonDown (this)' "
@@ -506,6 +507,9 @@ Spot_Win(NotHTML = 0) {
 	If WinText !=
 		WinText := _T1 " ( Window Text ) </span><a></a>" _BT1 " id='copy_wintext'> copy " _BT2 _DB _BT1 " id='wintext_hidden'> hidden - " DetectHiddenText " " _BT2 _T2
 		. _LPRE  " id='wintextcon'><div>" TransformHTML(WinText) "</div>" _PRE2
+	
+	MenuText := GetMenu(WinID) 
+		
 	CoordMode, Mouse
 	MouseGetPos, WinXS, WinYS
 	PixelGetColor, ColorRGB, %WinXS%, %WinYS%, RGB
@@ -538,7 +542,7 @@ HTML_Win:
 	%_PRE1%<span class='param' name='MS:N'>PID:</span>  <span name='MS:'>%WinPID%</span>%_DP%%ProcessBitSize%<span class='param'>Window count:</span> %WinCountProcess%%_DP%%_BB1% id='process_close'> process close %_BB2%
 	<span class='param' name='MS:N'>HWND:</span>  <span name='MS:'>%WinID%</span>%_DP%%_BB1% id='win_close'> win close %_BB2%%_DP%<span class='param'>Control count:</span>  %CountControl%
 	<span class='param'>Style:  </span><span id='c_Style' name='MS:'>%WinStyle%</span>%_DP%<span class='param'>ExStyle:  </span><span id='c_ExStyle' name='MS:'>%WinExStyle%</span>%_DP%%_BB1% id='get_styles'> %ButtonStyle_% %_BB2%%WinTransparent%%WinTransColor%%CLSID%%_PRE2%
-	<span id=WinStyles>%WinStyles%</span>%SBText%%WinText%<a></a>%_T0%
+	<span id=WinStyles>%WinStyles%</span>%SBText%%WinText%%MenuText%<a></a>%_T0%
 	</body>
 
 	<style>
@@ -564,6 +568,12 @@ HTML_Win:
 		background: transparent;
 		left: 0px;
 	}
+	.hr {
+		position: absolute;
+		width: 100`%;
+		border-bottom: 0.2em dashed red;
+		height: 0.5em;
+	}
 	.line {
 		position: absolute;
 		width: 100`%;
@@ -577,12 +587,6 @@ HTML_Win:
 		margin-right: 50px;
 		white-space: pre;
 		color: #%ColorTitle%; 
-	}
-	.hr {
-		position: absolute;
-		width: 100`%;
-		border-bottom: 0.2em dashed red;
-		height: 0.5em;
 	}
 	pre {
 		margin-bottom: 0.1em;
@@ -601,6 +605,9 @@ HTML_Win:
 	}
 	.param {
 		color: #%ColorParam%;
+	}
+	.titleparam {
+		color: #%ColorTitle%;
 	}
 	</style>
 	)
@@ -819,6 +826,52 @@ Write_Control() {
 	If oDocEl.scrollLeft
 		oDocEl.scrollLeft := 0
 	Return 1
+}
+
+	; _________________________________________________ Get Menu _________________________________________________
+
+GetMenu(hWnd) {
+	; Static prhWnd, MenuText
+	; If (hWnd = prhWnd)
+		; Return MenuText
+	; prhWnd := hWnd
+	SendMessage, 0x1E1, 0, 0, , ahk_id %hWnd%	;  MN_GETHMENU
+	hMenu := ErrorLevel
+	If !hMenu || (hMenu + 0 = "")
+		Return 
+	Return _T1 " ( Menu text ) </span>" _BT1 " id='copy_menutext'> copy " _BT2 _DB 
+	. _BT1 " id='menu_idview'> id - " (MenuIdView ? "view" : "hide") " " _BT2 _T2 _LPRE " id='pre_menutext'>" RTrim(GetMenuText(hMenu), "`n")  _PRE2
+}
+
+GetMenuText(hMenu, child = 0)
+{ 
+	Loop, % DllCall("GetMenuItemCount", "Ptr", hMenu)
+	{ 
+		idx := A_Index - 1
+		nSize++ := DllCall("GetMenuString", "Ptr", hMenu, "int", idx, "Uint", 0, "int", 0, "Uint", 0x400)   ;  MF_BYPOSITION
+		nSize := (nSize * (A_IsUnicode ? 2 : 1)) 
+		VarSetCapacity(sString, nSize)
+		DllCall("GetMenuString", "Ptr", hMenu, "int", idx, "str", sString, "int", nSize, "Uint", 0x400)   ;  MF_BYPOSITION
+		sString := TransformHTML(sString)
+		idn := DllCall("GetMenuItemID", "Ptr", hMenu, "int", idx)
+		IdItem := "<span class='param menuitemid' style='display: " (!MenuIdView ? "none" : "inline") ";'>`t`t`t<span name='MS:'>" idn "</span></span>"
+		isSubMenu := (idn = -1) && (hSubMenu := DllCall("GetSubMenu", "Ptr", hMenu, "int", idx)) ? 1 : 0
+		If isSubMenu
+			sContents .= AddTab(child) "<span class='param'>" idx + 1 ":  </span><span name='MS:' class='titleparam'>" sString "</span><span class='param menuitemsub';'>&#8595;</span>" IdItem "`n" 
+		Else If (sString = "")
+			sContents .= AddTab(child) "<span class='param'>" idx + 1 ":  &#8212; &#8212; &#8212; &#8212; &#8212; &#8212; &#8212;</span>" IdItem "`n" 
+		Else
+			sContents .= AddTab(child) "<span class='param'>" idx + 1 ":  </span><span name='MS:'>" sString "</span>" IdItem "`n" 
+		If isSubMenu
+			sContents .= GetMenuText(hSubMenu, ++child), --child 
+	} 
+	Return sContents 
+} 
+
+AddTab(c) {
+	loop % c
+		Tab .= "<span class='param';'>&#8595;`t</span>"
+	Return  Tab  
 }
 
 	; _________________________________________________ Get Info Control _________________________________________________
@@ -1263,7 +1316,7 @@ Write_HotkeyHTML(K) {
 	<br><span id='hotkeybox'>
 	%_INPHK% id='edithotkey' value='%inp_hotkey%'><button id='keyname'> &#8250 &#8250 &#8250 </button>%_INPHK% id='editkeyname' value='%inp_keyname%'></input>
 	</span> 
-	<br> 
+	%_PRE1%%_PRE2%
 	%_T0% 
 	</body>
 	
@@ -2621,6 +2674,18 @@ html =
 			col[i].style.left = "30`%";
 		} 
 	}
+	function menuitemdisplay(param) {
+		col = document.querySelectorAll('.menuitemid');
+		for (var i = 0; i < col.length; i++) {
+			col[i].style.display = param;
+		} 
+	}
+	function removemenuitem(parent, selector) {
+		col = parent.querySelectorAll(selector);
+		for (var i = 0; i < col.length; i++) {  
+			parent.removeChild(col[i])  
+		} 
+	}
 	onresize = function() {
 		shift(0);
 	}
@@ -2737,7 +2802,7 @@ Class Events {  ;	http://forum.script-coding.com/viewtopic.php?pid=82283#p82283
 	}
 }
 
-ButtonClick(oevent) {
+ButtonClick(oevent) { 
 	thisid := oevent.id
 	If (thisid = "copy_wintext")
 		o := oDoc.getElementById("wintextcon")
@@ -2757,6 +2822,22 @@ ButtonClick(oevent) {
 		oDoc.getElementById("wintextcon").style.visibility := "visible"
 		oDoc.getElementById("wintext_hidden").innerText := " hidden - " DetectHiddenText " " 
 		HTML_Win := oBody.innerHTML
+	}
+	Else If (thisid = "menu_idview")
+	{   
+		IniWrite(MenuIdView := !MenuIdView, "MenuIdView")
+		oJScript.menuitemdisplay(!MenuIdView ? "none" : "inline")
+		oDoc.getElementById("menu_idview").innerText :=  " id - " (MenuIdView ? "view" : "hide") " "  
+	}
+	Else If (thisid = "copy_menutext")
+	{
+		pre_menutext := oDoc.getElementById("pre_menutext")
+		preclone := pre_menutext.cloneNode(true)
+		oJScript.removemenuitem(preclone, ".menuitemsub")
+		If !MenuIdView
+			oJScript.removemenuitem(preclone, ".menuitemid") 
+		GetKeyState("Shift", "P") ? ClipAdd(preclone.OuterText, 1) : (Clipboard := preclone.OuterText)
+		HighLight(pre_menutext, 500), preclone := ""
 	}
 	Else If (thisid = "copy_button") 
 		o := oDoc.all.item(oevent.sourceIndex + 2)
@@ -2976,7 +3057,8 @@ SetBatchLines,-1
 CoordMode, Mouse, Screen
 OnExit("ZoomOnClose")
 
-Global oZoom := {}, isZoom := 1, hAhkSpy, MsgAhkSpyZoom, ActiveNoPause
+Global oZoom := {}, isZoom := 1, hAhkSpy, MsgAhkSpyZoom, ActiveNoPause, isAeroEnabled
+DllCall("Dwmapi\DwmIsCompositionEnabled", "Int*", isAeroEnabled)
 OnMessage(0x0020, "WM_SETCURSOR")
 OnMessage(0x201, "LBUTTONDOWN") ; WM_LBUTTONDOWN
 OnMessage(0xA1, "LBUTTONDOWN") ; WM_NCLBUTTONDOWN
@@ -3160,6 +3242,13 @@ RedrawWindow() {
 	DllCall("RedrawWindow", "Ptr", oZoom.hGui, "Uint", 0, "Uint", 0, "Uint", 0x1|0x4)
 }
 
+Redraw() {
+	StretchBlt(oZoom.hdcDest, 0, 0, oZoom.nWidthDest, oZoom.nHeightDest
+		, oZoom.hdcMemory, oZoom.nXOriginSrc - oZoom.nXOriginSrcOffset, oZoom.nYOriginSrc - oZoom.nYOriginSrcOffset, oZoom.nWidthSrc, oZoom.nHeightSrc)
+	For k, v In oZoom.oMarkers[oZoom.Mark]
+		StretchBlt(oZoom.hdcDest, v.x, v.y, v.w, v.h, oZoom.hdcDest, v.x, v.y, v.w, v.h, 0x5A0049)	; PATINVERT
+}
+
 SliderZoom()  {
 	GuiControlGet, SliderZoom, ZoomTB:, % oZoom.vSliderZoom
 	ChangeZoom(SliderZoom)
@@ -3206,6 +3295,7 @@ ZoomMove() {
 		Return
 	WinGetPos, WinX, WinY, WinWidth, WinHeight, ahk_id %hAhkSpy%
 	; Gui, Zoom:Show, % "NA x" WinX + WinWidth " y" WinY  
+	
 	SetWindowPos(oZoom.hGui, WinX + WinWidth, WinY, "", "", 0x0001)
 }
 
@@ -3223,13 +3313,6 @@ Memory() {
 	hBM := DllCall("Gdi32.Dll\CreateCompatibleBitmap", "Ptr", oZoom.hdcSrc, "Int", VirtualScreenWidth, "Int", VirtualScreenHeight)
 	DllCall("Gdi32.Dll\SelectObject", "Ptr", oZoom.hdcMemory, "Ptr", hBM), DllCall("DeleteObject", "Ptr", hBM)
 	BitBlt(oZoom.hdcMemory, 0, 0, VirtualScreenWidth, VirtualScreenHeight, oZoom.hdcSrc, VirtualScreenX, VirtualScreenY)
-}
-
-Redraw() {
-	StretchBlt(oZoom.hdcDest, 0, 0, oZoom.nWidthDest, oZoom.nHeightDest
-		, oZoom.hdcMemory, oZoom.nXOriginSrc - oZoom.nXOriginSrcOffset, oZoom.nYOriginSrc - oZoom.nYOriginSrcOffset, oZoom.nWidthSrc, oZoom.nHeightSrc)
-	For k, v In oZoom.oMarkers[oZoom.Mark]
-		StretchBlt(oZoom.hdcDest, v.x, v.y, v.w, v.h, oZoom.hdcDest, v.x, v.y, v.w, v.h, 0x5A0049)	; PATINVERT
 }
 
 CheckAhkSpy() {
@@ -3349,8 +3432,11 @@ EVENT_OBJECT_DESTROY(hWinEventHook, event, hwnd) {
 }
 
 EVENT_OBJECT_LOCATIONCHANGE(hWinEventHook, event, hwnd) {
-	If (hwnd = hAhkSpy)  
-		ZoomMove()
+	If (hwnd != hAhkSpy)  
+		Return
+	ZoomMove()
+	If !isAeroEnabled 
+		SetTimer, RedrawWindow, -1
 }
 
 EVENT_SYSTEM_MINIMIZESTART(hWinEventHook, event, hwnd) {
