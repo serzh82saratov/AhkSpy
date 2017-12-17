@@ -2065,6 +2065,7 @@ ExistSelectedText(byref Copy) {
 
 TitleText(Text, Time = 1000) {
 	StringReplace, Text, Text, `r`n, % Chr(8629), 1
+	StringReplace, Text, Text, %A_Tab%, % "      ", 1
 	SendMessage, 0xC, 0, &Text, , ahk_id %hGui%
 	SetTimer, TitleShow, -%Time%
 }
@@ -3512,3 +3513,4 @@ RestoreCursors() {
 }
 
 	;)
+
