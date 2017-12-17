@@ -484,7 +484,6 @@ Spot_Win(NotHTML = 0) {
 	RegExReplace(CountControl, "m`a)$", "", CountControl)
 	GetClientPos(WinID, caX, caY, caW, caH)
 	caWinRight := WinWidth - caW - caX , caWinBottom := WinHeight - caH - caY
-	
 	loop 1000
 	{
 		StatusBarGetText, SBFieldText, %A_Index%, ahk_id %WinID%
@@ -500,16 +499,13 @@ Spot_Win(NotHTML = 0) {
 			SBText .= "<span class='param'>(" k "):</span> <span name='MS:' id='sb_field_" A_Index "'>" TransformHTML(v "`n") "</span>"
 		If SBText !=
 			SBText := _T1 "( StatusBarText ) </span>" _BT1 " id='copy_sbtext' name='" sb_max "'> copy " _BT2 _T2 _PRE1 "<span>" SBText "</span></span>" _PRE2
-	}
-
+	} 
 	DetectHiddenText, % DetectHiddenText
 	WinGetText, WinText, ahk_id %WinID%
 	If WinText !=
 		WinText := _T1 " ( Window Text ) </span><a></a>" _BT1 " id='copy_wintext'> copy " _BT2 _DB _BT1 " id='wintext_hidden'> hidden - " DetectHiddenText " " _BT2 _T2
-		. _LPRE  " id='wintextcon'><div>" TransformHTML(WinText) "</div>" _PRE2
-	
-	MenuText := GetMenu(WinID) 
-		
+		. _LPRE  "><pre id='wintextcon'>" TransformHTML(WinText) "</pre>" _PRE2
+	MenuText := GetMenu(WinID)  
 	CoordMode, Mouse
 	MouseGetPos, WinXS, WinYS
 	PixelGetColor, ColorRGB, %WinXS%, %WinYS%, RGB
@@ -2808,20 +2804,19 @@ ButtonClick(oevent) {
 		o := oDoc.getElementById("wintextcon")
 		, GetKeyState("Shift", "P") ? ClipAdd(o.OuterText, 1) : (Clipboard := o.OuterText), HighLight(o, 500)
 	Else If (thisid = "wintext_hidden")
-	{   
+	{    
+		R := oBody.createTextRange(), R.collapse(1), R.select()
+		oDoc.getElementById("wintextcon").disabled := 1
 		DetectHiddenText, % DetectHiddenText := (DetectHiddenText = "on" ? "off" : "on") 
 		IniWrite(DetectHiddenText, "DetectHiddenText")
 		If !WinExist("ahk_id" oOther.WinID) && ToolTip("Window not exist", 500)
 			Return oDoc.getElementById("wintext_hidden").innerText := " hidden - " DetectHiddenText " "
-		WinGetText, WinText, % "ahk_id" oOther.WinID 
-		oDoc.getElementById("wintextcon").style.height := oDoc.getElementById("wintextcon").clientHeight
-		oDoc.getElementById("wintextcon").style.visibility := "hidden" 
-		oDoc.getElementById("wintextcon").innerHTML := "<div>" TransformHTML(WinText) "</div>" 
-		Sleep 300
-		oDoc.getElementById("wintextcon").style.height := ""
-		oDoc.getElementById("wintextcon").style.visibility := "visible"
-		oDoc.getElementById("wintext_hidden").innerText := " hidden - " DetectHiddenText " " 
+		WinGetText, WinText, % "ahk_id" oOther.WinID
+		oDoc.getElementById("wintextcon").innerHTML := "<pre>" TransformHTML(WinText) "</pre>"
 		HTML_Win := oBody.innerHTML
+		Sleep 200
+		oDoc.getElementById("wintextcon").disabled := 0
+		oDoc.getElementById("wintext_hidden").innerText := " hidden - " DetectHiddenText " " 
 	}
 	Else If (thisid = "menu_idview")
 	{   
