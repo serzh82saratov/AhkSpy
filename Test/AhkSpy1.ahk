@@ -516,7 +516,7 @@ Spot_Win(NotHTML = 0) {
 HTML_Win:
 	If w_ShowStyles
 		WinStyles := GetStyles(WinStyle, WinExStyle)
-	ButtonStyle_ := !w_ShowStyles ? "show styles" : "hide styles"
+	ButtonStyle_ := w_ShowStyles ? "show styles" : "hide styles"
 
 	HTML_Win =
 	( Ltrim
@@ -2208,7 +2208,7 @@ GetCLSIDExplorer(hwnd) {
 }
 
 ViewStyles(elem) {
-	elem.innerText := (w_ShowStyles := !w_ShowStyles) ? " hide styles " : " show styles "
+	elem.innerText := (w_ShowStyles := !w_ShowStyles) ? " show styles " : " hide styles "
 	If w_ShowStyles
 		Styles := GetStyles(oDoc.getElementById("c_Style").innerText, oDoc.getElementById("c_ExStyle").innerText)
 	oDoc.getElementById("WinStyles").innerHTML := Styles
@@ -3056,7 +3056,7 @@ SetBatchLines,-1
 CoordMode, Mouse, Screen
 OnExit("ZoomOnClose")
 
-Global oZoom := {}, isZoom := 1, hAhkSpy, MsgAhkSpyZoom, ActiveNoPause, isAeroEnabled
+Global oZoom := {}, isZoom := 1, hAhkSpy, MsgAhkSpyZoom, ActiveNoPause
 OnMessage(0x0020, "WM_SETCURSOR")
 OnMessage(0x201, "LBUTTONDOWN") ; WM_LBUTTONDOWN
 OnMessage(0xA1, "LBUTTONDOWN") ; WM_NCLBUTTONDOWN
@@ -3286,16 +3286,13 @@ ZoomShow() {
 	GuiControl, ZoomTB:, Focus, % oZoom.vTextZoom
 	IniWrite(1, "ZoomShow")
 	Gui, Zoom: Show, NA
-	GoSub, isAeroEnabled
 }
 
 ZoomMove() {
 	If !oZoom.Show
 		Return
 	WinGetPos, WinX, WinY, WinWidth, WinHeight, ahk_id %hAhkSpy%
-	; Gui, Zoom:Show, % "NA x" WinX + WinWidth " y" WinY  
-	; SetWindowPos(oZoom.hGui, WinX + WinWidth, WinY, 0, 0, 0x0001, 0)
-	 SetWindowPos(oZoom.hGui, WinX + WinWidth, WinY, 0, 0, 0x0001)
+	Gui, Zoom:Show, % "NA x" WinX + WinWidth " y" WinY  
 }
 	
 WM_Paint() {
@@ -3432,18 +3429,12 @@ EVENT_OBJECT_LOCATIONCHANGE(hWinEventHook, event, hwnd) {
 	If (hwnd != hAhkSpy)  
 		Return
 	ZoomMove()
-	If !isAeroEnabled 
-		SetTimer, RedrawWindow, -1
 }
 
 EVENT_SYSTEM_MINIMIZESTART(hWinEventHook, event, hwnd) {
 	If (hwnd = hAhkSpy)  
 		oZoom.Pause := 1
 }
-
-isAeroEnabled:
-	DllCall("Dwmapi\DwmIsCompositionEnabled", "Int*", isAeroEnabled) 
-	Return
 
 	; _________________________________________________ Sizing _________________________________________________
 
@@ -3513,4 +3504,4 @@ RestoreCursors() {
 }
 
 	;)
-
+	
