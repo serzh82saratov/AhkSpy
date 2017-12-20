@@ -1593,7 +1593,7 @@ Hotkey_SetHook(On = 1) {
 
 	; _________________________________________________ Labels _________________________________________________
 
-GuiSize:
+GuiSize: 
 	Sleep := A_EventInfo
 	If Sleep != 1
 		ControlsMove(A_GuiWidth, A_GuiHeight)
@@ -1846,7 +1846,7 @@ WM_CONTEXTMENU() {
 
 WM_WINDOWPOSCHANGED(Wp, Lp) {
 	Static PtrAdd := A_PtrSize = 8 ? 8 : 0
-	if (NumGet(Lp + 0, 0, "UInt") != hGui)
+	If (NumGet(Lp + 0, 0, "UInt") != hGui)
 		Return
 	If oOther.ZoomShow 
 	{
@@ -1854,7 +1854,7 @@ WM_WINDOWPOSCHANGED(Wp, Lp) {
 		, "Ptr", DllCall("BeginDeferWindowPos", "Int", 1), "UInt", oOther.hZoom, "UInt", 0
 		, "Int", NumGet(Lp + 0, 8 + PtrAdd, "UInt") + NumGet(Lp + 0, 16 + PtrAdd, "UInt") + 2
 		, "Int", NumGet(Lp + 0, 12 + PtrAdd, "UInt") + 2, "Int", 0, "Int", 0
-		, "UInt", 0x0215))
+		, "UInt", 0x0211))    ;	0x0200 := SWP_NOOWNERZORDER | 0x0010 := SWP_NOACTIVATE | 0x0001 := SWP_NOSIZE
 	}
 	If MemoryPos
 		SetTimer, SavePos, -400
@@ -1862,7 +1862,7 @@ WM_WINDOWPOSCHANGED(Wp, Lp) {
 
 WM_SIZE() {
 	If MemorySize
-		SetTimer, SaveSize, -400
+		SetTimer, SaveSize, -400 
 }
 
 ControlsMove(Width, Height) {
@@ -3510,4 +3510,4 @@ RestoreCursors() {
 }
 
 	;)
-	
+
