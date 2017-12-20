@@ -1767,7 +1767,7 @@ MoveTitles:
 MemoryStateZoom:
 	IniWrite(MemoryStateZoom := !MemoryStateZoom, "MemoryStateZoom")
 	Menu, View, % MemoryStateZoom ? "Check" : "UnCheck", Remember state zoom
-	IniWrite(DllCall("IsWindowVisible", "Ptr", oOther.hZoom) ? 1 : 0, "ZoomShow")
+	IniWrite(oOther.ZoomShow, "ZoomShow")
 	Return
 	
 WordWrap:
@@ -1845,15 +1845,16 @@ WM_CONTEXTMENU() {
 }
 
 WM_WINDOWPOSCHANGED(Wp, Lp) {
+	Static PtrAdd := A_PtrSize = 8 ? 8 : 0
 	if (NumGet(Lp + 0, 0, "UInt") != hGui)
 		Return
-	If oOther.hZoom 
-	{   
-		hDWP := DllCall("DeferWindowPos"
-		, "Uint", DllCall("BeginDeferWindowPos", "Int", 1), "UInt", oOther.hZoom, "UInt", 0
-		, "Int", NumGet(Lp + 0, 8, "UInt") + NumGet(Lp + 0, 16, "UInt") + 2, "Int", NumGet(Lp + 0, 12, "UInt") + 2, "Int", 0, "Int", 0
-		, "UInt", 0x0215) 
-		DllCall("EndDeferWindowPos", "UInt", hDWP)
+	If oOther.ZoomShow 
+	{
+		DllCall("EndDeferWindowPos", "Ptr", DllCall("DeferWindowPos"
+		, "Ptr", DllCall("BeginDeferWindowPos", "Int", 1), "UInt", oOther.hZoom, "UInt", 0
+		, "Int", NumGet(Lp + 0, 8 + PtrAdd, "UInt") + NumGet(Lp + 0, 16 + PtrAdd, "UInt") + 2
+		, "Int", NumGet(Lp + 0, 12 + PtrAdd, "UInt") + 2, "Int", 0, "Int", 0
+		, "UInt", 0x0215))
 	}
 	If MemoryPos
 		SetTimer, SavePos, -400
@@ -1883,13 +1884,12 @@ ZoomSpot() {
 }
 
 MsgZoom(wParam, lParam) {
-	If (wParam = 1)
-	{
-		SetTimer, ZoomSpot, -10
-		Return 1
-	}
-	oOther.hZoom := lParam
-	ZoomMsg(Sleep != 1 && !isPaused && (!WinActive("ahk_id" hGui) || ActiveNoPause) ? 0	 : 1)
+	If (wParam = 1) 
+		SetTimer, ZoomSpot, -10 
+	Else If (wParam = 2) 
+		oOther.ZoomShow := lParam, (MemoryStateZoom && IniWrite(lParam, "ZoomShow"))
+	Else If (wParam = 0)
+		oOther.hZoom := lParam, ZoomMsg(Sleep != 1 && !isPaused && (!WinActive("ahk_id" hGui) || ActiveNoPause) ? 0	 : 1)
 }
 
 ZoomMsg(wParam = -1, lParam = -1) {
@@ -1898,7 +1898,7 @@ ZoomMsg(wParam = -1, lParam = -1) {
 }
 
 AhkSpyZoomShow() {  
-	If !WinExist("ahk_id" oOther.hZoom) && IniWrite(1, "ZoomShow") {
+	If !WinExist("ahk_id" oOther.hZoom) {
 		If A_IsCompiled
 			Run "%A_ScriptFullPath%" "Zoom" "%hGui%" "%ActiveNoPause%", , , PID
 		Else
@@ -1906,9 +1906,9 @@ AhkSpyZoomShow() {
 		WinWait, % "ahk_pid" PID, , 1
 	}
 	Else If DllCall("IsWindowVisible", "Ptr", oOther.hZoom) 
-		ZoomMsg(3), IniWrite(0, "ZoomShow")
+		ZoomMsg(3)
 	Else
-		ZoomMsg(4), IniWrite(1, "ZoomShow")
+		ZoomMsg(4)
 	ZoomMsg(7, isPaused), ZoomMsg(8, ActiveNoPause)
 	ZoomMsg(Sleep != 1 && !isPaused && (!WinActive("ahk_id" hGui) || ActiveNoPause) ? 0 : 1)
 }
@@ -2271,7 +2271,7 @@ ChangeLocal(hWnd) {
 	SendMessage, WM_INPUTLANGCHANGEREQUEST, INPUTLANGCHANGE_FORWARD, , , % "ahk_id" hWnd
 }
 
-ToolTip(text, time) {
+ToolTip(text, time = 500) {
 	CoordMode, Mouse
 	CoordMode, ToolTip
 	MouseGetPos, X, Y
@@ -3074,8 +3074,7 @@ OnMessage(0xF, "WM_Paint")
 ZoomCreate()
 OnMessage(MsgAhkSpyZoom := DllCall("RegisterWindowMessage", "Str", "MsgAhkSpyZoom"), "Z_MsgZoom")
 PostMessage, % MsgAhkSpyZoom, 0, % oZoom.hGui, , ahk_id %hAhkSpy%
-SetWinEventHook("EVENT_OBJECT_DESTROY", 0x8001)
-; SetWinEventHook("EVENT_OBJECT_LOCATIONCHANGE", 0x800B)
+SetWinEventHook("EVENT_OBJECT_DESTROY", 0x8001) 
 SetWinEventHook("EVENT_SYSTEM_MINIMIZESTART", 0x0016, 0x0017)
 WinGet, Min, MinMax, % "ahk_id " hAhkSpy
 If Min != -1
@@ -3282,6 +3281,7 @@ ChangeMark()  {
 
 ZoomHide() {
 	oZoom.Show := 0
+	PostMessage, % MsgAhkSpyZoom, 2, 0, , ahk_id %hAhkSpy%
 	oZoom.Pause := 1
 	GuiControl, ZoomTB:, -0x0001, % oZoom.vZoomHideBut
 	GuiControl, ZoomTB:, Focus, % oZoom.vTextZoom
@@ -3292,6 +3292,7 @@ ZoomHide() {
 
 ZoomShow() {
 	oZoom.Show := 1
+	PostMessage, % MsgAhkSpyZoom, 2, 1, , ahk_id %hAhkSpy%
 	oZoom.Pause ? 0 : Magnify(), ZoomMove()
 	GuiControl, ZoomTB:, Focus, % oZoom.vTextZoom
 	IniWrite(1, "ZoomShow")
@@ -3395,9 +3396,11 @@ ZoomOnClose() {
 	RestoreCursors()
 	ExitApp
 }
+
 MagnifyOff() {
 	SetTimer, Magnify, Off
 }
+
 	; wParam: 0 снять паузу, 1 пауза, 2 однократный зум, 3 hide, 4 show, 5 MemoryZoomSize, 6 MinSize, 7 пауза AhkSpy, 8 ActiveNoPause, 9 Suspend
 
 Z_MsgZoom(wParam, lParam) {   
@@ -3429,16 +3432,10 @@ Z_MsgZoom(wParam, lParam) {
 		Suspend % lParam ? "On" : "Off"
 }
 
-EVENT_OBJECT_DESTROY(hWinEventHook, event, hwnd) {
-	; If (idObject || idChild || hwnd != hAhkSpy)
+EVENT_OBJECT_DESTROY(hWinEventHook, event, hwnd) { 
 	If (hwnd = hAhkSpy)
 		ExitApp
-}
-
-EVENT_OBJECT_LOCATIONCHANGE(hWinEventHook, event, hwnd) { 
-	If (hwnd != hAhkSpy)  
-		Return
-}
+} 
 
 EVENT_SYSTEM_MINIMIZESTART(hWinEventHook, event, hwnd) {
 	If (hwnd = hAhkSpy)  
@@ -3513,3 +3510,4 @@ RestoreCursors() {
 }
 
 	;)
+	
