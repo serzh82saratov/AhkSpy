@@ -103,7 +103,7 @@ OnMessage(0x208, "WM_MBUTTONUP")
 OnMessage(0xA1, "WM_NCLBUTTONDOWN")
 OnMessage(0x7B, "WM_CONTEXTMENU")
 OnMessage(0x6, "WM_ACTIVATE")
-OnMessage(0x03, "WM_MOVE")
+OnMessage(0x47, "WM_WINDOWPOSCHANGED")
 OnMessage(0x05, "WM_SIZE")
 
 OnMessage(MsgAhkSpyZoom := DllCall("RegisterWindowMessage", "Str", "MsgAhkSpyZoom"), "MsgZoom")
@@ -1844,14 +1844,24 @@ WM_CONTEXTMENU() {
 	Return 1
 }
 
-WM_MOVE() {
+WM_WINDOWPOSCHANGED(Wp, Lp) {
+	if (NumGet(Lp + 0, 0, "UInt") != hGui)
+		Return
+	If oOther.hZoom 
+	{   
+		hDWP := DllCall("DeferWindowPos"
+		, "Uint", DllCall("BeginDeferWindowPos", "Int", 1), "UInt", oOther.hZoom, "UInt", 0
+		, "Int", NumGet(Lp + 0, 8, "UInt") + NumGet(Lp + 0, 16, "UInt") + 2, "Int", NumGet(Lp + 0, 12, "UInt") + 2, "Int", 0, "Int", 0
+		, "UInt", 0x0215) 
+		DllCall("EndDeferWindowPos", "UInt", hDWP)
+	}
 	If MemoryPos
-		SetTimer, SavePos, -200
+		SetTimer, SavePos, -400
 }
 
 WM_SIZE() {
 	If MemorySize
-		SetTimer, SaveSize, -200
+		SetTimer, SaveSize, -400
 }
 
 ControlsMove(Width, Height) {
@@ -3065,7 +3075,7 @@ ZoomCreate()
 OnMessage(MsgAhkSpyZoom := DllCall("RegisterWindowMessage", "Str", "MsgAhkSpyZoom"), "Z_MsgZoom")
 PostMessage, % MsgAhkSpyZoom, 0, % oZoom.hGui, , ahk_id %hAhkSpy%
 SetWinEventHook("EVENT_OBJECT_DESTROY", 0x8001)
-SetWinEventHook("EVENT_OBJECT_LOCATIONCHANGE", 0x800B)
+; SetWinEventHook("EVENT_OBJECT_LOCATIONCHANGE", 0x800B)
 SetWinEventHook("EVENT_SYSTEM_MINIMIZESTART", 0x0016, 0x0017)
 WinGet, Min, MinMax, % "ahk_id " hAhkSpy
 If Min != -1
@@ -3292,7 +3302,7 @@ ZoomMove() {
 	If !oZoom.Show
 		Return
 	WinGetPos, WinX, WinY, WinWidth, WinHeight, ahk_id %hAhkSpy%
-	Gui, Zoom:Show, % "NA x" WinX + WinWidth " y" WinY  
+	Gui, Zoom:Show, % "NA x" WinX + WinWidth + 2 " y" WinY + 2
 }
 	
 WM_Paint() {
@@ -3428,7 +3438,6 @@ EVENT_OBJECT_DESTROY(hWinEventHook, event, hwnd) {
 EVENT_OBJECT_LOCATIONCHANGE(hWinEventHook, event, hwnd) { 
 	If (hwnd != hAhkSpy)  
 		Return
-	ZoomMove()
 }
 
 EVENT_SYSTEM_MINIMIZESTART(hWinEventHook, event, hwnd) {
@@ -3504,4 +3513,3 @@ RestoreCursors() {
 }
 
 	;)
-	
