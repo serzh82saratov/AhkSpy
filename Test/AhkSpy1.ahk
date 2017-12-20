@@ -1854,7 +1854,7 @@ WM_WINDOWPOSCHANGED(Wp, Lp) {
 		, "Ptr", DllCall("BeginDeferWindowPos", "Int", 1), "UInt", oOther.hZoom, "UInt", 0
 		, "Int", NumGet(Lp + 0, 8 + PtrAdd, "UInt") + NumGet(Lp + 0, 16 + PtrAdd, "UInt") + 2
 		, "Int", NumGet(Lp + 0, 12 + PtrAdd, "UInt") + 2, "Int", 0, "Int", 0
-		, "UInt", 0x0211))    ;	0x0200 := SWP_NOOWNERZORDER | 0x0010 := SWP_NOACTIVATE | 0x0001 := SWP_NOSIZE
+		, "UInt", 0x0011))    ; 0x0010 := SWP_NOACTIVATE | 0x0001 := SWP_NOSIZE
 	}
 	If MemoryPos
 		SetTimer, SavePos, -400
@@ -3511,3 +3511,5 @@ RestoreCursors() {
 
 	;)
 
+	
+	
