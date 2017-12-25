@@ -283,7 +283,7 @@ PausedScript:
 	Menu, Sys, % (isPaused ? "Check" : "UnCheck"), Pause
 	ZoomMsg(isPaused || (!ActiveNoPause && WinActive("ahk_id" hGui)) ? 1 : 0)
 	ZoomMsg(7, isPaused)
-	isPaused ? TaskbarProgress(4, hGui, 100) : TaskbarProgress(0, hGui)
+	isPaused ? TaskbarProgress(4, hGui, 100) : TaskbarProgress(0, hGui) 
 	Return
 
 ~RShift Up::
@@ -1852,13 +1852,13 @@ WM_WINDOWPOSCHANGED(Wp, Lp) {
 	{
 		DllCall("EndDeferWindowPos", "Ptr", DllCall("DeferWindowPos"
 		, "Ptr", DllCall("BeginDeferWindowPos", "Int", 1), "UInt", oOther.hZoom, "UInt", 0
-		, "Int", NumGet(Lp + 0, 8 + PtrAdd, "UInt") + NumGet(Lp + 0, 16 + PtrAdd, "UInt") + 2
-		, "Int", NumGet(Lp + 0, 12 + PtrAdd, "UInt") + 2, "Int", 0, "Int", 0
-		, "UInt", 0x0011))    ; 0x0010 := SWP_NOACTIVATE | 0x0001 := SWP_NOSIZE
+		, "Int", NumGet(Lp + 0, 8 + PtrAdd, "UInt") + NumGet(Lp + 0, 16 + PtrAdd, "UInt") + 4
+		, "Int", NumGet(Lp + 0, 12 + PtrAdd, "UInt"), "Int", 0, "Int", 0
+		, "UInt", 0x0011))    ; 0x0010 := SWP_NOACTIVATE | 0x0001 := SWP_NOSIZE 
 	}
 	If MemoryPos
 		SetTimer, SavePos, -400
-}
+} 
 
 WM_SIZE() {
 	If MemorySize
@@ -3013,7 +3013,7 @@ SingleInstance(Icon = 0) {
 	#SingleInstance Off
 	DetectHiddenWindows, On
 	WinGetTitle, MyTitle, ahk_id %A_ScriptHWND%  
-	WinGet, id, List, %MyTitle% ahk_class AutoHotkey ; ToolTip %  id "`n"  DllCall("GetCurrentProcessId")
+	WinGet, id, List, %MyTitle% ahk_class AutoHotkey
 	Loop, %id%
 	{
 		this_id := id%A_Index%
@@ -3100,10 +3100,8 @@ Return
 
 Z_MouseStep(x, y) {
 	MouseMove, x, y, 0, R
-	If oZoom.Pause
-	{
-		oZoom.Pause := 0, Magnify(1), oZoom.Pause := 1  
-	}
+	If oZoom.Pause 
+		oZoom.Pause := 0, Magnify(1), oZoom.Pause := 1   
 	PostMessage, % MsgAhkSpyZoom, 1, 0, , ahk_id %hAhkSpy%
 }
 
@@ -3143,7 +3141,7 @@ ZoomCreate() {
 	oZoom.hdcSrc := DllCall("GetDC", Ptr, "")
 	oZoom.hdcDest := DllCall("GetDC", Ptr, hDevCon, Ptr)
 	oZoom.hdcMemory := DllCall("CreateCompatibleDC", "Ptr", 0)
-	DllCall("gdi32.dll\SetStretchBltMode", "Ptr", oZoom.hdcDest, "Int", 4)
+	DllCall("Gdi32.Dll\SetStretchBltMode", "Ptr", oZoom.hdcDest, "Int", 4)
 	oZoom.hGui := hGui
 	oZoom.hDev := hDev
 	oZoom.hDevCon := hDevCon
@@ -3228,7 +3226,8 @@ SetSize() {
 			IniWrite(GuiWidth, "MemoryZoomSizeW"), IniWrite(GuiHeight, "MemoryZoomSizeH")
 		SetTimer, RedrawWindow, -100
 	}
-	SetTimer, Magnify, -10
+	If !oZoom.Pause
+		SetTimer, Magnify, -10
 }
 
 SetWindowPos(hWnd, x, y, w, h, SWP_NOSIZE := 0, SWP_NOREDRAW := 0x0008) {
@@ -3285,8 +3284,7 @@ ZoomHide() {
 	oZoom.Pause := 1
 	GuiControl, ZoomTB:, -0x0001, % oZoom.vZoomHideBut
 	GuiControl, ZoomTB:, Focus, % oZoom.vTextZoom
-	Gui, Zoom: Show, Hide
-	IniWrite(0, "ZoomShow")
+	Gui, Zoom: Show, Hide 
 	MagnifyOff()
 }
 
@@ -3294,16 +3292,14 @@ ZoomShow() {
 	oZoom.Show := 1
 	PostMessage, % MsgAhkSpyZoom, 2, 1, , ahk_id %hAhkSpy%
 	oZoom.Pause ? 0 : Magnify(), ZoomMove()
-	GuiControl, ZoomTB:, Focus, % oZoom.vTextZoom
-	IniWrite(1, "ZoomShow")
-	Gui, Zoom: Show, NA
+	GuiControl, ZoomTB:, Focus, % oZoom.vTextZoom 
 }
 
 ZoomMove() {
 	If !oZoom.Show
 		Return
 	WinGetPos, WinX, WinY, WinWidth, WinHeight, ahk_id %hAhkSpy%
-	Gui, Zoom:Show, % "NA x" WinX + WinWidth + 2 " y" WinY + 2
+	Gui, Zoom:Show, % "NA x" WinX + WinWidth + 4 " y" WinY
 }
 	
 WM_Paint() {
@@ -3390,8 +3386,8 @@ ZoomOnSize() {
 }
 
 ZoomOnClose() {
-	DllCall("gdi32.dll\DeleteDC", "Ptr", oZoom.hdcDest)
-	DllCall("gdi32.dll\DeleteDC", "Ptr", oZoom.hdcSrc)
+	DllCall("Gdi32.Dll\DeleteDC", "Ptr", oZoom.hdcDest)
+	DllCall("Gdi32.Dll\DeleteDC", "Ptr", oZoom.hdcSrc)
 	DllCall("Gdi32.Dll\DeleteDC", "Ptr", oZoom.hdcMemory)
 	RestoreCursors()
 	ExitApp
@@ -3511,5 +3507,4 @@ RestoreCursors() {
 
 	;)
 
-	
-	
+
