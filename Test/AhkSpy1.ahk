@@ -51,7 +51,7 @@ Global ThisMode := IniRead("StartMode", "Control"), ThisMode := ThisMode = "Last
 , StateLightAcc := IniRead("StateLightAcc", 1), SendCode := IniRead("SendCode", "vk"), StateLightMarker := IniRead("StateLightMarker", 1)
 , StateUpdate := IniRead("StateUpdate", 1), SendMode := IniRead("SendMode", "send"), SendModeStr := Format("{:L}", SendMode)
 , StateAllwaysSpot := IniRead("AllwaysSpot", 0), ScrollPos := {}, AccCoord := [], oOther := {}, oFind := {}, Edits := [], oMS := {}
-, hGui, hActiveX, hMarkerGui, hMarkerAccGui, hFindGui, oDoc, ShowMarker, isFindView, isIE, isPaused, w_ShowStyles, MsgAhkSpyZoom, Sleep
+, hGui, hTBGui, hActiveX, hMarkerGui, hMarkerAccGui, hFindGui, oDoc, ShowMarker, isFindView, isIE, isPaused, w_ShowStyles, MsgAhkSpyZoom, Sleep
 , HTML_Win, HTML_Control, HTML_Hotkey, rmCtrlX, rmCtrlY, widthTB, FullScreenMode, hColorProgress
 , ClipAdd_Before := 0, ClipAdd_Delimiter := "`r`n", oDocEl, oJScript, oBody, isConfirm, isAhkSpy := 1, WordWrap := IniRead("WordWrap", 0)
 , MoveTitles := IniRead("MoveTitles", 1), PreOverflowHide := IniRead("PreOverflowHide", 1), DetectHiddenText := IniRead("DetectHiddenText", "on")
@@ -1851,8 +1851,8 @@ WM_WINDOWPOSCHANGED(Wp, Lp) {
 	If oOther.ZoomShow 
 	{
 		DllCall("EndDeferWindowPos", "Ptr", DllCall("DeferWindowPos"
-		, "Ptr", DllCall("BeginDeferWindowPos", "Int", 1), "UInt", oOther.hZoom, "UInt", 0
-		, "Int", NumGet(Lp + 0, 8 + PtrAdd, "UInt") + NumGet(Lp + 0, 16 + PtrAdd, "UInt") + 4
+		, "Ptr", DllCall("BeginDeferWindowPos", "Int", 1), "Ptr", oOther.hZoom, "UInt", 0
+		, "Int", NumGet(Lp + 0, 8 + PtrAdd, "UInt") + NumGet(Lp + 0, 16 + PtrAdd, "UInt")
 		, "Int", NumGet(Lp + 0, 12 + PtrAdd, "UInt"), "Int", 0, "Int", 0
 		, "UInt", 0x0011))    ; 0x0010 := SWP_NOACTIVATE | 0x0001 := SWP_NOSIZE 
 	}
@@ -1865,11 +1865,24 @@ WM_SIZE() {
 		SetTimer, SaveSize, -400 
 }
 
-ControlsMove(Width, Height) {
-	Gui, TB: Show, % "NA y0 x" (Width - widthTB) // 2.2
+ControlsMove(Width, Height) { 
+	hDWP := DllCall("BeginDeferWindowPos", "Int", isFindView ? 3 : 2)
+	hDWP := DllCall("DeferWindowPos"
+	, "Ptr", hDWP, "Ptr", hTBGui, "UInt", 0
+	, "Int", (Width - widthTB) // 2.2, "Int", 0, "Int", 0, "Int", 0
+	, "UInt", 0x0011)    ; 0x0010 := SWP_NOACTIVATE | 0x0001 := SWP_NOSIZE 
+	hDWP := DllCall("DeferWindowPos"
+	, "Ptr", hDWP, "Ptr", hActiveX, "UInt", 0
+	, "Int", 0, "Int", HeigtButton
+	, "Int", Width, "Int", Height - HeigtButton - (isFindView ? 28 : 0)
+	, "UInt", 0x0010)    ; 0x0010 := SWP_NOACTIVATE
 	If isFindView
-		Gui, F: Show, % "NA x" (Width - widthTB) // 2.2 " y" (Height - (Height < HeigtButton * 2 ? -2 : 27))
-	WinMove, ahk_id %hActiveX%, , 0, HeigtButton, Width, Height - HeigtButton - (isFindView ? 28 : 0)
+		hDWP := DllCall("DeferWindowPos"
+		, "Ptr", hDWP, "Ptr", hFindGui, "UInt", 0
+		, "Int", (Width - widthTB) // 2.2, "Int", (Height - (Height < HeigtButton * 2 ? -2 : 27))
+		, "Int", 0, "Int", 0
+		, "UInt", 0x0011)    ; 0x0010 := SWP_NOACTIVATE | 0x0001 := SWP_NOSIZE 
+	DllCall("EndDeferWindowPos", "Ptr", hDWP)
 }
 
 Minimize() {
@@ -2463,7 +2476,7 @@ FullScreenMode() {
 		FullScreenMode := 0
 		Menu, Sys, UnCheck, Full screen
 	}
-	SetTimer, % hFunc, % Max ? -150 : -50
+	SetTimer, % hFunc, -10
 }
 
 WinGetNormalPos(hwnd, ByRef x, ByRef y, ByRef w, ByRef h) {
@@ -3116,8 +3129,10 @@ ZoomCreate() {
 		GuiW := IniRead("MemoryZoomSizeW", oZoom.GuiMinW), GuiH := IniRead("MemoryZoomSizeH", oZoom.GuiMinH)
 	Else
 		GuiW := oZoom.GuiMinW, GuiH := oZoom.GuiMinH
-	Gui Zoom: +AlwaysOnTop -DPIScale +hwndhGui +LabelZoomOn -Caption +E0x08000000 +Border
+	Gui Zoom: +AlwaysOnTop -DPIScale +hwndhGui +LabelZoomOn -Caption +E0x08000000
 	Gui, Zoom: Color, F0F0F0
+	DllCall("SetClassLong", "Ptr", hGui, "int", -26
+		, "int", DllCall("GetClassLong", "Ptr", hGui, "int", -26) | 0x20000)
 	
 	Gui, ZoomTB: +HWNDhTBGui -Caption -DPIScale +Parent%hGui% +E0x08000000 +0x40000000 -0x80000000
 	Gui, ZoomTB: Font, s%FontSize%
@@ -3127,18 +3142,17 @@ ZoomCreate() {
 	Gui, ZoomTB: Add, Button, hwndhChangeMark gChangeMark x+10 yp w52, % oZoom.Mark
 	Gui, ZoomTB: Add, Button, hwndhZoomHideBut gZoomHide x+10 yp, X
 	Gui, ZoomTB: Show, x0 y0
+	Gui, ZoomTB: Color, F0F0F0
 	
 	Gui, Zoom: Show, % "Hide w" GuiW " h" GuiH, AhkSpyZoom
 	Gui, Zoom: +MinSize
-	DllCall("SetClassLong", "Ptr", hGui, "int", -26
-		, "int", DllCall("GetClassLong", "Ptr", hGui, "int", -26) | 0x20000)
 
 	Gui, Dev: +HWNDhDev -Caption -DPIScale +Parent%hGui% +Border
-	Gui, Dev: Add, Text, hwndhDevCon
+	Gui, Dev: Add, Text, hwndhDevCon x0 y0 +0xE ;	SS_BITMAP := 0xE
 	Gui, Dev: Show, NA
 	Gui, Dev: Color, F0F0F0
 
-	oZoom.hdcSrc := DllCall("GetDC", Ptr, "")
+	oZoom.hdcSrc := DllCall("GetDC", Ptr, 0, Ptr)
 	oZoom.hdcDest := DllCall("GetDC", Ptr, hDevCon, Ptr)
 	oZoom.hdcMemory := DllCall("CreateCompatibleDC", "Ptr", 0)
 	DllCall("Gdi32.Dll\SetStretchBltMode", "Ptr", oZoom.hdcDest, "Int", 4)
@@ -3151,6 +3165,10 @@ ZoomCreate() {
 	oZoom.vChangeMark := hChangeMark
 	oZoom.vZoomHideBut := hZoomHideBut
 	oZoom.vSliderZoom := hSliderZoom
+	
+	hBM := DllCall("Gdi32.Dll\CreateCompatibleBitmap", "Ptr", oZoom.hdcDest, "Int", GuiW, "Int", GuiH)
+	DllCall("Gdi32.Dll\SelectObject", "Ptr", oZoom.hdcMemory, "Ptr", hBM), DllCall("DeleteObject", "Ptr", hBM)
+	BitBlt(oZoom.hdcMemory, 0, 0, GuiW, GuiH, oZoom.hdcDest, 0, 0, 0xFF0062)  ;	WHITENESS
 }
 
 Magnify(one = 0) {
@@ -3172,19 +3190,33 @@ Magnify(one = 0) {
 		SetTimer, Magnify, -1
 }
 
-SetSize() {
-	Static Top := 45, Left := 4, Right := 4, Bottom := 4, PrWidth, PrHeight
+SetSize(GuiWidth = "", GuiHeight = "") {
+	Static Top := 45, Left := 4, Right := 4, Bottom := 4
 	MagnifyOff()
-	GetClientSize(oZoom.hGui, GuiWidth, GuiHeight)
+	If (GuiWidth = "")
+		GetClientSize(oZoom.hGui, GuiWidth, GuiHeight) 
+	oZoom.GuiWidth := GuiWidth
+	oZoom.GuiHeight := GuiHeight
+	
 	Width := GuiWidth - Left - Right
 	Height := GuiHeight - Top - Bottom
 	Zoom := oZoom.Zoom
 	conW := Mod(Width, Zoom) ? Width - Mod(Width, Zoom) + Zoom : Width
 	conW := Mod(conW // Zoom, 2) ? conW : conW + Zoom
 	conH := Mod(Height, Zoom) ? Height - Mod(Height, Zoom) + Zoom : Height
-	conH := Mod(conH // Zoom, 2) ? conH : conH + Zoom
-	conX := ((conW - Width) // 2) * -1
-	conY :=  ((conH - Height) // 2) * -1
+	conH := Mod(conH // Zoom, 2) ? conH : conH + Zoom 
+
+	hDWP := DllCall("BeginDeferWindowPos", "Int", 2)
+	hDWP := DllCall("DeferWindowPos"
+	, "Ptr", hDWP, "Ptr", oZoom.hDev, "UInt", 0
+	, "Int", Left, "Int", Top, "Int", Width, "Int", Height
+	, "UInt", 0x0010)    ; 0x0010 := SWP_NOACTIVATE  
+	hDWP := DllCall("DeferWindowPos"
+	, "Ptr", hDWP, "Ptr", oZoom.hTBGui, "UInt", 0
+	, "Int", (GuiWidth - oZoom.GuiMinW) / 2
+	, "Int", 0, "Int", 0, "Int", 0
+	, "UInt", 0x0011)    ; 0x0010 := SWP_NOACTIVATE | 0x0001 := SWP_NOSIZE  
+	DllCall("EndDeferWindowPos", "Ptr", hDWP) 
 
 	oZoom.nWidthSrc := conW // Zoom
 	oZoom.nHeightSrc := conH // Zoom
@@ -3214,20 +3246,19 @@ SetSize() {
 		, {x:xCenter,y:yCenter - Zoom,w:1,h:Zoom * 3}
 		, {x:xCenter + Zoom,y:yCenter - Zoom,w:1,h:Zoom * 3}
 		, {x:xCenter + Zoom * 2,y:yCenter - Zoom,w:1,h:Zoom * 3}]
-
-	SetWindowPos(oZoom.hDevCon, conX, conY, conW, conH)
-	SetWindowPos(oZoom.hDev, Left, Top, Width, Height)  
-	SetWindowPos(oZoom.hTBGui, (GuiWidth - oZoom.GuiMinW) / 2, 0, "", "", 0x0001)
-	Redraw()
-	If (PrWidth != Width || PrHeight != Height)
-	{
-		PrWidth := Width, PrHeight := Height
-		If oZoom.MemoryZoomSize
-			IniWrite(GuiWidth, "MemoryZoomSizeW"), IniWrite(GuiHeight, "MemoryZoomSizeH")
-		SetTimer, RedrawWindow, -100
-	}
+	
 	If !oZoom.Pause
 		SetTimer, Magnify, -10
+	If oZoom.MemoryZoomSize
+		SetTimer, ZoomCheckSize, -100
+}
+
+ZoomCheckSize() {
+	Static PrWidth, PrHeight
+	If (PrWidth = oZoom.GuiWidth && PrHeight = oZoom.GuiHeight)
+		Return
+	PrWidth := oZoom.GuiWidth, PrHeight := oZoom.GuiHeight
+	IniWrite(PrWidth, "MemoryZoomSizeW"), IniWrite(PrHeight, "MemoryZoomSizeH")  
 }
 
 SetWindowPos(hWnd, x, y, w, h, SWP_NOSIZE := 0, SWP_NOREDRAW := 0x0008) {
@@ -3247,13 +3278,6 @@ RedrawWindow() {
 	DllCall("RedrawWindow", "Ptr", oZoom.hGui, "Uint", 0, "Uint", 0, "Uint", 0x1|0x4)
 }
 
-Redraw() {
-	StretchBlt(oZoom.hdcDest, 0, 0, oZoom.nWidthDest, oZoom.nHeightDest
-		, oZoom.hdcMemory, oZoom.nXOriginSrc - oZoom.nXOriginSrcOffset, oZoom.nYOriginSrc - oZoom.nYOriginSrcOffset, oZoom.nWidthSrc, oZoom.nHeightSrc)
-	For k, v In oZoom.oMarkers[oZoom.Mark]
-		StretchBlt(oZoom.hdcDest, v.x, v.y, v.w, v.h, oZoom.hdcDest, v.x, v.y, v.w, v.h, 0x5A0049)	; PATINVERT
-}
-
 SliderZoom()  {
 	GuiControlGet, SliderZoom, ZoomTB:, % oZoom.vSliderZoom
 	ChangeZoom(SliderZoom)
@@ -3267,6 +3291,7 @@ ChangeZoom(Val)  {
 	GuiControl, ZoomTB:, % oZoom.vSliderZoom, % oZoom.Zoom
 	IniWrite(oZoom.Zoom, "MagnifyZoom")
 	SetTimer, SetSize, -10
+	SetTimer, Redraw, -20
 }
 
 ChangeMark()  {
@@ -3278,31 +3303,48 @@ ChangeMark()  {
 	Redraw()
 }
 
-ZoomHide() {
-	oZoom.Show := 0
-	PostMessage, % MsgAhkSpyZoom, 2, 0, , ahk_id %hAhkSpy%
-	oZoom.Pause := 1
-	GuiControl, ZoomTB:, -0x0001, % oZoom.vZoomHideBut
-	GuiControl, ZoomTB:, Focus, % oZoom.vTextZoom
-	Gui, Zoom: Show, Hide 
-	MagnifyOff()
+Redraw() {
+	StretchBlt(oZoom.hdcDest, 0, 0, oZoom.nWidthDest, oZoom.nHeightDest
+		, oZoom.hdcMemory, oZoom.nXOriginSrc - oZoom.nXOriginSrcOffset, oZoom.nYOriginSrc - oZoom.nYOriginSrcOffset, oZoom.nWidthSrc, oZoom.nHeightSrc)
+	For k, v In oZoom.oMarkers[oZoom.Mark]
+		StretchBlt(oZoom.hdcDest, v.x, v.y, v.w, v.h, oZoom.hdcDest, v.x, v.y, v.w, v.h, 0x5A0049)	; PATINVERT
 }
 
 ZoomShow() {
+	PostMessage, % MsgAhkSpyZoom, 2, 1, , ahk_id %hAhkSpy% 
+	WinGetPos, WinX, WinY, WinWidth, WinHeight, ahk_id %hAhkSpy%
+	Gui, Zoom:Show, % "NA Hide x" WinX + WinWidth " y" WinY 
+	DllCall("AnimateWindow", "Ptr", oZoom.hGui, "Int", 96 , "UInt", 0x0000001)    
+	DllCall("DeleteObject", Ptr, oZoom.hBM)
+	GuiControl, ZoomTB:, Focus, % oZoom.vTextZoom 
 	oZoom.Show := 1
-	PostMessage, % MsgAhkSpyZoom, 2, 1, , ahk_id %hAhkSpy%
-	oZoom.Pause ? 0 : Magnify(), ZoomMove()
+	oZoom.Pause ? 0 : Magnify()
+}
+
+ZoomHide() {
+	oZoom.Show := 0
+	oZoom.Pause := 1
+	MagnifyOff()
+	DCToStatic(oZoom.hdcDest, oZoom.hDevCon, 0, 0, oZoom.nWidthDest, oZoom.nHeightDest)
+	DllCall("AnimateWindow", "Ptr", oZoom.hGui, "Int", 96, "UInt", 0x00010002) 
+	PostMessage, % MsgAhkSpyZoom, 2, 0, , ahk_id %hAhkSpy%
+	GuiControl, ZoomTB:, -0x0001, % oZoom.vZoomHideBut
 	GuiControl, ZoomTB:, Focus, % oZoom.vTextZoom 
 }
 
-ZoomMove() {
-	If !oZoom.Show
-		Return
-	WinGetPos, WinX, WinY, WinWidth, WinHeight, ahk_id %hAhkSpy%
-	Gui, Zoom:Show, % "NA x" WinX + WinWidth + 4 " y" WinY
+DCToStatic(hDC, hWnd, X, Y, W, H) {  
+	tDC := DllCall("CreateCompatibleDC", UInt, 0) 
+	hBM := DllCall("CopyImage", Ptr, DllCall("CreateBitmap", Int, W, Int, H, UInt, 1, UInt, 24
+							, UInt, 0), UInt, 0, Int, 0, Int, 0, UInt, 0x2008, UInt) 
+	oBM := DllCall("SelectObject", Ptr, tDC, Ptr, hBM) 
+	DllCall("BitBlt", Ptr, tDC, UInt, 0, UInt, 0, Int, W, Int, H, Ptr, hDC, UInt, X, UInt, Y, UInt, 0xC000CA) 
+	DllCall("SelectObject", Ptr, tDC, Ptr, oBM)
+	DllCall("DeleteDC", Ptr, tDC) 
+	SendMessage, 0x172, 0, hBM,, ahk_id %hWnd%  ;	STM_SETIMAGE, IMAGE_BITMAP
+	oZoom.hBM := hBM
 }
 	
-WM_Paint() {
+WM_Paint() { 
 	If A_GuiControl =
 		SetTimer, Redraw, -10 
 }
@@ -3377,18 +3419,17 @@ StretchBlt(ddc, dx, dy, dw, dh, sdc, sx, sy, sw, sh, Raster = 0xC000CA) {
 
 	; _________________________________________________ Events _________________________________________________
 
-ZoomOnSize() {
+ZoomOnSize() { 
 	If A_EventInfo != 0
 		Return
-	SetTimer, SetSize, -10
-	ZoomMove()
-	
+	SetSize(A_GuiWidth, A_GuiHeight)  
 }
 
 ZoomOnClose() {
 	DllCall("Gdi32.Dll\DeleteDC", "Ptr", oZoom.hdcDest)
 	DllCall("Gdi32.Dll\DeleteDC", "Ptr", oZoom.hdcSrc)
 	DllCall("Gdi32.Dll\DeleteDC", "Ptr", oZoom.hdcMemory)
+	DllCall("DeleteObject", Ptr, oZoom.hBM)
 	RestoreCursors()
 	ExitApp
 }
@@ -3473,8 +3514,7 @@ LBUTTONDOWN(W, L, M, H) {
 		SetTimer, Sizing, -10
 		KeyWait LButton
 		SetTimer, Sizing, Off
-		RestoreCursors()
-		SetSize()
+		RestoreCursors() 
 		oZoom.SIZING := 0, oZoom.SIZINGType := ""
 	}
 }
@@ -3500,11 +3540,8 @@ SetSystemCursor(CursorName, cx = 0, cy = 0) {
 			, DllCall("SetSystemCursor", Ptr, hImage, Int, ID)
 }
 
-RestoreCursors() {
-	Static SPI_SETCURSORS := 0x57
-	DllCall("SystemParametersInfo", UInt, SPI_SETCURSORS, UInt, 0, UInt, 0, UInt, 0)
+RestoreCursors() { 
+	DllCall("SystemParametersInfo", UInt, 0x57, UInt, 0, UInt, 0, UInt, 0)  ;	SPI_SETCURSORS := 0x57
 }
 
 	;)
-
-
