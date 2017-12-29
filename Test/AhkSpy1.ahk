@@ -3205,8 +3205,15 @@ SetSize(GuiWidth = "", GuiHeight = "") {
 	conW := Mod(conW // Zoom, 2) ? conW : conW + Zoom
 	conH := Mod(Height, Zoom) ? Height - Mod(Height, Zoom) + Zoom : Height
 	conH := Mod(conH // Zoom, 2) ? conH : conH + Zoom 
+	conX := ((conW - Width) // 2) * -1
+	conY :=  ((conH - Height) // 2) * -1
 
+	SetWindowPos(oZoom.hDevCon, conX, conY, conW, conH)
 	hDWP := DllCall("BeginDeferWindowPos", "Int", 2)
+	; hDWP := DllCall("DeferWindowPos"
+	; , "Ptr", hDWP, "Ptr", oZoom.hDevCon, "UInt", 0
+	; , "Int", conX, "Int", conY, "Int", conW, "Int", conH
+	; , "UInt", 0x0010)    ; 0x0010 := SWP_NOACTIVATE  
 	hDWP := DllCall("DeferWindowPos"
 	, "Ptr", hDWP, "Ptr", oZoom.hDev, "UInt", 0
 	, "Int", Left, "Int", Top, "Int", Width, "Int", Height
@@ -3216,6 +3223,8 @@ SetSize(GuiWidth = "", GuiHeight = "") {
 	, "Int", (GuiWidth - oZoom.GuiMinW) / 2
 	, "Int", 0, "Int", 0, "Int", 0
 	, "UInt", 0x0011)    ; 0x0010 := SWP_NOACTIVATE | 0x0001 := SWP_NOSIZE  
+	
+		
 	DllCall("EndDeferWindowPos", "Ptr", hDWP) 
 
 	oZoom.nWidthSrc := conW // Zoom
@@ -3226,7 +3235,7 @@ SetSize(GuiWidth = "", GuiHeight = "") {
 	oZoom.nHeightDest := nHeightDest := conH
 	oZoom.xCenter := xCenter := conW / 2 - Zoom / 2
 	oZoom.yCenter := yCenter := conH / 2 - Zoom / 2
-
+	
 	oZoom.oMarkers["Cross"] := [{x:0,y:yCenter - 1,w:nWidthDest,h:1}
 		, {x:0,y:yCenter + Zoom,w:nWidthDest,h:1}
 		, {x:xCenter - 1,y:0,w:1,h:nHeightDest}
@@ -3289,9 +3298,15 @@ ChangeZoom(Val)  {
 	MagnifyOff()
 	GuiControl, ZoomTB:, % oZoom.vTextZoom, % oZoom.Zoom := Val
 	GuiControl, ZoomTB:, % oZoom.vSliderZoom, % oZoom.Zoom
+	; SetTimer, SetSize, -10
+	; SetTimer, Redraw, -20
+	SetSize()
+	Redraw()
+	SetTimer, MagnifyZoomSave, -200
+}
+
+MagnifyZoomSave() {
 	IniWrite(oZoom.Zoom, "MagnifyZoom")
-	SetTimer, SetSize, -10
-	SetTimer, Redraw, -20
 }
 
 ChangeMark()  {
