@@ -76,8 +76,7 @@ Global ThisMode := IniRead("StartMode", "Control"), ThisMode := ThisMode = "Last
 
 , _ButAccViewer := ExtraFile("AccViewer Source") ? _BT1 " id='run_AccViewer'> run accviewer " _BT2 : ""
 , _ButiWB2Learner := ExtraFile("iWB2 Learner") ? _BT1 " id='run_iWB2Learner'> run iwb2 learner " _BT2 : ""
-	
-TitleTextP2 := "     ( Shift+Tab - Freeze | RButton - CopySelected | Pause - Pause )     v" AhkSpyVersion
+, TitleText, FreezeTitleText, TitleTextP1, TitleTextP2 := TitleTextP2_Reserved := "     ( Shift+Tab - Freeze | RButton - CopySelected | Pause - Pause )     v" AhkSpyVersion
 BLGroup := ["Backlight allways","Backlight disable","Backlight hold shift button"]
 
 FixIE()
@@ -283,9 +282,13 @@ PausedScript:
 	Menu, Sys, % (isPaused ? "Check" : "UnCheck"), Pause
 	ZoomMsg(isPaused || (!ActiveNoPause && WinActive("ahk_id" hGui)) ? 1 : 0)
 	ZoomMsg(7, isPaused)
-	isPaused ? TaskbarProgress(4, hGui, 100) : TaskbarProgress(0, hGui) 
+	isPaused ? TaskbarProgress(4, hGui, 100) : TaskbarProgress(0, hGui)
+	TitleText := (TitleTextP1 := "AhkSpy - " ({"Win":"Window","Control":"Control","Hotkey":"Button"}[ThisMode]))
+	. (TitleTextP2 := (isPaused ? "                Paused..." : TitleTextP2_Reserved))
+	SendMessage, 0xC, 0, &TitleText, , ahk_id %hGui%
+	PausedTitleText()
 	Return
-
+	
 ~RShift Up::
 ~LShift Up:: CheckHideMarker()
 #If isAhkSpy && WinActive("ahk_id" hGui)
@@ -370,12 +373,11 @@ RButton::
 	CopyText := oMS.ELSel.OuterText
 	If (A_ThisHotkey = "^RButton")
 		CopyText := CopyCommaParam(CopyText)
-	Clipboard := CopyText
-	TitleText(CopyText)
+	Clipboard := CopyText 
 	Return
 
-+RButton:: ClipAdd(CopyText := oMS.ELSel.OuterText, 1), TitleText(CopyText)
-^+RButton:: ClipAdd(CopyText := CopyCommaParam(oMS.ELSel.OuterText), 1), TitleText(CopyText)
++RButton:: ClipAdd(CopyText := oMS.ELSel.OuterText, 1) 
+^+RButton:: ClipAdd(CopyText := CopyCommaParam(oMS.ELSel.OuterText), 1) 
 
 #If (isAhkSpy && Sleep != 1 && oMS.ELSel) && (oMS.ELSel.OuterText != "" || MS_Cancel())  ;	Mode = Hotkey
 
@@ -385,8 +387,7 @@ RButton::
 	If ErrorLevel
 		ClipAdd(CopyText, 1)
 	Else
-		Clipboard := CopyText, ToolTip("copy", 300)
-	TitleText(CopyText)
+		Clipboard := CopyText, ToolTip("copy", 300) 
 	Return
 
 #If isAhkSpy && WinActive("ahk_id" hGui) && ExistSelectedText(CopyText)
@@ -397,12 +398,11 @@ CopyText:
 	ToolTip("copy", 300)
 	If (A_ThisHotkey = "^RButton")
 		CopyText := CopyCommaParam(CopyText)
-	Clipboard := CopyText
-	TitleText(CopyText)
+	Clipboard := CopyText 
 	Return
 
-+RButton:: ClipAdd(CopyText, 1), TitleText(CopyText)
-^+RButton:: ClipAdd(CopyText := CopyCommaParam(CopyText), 1), TitleText(CopyText)
++RButton:: ClipAdd(CopyText, 1) 
+^+RButton:: ClipAdd(CopyText := CopyCommaParam(CopyText), 1) 
 
 #If (isAhkSpy && Sleep != 1 && !DllCall("IsWindowVisible", "Ptr", oOther.hZoom))
 
@@ -431,7 +431,7 @@ Mode_Win:
 	ThisMode := "Win"
 	If (HTML_Win = "")
 		Spot_Win(1)
-	TitleText := "AhkSpy - Window" TitleTextP2
+	TitleText := (TitleTextP1 := "AhkSpy - Window") . TitleTextP2
 	SendMessage, 0xC, 0, &TitleText, , ahk_id %hGui%
 	Write_Win(), oDocEl.scrollLeft := ScrollPos[ThisMode,1], oDocEl.scrollTop := ScrollPos[ThisMode,2]
 	IniWrite(ThisMode, "LastMode")
@@ -639,7 +639,7 @@ Mode_Control:
 	ThisMode := "Control"
 	If (HTML_Control = "")
 		Spot_Control(1)
-	TitleText := "AhkSpy - Control" TitleTextP2
+	TitleText := (TitleTextP1 := "AhkSpy - Control") . TitleTextP2
 	SendMessage, 0xC, 0, &TitleText, , ahk_id %hGui%
 	Write_Control(), oDocEl.scrollLeft := ScrollPos[ThisMode,1], oDocEl.scrollTop := ScrollPos[ThisMode,2]
 	IniWrite(ThisMode, "LastMode")
@@ -1224,7 +1224,8 @@ Mode_Hotkey:
 	ScrollPos[ThisMode,1] := oDocEl.scrollLeft, ScrollPos[ThisMode,2] := oDocEl.scrollTop
 	If ThisMode != Hotkey
 		HTML_%ThisMode% := oBody.innerHTML
-	ThisMode := "Hotkey", Hotkey_Hook(!isPaused), TitleText := "AhkSpy - Button" TitleTextP2
+	ThisMode := "Hotkey", Hotkey_Hook(!isPaused)
+	TitleText := (TitleTextP1 := "AhkSpy - Button") . TitleTextP2
 	oDocEl.scrollLeft := ScrollPos[ThisMode,1], oDocEl.scrollTop := ScrollPos[ThisMode,2]
 	ShowMarker ? (HideMarker(), HideAccMarker()) : 0
 	(HTML_Hotkey != "") ? Write_Hotkey() : Write_HotkeyHTML({Mods:"Waiting pushed buttons..."})
@@ -1608,10 +1609,6 @@ GuiClose:
 	DllCall("DeregisterShellHookWindow", "Ptr", A_ScriptHwnd)
 	ExitApp
 
-TitleShow:
-	SendMessage, 0xC, 0, &TitleText, , ahk_id %hGui%
-	Return
-
 CheckAhkVersion:
 	If A_AhkVersion < 1.1.17.00
 	{
@@ -1788,7 +1785,7 @@ ShellProc(nCode, wParam) {
 			(ThisMode = "Hotkey" && !isPaused ? Hotkey_Hook(1) : ""), HideMarker(), HideAccMarker(), CheckHideMarker()
 		Else If Hotkey_Arr("Hook")
 			Hotkey_Hook(0)
-		ZoomMsg(!ActiveNoPause && wParam = hGui ? 1 : Sleep != 1 && !isPaused ? 0 : 1)
+		ZoomMsg(!ActiveNoPause && wParam = hGui ? 1 : Sleep != 1 && !isPaused && ThisMode != "Hotkey" ? 0 : 1)
 	}
 }
 
@@ -1798,7 +1795,7 @@ WM_ACTIVATE(wp) {
 		(ThisMode = "Hotkey" && !isPaused ? Hotkey_Hook(1) : 0), HideMarker(), HideAccMarker(), CheckHideMarker()
 	Else If (wp & 0xFFFF = 0 && Hotkey_Arr("Hook"))
 		Hotkey_Hook(0)
-	ZoomMsg(!ActiveNoPause && (wp & 0xFFFF) ? 1 : Sleep != 1 && !isPaused ? 0 : 1)
+	ZoomMsg(!ActiveNoPause && (wp & 0xFFFF) ? 1 : Sleep != 1 && !isPaused && ThisMode != "Hotkey" ? 0 : 1)
 }
 
 WM_NCLBUTTONDOWN(wp) {
@@ -2086,12 +2083,30 @@ ExistSelectedText(byref Copy) {
 	Return 1
 }
 
+PausedTitleText() {
+	Static i := 0, Str := "           Paused..."
+ 	If !isPaused
+		Return i := 0
+	i := i > 20 ? 2 : i + 1
+	TitleTextP2 := "     " SubStr(Str, i)   SubStr(Str, 1, i - 1)
+	TitleText := TitleTextP1 . TitleTextP2 
+	If !FreezeTitleText
+		SendMessage, 0xC, 0, &TitleText, , ahk_id %hGui%
+	SetTimer, PausedTitleText, -200
+}
+
 TitleText(Text, Time = 1000) {
+	FreezeTitleText := 1
 	StringReplace, Text, Text, `r`n, % Chr(8629), 1
 	StringReplace, Text, Text, %A_Tab%, % "      ", 1
 	SendMessage, 0xC, 0, &Text, , ahk_id %hGui%
 	SetTimer, TitleShow, -%Time%
 }
+
+TitleShow:
+	SendMessage, 0xC, 0, &TitleText, , ahk_id %hGui%
+	FreezeTitleText := 0
+	Return
 
 ClipAdd(Text, AddTip = 0) {
 	If ClipAdd_Before
@@ -2107,6 +2122,7 @@ ClipPaste() {
 		oMS.ELSel.innerHTML := TransformHTML(Clipboard), oMS.ELSel.Name := "MS:"
 	Else
 		oDoc.execCommand("Paste")
+	ToolTip("paste", 300)
 }
 
 CopyCommaParam(Text) {
@@ -3166,9 +3182,11 @@ ZoomCreate() {
 	oZoom.vZoomHideBut := hZoomHideBut
 	oZoom.vSliderZoom := hSliderZoom
 	
-	hBM := DllCall("Gdi32.Dll\CreateCompatibleBitmap", "Ptr", oZoom.hdcDest, "Int", GuiW, "Int", GuiH)
+	SysGet, VirtualScreenWidth, 78
+	SysGet, VirtualScreenHeight, 79
+	hBM := DllCall("Gdi32.Dll\CreateCompatibleBitmap", "Ptr", oZoom.hdcDest, "Int", VirtualScreenWidth, "Int", VirtualScreenHeight)
 	DllCall("Gdi32.Dll\SelectObject", "Ptr", oZoom.hdcMemory, "Ptr", hBM), DllCall("DeleteObject", "Ptr", hBM)
-	BitBlt(oZoom.hdcMemory, 0, 0, GuiW, GuiH, oZoom.hdcDest, 0, 0, 0xFF0062)  ;	WHITENESS
+	BitBlt(oZoom.hdcMemory, 0, 0, VirtualScreenWidth, VirtualScreenHeight, oZoom.hdcDest, 0, 0, 0xFF0062)  ;	WHITENESS
 }
 
 Magnify(one = 0) {
@@ -3205,27 +3223,20 @@ SetSize(GuiWidth = "", GuiHeight = "") {
 	conW := Mod(conW // Zoom, 2) ? conW : conW + Zoom
 	conH := Mod(Height, Zoom) ? Height - Mod(Height, Zoom) + Zoom : Height
 	conH := Mod(conH // Zoom, 2) ? conH : conH + Zoom 
-	conX := ((conW - Width) // 2) * -1
-	conY :=  ((conH - Height) // 2) * -1
-
+	conX := (((conW - Width) // 2) + 1) * -1
+	conY :=  (((conH - Height) // 2) + 1) * -1
+	
 	hDWP := DllCall("BeginDeferWindowPos", "Int", 2)
-	
-	hDWP := DllCall("DeferWindowPos"
-	, "Ptr", hDWP, "Ptr", oZoom.hDev, "UInt", 0
-	, "Int", Left, "Int", Top, "Int", Width, "Int", Height
-	, "UInt", 0x0010)    ; 0x0010 := SWP_NOACTIVATE  
-	
-	; hDWP := DllCall("DeferWindowPos"
-	; , "Ptr", hDWP, "Ptr", oZoom.hDevCon, "UInt", 0
-	; , "Int", conX, "Int", conY, "Int", conW, "Int", conH
-	; , "UInt", 0x0010)    ; 0x0010 := SWP_NOACTIVATE  
-	
+	hDWP := DllCall("DeferWindowPos"                             	; hDWP := DllCall("DeferWindowPos"
+	, "Ptr", hDWP, "Ptr", oZoom.hDev, "UInt", 0                  	; , "Ptr", hDWP, "Ptr", oZoom.hDevCon, "UInt", 0
+	, "Int", Left, "Int", Top, "Int", Width, "Int", Height		 	; , "Int", conX, "Int", conY, "Int", conW, "Int", conH
+	, "UInt", 0x0010)    ; 0x0010 := SWP_NOACTIVATE  			 	; , "UInt", 0x0010)    ; 0x0010 := SWP_NOACTIVATE   
 	hDWP := DllCall("DeferWindowPos"
 	, "Ptr", hDWP, "Ptr", oZoom.hTBGui, "UInt", 0
 	, "Int", (GuiWidth - oZoom.GuiMinW) / 2
 	, "Int", 0, "Int", 0, "Int", 0
-	, "UInt", 0x0011)    ; 0x0010 := SWP_NOACTIVATE | 0x0001 := SWP_NOSIZE  
-	DllCall("EndDeferWindowPos", "Ptr", hDWP) 
+	, "UInt", 0x0011)    ; 0x0010 := SWP_NOACTIVATE | 0x0001 := SWP_NOSIZE 
+	DllCall("EndDeferWindowPos", "Ptr", hDWP)
 	
 	SetWindowPos(oZoom.hDevCon, conX, conY, conW, conH)
 
@@ -3233,35 +3244,50 @@ SetSize(GuiWidth = "", GuiHeight = "") {
 	oZoom.nHeightSrc := conH // Zoom
 	oZoom.nXOriginSrcOffset := oZoom.nWidthSrc//2
 	oZoom.nYOriginSrcOffset := oZoom.nHeightSrc//2
-	oZoom.nWidthDest := nWidthDest := conW
-	oZoom.nHeightDest := nHeightDest := conH
-	oZoom.xCenter := xCenter := conW / 2 - Zoom / 2
-	oZoom.yCenter := yCenter := conH / 2 - Zoom / 2
+	oZoom.nWidthDest := conW
+	oZoom.nHeightDest := conH
+	oZoom.xCenter := conW / 2 - Zoom / 2
+	oZoom.yCenter := conH / 2 - Zoom / 2
 	
-	oZoom.oMarkers["Cross"] := [{x:0,y:yCenter - 1,w:nWidthDest,h:1}
-		, {x:0,y:yCenter + Zoom,w:nWidthDest,h:1}
-		, {x:xCenter - 1,y:0,w:1,h:nHeightDest}
-		, {x:xCenter + Zoom,y:0,w:1,h:nHeightDest}]
-
-	oZoom.oMarkers["Square"] := [{x:xCenter - 1,y:yCenter,w:Zoom + 2,h:1}
-		, {x:xCenter - 1,y:yCenter + Zoom + 1,w:Zoom + 2,h:1}
-		, {x:xCenter - 1,y:yCenter + 1,w:1,h:Zoom}
-		, {x:xCenter + Zoom,y:yCenter + 1,w:1,h:Zoom}]
-
-	oZoom.oMarkers["Grid"] := Zoom = 1 ? oZoom.oMarkers["Square"]
-		: [{x:xCenter - Zoom,y:yCenter - Zoom,w:Zoom * 3,h:1}
-		, {x:xCenter - Zoom,y:yCenter,w:Zoom * 3,h:1}
-		, {x:xCenter - Zoom,y:yCenter + Zoom,w:Zoom * 3,h:1}
-		, {x:xCenter - Zoom,y:yCenter + Zoom * 2,w:Zoom * 3,h:1}
-		, {x:xCenter - Zoom,y:yCenter - Zoom,w:1,h:Zoom * 3}
-		, {x:xCenter,y:yCenter - Zoom,w:1,h:Zoom * 3}
-		, {x:xCenter + Zoom,y:yCenter - Zoom,w:1,h:Zoom * 3}
-		, {x:xCenter + Zoom * 2,y:yCenter - Zoom,w:1,h:Zoom * 3}]
+	ChangeMarker()
 	
 	If !oZoom.Pause
 		SetTimer, Magnify, -10
 	If oZoom.MemoryZoomSize
 		SetTimer, ZoomCheckSize, -100
+}
+
+ChangeMarker() {
+	Try GoTo % "Marker" oZoom.Mark
+	
+	MarkerCross:
+		oZoom.oMarkers["Cross"] := [{x:0,y:oZoom.yCenter - 1,w:oZoom.nWidthDest,h:1}
+		, {x:0,y:oZoom.yCenter + oZoom.Zoom,w:oZoom.nWidthDest,h:1}
+		, {x:oZoom.xCenter - 1,y:0,w:1,h:oZoom.nHeightDest}
+		, {x:oZoom.xCenter + oZoom.Zoom,y:0,w:1,h:oZoom.nHeightDest}]	
+		Return
+
+	MarkerSquare:
+		oZoom.oMarkers["Square"] := [{x:oZoom.xCenter - 1,y:oZoom.yCenter,w:oZoom.Zoom + 2,h:1}
+		, {x:oZoom.xCenter - 1,y:oZoom.yCenter + oZoom.Zoom + 1,w:oZoom.Zoom + 2,h:1}
+		, {x:oZoom.xCenter - 1,y:oZoom.yCenter + 1,w:1,h:oZoom.Zoom}
+		, {x:oZoom.xCenter + oZoom.Zoom,y:oZoom.yCenter + 1,w:1,h:oZoom.Zoom}]
+		Return
+		
+	MarkerGrid:
+		If (oZoom.Zoom = 1) {
+			Gosub MarkerSquare
+			Return oZoom.oMarkers["Grid"] := oZoom.oMarkers["Square"]
+		}
+		oZoom.oMarkers["Grid"] := [{x:oZoom.xCenter - oZoom.Zoom,y:oZoom.yCenter - oZoom.Zoom,w:oZoom.Zoom * 3,h:1}
+		, {x:oZoom.xCenter - oZoom.Zoom,y:oZoom.yCenter,w:oZoom.Zoom * 3,h:1}
+		, {x:oZoom.xCenter - oZoom.Zoom,y:oZoom.yCenter + oZoom.Zoom,w:oZoom.Zoom * 3,h:1}
+		, {x:oZoom.xCenter - oZoom.Zoom,y:oZoom.yCenter + oZoom.Zoom * 2,w:oZoom.Zoom * 3,h:1}
+		, {x:oZoom.xCenter - oZoom.Zoom,y:oZoom.yCenter - oZoom.Zoom,w:1,h:oZoom.Zoom * 3}
+		, {x:oZoom.xCenter,y:oZoom.yCenter - oZoom.Zoom,w:1,h:oZoom.Zoom * 3}
+		, {x:oZoom.xCenter + oZoom.Zoom,y:oZoom.yCenter - oZoom.Zoom,w:1,h:oZoom.Zoom * 3}
+		, {x:oZoom.xCenter + oZoom.Zoom * 2,y:oZoom.yCenter - oZoom.Zoom,w:1,h:oZoom.Zoom * 3}]
+		Return
 }
 
 ZoomCheckSize() {
@@ -3301,8 +3327,6 @@ ChangeZoom(Val = "")  {
 	MagnifyOff()
 	GuiControl, ZoomTB:, % oZoom.vSliderZoom, % oZoom.Zoom := Val
 	GuiControl, ZoomTB:, % oZoom.vTextZoom, % oZoom.Zoom
-	; SetTimer, SetSize, -10
-	; SetTimer, Redraw, -20
 	SetSize()
 	Redraw()
 	SetTimer, MagnifyZoomSave, -200
@@ -3313,12 +3337,12 @@ MagnifyZoomSave() {
 }
 
 ChangeMark()  {
-	oZoom.Mark := ["Cross","Square","Grid","None"][{"Cross":2,"Square":3,"Grid":4,"None":1}[oZoom.Mark]]
+	Static Mark := {"Cross":"Square","Square":"Grid","Grid":"None","None":"Cross","":"None"}
+	oZoom.Mark := Mark[oZoom.Mark], ChangeMarker(), Redraw()
 	GuiControl, ZoomTB:, % oZoom.vChangeMark, % oZoom.Mark
 	GuiControl, ZoomTB:, -0x0001, % oZoom.vChangeMark
 	GuiControl, ZoomTB:, Focus, % oZoom.vTextZoom
 	IniWrite(oZoom.Mark, "MagnifyMark")
-	Redraw()
 }
 
 Redraw() {
