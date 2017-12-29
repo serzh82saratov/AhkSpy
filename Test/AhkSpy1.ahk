@@ -3148,7 +3148,7 @@ ZoomCreate() {
 	Gui, Zoom: +MinSize
 
 	Gui, Dev: +HWNDhDev -Caption -DPIScale +Parent%hGui% +Border
-	Gui, Dev: Add, Text, hwndhDevCon x0 y0 +0xE ;	SS_BITMAP := 0xE
+	Gui, Dev: Add, Text, hwndhDevCon +0xE ;	SS_BITMAP := 0xE
 	Gui, Dev: Show, NA
 	Gui, Dev: Color, F0F0F0
 
@@ -3208,24 +3208,26 @@ SetSize(GuiWidth = "", GuiHeight = "") {
 	conX := ((conW - Width) // 2) * -1
 	conY :=  ((conH - Height) // 2) * -1
 
-	SetWindowPos(oZoom.hDevCon, conX, conY, conW, conH)
 	hDWP := DllCall("BeginDeferWindowPos", "Int", 2)
-	; hDWP := DllCall("DeferWindowPos"
-	; , "Ptr", hDWP, "Ptr", oZoom.hDevCon, "UInt", 0
-	; , "Int", conX, "Int", conY, "Int", conW, "Int", conH
-	; , "UInt", 0x0010)    ; 0x0010 := SWP_NOACTIVATE  
+	
 	hDWP := DllCall("DeferWindowPos"
 	, "Ptr", hDWP, "Ptr", oZoom.hDev, "UInt", 0
 	, "Int", Left, "Int", Top, "Int", Width, "Int", Height
 	, "UInt", 0x0010)    ; 0x0010 := SWP_NOACTIVATE  
+	
+	; hDWP := DllCall("DeferWindowPos"
+	; , "Ptr", hDWP, "Ptr", oZoom.hDevCon, "UInt", 0
+	; , "Int", conX, "Int", conY, "Int", conW, "Int", conH
+	; , "UInt", 0x0010)    ; 0x0010 := SWP_NOACTIVATE  
+	
 	hDWP := DllCall("DeferWindowPos"
 	, "Ptr", hDWP, "Ptr", oZoom.hTBGui, "UInt", 0
 	, "Int", (GuiWidth - oZoom.GuiMinW) / 2
 	, "Int", 0, "Int", 0, "Int", 0
 	, "UInt", 0x0011)    ; 0x0010 := SWP_NOACTIVATE | 0x0001 := SWP_NOSIZE  
-	
-		
 	DllCall("EndDeferWindowPos", "Ptr", hDWP) 
+	
+	SetWindowPos(oZoom.hDevCon, conX, conY, conW, conH)
 
 	oZoom.nWidthSrc := conW // Zoom
 	oZoom.nHeightSrc := conH // Zoom
@@ -3287,17 +3289,18 @@ RedrawWindow() {
 	DllCall("RedrawWindow", "Ptr", oZoom.hGui, "Uint", 0, "Uint", 0, "Uint", 0x1|0x4)
 }
 
-SliderZoom()  {
-	GuiControlGet, SliderZoom, ZoomTB:, % oZoom.vSliderZoom
-	ChangeZoom(SliderZoom)
+SliderZoom() {
+	SetTimer, ChangeZoom, -10
 }
 
-ChangeZoom(Val)  {
+ChangeZoom(Val = "")  {
+	If Val =
+		GuiControlGet, Val, ZoomTB:, % oZoom.vSliderZoom
 	If (Val < 1 || Val > 50)
 		Return
 	MagnifyOff()
-	GuiControl, ZoomTB:, % oZoom.vTextZoom, % oZoom.Zoom := Val
-	GuiControl, ZoomTB:, % oZoom.vSliderZoom, % oZoom.Zoom
+	GuiControl, ZoomTB:, % oZoom.vSliderZoom, % oZoom.Zoom := Val
+	GuiControl, ZoomTB:, % oZoom.vTextZoom, % oZoom.Zoom
 	; SetTimer, SetSize, -10
 	; SetTimer, Redraw, -20
 	SetSize()
