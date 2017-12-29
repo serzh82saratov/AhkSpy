@@ -3290,7 +3290,7 @@ RedrawWindow() {
 }
 
 SliderZoom() {
-	SetTimer, ChangeZoom, -10
+	SetTimer, ChangeZoom, -1
 }
 
 ChangeZoom(Val = "")  {
