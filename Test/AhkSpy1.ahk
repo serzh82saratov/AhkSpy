@@ -244,7 +244,7 @@ Return
 
 #If (isAhkSpy && Sleep != 1 && !isPaused && ThisMode != "Hotkey")
 
-+Tab:: 
++Tab::
 SpotProc:
 	(ThisMode = "Control" ? (Spot_Control() (StateAllwaysSpot ? Spot_Win() : 0) Write_Control()) : (Spot_Win() (StateAllwaysSpot ? Spot_Control() : 0) Write_Win()))
 	If !WinActive("ahk_id" hGui)
@@ -254,7 +254,8 @@ SpotProc:
 		GuiControl, 1:Focus, oDoc
 	}
 	Else
-		ZoomMsg(2)
+		ZoomMsg(2) 
+	KeyWait, Tab, T0.1
 	Return
 
 #If isAhkSpy && ShowMarker && (StateLight = 3 || WinActive("ahk_id" hGui))
@@ -1913,7 +1914,7 @@ AhkSpyZoomShow() {
 			Run "%A_ScriptFullPath%" "Zoom" "%hGui%" "%ActiveNoPause%", , , PID
 		Else
 			Run "%A_AHKPath%" "%A_ScriptFullPath%" "Zoom" "%hGui%" "%ActiveNoPause%", , , PID
-		WinWait, % "ahk_pid" PID, , 1
+		WinWait, % "ahk_pid" PID, , 1 
 	}
 	Else If DllCall("IsWindowVisible", "Ptr", oOther.hZoom) 
 		ZoomMsg(3)
@@ -2088,7 +2089,7 @@ PausedTitleText() {
  	If !isPaused
 		Return i := 0
 	i := i > 20 ? 2 : i + 1
-	TitleTextP2 := "     " SubStr(Str, i)   SubStr(Str, 1, i - 1)
+	TitleTextP2 := "     " SubStr(Str, i) . SubStr(Str, 1, i - 1)
 	TitleText := TitleTextP1 . TitleTextP2 
 	If !FreezeTitleText
 		SendMessage, 0xC, 0, &TitleText, , ahk_id %hGui%
@@ -3186,11 +3187,11 @@ ZoomCreate() {
 	SysGet, VirtualScreenHeight, 79
 	hBM := DllCall("Gdi32.Dll\CreateCompatibleBitmap", "Ptr", oZoom.hdcDest, "Int", VirtualScreenWidth, "Int", VirtualScreenHeight)
 	DllCall("Gdi32.Dll\SelectObject", "Ptr", oZoom.hdcMemory, "Ptr", hBM), DllCall("DeleteObject", "Ptr", hBM)
-	BitBlt(oZoom.hdcMemory, 0, 0, VirtualScreenWidth, VirtualScreenHeight, oZoom.hdcDest, 0, 0, 0xFF0062)  ;	WHITENESS
+	BitBlt(oZoom.hdcMemory, 0, 0, VirtualScreenWidth, VirtualScreenHeight, oZoom.hdcDest, 0, 0, 0xFF0062)  ;	WHITENESS   
 }
 
 Magnify(one = 0) {
-	If (oZoom.Show && !oZoom.Pause && oZoom.SIZING != 2)
+	If (oZoom.Show && (one || !oZoom.Pause) && oZoom.SIZING != 2)
 	{
 		MouseGetPos, mX, mY, WinID
 		If (WinID != oZoom.hGui && WinID != hAhkSpy)
@@ -3198,13 +3199,13 @@ Magnify(one = 0) {
 			SetTimer, Memory, Off
 			oZoom.MouseX := mX, oZoom.MouseY := mY
 			StretchBlt(oZoom.hdcDest, 0, 0, oZoom.nWidthDest, oZoom.nHeightDest
-				, oZoom.hdcSrc, mX - oZoom.nXOriginSrcOffset, mY - oZoom.nYOriginSrcOffset, oZoom.nWidthSrc, oZoom.nHeightSrc)
+				, oZoom.hdcSrc, mX - oZoom.nXOriginSrcOffset, mY - oZoom.nYOriginSrcOffset, oZoom.nWidthSrc, oZoom.nHeightSrc) 
 			For k, v In oZoom.oMarkers[oZoom.Mark]
 				StretchBlt(oZoom.hdcDest, v.x, v.y, v.w, v.h, oZoom.hdcDest, v.x, v.y, v.w, v.h, 0x5A0049)	; PATINVERT
-			SetTimer, Memory, -30
+			SetTimer, Memory, -180
 		}
 	}
-	If !one
+	If !oZoom.Pause
 		SetTimer, Magnify, -1
 }
 
@@ -3342,6 +3343,10 @@ ChangeMark()  {
 	GuiControl, ZoomTB:, % oZoom.vChangeMark, % oZoom.Mark
 	GuiControl, ZoomTB:, -0x0001, % oZoom.vChangeMark
 	GuiControl, ZoomTB:, Focus, % oZoom.vTextZoom
+	SetTimer, MagnifyMarkSave, -300
+}
+
+MagnifyMarkSave() {
 	IniWrite(oZoom.Mark, "MagnifyMark")
 }
 
@@ -3356,7 +3361,7 @@ ZoomShow() {
 	PostMessage, % MsgAhkSpyZoom, 2, 1, , ahk_id %hAhkSpy% 
 	WinGetPos, WinX, WinY, WinWidth, WinHeight, ahk_id %hAhkSpy%
 	Gui, Zoom:Show, % "NA Hide x" WinX + WinWidth " y" WinY 
-	DllCall("AnimateWindow", "Ptr", oZoom.hGui, "Int", 96 , "UInt", 0x0000001)    
+	DllCall("AnimateWindow", "Ptr", oZoom.hGui, "Int", 96 , "UInt", 0x0000001)   
 	DllCall("DeleteObject", Ptr, oZoom.hBM)
 	GuiControl, ZoomTB:, Focus, % oZoom.vTextZoom 
 	oZoom.Show := 1
@@ -3488,7 +3493,7 @@ Z_MsgZoom(wParam, lParam) {
 	Else If wParam = 1 
 		MagnifyOff(), oZoom.Pause := 1 
 	Else If (wParam = 2 && oZoom.Show)
-		S_Pause := oZoom.Pause, oZoom.Pause := 0, Magnify(1), oZoom.Pause := S_Pause 
+		Magnify(1)
 	Else If wParam = 3
 		ZoomHide()
 	Else If wParam = 4
