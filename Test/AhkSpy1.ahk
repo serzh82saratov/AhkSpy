@@ -45,11 +45,11 @@ Global MemoryFontSize := IniRead("MemoryFontSize", 0)
   wColor := wKey//2														;  Ширина цветного фрагмента
   RangeTimer := 100														;  Период опроса данных, увеличьте на слабом ПК
 
-Global ThisMode := IniRead("StartMode", "Control"), ThisMode := ThisMode = "LastMode" ? IniRead("LastMode", "Control") : ThisMode
+Global ThisMode := IniRead("StartMode", "Control"), LastModeSave := (ThisMode = "LastMode"), ThisMode := ThisMode = "LastMode" ? IniRead("LastMode", "Control") : ThisMode
 , ActiveNoPause := IniRead("ActiveNoPause", 0), MemoryPos := IniRead("MemoryPos", 0), MemorySize := IniRead("MemorySize", 0)
 , MemoryZoomSize := IniRead("MemoryZoomSize", 0), MemoryStateZoom := IniRead("MemoryStateZoom", 0), StateLight := IniRead("StateLight", 1)
 , StateLightAcc := IniRead("StateLightAcc", 1), SendCode := IniRead("SendCode", "vk"), StateLightMarker := IniRead("StateLightMarker", 1)
-, StateUpdate := IniRead("StateUpdate", 1), SendMode := IniRead("SendMode", "send"), SendModeStr := Format("{:L}", SendMode)
+, StateUpdate := IniRead("StateUpdate", 0), SendMode := IniRead("SendMode", "send"), SendModeStr := Format("{:L}", SendMode)
 , StateAllwaysSpot := IniRead("AllwaysSpot", 0), ScrollPos := {}, AccCoord := [], oOther := {}, oFind := {}, Edits := [], oMS := {}
 , hGui, hTBGui, hActiveX, hMarkerGui, hMarkerAccGui, hFindGui, oDoc, ShowMarker, isFindView, isIE, isPaused, w_ShowStyles, MsgAhkSpyZoom, Sleep
 , HTML_Win, HTML_Control, HTML_Hotkey, rmCtrlX, rmCtrlY, widthTB, FullScreenMode, hColorProgress
@@ -164,7 +164,7 @@ If !A_IsCompiled
 		SetTimer, UpdateAhkSpy, -1000
 }
 Else
-	StateUpdate := IniWrite(0, "StateUpdate")
+	StateUpdate := 0
 
 Menu, Startmode, Add, Window, SelStartMode
 Menu, Startmode, Add, Control, SelStartMode
@@ -300,7 +300,8 @@ PausedScript:
 	FontSize := FontSize < 10 ? 10 : FontSize > 24 ? 24 : FontSize
 	oBody.Style.fontSize := FontSize "px"
 	TitleText("FontSize: " FontSize)
-	IniWrite(FontSize, "FontSize")
+	If MemoryFontSize
+		IniWrite(FontSize, "FontSize")
 	Return
 
 F1::
@@ -435,7 +436,6 @@ Mode_Win:
 	TitleText := (TitleTextP1 := "AhkSpy - Window") . TitleTextP2
 	SendMessage, 0xC, 0, &TitleText, , ahk_id %hGui%
 	Write_Win(), oDocEl.scrollLeft := ScrollPos[ThisMode,1], oDocEl.scrollTop := ScrollPos[ThisMode,2]
-	IniWrite(ThisMode, "LastMode")
 	If isFindView
 		FindSearch(1)
 
@@ -643,7 +643,6 @@ Mode_Control:
 	TitleText := (TitleTextP1 := "AhkSpy - Control") . TitleTextP2
 	SendMessage, 0xC, 0, &TitleText, , ahk_id %hGui%
 	Write_Control(), oDocEl.scrollLeft := ScrollPos[ThisMode,1], oDocEl.scrollTop := ScrollPos[ThisMode,2]
-	IniWrite(ThisMode, "LastMode")
 	If isFindView
 		FindSearch(1)
 
@@ -1233,8 +1232,7 @@ Mode_Hotkey:
 	SendMessage, 0xC, 0, &TitleText, , ahk_id %hGui%
 	GuiControl, TB: -0x0001, But3
 	WinActivate ahk_id %hGui%
-	GuiControl, 1:Focus, oDoc
-	IniWrite(ThisMode, "LastMode")
+	GuiControl, 1:Focus, oDoc 
 	If isFindView
 		FindSearch(1)
 	Return
@@ -1610,6 +1608,8 @@ Exit:
 GuiClose:
 	oDoc := ""
 	DllCall("DeregisterShellHookWindow", "Ptr", A_ScriptHwnd)
+	If LastModeSave 
+		IniWrite(ThisMode, "LastMode")
 	ExitApp
 
 CheckAhkVersion:
@@ -1671,6 +1671,7 @@ SelStartMode:
 	Menu, Startmode, UnCheck, Button
 	Menu, Startmode, UnCheck, Last Mode
 	IniWrite({"Window":"Win","Control":"Control","Button":"Hotkey","Last Mode":"LastMode"}[A_ThisMenuItem], "StartMode")
+	LastModeSave := (A_ThisMenuItem = "Last Mode")
 	Menu, Startmode, Check, % A_ThisMenuItem
 	Return
 
@@ -1931,7 +1932,7 @@ AhkSpyZoomShow() {
 }
 
 SavePos() {
-	If FullScreenMode
+	If FullScreenMode || !MemoryPos
 		Return
 	WinGet, Min, MinMax, ahk_id %hGui%
 	If (Min = 0)
@@ -1942,7 +1943,7 @@ SavePos() {
 }
 
 SaveSize() {
-	If FullScreenMode
+	If FullScreenMode || !MemorySize
 		Return
 	WinGet, Min, MinMax, ahk_id %hGui%
 	If (Min = 0)
@@ -3509,9 +3510,8 @@ Z_MsgZoom(wParam, lParam) {
 	Else If wParam = 4
 		ZoomShow()
 	Else If wParam = 5
-	{
-		oZoom.MemoryZoomSize := lParam
-		If lParam
+	{ 
+		If (oZoom.MemoryZoomSize := lParam)
 			GetClientSize(oZoom.hGui, GuiWidth, GuiHeight)
 			, IniWrite(GuiWidth, "MemoryZoomSizeW")
 			, IniWrite(GuiHeight, "MemoryZoomSizeH")
@@ -3602,3 +3602,4 @@ RestoreCursors() {
 }
 
 	;)
+	
