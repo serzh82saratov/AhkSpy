@@ -1468,10 +1468,11 @@ Hotkey_Main(In) {
 	Else If (In.Opt = "GetMod")
 		Return !!(K.PCtrl K.PAlt K.PShift K.PWin)
 	K.UP := In.UP, K.IsJM := 0, K.Time := In.Time, K.NFP := In.NFP, K.IsMod := IsMod
-	K.VK := In.VK, K.SC := In.SC
 	K.Mods := K.MCtrl K.MAlt K.MShift K.MWin
-	K.LRMods := K.MLCtrl K.MRCtrl K.MLAlt K.MRAlt K.MLShift K.MRShift K.MLWin K.MRWin
-	K.TK := GetKeyName(K.VK K.SC), K.TK := K.TK = "" ? K.VK K.SC : (StrLen(K.TK) = 1 ? Format("{:U}", K.TK) : K.TK)
+	K.LRMods := K.MLCtrl K.MRCtrl K.MLAlt K.MRAlt K.MLShift K.MRShift K.MLWin K.MRWin 
+	K.VK := "vk" In.VK, K.SC := "sc" In.SC
+	K.TK := GetKeyName(Format("vk{:02}", In.VK) . Format("sc{:03}", In.SC)) 
+	K.TK := K.TK = "" ? K.VK K.SC : (StrLen(K.TK) = 1 ? Format("{:U}", K.TK) : K.TK)
 	(IsMod) ? (K.HK := K.Pref := K.LRPref := K.Name := K.IsCode := "", ModsOnly := K.Mods = "" ? 0 : 1)
 	: (K.IsCode := (SendCode != "name" && StrLen(K.TK) = 1)  ;	 && !Instr("1234567890-=", K.TK)
 	, K.HK := K.IsCode ? K[SendCode] : K.TK
@@ -1485,6 +1486,7 @@ Hotkey_Main(In) {
 Hotkey_PressMouseRButton: 
 	If !WM_CONTEXTMENU() && !Hotkey_Hook(0)
 		Return
+		
 Hotkey_PressJoy:
 Hotkey_PressMouse:
 	K.NFP := !GetKeyState(A_ThisHotkey, "P")
@@ -1541,8 +1543,8 @@ Hotkey_Arr(P*) {
 	;  http://forum.script-coding.com/viewtopic.php?id=6350
 
 Hotkey_LowLevelKeyboardProc(nCode, wParam, lParam) {
-	Static Mods := {"vkA4":"LAlt","vkA5":"RAlt","vkA2":"LCtrl","vkA3":"RCtrl"
-	,"vkA0":"LShift","vkA1":"RShift","vk5B":"LWin","vk5C":"RWin"}, oMem := []
+	Static Mods := {"A4":"LAlt","A5":"RAlt","A2":"LCtrl","A3":"RCtrl"
+	,"A0":"LShift","A1":"RShift","5B":"LWin","5C":"RWin"}, oMem := []
 	, HEAP_ZERO_MEMORY := 0x8, Size := 16, hHeap := DllCall("GetProcessHeap", Ptr)
 	Local pHeap, Lp, Ext, VK, SC, SC1, SC2, IsMod, Time, NFP, KeyUp
 	Critical
@@ -1557,17 +1559,17 @@ Hotkey_LowLevelKeyboardProc(nCode, wParam, lParam) {
 		While (oMem[1] != "") {
 			If Hotkey_Arr("Hook") {
 				Lp := oMem[1]
-				VK := Format("vk{:X}", NumGet(Lp + 0, "UInt"))
+				VK := Format("{:X}", NumGet(Lp + 0, "UInt"))
 				Ext := NumGet(Lp + 0, 8, "UInt")
-				SC1 := NumGet(Lp + 0, 4, "UInt")
+				SC1 := NumGet(Lp + 0, 4, "UInt") 
 				NFP := (Ext >> 4) & 1				;  Не физическое нажатие
 				KeyUp := Ext >> 7
 				; Time := NumGet(Lp + 12, "UInt")
 				IsMod := Mods[VK]
 				If !SC1
-					SC2 := GetKeySC(VK), SC := SC2 = "" ? "" : Format("sc{:X}", SC2)
+					SC2 := GetKeySC("vk" VK), SC := SC2 = "" ? "" : Format("{:X}", SC2)
 				Else
-					SC := Format("sc{:X}", (Ext & 1) << 8 | SC1)
+					SC := Format("{:X}", (Ext & 1) << 8 | SC1)
 				If !KeyUp
 					IsMod ? Hotkey_Main({VK:VK, SC:SC, Opt:"Down", IsMod:IsMod, NFP:NFP, Time:Time, UP:0})
 					: Hotkey_Main({VK:VK, SC:SC, NFP:NFP, Time:Time, UP:0})
