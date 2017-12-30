@@ -320,7 +320,7 @@ F5:: Write_%ThisMode%()		;  Return original HTML
 F6:: AppsKey
 
 F12::
-F7::Menu, Sys, Show, 5, 5
+F7:: ShowSys(5, 5)
 
 !Space:: SetTimer, ShowSys, -1
 
@@ -405,7 +405,7 @@ CopyText:
 +RButton:: ClipAdd(CopyText, 1) 
 ^+RButton:: ClipAdd(CopyText := CopyCommaParam(CopyText), 1) 
 
-#If (isAhkSpy && Sleep != 1 && !DllCall("IsWindowVisible", "Ptr", oOther.hZoom))
+#If (isAhkSpy && Sleep != 1 && !isPaused && !DllCall("IsWindowVisible", "Ptr", oOther.hZoom))
 
 +#Up::MouseStep(0, -1)
 +#Down::MouseStep(0, 1)
@@ -1674,9 +1674,13 @@ SelStartMode:
 	Menu, Startmode, Check, % A_ThisMenuItem
 	Return
 
-ShowSys: 
-	Menu, Sys, Show
+ShowSys(x, y) {
+ShowSys:
+	ZoomMsg(7, 1)
+	Menu, Sys, Show, % x, % y
+	ZoomMsg(7, 0)
 	Return
+}
 
 Sys_Backlight:
 	Menu, Sys, UnCheck, % BLGroup[StateLight]
@@ -1913,9 +1917,9 @@ ZoomMsg(wParam = -1, lParam = -1) {
 AhkSpyZoomShow() {  
 	If !WinExist("ahk_id" oOther.hZoom) {
 		If A_IsCompiled
-			Run "%A_ScriptFullPath%" "Zoom" "%hGui%" "%ActiveNoPause%", , , PID
+			Run "%A_ScriptFullPath%" "Zoom" "%hGui%" "%ActiveNoPause%" "%isPaused%", , , PID
 		Else
-			Run "%A_AHKPath%" "%A_ScriptFullPath%" "Zoom" "%hGui%" "%ActiveNoPause%", , , PID
+			Run "%A_AHKPath%" "%A_ScriptFullPath%" "Zoom" "%hGui%" "%ActiveNoPause%" "%isPaused%", , , PID
 		WinWait, % "ahk_pid" PID, , 1 
 	}
 	Else If DllCall("IsWindowVisible", "Ptr", oOther.hZoom) 
@@ -3093,6 +3097,9 @@ If !WinExist("ahk_id" hAhkSpy)
 	ExitApp
 
 ActiveNoPause = %3%
+AhkSpyPause = %4%
+oZoom.AhkSpyPause := AhkSpyPause
+
 ListLines Off
 SetBatchLines,-1
 CoordMode, Mouse, Screen
@@ -3193,7 +3200,7 @@ ZoomCreate() {
 }
 
 Magnify(one = 0) {
-	If (oZoom.Show && (one || !oZoom.Pause) && oZoom.SIZING != 2)
+	If (oZoom.Show && (one || !oZoom.Pause && !oZoom.AhkSpyPause) && oZoom.SIZING != 2)
 	{
 		MouseGetPos, mX, mY, WinID
 		If (WinID != oZoom.hGui && WinID != hAhkSpy)
@@ -3204,11 +3211,11 @@ Magnify(one = 0) {
 				, oZoom.hdcSrc, mX - oZoom.nXOriginSrcOffset, mY - oZoom.nYOriginSrcOffset, oZoom.nWidthSrc, oZoom.nHeightSrc) 
 			For k, v In oZoom.oMarkers[oZoom.Mark]
 				StretchBlt(oZoom.hdcDest, v.x, v.y, v.w, v.h, oZoom.hdcDest, v.x, v.y, v.w, v.h, 0x5A0049)	; PATINVERT
-			SetTimer, Memory, -180
+			SetTimer, Memory, -180 
 		}
 	}
 	If !oZoom.Pause
-		SetTimer, Magnify, -1
+		SetTimer, Magnify, -1 
 }
 
 SetSize(GuiWidth = "", GuiHeight = "") {
@@ -3359,15 +3366,16 @@ Redraw() {
 		StretchBlt(oZoom.hdcDest, v.x, v.y, v.w, v.h, oZoom.hdcDest, v.x, v.y, v.w, v.h, 0x5A0049)	; PATINVERT
 }
 
-ZoomShow() {
+ZoomShow() { 
 	PostMessage, % MsgAhkSpyZoom, 2, 1, , ahk_id %hAhkSpy% 
 	WinGetPos, WinX, WinY, WinWidth, WinHeight, ahk_id %hAhkSpy%
 	Gui, Zoom:Show, % "NA Hide x" WinX + WinWidth " y" WinY 
 	DllCall("AnimateWindow", "Ptr", oZoom.hGui, "Int", 96 , "UInt", 0x0000001)   
 	DllCall("DeleteObject", Ptr, oZoom.hBM)
-	GuiControl, ZoomTB:, Focus, % oZoom.vTextZoom 
-	oZoom.Show := 1
+	GuiControl, ZoomTB:, Focus, % oZoom.vTextZoom  
+	oZoom.Pause := !(!oZoom.AhkSpyPause && ActiveNoPause || !WinActive("ahk_id" hAhkSpy))
 	oZoom.Pause ? 0 : Magnify()
+	oZoom.Show := 1
 }
 
 ZoomHide() {
