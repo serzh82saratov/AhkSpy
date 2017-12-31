@@ -3149,8 +3149,8 @@ ZoomCreate() {
 	oZoom.Zoom := IniRead("MagnifyZoom", 4)
 	oZoom.Mark := IniRead("MagnifyMark", "Cross")
 	oZoom.MemoryZoomSize := IniRead("MemoryZoomSize", 0)
-	oZoom.GuiMinW := 308
-	oZoom.GuiMinH := 349
+	oZoom.GuiMinW := 306
+	oZoom.GuiMinH := 351
 	FontSize := (A_ScreenDPI = 120 ? 10 : 12)
 	If oZoom.MemoryZoomSize
 		GuiW := IniRead("MemoryZoomSizeW", oZoom.GuiMinW), GuiH := IniRead("MemoryZoomSizeH", oZoom.GuiMinH)
@@ -3220,13 +3220,12 @@ Magnify(one = 0) {
 }
 
 SetSize(GuiWidth = "", GuiHeight = "") {
-	Static Top := 45, Left := 4, Right := 4, Bottom := 4
+	Static Top := 45, Left := 0, Right := 6, Bottom := 6
 	MagnifyOff()
 	If (GuiWidth = "")
 		GetClientSize(oZoom.hGui, GuiWidth, GuiHeight) 
 	oZoom.GuiWidth := GuiWidth
 	oZoom.GuiHeight := GuiHeight
-	
 	Width := GuiWidth - Left - Right
 	Height := GuiHeight - Top - Bottom
 	Zoom := oZoom.Zoom
@@ -3373,10 +3372,10 @@ ZoomShow() {
 	Gui, Zoom:Show, % "NA Hide x" WinX + WinWidth " y" WinY 
 	DllCall("AnimateWindow", "Ptr", oZoom.hGui, "Int", 96 , "UInt", 0x0000001)   
 	DllCall("DeleteObject", Ptr, oZoom.hBM)
-	GuiControl, ZoomTB:, Focus, % oZoom.vTextZoom  
 	oZoom.Pause := !(!oZoom.AhkSpyPause && ActiveNoPause || !WinActive("ahk_id" hAhkSpy))
 	oZoom.Pause ? 0 : Magnify()
 	oZoom.Show := 1
+	GuiControl, ZoomTB:, Focus, % oZoom.vTextZoom  
 }
 
 ZoomHide() {
