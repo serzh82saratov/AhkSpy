@@ -2720,11 +2720,11 @@ html =
 		var col, Width, clientWidth, scrollLeft, Offset;
 		clientWidth = document.documentElement.clientWidth;
 		if (clientWidth < 0)
-			return
+			Return
 		scrollLeft = document.documentElement.scrollLeft;
 		Width = (clientWidth + scrollLeft);
 		if (scroll && Width == prWidth)
-			return
+			Return
 		if (MoveTitles == 1) {
 			Offset = ((clientWidth / 100 * 30) + scrollLeft);
 			col = document.querySelectorAll('.con');
@@ -2761,12 +2761,12 @@ html =
 	}
 	onscroll = function() {
 		if (WordWrap == 1)
-			return
+			Return
 		shift(1);
 	}
 	function OnButtonDown (el) {
 		if (window.event.button != 1)   //  only left button https://msdn.microsoft.com/en-us/library/aa703876(v=vs.85).aspx
-			return
+			Return
 		el.style.backgroundColor = "#%ColorSelMouseHover%";
 		el.style.color = "#fff";
 		el.style.border = "1px solid black";
@@ -2819,7 +2819,7 @@ Class Events {  ;	http://forum.script-coding.com/viewtopic.php?pid=82283#p82283
 	Global CopyText
 		oevent := oDoc.parentWindow.event.srcElement
 		If (oevent.ClassName = "button" || oevent.tagname = "button")
-			return ButtonClick(oevent)
+			Return ButtonClick(oevent)
 		tagname := oevent.tagname
 		If (ThisMode = "Hotkey" && !Hotkey_Arr("Hook") && !isPaused && tagname ~= "PRE|SPAN")
 			Hotkey_Hook(1)
@@ -2827,7 +2827,7 @@ Class Events {  ;	http://forum.script-coding.com/viewtopic.php?pid=82283#p82283
 	ondblclick() {
 		oevent := oDoc.parentWindow.event.srcElement
 		If (oevent.ClassName = "button" || oevent.tagname = "button")
-			return ButtonClick(oevent)
+			Return ButtonClick(oevent)
 		If (oevent.tagname != "input" && (rng := oDoc.selection.createRange()).text != "" && oevent.isContentEditable)
 		{
 			While !t
@@ -3138,16 +3138,11 @@ If !oZoom.pToken := GdipStartup()
 	MsgBox, 4112, Gdiplus Error, Gdiplus failed to start. Please ensure you have Gdiplus on your system.
 	ExitApp
 }
-
-	; wParam: 0 hide, 1 show, 2 пауза AhkSpy, 3 однократный зум, 4 MemoryZoomSize, 5 MinSize, 6 ActiveNoPause, 7 WinActive AhkSpy, 8 Suspend
-
 Z_MsgZoom(8, Suspend)
 Z_MsgZoom(2, AhkSpyPause)
 Z_MsgZoom(6, ActiveNoPause)
 Z_MsgZoom(7, !!WinActive("ahk_id" hAhkSpy))
 Z_MsgZoom(10, Hotkey)
-
-
 
 OnMessage(MsgAhkSpyZoom := DllCall("RegisterWindowMessage", "Str", "MsgAhkSpyZoom"), "Z_MsgZoom")
 OnMessage(0x0020, "WM_SETCURSOR")
@@ -3186,8 +3181,6 @@ ZoomCreate() {
 		GuiW := IniRead("MemoryZoomSizeW", oZoom.GuiMinW), GuiH := IniRead("MemoryZoomSizeH", oZoom.GuiMinH)
 	Else
 		GuiW := oZoom.GuiMinW, GuiH := oZoom.GuiMinH
-
-
 	Gui, Zoom: -Caption -DPIScale +Border  +LabelZoomOn +HWNDhGui +AlwaysOnTop +E0x08000000    ;	+Owner%hAhkSpy%
 	Gui, Zoom: Color, F0F0F0
 	Gui, Zoom: Add, Text, hwndhStatic +Border
@@ -3208,8 +3201,7 @@ ZoomCreate() {
 
 	Gui, Zoom: Show, % "NA Hide w" GuiW " h" GuiH, AhkSpyZoom
 	Gui, Zoom: +MinSize
-
-
+	
 	oZoom.hdcSrc := DllCall("GetDC", "UPtr", 0, "UPtr")
 	oZoom.hDCBuf := CreateCompatibleDC()
 	oZoom.hdcMemory := CreateCompatibleDC()
@@ -3382,26 +3374,10 @@ ShowZoom(Show) {
 		Gui,  LW: Show, % "NA x" oZoom.LWX " y" oZoom.LWY " w" 0 " h" 0
 		Gui,  Zoom: Show, NA
 		try Gui, LW: Show, % "NA x" WinX + WinW + 1 " y" WinY + 46 " w" oZoom.nWidthDest " h" oZoom.nHeightDest
-		return
+		Return
 	}
 	Gui,  LW: Show, % "NA w" 0 " h" 0  ;	нельзя применять Hide, иначе после появления и ресайза остаётся прозрачный след
-	Gui,  Zoom: Show, NA Hide
-	return
-
-	; Static Count := 5
-	WinGetPos, , , WinW, WinH, % "ahk_id" oZoom.hGui
-	step := WinW // Count, rest := WinW - (step * Count), prWinW := Show ? 0 : WinW
-	Loop % Count
-	{
-		W := prWinW + ((step + (!!rest)) * (Show ? 1 : -1)), (rest && (--rest)), prWinW := W
-		WinSet, Region, % "0-0 " W "-0 " W "-" WinH " 0-" WinH, % "ahk_id" oZoom.hLW
-		WinSet, Region, % "0-0 " W-!Show "-0 " W-!Show "-" WinH " 0-" WinH, % "ahk_id" oZoom.hGui
-		Sleep 1
-	}
-	If Show {
-		WinSet, Region, , % "ahk_id" oZoom.hLW
-		WinSet, Region, , % "ahk_id" oZoom.hGui
-	}
+	Gui,  Zoom: Show, NA Hide 
 }
 
 Redraw() {
@@ -3626,20 +3602,20 @@ GdipStartup() {
 		DllCall("LoadLibrary", "str", "gdiplus")
 	VarSetCapacity(si, A_PtrSize = 8 ? 24 : 16, 0), si := Chr(1)
 	DllCall("gdiplus\GdiplusStartup", A_PtrSize ? "UPtr*" : "uint*", pToken, UPtr, &si, UPtr, 0)
-	return pToken
+	Return pToken
 }
 
 GdipShutdown(pToken) {
 	DllCall("gdiplus\GdiplusShutdown", UPtr, pToken)
 	if hModule := DllCall("GetModuleHandle", "str", "gdiplus", UPtr)
 		DllCall("FreeLibrary", UPtr, hModule)
-	return 0
+	Return 0
 }
 
 UpdateLayeredWindow(hwnd, hdc, x, y, w, h) {
 	Static pt, _ := VarSetCapacity(pt, 8)
 	NumPut(x, pt, 0, "UInt"), NumPut(y, pt, 4, "UInt")
-	return DllCall("UpdateLayeredWindow"
+	Return DllCall("UpdateLayeredWindow"
 					, UPtr, hwnd
 					, UPtr, 0
 					, UPtr, &pt
@@ -3652,7 +3628,7 @@ UpdateLayeredWindow(hwnd, hdc, x, y, w, h) {
 }
 
 StretchBlt(ddc, dx, dy, dw, dh, sdc, sx, sy, sw, sh, Raster=0x40CC0020) {  ;	0x00CC0020|0x40000000
-	return DllCall("gdi32\StretchBlt"
+	Return DllCall("gdi32\StretchBlt"
 					, UPtr, ddc
 					, "int", dx
 					, "int", dy
@@ -3674,7 +3650,7 @@ CreateDIBSection(w, h, hdc) {
 	NumPut(1, bi, 12, "ushort")
 	NumPut(0, bi, 16, "uInt")
 	NumPut(32, bi, 14, "ushort")
-	return DllCall("CreateDIBSection"
+	Return DllCall("CreateDIBSection"
 					, "UPtr", hdc
 					, "UPtr", &bi
 					, "uint", 0
@@ -3684,7 +3660,7 @@ CreateDIBSection(w, h, hdc) {
 }
 
 DrawImage(pGraphics, pBitmap, dx, dy, dw, dh) {
-	return DllCall("gdiplus\GdipDrawImageRectRect"
+	Return DllCall("gdiplus\GdipDrawImageRectRect"
 				, "UPtr", pGraphics
 				, "UPtr", pBitmap
 				, "float", dx
@@ -3702,15 +3678,15 @@ DrawImage(pGraphics, pBitmap, dx, dy, dw, dh) {
 }
 
 ReleaseDC(hdc, hwnd=0) {
-	return DllCall("ReleaseDC", "UPtr", hwnd, "UPtr", hdc)
+	Return DllCall("ReleaseDC", "UPtr", hwnd, "UPtr", hdc)
 }
 
 DeleteDC(hdc) {
-   return DllCall("DeleteDC", "UPtr", hdc)
+   Return DllCall("DeleteDC", "UPtr", hdc)
 }
 
 CreateCompatibleDC(hdc=0) {
-   return DllCall("CreateCompatibleDC", "UPtr", hdc)
+   Return DllCall("CreateCompatibleDC", "UPtr", hdc)
 }
 
 	;)
