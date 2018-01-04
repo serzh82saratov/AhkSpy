@@ -2720,11 +2720,11 @@ html =
 		var col, Width, clientWidth, scrollLeft, Offset;
 		clientWidth = document.documentElement.clientWidth;
 		if (clientWidth < 0)
-			Return
+			return
 		scrollLeft = document.documentElement.scrollLeft;
 		Width = (clientWidth + scrollLeft);
 		if (scroll && Width == prWidth)
-			Return
+			return
 		if (MoveTitles == 1) {
 			Offset = ((clientWidth / 100 * 30) + scrollLeft);
 			col = document.querySelectorAll('.con');
@@ -2761,12 +2761,12 @@ html =
 	}
 	onscroll = function() {
 		if (WordWrap == 1)
-			Return
+			return
 		shift(1);
 	}
 	function OnButtonDown (el) {
 		if (window.event.button != 1)   //  only left button https://msdn.microsoft.com/en-us/library/aa703876(v=vs.85).aspx
-			Return
+			return
 		el.style.backgroundColor = "#%ColorSelMouseHover%";
 		el.style.color = "#fff";
 		el.style.border = "1px solid black";
