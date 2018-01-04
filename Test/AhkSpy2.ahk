@@ -244,7 +244,7 @@ SpotProc:
 	KeyWait, Tab, T0.1
 	Return
 
-#If isAhkSpy && ShowMarker && (StateLight = 3 || WinActive("ahk_id" hGui))
+#If isAhkSpy && (StateLight = 3 || WinActive("ahk_id" hGui))
 
 ~RShift Up::
 ~LShift Up:: HideMarker(), HideAccMarker()
@@ -2400,9 +2400,9 @@ MouseStep(x, y) {
 	If WinActive("ahk_id" hGui) && !ActiveNoPause
 	{
 		(ThisMode = "Control" ? (Spot_Control() (StateAllwaysSpot ? Spot_Win() : 0) Write_Control()) : (Spot_Win() (StateAllwaysSpot ? Spot_Control() : 0) Write_Win()))
+		If DllCall("IsWindowVisible", "Ptr", oOther.hZoom)
+			ZoomMsg(3)
 	}
-	If DllCall("IsWindowVisible", "Ptr", oOther.hZoom)
-		ZoomMsg(3)
 }
 
 IsIEFocus() {
