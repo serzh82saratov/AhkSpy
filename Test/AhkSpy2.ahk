@@ -3484,16 +3484,21 @@ EVENT_OBJECT_DESTROY(hWinEventHook, event, hwnd) {
 EVENT_SYSTEM_MINIMIZESTART(hWinEventHook, event, hwnd) {
 	If (hwnd != hAhkSpy)
 		Return
-	ZoomRules("MIN", 1) 
-	ShowZoom(0)
+	ZoomRules("MIN", 1)
+	If oZoom.Show 
+		oZoom.Minimize := 1, ShowZoom(0)
 }
 
 EVENT_SYSTEM_MINIMIZEEND(hWinEventHook, event, hwnd) {
 	If (hwnd != hAhkSpy)
 		Return
-	isEnabled := false, DllCall("dwmapi.dll\DwmIsCompositionEnabled", "UInt", &isEnabled)
-	Sleep % !!isEnabled ? 300 : 10
-	ShowZoom(1)
+	If oZoom.Minimize
+	{
+		isEnabled := false, DllCall("dwmapi.dll\DwmIsCompositionEnabled", "UInt", &isEnabled)
+		Sleep % !!isEnabled ? 300 : 10
+		ShowZoom(1)
+		oZoom.Minimize := 0
+	}
 	ZoomRules("MIN", 0)
 }
 
@@ -3565,7 +3570,7 @@ Sizing() {
 SetSystemCursor(CursorName, cx = 0, cy = 0) {
 	Static SystemCursors := {ARROW:32512, IBEAM:32513, WAIT:32514, CROSS:32515, UPARROW:32516, SIZE:32640, ICON:32641, SIZENWSE:32642
 					, SIZENESW:32643, SIZEWE:32644 ,SIZENS:32645, SIZEALL:32646, NO:32648, HAND:32649, APPSTARTING:32650, HELP:32651}
-    Local CursorHandle, hImage, Name, ID
+	Local CursorHandle, hImage, Name, ID
 	If (CursorHandle := DllCall("LoadCursor", Uint, 0, Int, SystemCursors[CursorName]))
 		For Name, ID in SystemCursors
 			hImage := DllCall("CopyImage", Ptr, CursorHandle, Uint, 0x2, Int, cx, Int, cy, Uint, 0)
@@ -3685,12 +3690,11 @@ ReleaseDC(hdc, hwnd=0) {
 }
 
 DeleteDC(hdc) {
-   Return DllCall("DeleteDC", "UPtr", hdc)
+	Return DllCall("DeleteDC", "UPtr", hdc)
 }
 
 CreateCompatibleDC(hdc=0) {
-   Return DllCall("CreateCompatibleDC", "UPtr", hdc)
+	Return DllCall("CreateCompatibleDC", "UPtr", hdc)
 }
 
 	;)
-	
