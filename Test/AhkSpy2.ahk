@@ -3367,17 +3367,19 @@ ZoomHide() {
 }
 
 ShowZoom(Show) {
+	oZoom.Show := Show
+	Sleep 1
 	If Show {
 		WinGetPos, WinX, WinY, WinW, , ahk_id %hAhkSpy%
 		oZoom.LWX := WinX + WinW + 1, oZoom.LWY := WinY + 46
 		Gui,  Zoom: Show, % "NA Hide x" WinX + WinW " y" WinY
 		Gui,  LW: Show, % "NA x" oZoom.LWX " y" oZoom.LWY " w" 0 " h" 0
 		Gui,  Zoom: Show, NA
-		try Gui, LW: Show, % "NA x" WinX + WinW + 1 " y" WinY + 46 " w" oZoom.nWidthDest " h" oZoom.nHeightDest
+		try Gui, LW: Show, % "NA x" oZoom.LWX " y" oZoom.LWY " w" oZoom.nWidthDest " h" oZoom.nHeightDest
 		Return
 	}
 	Gui,  LW: Show, % "NA w" 0 " h" 0  ;	нельзя применять Hide, иначе после появления и ресайза остаётся прозрачный след
-	Gui,  Zoom: Show, NA Hide 
+	Gui,  Zoom: Show, NA Hide  
 }
 
 Redraw() {
@@ -3482,7 +3484,7 @@ EVENT_OBJECT_DESTROY(hWinEventHook, event, hwnd) {
 EVENT_SYSTEM_MINIMIZESTART(hWinEventHook, event, hwnd) {
 	If (hwnd != hAhkSpy)
 		Return
-	ZoomRules("MIN", 1)
+	ZoomRules("MIN", 1) 
 	ShowZoom(0)
 }
 
@@ -3590,7 +3592,8 @@ UpdateWindow(Src, X, Y) {
 	DllCall("SelectObject", "UPtr", oZoom.hDCBuf, "UPtr", hbm)  ;	hDCBuf2
 	DllCall("gdiplus\GdipCreateFromHDC", "UPtr", oZoom.hDCBuf, "UPtr*", G)  ;	hDCBuf2
 	DrawImage(G, pBitmap, 0, 0, oZoom.LWWidth, oZoom.LWHeight)
-	UpdateLayeredWindow(oZoom.hLW, oZoom.hDCBuf, oZoom.LWX, oZoom.LWY, oZoom.LWWidth, oZoom.LWHeight)  ;	hDCBuf2
+	If oZoom.Show
+		UpdateLayeredWindow(oZoom.hLW, oZoom.hDCBuf, oZoom.LWX, oZoom.LWY, oZoom.LWWidth, oZoom.LWHeight)  ;	hDCBuf2
 	DllCall("SelectObject", "UPtr", oZoom.hDCBuf, "UPtr", obm)   ;	hDCBuf2
 	DllCall("DeleteObject", "UPtr", hbm)
 	DllCall("gdiplus\GdipDeleteGraphics", "UPtr", G)
