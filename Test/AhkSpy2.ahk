@@ -3375,7 +3375,7 @@ ShowZoom(Show) {
 		Gui,  Zoom: Show, % "NA Hide x" WinX + WinW " y" WinY
 		Gui,  LW: Show, % "NA x" oZoom.LWX " y" oZoom.LWY " w" 0 " h" 0
 		Gui,  Zoom: Show, NA
-		try Gui, LW: Show, % "NA x" oZoom.LWX " y" oZoom.LWY " w" oZoom.nWidthDest " h" oZoom.nHeightDest
+		try Gui, LW: Show, % "NA x" oZoom.LWX " y" oZoom.LWY " w" oZoom.LWWidth " h" oZoom.LWHeight
 		Return
 	}
 	Gui,  LW: Show, % "NA w" 0 " h" 0  ;	нельзя применять Hide, иначе после появления и ресайза остаётся прозрачный след
