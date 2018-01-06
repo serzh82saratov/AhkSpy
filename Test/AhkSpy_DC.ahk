@@ -40,7 +40,7 @@ Global MemoryFontSize := IniRead("MemoryFontSize", 0)
 , HeigtButton := 32														;  Высота кнопок
 , PreMaxHeight := Round(A_ScreenHeight / 3 * 2)							;  Максимальная высота поля "Big text overflow hide" при которой добавлять прокрутку
 
-  HeightStart := 550													;  Высота окна при старте
+  HeightStart := 523													;  Высота окна при старте
   wKey := 142															;  Ширина кнопок
   wColor := wKey//2														;  Ширина цветного фрагмента
   RangeTimer := 100														;  Период опроса данных, увеличьте на слабом ПК
@@ -51,7 +51,7 @@ Global ThisMode := IniRead("StartMode", "Control"), LastModeSave := (ThisMode = 
 , StateLightAcc := IniRead("StateLightAcc", 1), SendCode := IniRead("SendCode", "vk"), StateLightMarker := IniRead("StateLightMarker", 1)
 , StateUpdate := IniRead("StateUpdate", 0), SendMode := IniRead("SendMode", "send"), SendModeStr := Format("{:L}", SendMode)
 , StateAllwaysSpot := IniRead("AllwaysSpot", 0), ScrollPos := {}, AccCoord := [], oOther := {}, oFind := {}, Edits := [], oMS := {}
-, hGui, hTBGui, hActiveX, hMarkerGui, hMarkerAccGui, hFindGui, oDoc, ShowMarker, isFindView, isIE, isPaused, w_ShowStyles, MsgAhkSpyZoom, Sleep
+, hGui, hTBGui, hActiveX, hFindGui, oDoc, ShowMarker, isFindView, isIE, isPaused, w_ShowStyles, MsgAhkSpyZoom, Sleep, oShowAccMarkers, oShowMarkers
 , HTML_Win, HTML_Control, HTML_Hotkey, rmCtrlX, rmCtrlY, widthTB, FullScreenMode, hColorProgress
 , ClipAdd_Before := 0, ClipAdd_Delimiter := "`r`n", oDocEl, oJScript, oBody, isConfirm, isAhkSpy := 1, WordWrap := IniRead("WordWrap", 0)
 , MoveTitles := IniRead("MoveTitles", 1), PreOverflowHide := IniRead("PreOverflowHide", 1), DetectHiddenText := IniRead("DetectHiddenText", "on")
@@ -131,16 +131,6 @@ Gui, F: Add, Text, x+10 yp hp c2F2F2F +0x201 gFindOption, % " whole word "
 Gui, F: Add, Text, x+3 yp hp +0x201 w52 vFindMatches
 Gui, F: Add, Button, % "+0x300 +0xC00 y3 h20 w20 gFindHide x" widthTB - 21, X
 
-Gui, M: Margin, 0, 0
-Gui, M: -DPIScale +AlwaysOnTop +HWNDhMarkerGui +E0x08000000 +E0x20 -Caption +Owner +0x40000000 -0x80000000
-Gui, M: Color, E14B30
-WinSet, TransParent, 250, ahk_id %hMarkerGui%
-Gui, AcM: Margin, 0, 0
-Gui, AcM: -DPIScale +AlwaysOnTop +HWNDhMarkerAccGui +E0x08000000 +E0x20 -Caption +Owner +0x40000000 -0x80000000
-Gui, AcM: Color, 26419F
-WinSet, TransParent, 250, ahk_id %hMarkerAccGui%
-ShowMarker(0, 0, 0, 0, 0), ShowAccMarker(0, 0, 0, 0, 0), HideMarker(), HideAccMarker()
-
 Menu, Sys, Add, Backlight allways, Sys_Backlight
 Menu, Sys, Add, Backlight hold shift button, Sys_Backlight
 Menu, Sys, Add, Backlight disable, Sys_Backlight
@@ -218,7 +208,7 @@ Menu, Sys, Color, % ColorBgOriginal
 
 Gui, Show, % "NA " (MemoryPos ? " x" IniRead("MemoryPosX", "Center") " y" IniRead("MemoryPosY", "Center") : "")
 . (MemorySize ? " h" IniRead("MemorySizeH", HeightStart) " w" IniRead("MemorySizeW", widthTB) : " h" HeightStart " w" widthTB)
-Gui, % "+MinSize" widthTB "x" HeigtButton 
+Gui, % "+MinSize" widthTB "x" 313
 
 Hotkey_Init("Write_HotkeyHTML", "MLRJ")
 Gosub, Mode_%ThisMode%
@@ -1468,8 +1458,7 @@ Hotkey_Main(In) {
 	K.UP := In.UP, K.IsJM := 0, K.Time := In.Time, K.NFP := In.NFP, K.IsMod := IsMod
 	K.Mods := K.MCtrl K.MAlt K.MShift K.MWin
 	K.LRMods := K.MLCtrl K.MRCtrl K.MLAlt K.MRAlt K.MLShift K.MRShift K.MLWin K.MRWin 
-	K.VK := "vk" In.VK, K.SC := "sc" In.SC
-	K.TK := GetKeyName(Format("vk{:02}", In.VK) . Format("sc{:03}", In.SC)) 
+	K.VK := "vk" In.VK, K.SC := "sc" In.SC, K.TK := GetKeyName(K.VK K.SC) 
 	K.TK := K.TK = "" ? K.VK K.SC : (StrLen(K.TK) = 1 ? Format("{:U}", K.TK) : K.TK)
 	(IsMod) ? (K.HK := K.Pref := K.LRPref := K.Name := K.IsCode := "", ModsOnly := K.Mods = "" ? 0 : 1)
 	: (K.IsCode := (SendCode != "name" && StrLen(K.TK) = 1)  ;	 && !Instr("1234567890-=", K.TK)
@@ -1596,6 +1585,8 @@ Hotkey_SetHook(On = 1) {
 	; _________________________________________________ Labels _________________________________________________
 
 GuiSize: 
+	If A_Gui != 1
+		Return
 	Sleep := A_EventInfo
 	If Sleep != 1
 		ControlsMove(A_GuiWidth, A_GuiHeight)
@@ -1997,33 +1988,64 @@ ExtraFile(Name, GetNoCompile = 0) {
 		Return Dir "\" Name ".ahk"
 }
 
-ShowMarker(x, y, w, h, b := 4) {
-	w < 8 || h < 8 ? b := 2 : 0
-	Gui, M: +AlwaysOnTop
-	Try Gui, M: Show, NA x%x% y%y% w%w% h%h%
-	Catch
-		Return HideMarker(), ShowMarker := 0
-	ShowMarker := 1
-	WinSet, Region, % "0-0 " w "-0 " w "-" h " 0-" h " 0-0 " b "-" b
-		. " " w-b "-" b " " w-b "-" h-b " " b "-" h-b " " b "-" b, ahk_id %hMarkerGui%
+ShowMarker(x, y, w, h, b := 4) { 
+	If !oShowMarkers
+		ShowMarkersCreate("oShowMarkers", "E14B30")
+	(w < 8 || h < 8) && (b := 2)
+	ShowMarkers(oShowMarkers, x, y, w, h, b)
 }
 
-ShowAccMarker(x, y, w, h, b := 2) {
-	Gui, AcM: +AlwaysOnTop
-	Try Gui, AcM: Show, NA x%x% y%y% w%w% h%h%
-	Catch
-		Return HideAccMarker(), (ShowMarker := ShowMarker ? 1 : 0)
-	ShowMarker := 1
-	WinSet, Region, % "0-0 " w "-0 " w "-" h " 0-" h " 0-0 " b "-" b
-		. " " w-b "-" b " " w-b "-" h-b " " b "-" h-b " " b "-" b, ahk_id %hMarkerAccGui%
+ShowAccMarker(x, y, w, h, b := 2) { 
+	If !oShowAccMarkers
+		ShowMarkersCreate("oShowAccMarkers", "26419F")
+	ShowMarkers(oShowAccMarkers, x, y, w, h, b)
 }
 
-HideMarker() {
-	Gui, M: Show, Hide
+HideMarker() {  
+	HideMarkers(oShowMarkers) 
 }
 
 HideAccMarker() {
-	Gui, AcM: Show, Hide
+	HideMarkers(oShowAccMarkers)
+}
+
+ShowMarkers(arr, x, y, w, h, b) { 
+	ShowMarker := 1 
+	hDWP := DllCall("BeginDeferWindowPos", "Int", 4)
+	for k, v in [[x, y, b, h],[x, y+h-b, w, b],[x+w-b, y, b, h],[x, y, w, b]]
+		{
+			hDWP := DllCall("DeferWindowPos"
+			, "Ptr", hDWP, "Ptr", arr[k], "UInt", -1  ;	-1 := HWND_TOPMOST
+			, "Int", v[1], "Int", v[2], "Int", v[3], "Int", v[4]
+			, "UInt", 0x0250)    ; 0x0010 := SWP_NOACTIVATE | 0x0040 := SWP_SHOWWINDOW | SWP_NOOWNERZORDER := 0x0200
+		}
+	DllCall("EndDeferWindowPos", "Ptr", hDWP)
+}
+
+HideMarkers(arr) { 
+	ShowMarker := 0
+	hDWP := DllCall("BeginDeferWindowPos", "Int", 4)
+	Loop 4
+		hDWP := DllCall("DeferWindowPos"
+		, "Ptr", hDWP, "Ptr", arr[A_Index], "UInt", 0
+		, "Int", 0, "Int", 0, "Int", 0, "Int", 0
+		, "UInt", 0x0083)    ; 0x0080 := SWP_HIDEWINDOW | SWP_NOMOVE := 0x0002 | SWP_NOSIZE := 0x0001
+	DllCall("EndDeferWindowPos", "Ptr", hDWP)
+}
+
+ShowMarkersCreate(arr, color) {  
+	S_DefaultGui := A_DefaultGui, %arr% := {}
+	loop 4
+	{
+		Gui, New
+		Gui, Margin, 0, 0
+		Gui, -DPIScale  +HWNDHWND -Caption +Owner +0x40000000 +E0x20 -0x80000000 +E0x08000000 +AlwaysOnTop 
+		Gui, Color, %color%
+		WinSet, TransParent, 250, ahk_id %HWND%
+		%arr%[A_Index] := HWND 
+		Gui, Show, NA Hide
+	}
+	Gui, %S_DefaultGui%:Default 
 }
 
 CheckHideMarker() {
@@ -3156,7 +3178,7 @@ ZoomCreate() {
 		GuiW := IniRead("MemoryZoomSizeW", oZoom.GuiMinW), GuiH := IniRead("MemoryZoomSizeH", oZoom.GuiMinH)
 	Else
 		GuiW := oZoom.GuiMinW, GuiH := oZoom.GuiMinH
-	Gui Zoom: +AlwaysOnTop -DPIScale +hwndhGui +LabelZoomOn -Caption +E0x08000000
+	Gui Zoom: +AlwaysOnTop -DPIScale +hwndhGui +LabelZoomOn -Caption +E0x08000000  ;	 +Owner%hAhkSpy%
 	Gui, Zoom: Color, F0F0F0
 	DllCall("SetClassLong", "Ptr", hGui, "int", -26
 		, "int", DllCall("GetClassLong", "Ptr", hGui, "int", -26) | 0x20000)
@@ -3201,33 +3223,34 @@ ZoomCreate() {
 }
 
 Magnify(one = 0) {
+	Static New
 	If (oZoom.Show && (one || !oZoom.Pause && !oZoom.AhkSpyPause) && oZoom.SIZING != 2)
 	{
 		MouseGetPos, mX, mY, WinID
 		If (WinID != oZoom.hGui && WinID != hAhkSpy)
-		{
-			SetTimer, Memory, Off
+		{ 
 			oZoom.MouseX := mX, oZoom.MouseY := mY
 			StretchBlt(oZoom.hdcDest, 0, 0, oZoom.nWidthDest, oZoom.nHeightDest
 				, oZoom.hdcSrc, mX - oZoom.nXOriginSrcOffset, mY - oZoom.nYOriginSrcOffset, oZoom.nWidthSrc, oZoom.nHeightSrc) 
 			For k, v In oZoom.oMarkers[oZoom.Mark]
-				StretchBlt(oZoom.hdcDest, v.x, v.y, v.w, v.h, oZoom.hdcDest, v.x, v.y, v.w, v.h, 0x5A0049)	; PATINVERT
-			SetTimer, Memory, -180 
+				StretchBlt(oZoom.hdcDest, v.x, v.y, v.w, v.h, oZoom.hdcDest, v.x, v.y, v.w, v.h, 0x5A0049)	; PATINVERT 
+			If !New
+				New := 1
+			If one
+				Memory()  
 		}
+		Else If New  
+			Memory(), New := 0
 	}
 	If !oZoom.Pause
 		SetTimer, Magnify, -1 
 }
 
-SetSize(GuiWidth = "", GuiHeight = "") {
+SetSize() {
 	Static Top := 45, Left := 0, Right := 6, Bottom := 6
 	MagnifyOff()
-	If (GuiWidth = "")
-		GetClientSize(oZoom.hGui, GuiWidth, GuiHeight) 
-	oZoom.GuiWidth := GuiWidth
-	oZoom.GuiHeight := GuiHeight
-	Width := GuiWidth - Left - Right
-	Height := GuiHeight - Top - Bottom
+	Width := oZoom.GuiWidth - Left - Right
+	Height := oZoom.GuiHeight - Top - Bottom
 	Zoom := oZoom.Zoom
 	conW := Mod(Width, Zoom) ? Width - Mod(Width, Zoom) + Zoom : Width
 	conW := Mod(conW // Zoom, 2) ? conW : conW + Zoom
@@ -3243,7 +3266,7 @@ SetSize(GuiWidth = "", GuiHeight = "") {
 	, "UInt", 0x0010)    ; 0x0010 := SWP_NOACTIVATE  			 	; , "UInt", 0x0010)    ; 0x0010 := SWP_NOACTIVATE   
 	hDWP := DllCall("DeferWindowPos"
 	, "Ptr", hDWP, "Ptr", oZoom.hTBGui, "UInt", 0
-	, "Int", (GuiWidth - oZoom.GuiMinW) / 2
+	, "Int", (oZoom.GuiWidth - oZoom.GuiMinW) / 2
 	, "Int", 0, "Int", 0, "Int", 0
 	, "UInt", 0x0011)    ; 0x0010 := SWP_NOACTIVATE | 0x0001 := SWP_NOSIZE 
 	DllCall("EndDeferWindowPos", "Ptr", hDWP)
@@ -3394,16 +3417,11 @@ DCToStatic(hDC, hWnd, X, Y, W, H) {
 	hBM := DllCall("CopyImage", Ptr, DllCall("CreateBitmap", Int, W, Int, H, UInt, 1, UInt, 24
 							, UInt, 0), UInt, 0, Int, 0, Int, 0, UInt, 0x2008, UInt) 
 	oBM := DllCall("SelectObject", Ptr, tDC, Ptr, hBM) 
-	DllCall("BitBlt", Ptr, tDC, UInt, 0, UInt, 0, Int, W, Int, H, Ptr, hDC, UInt, X, UInt, Y, UInt, 0xC000CA) 
+	DllCall("BitBlt", Ptr, tDC, UInt, 0, UInt, 0, Int, W, Int, H, Ptr, hDC, UInt, X, UInt, Y, UInt, 0xC000CA|0x40000000) 
 	DllCall("SelectObject", Ptr, tDC, Ptr, oBM)
 	DllCall("DeleteDC", Ptr, tDC) 
 	SendMessage, 0x172, 0, hBM,, ahk_id %hWnd%  ;	STM_SETIMAGE, IMAGE_BITMAP
 	oZoom.hBM := hBM
-}
-	
-WM_Paint() { 
-	If A_GuiControl =
-		SetTimer, Redraw, -10 
 }
 
 Memory() {
@@ -3414,7 +3432,7 @@ Memory() {
 	oZoom.nXOriginSrc := oZoom.MouseX - VirtualScreenX, oZoom.nYOriginSrc := oZoom.MouseY - VirtualScreenY
 	hBM := DllCall("Gdi32.Dll\CreateCompatibleBitmap", "Ptr", oZoom.hdcSrc, "Int", VirtualScreenWidth, "Int", VirtualScreenHeight)
 	DllCall("Gdi32.Dll\SelectObject", "Ptr", oZoom.hdcMemory, "Ptr", hBM), DllCall("DeleteObject", "Ptr", hBM)
-	BitBlt(oZoom.hdcMemory, 0, 0, VirtualScreenWidth, VirtualScreenHeight, oZoom.hdcSrc, VirtualScreenX, VirtualScreenY)
+	BitBlt(oZoom.hdcMemory, 0, 0, VirtualScreenWidth, VirtualScreenHeight, oZoom.hdcSrc, VirtualScreenX, VirtualScreenY) 
 }
 
 CheckAhkSpy() {
@@ -3423,14 +3441,7 @@ CheckAhkSpy() {
 		ExitApp
 	If (Min = -1 || (!ActiveNoPause && WinActive("ahk_id" hAhkSpy)))
 		oZoom.Pause := 1
-}
-
-GetClientSize(hwnd, ByRef W, ByRef H)  {
-	VarSetCapacity(pwi, 60, 0), NumPut(60, pwi, 0, "UInt")
-	DllCall("GetWindowInfo", "Ptr", hwnd, "UInt", &pwi)
-	W := NumGet(pwi, 28, "int") - NumGet(pwi, 20, "int")
-	H := NumGet(pwi, 32, "int") - NumGet(pwi, 24, "int")
-}
+} 
 
 IsMinimize(hwnd) {
 	WinGet, Min, MinMax, % "ahk_id " hwnd
@@ -3456,7 +3467,7 @@ BitBlt(ddc, dx, dy, dw, dh, sdc, sx, sy, Raster = 0xC000CA) {
 					, "Ptr", sDC
 					, "Int", sx
 					, "Int", sy
-					, "Uint", Raster)
+					, "Uint", Raster|0x40000000)
 }
 
 StretchBlt(ddc, dx, dy, dw, dh, sdc, sx, sy, sw, sh, Raster = 0xC000CA) {
@@ -3471,15 +3482,17 @@ StretchBlt(ddc, dx, dy, dw, dh, sdc, sx, sy, sw, sh, Raster = 0xC000CA) {
 					, "Int", sy
 					, "Int", sw
 					, "Int", sh
-					, "Uint", Raster)
+					, "Uint", Raster|0x40000000)  ;	MERGECOPY|CAPTUREBLT
 }
 
 	; _________________________________________________ Events _________________________________________________
 
 ZoomOnSize() { 
 	If A_EventInfo != 0
-		Return
-	SetSize(A_GuiWidth, A_GuiHeight)  
+		Return 
+	oZoom.GuiWidth := A_GuiWidth
+	oZoom.GuiHeight := A_GuiHeight
+	SetSize()  
 }
 
 ZoomOnClose() {
@@ -3510,10 +3523,9 @@ Z_MsgZoom(wParam, lParam) {
 		ZoomShow()
 	Else If wParam = 5
 	{ 
-		If (oZoom.MemoryZoomSize := lParam)
-			GetClientSize(oZoom.hGui, GuiWidth, GuiHeight)
-			, IniWrite(GuiWidth, "MemoryZoomSizeW")
-			, IniWrite(GuiHeight, "MemoryZoomSizeH")
+		If (oZoom.MemoryZoomSize := lParam) 
+			IniWrite(oZoom.GuiWidth, "MemoryZoomSizeW")
+			, IniWrite(oZoom.GuiHeight, "MemoryZoomSizeH") 
 	}
 	Else If (wParam = 6 && oZoom.Show)
 		Gui, Zoom:Show, % "NA w" oZoom.GuiMinW " h" oZoom.GuiMinH
@@ -3523,6 +3535,11 @@ Z_MsgZoom(wParam, lParam) {
 		ActiveNoPause := lParam
 	Else If wParam = 9
 		Suspend % lParam ? "On" : "Off"
+}
+	
+WM_Paint() { 
+	If A_GuiControl =
+		SetTimer, Redraw, -10 
 }
 
 EVENT_OBJECT_DESTROY(hWinEventHook, event, hwnd) { 
@@ -3601,4 +3618,3 @@ RestoreCursors() {
 }
 
 	;)
-	
