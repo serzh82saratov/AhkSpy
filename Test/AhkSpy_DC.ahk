@@ -8,14 +8,13 @@
 	;  Описание - http://forum.script-coding.com/viewtopic.php?pid=72459#p72459
 	;  Обсуждение - http://forum.script-coding.com/viewtopic.php?pid=72244#p72244
 	;  GitHub - https://github.com/serzh82saratov/AhkSpy/blob/master/AhkSpy.ahk
-
+	
 p1 = %1%
 If (p1 = "Zoom")
 	GoTo ShowZoom
-
+	
 SingleInstance()
 #NoEnv
-#UseHook
 SetBatchLines, -1
 ListLines, Off
 DetectHiddenWindows, On
@@ -104,8 +103,11 @@ OnMessage(0xA1, "WM_NCLBUTTONDOWN")
 OnMessage(0x7B, "WM_CONTEXTMENU")
 OnMessage(0x6, "WM_ACTIVATE")
 OnMessage(0x47, "WM_WINDOWPOSCHANGED")
+OnMessage(0x05, "WM_SIZE")
 
 OnMessage(MsgAhkSpyZoom := DllCall("RegisterWindowMessage", "Str", "MsgAhkSpyZoom"), "MsgZoom")
+DllCall("RegisterShellHookWindow", "Ptr", A_ScriptHwnd)
+OnMessage(DllCall("RegisterWindowMessage", "str", "SHELLHOOK"), "ShellProc")
 DllCall("PostMessage", "Ptr", A_ScriptHWND, "UInt", 0x50, "UInt", 0, "UInt", 0x409) ; eng layout
 
 Gui, TB: +HWNDhTBGui -Caption -DPIScale +Parent%hGui% +E0x08000000 +0x40000000 -0x80000000
@@ -213,20 +215,20 @@ Gosub, Mode_%ThisMode%
 
 If (MemoryStateZoom && IniRead("ZoomShow", 0))
 	AhkSpyZoomShow()
-
+	
 WinGetPos, WinX, WinY, WinWidth, WinHeight, ahk_id %hGui%
-If !DllCall("WindowFromPoint", "Int64", WinX & 0xFFFFFFFF | WinY << 32)
-&& !DllCall("WindowFromPoint", "Int64", (WinX + WinWidth) & 0xFFFFFFFF | (WinY) << 32)
-&& !DllCall("WindowFromPoint", "Int64", (WinX + WinWidth) & 0xFFFFFFFF | (WinY + WinHeight) << 32)
-&& !DllCall("WindowFromPoint", "Int64", (WinX) & 0xFFFFFFFF | (WinY + WinHeight) << 32)
+If !DllCall("WindowFromPoint", "Int64", WinX & 0xFFFFFFFF | WinY << 32) 
+&& !DllCall("WindowFromPoint", "Int64", (WinX + WinWidth) & 0xFFFFFFFF | (WinY) << 32) 
+&& !DllCall("WindowFromPoint", "Int64", (WinX + WinWidth) & 0xFFFFFFFF | (WinY + WinHeight) << 32) 
+&& !DllCall("WindowFromPoint", "Int64", (WinX) & 0xFFFFFFFF | (WinY + WinHeight) << 32) 
 	Gui, Show, NA xCenter yCenter
-
+	
 #Include *i %A_AppData%\AhkSpy\Include.ahk
 Return
 
 	; _________________________________________________ Hotkey`s _________________________________________________
 
-#If isAhkSpy && Sleep != 1 && ActiveNoPause
+#If isAhkSpy && ActiveNoPause
 
 +Tab:: Goto PausedScript
 
@@ -237,18 +239,19 @@ SpotProc:
 	(ThisMode = "Control" ? (Spot_Control() (StateAllwaysSpot ? Spot_Win() : 0) Write_Control()) : (Spot_Win() (StateAllwaysSpot ? Spot_Control() : 0) Write_Win()))
 	If !WinActive("ahk_id" hGui)
 	{
+		ZoomMsg(1)
 		WinActivate ahk_id %hGui%
 		GuiControl, 1:Focus, oDoc
 	}
 	Else
-		ZoomMsg(3)
+		ZoomMsg(2) 
 	KeyWait, Tab, T0.1
 	Return
 
-#If isAhkSpy && (StateLight = 3 || WinActive("ahk_id" hGui))
+#If isAhkSpy && ShowMarker && (StateLight = 3 || WinActive("ahk_id" hGui))
 
-~*RShift Up::
-~*LShift Up:: HideMarker(), HideAccMarker()
+~RShift Up::
+~LShift Up:: HideMarker(), HideAccMarker()
 
 #If isAhkSpy && Sleep != 1
 
@@ -258,27 +261,28 @@ PausedScript:
 	If isConfirm
 		Return
 	isPaused := !isPaused
-	Try SetTimer, Loop_%ThisMode%, % isPaused ? "Off" : "On"
-	ZoomMsg(2, isPaused)
 	ColorBg := isPaused ? ColorBgPaused : ColorBgOriginal
 	oBody.style.backgroundColor := "#" ColorBg
 	ChangeCSS("css_ColorBg", ".title, .button {background-color: #" ColorBg ";}")
+	Try SetTimer, Loop_%ThisMode%, % isPaused ? "Off" : "On"
 	If (ThisMode = "Hotkey" && WinActive("ahk_id" hGui))
 		Hotkey_Hook(!isPaused)
 	If (isPaused && !WinActive("ahk_id" hGui))
 		(ThisMode = "Control" ? Spot_Win() : ThisMode = "Win" ? Spot_Control() : 0)
 	HideMarker(), HideAccMarker()
 	Menu, Sys, % (isPaused ? "Check" : "UnCheck"), Pause
+	ZoomMsg(isPaused || (!ActiveNoPause && WinActive("ahk_id" hGui)) ? 1 : 0)
+	ZoomMsg(7, isPaused)
 	isPaused ? TaskbarProgress(4, hGui, 100) : TaskbarProgress(0, hGui)
 	TitleText := (TitleTextP1 := "AhkSpy - " ({"Win":"Window","Control":"Control","Hotkey":"Button"}[ThisMode]))
 	. (TitleTextP2 := (isPaused ? "                Paused..." : TitleTextP2_Reserved))
 	SendMessage, 0xC, 0, &TitleText, , ahk_id %hGui%
 	PausedTitleText()
 	Return
-
-~*RShift Up::
-~*LShift Up:: CheckHideMarker()
-#If isAhkSpy && Sleep != 1 && WinActive("ahk_id" hGui)
+	
+~RShift Up::
+~LShift Up:: CheckHideMarker()
+#If isAhkSpy && WinActive("ahk_id" hGui)
 
 ^WheelUp::
 ^WheelDown::
@@ -349,7 +353,7 @@ Enter:: oDoc.selection.createRange().pasteHTML("<br>")  ; oDoc.selection.createR
 
 Tab:: oDoc.selection.createRange().text := "    "			;  &emsp
 
-#If isAhkSpy && Sleep != 1 && WinActive("ahk_id" hGui) && !Hotkey_Arr("Hook") && IsIEFocus()
+#If isAhkSpy && WinActive("ahk_id" hGui) && !Hotkey_Arr("Hook") && IsIEFocus()
 
 #RButton:: ClipPaste()
 
@@ -361,11 +365,11 @@ RButton::
 	CopyText := oMS.ELSel.OuterText
 	If (A_ThisHotkey = "^RButton")
 		CopyText := CopyCommaParam(CopyText)
-	Clipboard := CopyText
+	Clipboard := CopyText 
 	Return
 
-+RButton:: ClipAdd(CopyText := oMS.ELSel.OuterText, 1)
-^+RButton:: ClipAdd(CopyText := CopyCommaParam(oMS.ELSel.OuterText), 1)
++RButton:: ClipAdd(CopyText := oMS.ELSel.OuterText, 1) 
+^+RButton:: ClipAdd(CopyText := CopyCommaParam(oMS.ELSel.OuterText), 1) 
 
 #If (isAhkSpy && Sleep != 1 && oMS.ELSel) && (oMS.ELSel.OuterText != "" || MS_Cancel())  ;	Mode = Hotkey
 
@@ -375,10 +379,10 @@ RButton::
 	If ErrorLevel
 		ClipAdd(CopyText, 1)
 	Else
-		Clipboard := CopyText, ToolTip("copy", 300)
+		Clipboard := CopyText, ToolTip("copy", 300) 
 	Return
 
-#If isAhkSpy && Sleep != 1 && WinActive("ahk_id" hGui) && ExistSelectedText(CopyText)
+#If isAhkSpy && WinActive("ahk_id" hGui) && ExistSelectedText(CopyText)
 
 ^RButton::
 RButton::
@@ -386,22 +390,18 @@ CopyText:
 	ToolTip("copy", 300)
 	If (A_ThisHotkey = "^RButton")
 		CopyText := CopyCommaParam(CopyText)
-	Clipboard := CopyText
+	Clipboard := CopyText 
 	Return
 
-+RButton:: ClipAdd(CopyText, 1)
-^+RButton:: ClipAdd(CopyText := CopyCommaParam(CopyText), 1)
++RButton:: ClipAdd(CopyText, 1) 
+^+RButton:: ClipAdd(CopyText := CopyCommaParam(CopyText), 1) 
 
-#If (isAhkSpy && Sleep != 1 && !isPaused && ThisMode != "Hotkey")
+#If (isAhkSpy && Sleep != 1 && !isPaused && !DllCall("IsWindowVisible", "Ptr", oOther.hZoom))
 
 +#Up::MouseStep(0, -1)
 +#Down::MouseStep(0, 1)
 +#Left::MouseStep(-1, 0)
 +#Right::MouseStep(1, 0)
-^+#Up::MouseStep(0, -10)
-^+#Down::MouseStep(0, 10)
-^+#Left::MouseStep(-10, 0)
-^+#Right::MouseStep(10, 0)
 
 #If
 
@@ -410,7 +410,6 @@ CopyText:
 Mode_Win:
 	If A_GuiControl
 		GuiControl, 1:Focus, oDoc
-	ZoomMsg(10, 0)
 	oBody.createTextRange().execCommand("RemoveFormat")
 	GuiControl, TB: -0x0001, But1
 	If ThisMode = Win
@@ -445,7 +444,7 @@ Spot_Win(NotHTML = 0) {
 	If NotHTML
 		GoTo HTML_Win
 	MouseGetPos,,,WinID
-	If (WinID = hGui || WinID = oOther.hZoom || WinID = oOther.hZoomLW)
+	If (WinID = hGui || WinID = oOther.hZoom)
 		Return HideMarker(), HideAccMarker()
 	WinGetTitle, WinTitle, ahk_id %WinID%
 	WinTitle := TransformHTML(WinTitle)
@@ -487,24 +486,24 @@ Spot_Win(NotHTML = 0) {
 	{
 		while (sb_max := sb_fields.maxindex()) && (sb_fields[sb_max] = "")
 			sb_fields.Delete(sb_max)
-		for k, v in sb_fields
+		for k, v in sb_fields 
 			SBText .= "<span class='param'>(" k "):</span> <span name='MS:' id='sb_field_" A_Index "'>" TransformHTML(v "`n") "</span>"
 		If SBText !=
 			SBText := _T1 "( StatusBarText ) </span>" _BT1 " id='copy_sbtext' name='" sb_max "'> copy " _BT2 _T2 _PRE1 "<span>" SBText "</span></span>" _PRE2
-	}
+	} 
 	DetectHiddenText, % DetectHiddenText
 	WinGetText, WinText, ahk_id %WinID%
 	If WinText !=
 		WinText := _T1 " ( Window Text ) </span><a></a>" _BT1 " id='copy_wintext'> copy " _BT2 _DB _BT1 " id='wintext_hidden'> hidden - " DetectHiddenText " " _BT2 _T2
 		. _LPRE  "><pre id='wintextcon'>" TransformHTML(WinText) "</pre>" _PRE2
-	MenuText := GetMenu(WinID)
+	MenuText := GetMenu(WinID)  
 	CoordMode, Mouse
 	MouseGetPos, WinXS, WinYS
 	PixelGetColor, ColorRGB, %WinXS%, %WinYS%, RGB
 	GuiControl, TB: -Redraw, ColorProgress
 	GuiControl, % "TB: +c" SubStr(ColorRGB, 3), ColorProgress
 	GuiControl, TB: +Redraw, ColorProgress
-
+	
 HTML_Win:
 	If w_ShowStyles
 		WinStyles := GetStyles(WinStyle, WinExStyle)
@@ -543,13 +542,13 @@ HTML_Win:
 	body {
 		margin: 0.3em;
 		background-color: #%ColorBg%;
-		font-size: %FontSize%px;
+		font-size: %FontSize%px; 
 	}
 	.br {
 		height:0.1em;
 	}
 	.box {
-		position: absolute;
+		position: absolute; 
 		overflow: hidden;
 		width: 100`%;
 		height: 1.5em;
@@ -574,7 +573,7 @@ HTML_Win:
 	.title {
 		margin-right: 50px;
 		white-space: pre;
-		color: #%ColorTitle%;
+		color: #%ColorTitle%; 
 	}
 	pre {
 		margin-bottom: 0.1em;
@@ -586,7 +585,7 @@ HTML_Win:
 		border: 1px dotted;
 		border-color: black;
 		white-space: pre;
-		cursor: hand;
+		cursor: hand; 
 	}
 	.BB {
 		display: inline-block;
@@ -607,7 +606,7 @@ HTML_Win:
 }
 
 Write_Win() {
-	oBody.innerHTML := HTML_Win
+	oBody.innerHTML := HTML_Win  
 	If oDocEl.scrollLeft
 		oDocEl.scrollLeft := 0
 	Return 1
@@ -618,7 +617,6 @@ Write_Win() {
 Mode_Control:
 	If A_GuiControl
 		GuiControl, 1:Focus, oDoc
-	ZoomMsg(10, 0)
 	oBody.createTextRange().execCommand("RemoveFormat")
 	GuiControl, TB: -0x0001, But2
 	If (ThisMode = "Hotkey")
@@ -658,7 +656,7 @@ Spot_Control(NotHTML = 0) {
 	MouseGetPos, MXS, MYS, WinID, tControlNN
 	CoordMode, Mouse, Window
 	MouseGetPos, MXWA, MYWA, , tControlID, 2
-	If (WinID = hGui || WinID = oOther.hZoom || WinID = oOther.hZoomLW)
+	If (WinID = hGui || WinID = oOther.hZoom)
 		Return HideMarker(), HideAccMarker()
 	CtrlInfo := "", isIE := 0
 	ControlNN := tControlNN, ControlID := tControlID
@@ -672,7 +670,7 @@ Spot_Control(NotHTML = 0) {
 	sColorRGB := SubStr(ColorRGB, 3)
 	GuiControl, TB: -Redraw, ColorProgress
 	GuiControl, % "TB: +c" sColorRGB, ColorProgress
-	GuiControl, TB: +Redraw, ColorProgress
+	GuiControl, TB: +Redraw, ColorProgress 
 	WithRespectWin := "`n" _BP1 " id='set_pos'>Relative window:" _BP2 "  <span name='MS:'>"
 	. Round(RWinX / WinW, 4) ", " Round(RWinY / WinH, 4) "</span>  <span class='param'>for</span> <span name='MS:'>w" WinW " h" WinH "</span>" _DP
 	ControlGetPos, CtrlX, CtrlY, CtrlW, CtrlH,, ahk_id %ControlID%
@@ -682,12 +680,12 @@ Spot_Control(NotHTML = 0) {
 	WithRespectClient := _BP1 " id='set_pos'>Relative client:" _BP2 "  <span name='MS:'>" Round(MXC / caW, 4) ", " Round(MYC / caH, 4)
 		. "</span>  <span class='param'>for</span> <span name='MS:'>w" caW " h" caH "</span>"
 	ControlGetText, CtrlText, , ahk_id %ControlID%
-	If CtrlText !=
-		CtrlText := _T1 " ( Control Text ) </span><a></a>" _BT1 " id='copy_button'> copy " _BT2 _T2 _LPRE ">" TransformHTML(CtrlText) _PRE2
+	If CtrlText != 
+		CtrlText := _T1 " ( Control Text ) </span><a></a>" _BT1 " id='copy_button'> copy " _BT2 _T2 _LPRE ">" TransformHTML(CtrlText) _PRE2 
 	AccText := AccInfoUnderMouse(MXS, MYS, WinX, WinY, CtrlX, CtrlY)
-	If AccText !=
+	If AccText != 
 		AccText := _T1 " ( AccInfo ) </span><a></a>" _ButAccViewer _T2 AccText
-
+		
 	If ControlNN !=
 	{
 		rmCtrlX := MXS - WinX - CtrlX, rmCtrlY := MYS - WinY - CtrlY
@@ -740,7 +738,7 @@ HTML_Control:
 	%CtrlInfo%%CtrlText%%AccText%
 	<a></a>%_T0%
 	</body>
-
+	
 	<style>
 	* {
 		margin: 0;
@@ -751,13 +749,13 @@ HTML_Control:
 	body {
 		margin: 0.3em;
 		background-color: #%ColorBg%;
-		font-size: %FontSize%px;
+		font-size: %FontSize%px; 
 	}
 	.br {
 		height:0.1em;
 	}
 	.box {
-		position: absolute;
+		position: absolute; 
 		overflow: hidden;
 		width: 100`%;
 		height: 1.5em;
@@ -776,7 +774,7 @@ HTML_Control:
 	.title {
 		margin-right: 50px;
 		white-space: pre;
-		color: #%ColorTitle%;
+		color: #%ColorTitle%; 
 	}
 	.hr {
 		position: absolute;
@@ -794,7 +792,7 @@ HTML_Control:
 		border: 1px dotted;
 		border-color: black;
 		white-space: pre;
-		cursor: hand;
+		cursor: hand; 
 	}
 	.BB {
 		display: inline-block;
@@ -826,18 +824,18 @@ GetMenu(hWnd) {
 	SendMessage, 0x1E1, 0, 0, , ahk_id %hWnd%	;  MN_GETHMENU
 	hMenu := ErrorLevel
 	If !hMenu || (hMenu + 0 = "")
-		Return
-	Return _T1 " ( Menu text ) </span>" _BT1 " id='copy_menutext'> copy " _BT2 _DB
+		Return 
+	Return _T1 " ( Menu text ) </span>" _BT1 " id='copy_menutext'> copy " _BT2 _DB 
 	. _BT1 " id='menu_idview'> id - " (MenuIdView ? "view" : "hide") " " _BT2 _T2 _LPRE " id='pre_menutext'>" RTrim(GetMenuText(hMenu), "`n")  _PRE2
 }
 
 GetMenuText(hMenu, child = 0)
-{
+{ 
 	Loop, % DllCall("GetMenuItemCount", "Ptr", hMenu)
-	{
+	{ 
 		idx := A_Index - 1
 		nSize++ := DllCall("GetMenuString", "Ptr", hMenu, "int", idx, "Uint", 0, "int", 0, "Uint", 0x400)   ;  MF_BYPOSITION
-		nSize := (nSize * (A_IsUnicode ? 2 : 1))
+		nSize := (nSize * (A_IsUnicode ? 2 : 1)) 
 		VarSetCapacity(sString, nSize)
 		DllCall("GetMenuString", "Ptr", hMenu, "int", idx, "str", sString, "int", nSize, "Uint", 0x400)   ;  MF_BYPOSITION
 		sString := TransformHTML(sString)
@@ -845,21 +843,21 @@ GetMenuText(hMenu, child = 0)
 		IdItem := "<span class='param menuitemid' style='display: " (!MenuIdView ? "none" : "inline") ";'>`t`t`t<span name='MS:'>" idn "</span></span>"
 		isSubMenu := (idn = -1) && (hSubMenu := DllCall("GetSubMenu", "Ptr", hMenu, "int", idx)) ? 1 : 0
 		If isSubMenu
-			sContents .= AddTab(child) "<span class='param'>" idx + 1 ":  </span><span name='MS:' class='titleparam'>" sString "</span><span class='param menuitemsub';'>&#8595;</span>" IdItem "`n"
+			sContents .= AddTab(child) "<span class='param'>" idx + 1 ":  </span><span name='MS:' class='titleparam'>" sString "</span><span class='param menuitemsub';'>&#8595;</span>" IdItem "`n" 
 		Else If (sString = "")
-			sContents .= AddTab(child) "<span class='param'>" idx + 1 ":  &#8212; &#8212; &#8212; &#8212; &#8212; &#8212; &#8212;</span>" IdItem "`n"
+			sContents .= AddTab(child) "<span class='param'>" idx + 1 ":  &#8212; &#8212; &#8212; &#8212; &#8212; &#8212; &#8212;</span>" IdItem "`n" 
 		Else
-			sContents .= AddTab(child) "<span class='param'>" idx + 1 ":  </span><span name='MS:'>" sString "</span>" IdItem "`n"
+			sContents .= AddTab(child) "<span class='param'>" idx + 1 ":  </span><span name='MS:'>" sString "</span>" IdItem "`n" 
 		If isSubMenu
-			sContents .= GetMenuText(hSubMenu, ++child), --child
-	}
-	Return sContents
-}
+			sContents .= GetMenuText(hSubMenu, ++child), --child 
+	} 
+	Return sContents 
+} 
 
 AddTab(c) {
 	loop % c
 		Tab .= "<span class='param';'>&#8595;`t</span>"
-	Return  Tab
+	Return  Tab  
 }
 
 	; _________________________________________________ Get Info Control _________________________________________________
@@ -875,7 +873,7 @@ GetInfo_SysListView(hwnd, ByRef ClassNN) {
 			. "<span class='param' name='MS:N'>Column count:</span> <span name='MS:'>" ColCount "</span>`n"
 			. "<span class='param' name='MS:N'>Selected count:</span> <span name='MS:'>" SelectedCount "</span>" _DP
 			. "<span class='param' name='MS:N'>Focused row:</span> <span name='MS:'>" FocusedCount "</span>" _PRE2
-			. _T1 " ( Content ) </span>" _BT1 " id='copy_button'> copy " _BT2 _T2 _LPRE ">" TransformHTML(ListText)
+			. _T1 " ( Content ) </span>" _BT1 " id='copy_button'> copy " _BT2 _T2 _LPRE ">" TransformHTML(ListText) 
 }
 
 GetInfo_SysTreeView(hwnd, ByRef ClassNN) {
@@ -886,7 +884,7 @@ GetInfo_SysTreeView(hwnd, ByRef ClassNN) {
 }
 
 GetInfo_ListBox(hwnd, ByRef ClassNN) {
-	ClassNN = ListBox
+	ClassNN = ListBox 
 	Return GetInfo_ComboBox(hwnd, "", 1)
 }
 GetInfo_TListBox(hwnd, ByRef ClassNN) {
@@ -906,7 +904,7 @@ GetInfo_ComboBox(hwnd, ByRef ClassNN, ListBox = 0) {
 	RegExReplace(ListText, "m`a)$", "", RowCount)
 	Return	"<span class='param' name='MS:N'>Row count:</span> <span name='MS:'>" RowCount "</span>" _DP
 			. "<span class='param' name='MS:N'>Row selected:</span> <span name='MS:'>" SelPos "</span>" _PRE2
-			. _T1 " ( Content ) </span>" _BT1 " id='copy_button'> copy " _BT2 _T2 _LPRE ">" TransformHTML(ListText)
+			. _T1 " ( Content ) </span>" _BT1 " id='copy_button'> copy " _BT2 _T2 _LPRE ">" TransformHTML(ListText) 
 }
 
 GetInfo_CtrlNotifySink(hwnd, ByRef ClassNN) {
@@ -1063,13 +1061,13 @@ GetInfo_InternetExplorer_Server(hwnd, ByRef ClassNN) {
 		If ((Var := pelt.name) != "")
 			Frame .= "`n<span class='param' name='MS:N'>Name:  </span><span name='MS:'>" TransformHTML(Var) "</span>"
 
-		If ((Var := pelt.OuterHtml) != "")
-			HTML := _T1P " ( Outer HTML ) </span><a></a>" _BT1 " id='copy_button'> copy " _BT2 _T2 _LPRE ">" TransformHTML(Var) _PRE2
+		If ((Var := pelt.OuterHtml) != "")  
+			HTML := _T1P " ( Outer HTML ) </span><a></a>" _BT1 " id='copy_button'> copy " _BT2 _T2 _LPRE ">" TransformHTML(Var) _PRE2 
 		If ((Var := pelt.OuterText) != "")
 			Text := _T1P " ( Outer Text ) </span><a></a>" _BT1 " id='copy_button'> copy " _BT2 _T2 _LPRE ">" TransformHTML(Var) _PRE2
 		If Frame !=
 			Frame := _T1 " ( FrameInfo ) </span>" _T2 "<a></a>" _PRE1 Frame _PRE2 HTML Text
-
+			
 		_pbrt := pelt.getBoundingClientRect()
 		pelt := iFrame.document.elementFromPoint((rmCtrlX / ratio) - _pbrt.left, (rmCtrlY / ratio) - _pbrt.top)
 		__pbrt := pelt.getBoundingClientRect(), pbrt := {}
@@ -1080,14 +1078,14 @@ GetInfo_InternetExplorer_Server(hwnd, ByRef ClassNN) {
 		pbrt := pelt.getBoundingClientRect()
 
 	WB2 := ComObject(9, ComObjQuery(pwin, IID_IWebBrowserApp, IID_IWebBrowserApp), 1)
-
+	
 	If ((Location := WB2.LocationName) != "")
 		Topic .= "<span class='param' name='MS:N'>Title:  </span><span name='MS:'>" Location "</span>`n"
 	If ((URL := WB2.LocationURL) != "")
 		Topic .= "<span class='param' name='MS:N'>URL:  </span><span name='MS:'>" URL "</span>"
-	If Topic !=
+	If Topic != 
 		Topic := _PRE1 Topic _PRE2
-
+		
 	If ((Var := pelt.id) != "")
 		Info .= "`n<span class='param' name='MS:N'>ID:  </span><span name='MS:'>" Var "</span>"
 	If ((Var := pelt.ClassName) != "")
@@ -1096,16 +1094,16 @@ GetInfo_InternetExplorer_Server(hwnd, ByRef ClassNN) {
 		Info .= "`n<span class='param' name='MS:N'>Index:  </span><span name='MS:'>" Var "</span>"
 	If ((Var := pelt.name) != "")
 		Info .= "`n<span class='param' name='MS:N'>Name:  </span><span name='MS:'>" TransformHTML(Var) "</span>"
-
+		
 	If ((Var := pelt.OuterHtml) != "")
-		HTML := _T1P " ( Outer HTML ) </span><a></a>" _BT1 " id='copy_button'> copy " _BT2 _T2 _LPRE ">" TransformHTML(Var) _PRE2
+		HTML := _T1P " ( Outer HTML ) </span><a></a>" _BT1 " id='copy_button'> copy " _BT2 _T2 _LPRE ">" TransformHTML(Var) _PRE2 
 	If ((Var := pelt.OuterText) != "")
-		Text := _T1P " ( Outer Text ) </span><a></a>" _BT1 " id='copy_button'> copy " _BT2 _T2 _LPRE ">" TransformHTML(Var) _PRE2
+		Text := _T1P " ( Outer Text ) </span><a></a>" _BT1 " id='copy_button'> copy " _BT2 _T2 _LPRE ">" TransformHTML(Var) _PRE2  
 
 	x1 := pbrt.left * ratio, y1 := pbrt.top * ratio
 	x2 := pbrt.right * ratio, y2 := pbrt.bottom * ratio
 	ObjRelease(pwin), ObjRelease(pelt), ObjRelease(WB2), ObjRelease(iFrame), ObjRelease(pbrt)
-
+	
 	If (ThisMode = "Control") && (StateLight = 1 || (StateLight = 3 && GetKeyState("Shift", "P")))
 	{
 		WinGetPos, sX, sY, , , ahk_id %hwnd%
@@ -1142,8 +1140,8 @@ AccInfoUnderMouse(x, y, wx, wy, cx, cy) {
 		, "Ptr", VarSetCapacity(varChild,8+2*A_PtrSize,0)*0+&varChild) = 0
 	Acc := ComObjEnwrap(9,pacc,1), child := NumGet(varChild,8,"UInt")
 	If !IsObject(Acc)
-		Return
-	Count := (Var := Acc.accChildCount) != "" ? "<span name='MS:'>" Var "</span>" : "N/A"
+		Return 
+	Count := (Var := Acc.accChildCount) != "" ? "<span name='MS:'>" Var "</span>" : "N/A" 
 	Var := child ? "Child" _DP "<span class='param' name='MS:N'>Id:  </span><span name='MS:'>" child "</span>"
 		. _DP "<span class='param' name='MS:N'>Parent child count:  </span>" Count
 		: "Parent" _DP "<span class='param' name='MS:N'>ChildCount:  </span>" Count
@@ -1153,32 +1151,32 @@ AccInfoUnderMouse(x, y, wx, wy, cx, cy) {
 		. _DP "<span class='param'>Window: </span><span name='MS:'>x" AccCoord[1] - wx " y" AccCoord[2] - wy "</span>"
 		. (cx != "" ? _DP "<span class='param'>Control: </span><span name='MS:'>x" (AccCoord[1] - wx - cx) " y" (AccCoord[2] - wy - cy) "</span>" : "") _PRE2
 	If ((Var := Acc.accName(child)) != "")
-		code .= _T1P " ( Name ) </span><a></a>" _BT1 " id='copy_button'> copy " _BT2 _T2 _LPRE ">" TransformHTML(Var) _PRE2
-	If ((Var := Acc.accValue(child)) != "")
-		code .= _T1P " ( Value ) </span><a></a>" _BT1 " id='copy_button'> copy " _BT2 _T2 _LPRE ">" TransformHTML(Var) _PRE2
+		code .= _T1P " ( Name ) </span><a></a>" _BT1 " id='copy_button'> copy " _BT2 _T2 _LPRE ">" TransformHTML(Var) _PRE2  
+	If ((Var := Acc.accValue(child)) != "") 
+		code .= _T1P " ( Value ) </span><a></a>" _BT1 " id='copy_button'> copy " _BT2 _T2 _LPRE ">" TransformHTML(Var) _PRE2  
 	If ((Var := AccGetStateText(Var2 := Acc.accState(child))) != "")
 		code .= _T1P " ( State ) </span>" _T2 _PRE1 "<span name='MS:'>" TransformHTML(Var) "</span>"
 		. _DP "<span class='param' name='MS:N'>code: </span><span name='MS:'>" Var2 "</span>" _PRE2
-	If ((Var := AccRole(Acc, child)) != "")
+	If ((Var := AccRole(Acc, child)) != "") 
 		code .= _T1P " ( Role ) </span>" _T2 _PRE1 "<span name='MS:'>" TransformHTML(Var) "</span>"
-		. _DP "<span class='param' name='MS:N'>code: </span><span name='MS:'>" Acc.accRole(child) "</span>" _PRE2
-	If (child &&(Var := AccRole(Acc)) != "")
+		. _DP "<span class='param' name='MS:N'>code: </span><span name='MS:'>" Acc.accRole(child) "</span>" _PRE2 
+	If (child &&(Var := AccRole(Acc)) != "")  
 		code .= _T1P " ( Role - parent ) </span>" _T2 _PRE1 "<span name='MS:'>" TransformHTML(Var) "</span>"
-		. _DP "<span class='param' name='MS:N'>code: </span><span name='MS:'>" Acc.accRole(0) "</span>" _PRE2
-	If ((Var := Acc.accDefaultAction(child)) != "")
+		. _DP "<span class='param' name='MS:N'>code: </span><span name='MS:'>" Acc.accRole(0) "</span>" _PRE2 
+	If ((Var := Acc.accDefaultAction(child)) != "")  
 		code .= _T1P " ( Action ) </span>" _T2 _PRE1 "<span name='MS:'>" TransformHTML(Var) "</span>" _PRE2
-	If ((Var := Acc.accSelection) > 0)
+	If ((Var := Acc.accSelection) > 0)  
 		code .= _T1P " ( Selection - parent ) </span>" _T2 _PRE1 "<span name='MS:'>" TransformHTML(Var) "</span>" _PRE2
-	If ((Var := Acc.accFocus) > 0)
-		code .= _T1P " ( Focus - parent ) </span>" _T2 _PRE1 "<span name='MS:'>" TransformHTML(Var) "</span>" _PRE2
-	If ((Var := Acc.accDescription(child)) != "")
-		code .= _T1P " ( Description ) </span>" _T2 _PRE1 "<span name='MS:'>" TransformHTML(Var) "</span>" _PRE2
-	If ((Var := Acc.accKeyboardShortCut(child)) != "")
-		code .= _T1P " ( ShortCut ) </span>" _T2 _PRE1 "<span name='MS:'>" TransformHTML(Var) "</span>" _PRE2
-	If ((Var := Acc.accHelp(child)) != "")
-		code .= _T1P " ( Help ) </span>" _T2 _PRE1 "<span name='MS:'>" TransformHTML(Var) "</span>" _PRE2
-	If ((Var := Acc.AccHelpTopic(child)))
-		code .= _T1P " ( HelpTopic ) </span>" _T2 _PRE1 "<span name='MS:'>" TransformHTML(Var) "</span>" _PRE2
+	If ((Var := Acc.accFocus) > 0)  
+		code .= _T1P " ( Focus - parent ) </span>" _T2 _PRE1 "<span name='MS:'>" TransformHTML(Var) "</span>" _PRE2 
+	If ((Var := Acc.accDescription(child)) != "")  
+		code .= _T1P " ( Description ) </span>" _T2 _PRE1 "<span name='MS:'>" TransformHTML(Var) "</span>" _PRE2 
+	If ((Var := Acc.accKeyboardShortCut(child)) != "")  
+		code .= _T1P " ( ShortCut ) </span>" _T2 _PRE1 "<span name='MS:'>" TransformHTML(Var) "</span>" _PRE2 
+	If ((Var := Acc.accHelp(child)) != "")  
+		code .= _T1P " ( Help ) </span>" _T2 _PRE1 "<span name='MS:'>" TransformHTML(Var) "</span>" _PRE2  
+	If ((Var := Acc.AccHelpTopic(child))) 
+		code .= _T1P " ( HelpTopic ) </span>" _T2 _PRE1 "<span name='MS:'>" TransformHTML(Var) "</span>" _PRE2  
 	Return code
 }
 
@@ -1210,7 +1208,6 @@ AccGetLocation(Acc, Child=0) {
 
 Mode_Hotkey:
 	Try SetTimer, Loop_%ThisMode%, Off
-	ZoomMsg(10, 1)
 	If ThisMode = Hotkey
 		oDocEl.scrollLeft := 0
 	oBody.createTextRange().execCommand("RemoveFormat")
@@ -1225,7 +1222,7 @@ Mode_Hotkey:
 	SendMessage, 0xC, 0, &TitleText, , ahk_id %hGui%
 	GuiControl, TB: -0x0001, But3
 	WinActivate ahk_id %hGui%
-	GuiControl, 1:Focus, oDoc
+	GuiControl, 1:Focus, oDoc 
 	If isFindView
 		FindSearch(1)
 	Return
@@ -1245,7 +1242,7 @@ Write_HotkeyHTML(K) {
 	HK2 := HK1 = PrHK1 ? PrHK2 : PrHK1, PrHK1 := HK1, PrHK2 := HK2
 	HKComm1 := "    `;  """ (StrLen(Name := GetKeyName(HK2)) = 1 ? Format("{:U}", Name) : Name)
 	HKComm2 := (StrLen(Name := GetKeyName(HK1)) = 1 ? Format("{:U}", Name) : Name) """"
-
+	
 	If K.IsCode
 		Comment := "<span class='param' name='MS:S'>    `;  """ KeyName """</span>"
 	If (Hotkey != "")
@@ -1277,16 +1274,16 @@ Write_HotkeyHTML(K) {
 		ThisKeySC := "   " _DP "   <span name='MS:'>" VKCode "</span>   " _DP "   <span name='MS:'>" SCCode "</span>   "
 		. _DP "   <span name='MS:'>0x" SubStr(VKCode, 3) "</span>   " _DP "   <span name='MS:'>0x" SubStr(SCCode, 3) "</span>"
 	Else
-		ThisKeySC := "   " _DP "   <span name='MS:'>0x" SubStr(VKCode, 3) "</span>"
-
+		ThisKeySC := "   " _DP "   <span name='MS:'>0x" SubStr(VKCode, 3) "</span>" 
+	
 	inp_hotkey := oDoc.getElementById("edithotkey").value, inp_keyname := oDoc.getElementById("editkeyname").value
-
+	
 	HTML_Hotkey =
 	( Ltrim
 	<body id='body'>
-	%_T1% ( Pushed buttons ) </span>%_BT1% id='pause_button'> pause %_BT2%%_T2%
+	%_T1% ( Pushed buttons ) </span>%_BT1% id='pause_button'> pause %_BT2%%_T2% 
 	%_PRE1%<br><span name='MS:'>%Mods%%KeyName%</span>%NotPhysical%<br><br>%LRMStr%<br>%_PRE2%
-	%_T1% ( Command syntax ) </span>%_BT1% id='SendCode'> %SendCode% %_BT2%%_DB%%_BT1% id='SendMode'> %SendModeStr% %_BT2%%_T2%
+	%_T1% ( Command syntax ) </span>%_BT1% id='SendCode'> %SendCode% %_BT2%%_DB%%_BT1% id='SendMode'> %SendModeStr% %_BT2%%_T2% 
 	%_PRE1%<br><span><span name='MS:'>%Prefix%%Hotkey%::</span>%FComment%</span>%LRPStr%
 	<span name='MS:P'>        </span>
 	<span><span name='MS:'>%SendMode% %Prefix%{%SendHotkey%}</span>%Comment%</span>  %_DP%  <span><span name='MS:'>ControlSend, ahk_parent, %ControlSend%, WinTitle</span>%Comment%</span>
@@ -1297,18 +1294,18 @@ Write_HotkeyHTML(K) {
 	<span name='MS:P'>        </span>
 	<span><span name='MS:'>%HK2% & %HK1%::</span><span class='param' name='MS:S'>%HKComm1% & %HKComm2%</span></span>   %_DP%   <span><span name='MS:'>%HK2%::%HK1%</span><span class='param' name='MS:S'>%HKComm1% &#8250 &#8250 %HKComm2%</span></span>
 	<span name='MS:P'>        </span>%_PRE2%
-	%_T1% ( Key ) </span>%_BT1% id='numlock'> num %_BT2%%_DB%%_BT1% id='locale_change'> locale %_BT2%%_DB%%_BT1% id='hook_reload'> hook reload %_BT2%%_T2%
+	%_T1% ( Key ) </span>%_BT1% id='numlock'> num %_BT2%%_DB%%_BT1% id='locale_change'> locale %_BT2%%_DB%%_BT1% id='hook_reload'> hook reload %_BT2%%_T2% 
 	%_PRE1%<br><span name='MS:'>%ThisKey%</span>   %_DP%   <span name='MS:'>%VKCode%%SCCode%</span>%ThisKeySC%
-
+	
 	%_PRE2%
 	%_T1% ( Get name or code ) </span>%_BT1% id='paste_keyname'> paste %_BT2%%_T2%
 	<br><span id='hotkeybox'>
 	%_INPHK% id='edithotkey' value='%inp_hotkey%'><button id='keyname'> &#8250 &#8250 &#8250 </button>%_INPHK% id='editkeyname' value='%inp_keyname%'></input>
-	</span>
+	</span> 
 	%_PRE1%%_PRE2%
-	%_T0%
+	%_T0% 
 	</body>
-
+	
 	<style>
 	* {
 		margin: 0;
@@ -1319,13 +1316,13 @@ Write_HotkeyHTML(K) {
 	body {
 		margin: 0.3em;
 		background-color: #%ColorBg%;
-		font-size: %FontSize%px;
+		font-size: %FontSize%px; 
 	}
 	.br {
 		height:0.1em;
 	}
 	.box {
-		position: absolute;
+		position: absolute; 
 		overflow: hidden;
 		width: 100`%;
 		height: 1.7em;
@@ -1344,7 +1341,7 @@ Write_HotkeyHTML(K) {
 	.title {
 		margin-right: 50px;
 		white-space: pre;
-		color: #%ColorTitle%;
+		color: #%ColorTitle%; 
 	}
 	.hr {
 		position: absolute;
@@ -1362,7 +1359,7 @@ Write_HotkeyHTML(K) {
 		border: 1px dotted;
 		border-color: black;
 		white-space: pre;
-		cursor: hand;
+		cursor: hand; 
 	}
 	.BB {
 		display: inline-block;
@@ -1372,25 +1369,25 @@ Write_HotkeyHTML(K) {
 	}
 	#SendCode, #SendMode {
 		text-align: center;
-		position: absolute;
+		position: absolute;  
 	}
-	#SendCode {
+	#SendCode { 
 		width: 3em; left: 12em;
 	}
-	#SendMode {
+	#SendMode { 
 		width: 5em; left: 16em;
 	}
-	#hotkeybox {
+	#hotkeybox {  
 		position: relative;
 		white-space: pre;
 		left: 5px;
 	}
 	#edithotkey, #keyname, #editkeyname {
-		font-size: 1.2em;
-		text-align: center;
-		border: 1px dotted black;
+		font-size: 1.2em; 
+		text-align: center; 
+		border: 1px dotted black; 
 		display: inline-block;
-	}
+	} 
 	#keyname {
 		position: relative;
 		background-color: #%ColorParam%;
@@ -1399,14 +1396,14 @@ Write_HotkeyHTML(K) {
 	#editkeyname {
 		position: relative;
 		left: 4px; top: 0px;
-	}
+	} 
 	</style>
 	)
 	Write_Hotkey()
 }
 
 Write_Hotkey() {
-	oBody.innerHTML := HTML_Hotkey
+	oBody.innerHTML := HTML_Hotkey 
 	If oDocEl.scrollLeft
 		oDocEl.scrollLeft := 0
 }
@@ -1460,8 +1457,8 @@ Hotkey_Main(In) {
 		Return !!(K.PCtrl K.PAlt K.PShift K.PWin)
 	K.UP := In.UP, K.IsJM := 0, K.Time := In.Time, K.NFP := In.NFP, K.IsMod := IsMod
 	K.Mods := K.MCtrl K.MAlt K.MShift K.MWin
-	K.LRMods := K.MLCtrl K.MRCtrl K.MLAlt K.MRAlt K.MLShift K.MRShift K.MLWin K.MRWin
-	K.VK := "vk" In.VK, K.SC := "sc" In.SC, K.TK := GetKeyName(K.VK K.SC)
+	K.LRMods := K.MLCtrl K.MRCtrl K.MLAlt K.MRAlt K.MLShift K.MRShift K.MLWin K.MRWin 
+	K.VK := "vk" In.VK, K.SC := "sc" In.SC, K.TK := GetKeyName(K.VK K.SC) 
 	K.TK := K.TK = "" ? K.VK K.SC : (StrLen(K.TK) = 1 ? Format("{:U}", K.TK) : K.TK)
 	(IsMod) ? (K.HK := K.Pref := K.LRPref := K.Name := K.IsCode := "", ModsOnly := K.Mods = "" ? 0 : 1)
 	: (K.IsCode := (SendCode != "name" && StrLen(K.TK) = 1)  ;	 && !Instr("1234567890-=", K.TK)
@@ -1473,10 +1470,10 @@ Hotkey_Main(In) {
 	Func(Hotkey_Arr("Func")).Call(K)
 	Return 1
 
-Hotkey_PressMouseRButton:
+Hotkey_PressMouseRButton: 
 	If !WM_CONTEXTMENU() && !Hotkey_Hook(0)
 		Return
-
+		
 Hotkey_PressJoy:
 Hotkey_PressMouse:
 	K.NFP := !GetKeyState(A_ThisHotkey, "P")
@@ -1492,7 +1489,7 @@ Hotkey_PressMouse:
 	Return 1
 }
 
-#If Hotkey_Arr("Hook")
+#If Hotkey_Arr("Hook") 
 #If Hotkey_Arr("Hook") && GetKeyState("RButton", "P")
 #If Hotkey_Arr("Hook") && !Hotkey_Main({Opt:"GetMod"})
 #If
@@ -1500,10 +1497,10 @@ Hotkey_PressMouse:
 Hotkey_MouseAndJoyInit(Options) {
 	Static MouseKey := "MButton|WheelDown|WheelUp|WheelRight|WheelLeft|XButton1|XButton2"
 	Local S_FormatInteger, Option
-	Option := InStr(Options, "M") ? "On" : "Off"
+	Option := InStr(Options, "M") ? "On" : "Off" 
 	Hotkey, IF, Hotkey_Arr("Hook")
-	Loop, Parse, MouseKey, |
-		Hotkey, %A_LoopField%, Hotkey_PressMouse, % Option
+	Loop, Parse, MouseKey, |  
+		Hotkey, %A_LoopField%, Hotkey_PressMouse, % Option   
 	Option := InStr(Options, "L") ? "On" : "Off"
 	Hotkey, IF, Hotkey_Arr("Hook") && GetKeyState("RButton"`, "P")
 	Hotkey, LButton, Hotkey_PressMouse, % Option
@@ -1537,7 +1534,7 @@ Hotkey_LowLevelKeyboardProc(nCode, wParam, lParam) {
 	,"A0":"LShift","A1":"RShift","5B":"LWin","5C":"RWin"}, oMem := []
 	, HEAP_ZERO_MEMORY := 0x8, Size := 16, hHeap := DllCall("GetProcessHeap", Ptr)
 	Local pHeap, Lp, Ext, VK, SC, SC1, SC2, IsMod, Time, NFP, KeyUp
-
+	Critical
 	If !Hotkey_Arr("Hook")
 		Return DllCall("CallNextHookEx", "Ptr", 0, "Int", nCode, "UInt", wParam, "UInt", lParam)
 	pHeap := DllCall("HeapAlloc", Ptr, hHeap, UInt, HEAP_ZERO_MEMORY, Ptr, Size, Ptr)
@@ -1551,7 +1548,7 @@ Hotkey_LowLevelKeyboardProc(nCode, wParam, lParam) {
 				Lp := oMem[1]
 				VK := Format("{:X}", NumGet(Lp + 0, "UInt"))
 				Ext := NumGet(Lp + 0, 8, "UInt")
-				SC1 := NumGet(Lp + 0, 4, "UInt")
+				SC1 := NumGet(Lp + 0, 4, "UInt") 
 				NFP := (Ext >> 4) & 1				;  Не физическое нажатие
 				KeyUp := Ext >> 7
 				; Time := NumGet(Lp + 12, "UInt")
@@ -1587,10 +1584,22 @@ Hotkey_SetHook(On = 1) {
 
 	; _________________________________________________ Labels _________________________________________________
 
+GuiSize: 
+	If A_Gui != 1
+		Return
+	Sleep := A_EventInfo
+	If Sleep != 1
+		ControlsMove(A_GuiWidth, A_GuiHeight)
+	Else
+		ZoomMsg(1), HideMarker(), HideAccMarker()
+	Try SetTimer, Loop_%ThisMode%, % Sleep = 1 || isPaused ? "Off" : "On"
+	Return
+
 Exit:
 GuiClose:
 	oDoc := ""
-	If LastModeSave
+	DllCall("DeregisterShellHookWindow", "Ptr", A_ScriptHwnd)
+	If LastModeSave 
 		IniWrite(ThisMode, "LastMode")
 	ExitApp
 
@@ -1620,7 +1629,7 @@ DefaultSize:
 		Sleep 200
 	}
 	Gui, 1: Show, % "NA w" widthTB "h" HeightStart
-	ZoomMsg(5)
+	ZoomMsg(6)
 	If !MemoryFontSize
 		oDoc.getElementById("pre").style.fontSize := FontSize := 15
 	Return
@@ -1632,9 +1641,9 @@ Reload:
 Suspend:
 	isAhkSpy := !isAhkSpy
 	Menu, Sys, % !isAhkSpy ? "Check" : "UnCheck", % A_ThisMenuItem
-	ZoomMsg(8, !isAhkSpy)
+	ZoomMsg(9, !isAhkSpy)
 	Return
-
+	
 CheckUpdate:
 	StateUpdate := IniWrite(!StateUpdate, "StateUpdate")
 	Menu, Sys, % (StateUpdate ? "Check" : "UnCheck"), Check updates
@@ -1659,9 +1668,9 @@ SelStartMode:
 
 ShowSys(x, y) {
 ShowSys:
-	ZoomMsg(9, 1)
+	ZoomMsg(7, 1)
 	Menu, Sys, Show, % x, % y
-	ZoomMsg(9, 0)
+	ZoomMsg(7, 0)
 	Return
 }
 
@@ -1707,7 +1716,8 @@ Spot_Together:
 Active_No_Pause:
 	ActiveNoPause := IniWrite(!ActiveNoPause, "ActiveNoPause")
 	Menu, Sys, % (ActiveNoPause ? "Check" : "UnCheck"), Work with the active window
-	ZoomMsg(6, ActiveNoPause)
+	ZoomMsg(8, ActiveNoPause)
+	(ActiveNoPause && Sleep != 1 && !isPaused) && ZoomMsg(0)
 	Return
 
 MemoryPos:
@@ -1732,15 +1742,15 @@ MemoryFontSize:
 MemoryZoomSize:
 	IniWrite(MemoryZoomSize := !MemoryZoomSize, "MemoryZoomSize")
 	Menu, View, % MemoryZoomSize ? "Check" : "UnCheck", Remember zoom size
-	ZoomMsg(4, MemoryZoomSize)
+	ZoomMsg(5, MemoryZoomSize)
 	Return
 
 PreOverflowHide:
 	IniWrite(PreOverflowHide := !PreOverflowHide, "PreOverflowHide")
-	Menu, View, % PreOverflowHide ? "Check" : "UnCheck", Big text overflow hide
+	Menu, View, % PreOverflowHide ? "Check" : "UnCheck", Big text overflow hide 
 	ChangeCSS("css_PreOverflowHide", PreOverflowHide ? _PreOverflowHideCSS : "")
 	Return
-
+	
 MoveTitles:
 	IniWrite(MoveTitles := !MoveTitles, "MoveTitles")
 	Menu, View, % MoveTitles ? "Check" : "UnCheck", Moving titles
@@ -1755,7 +1765,7 @@ MemoryStateZoom:
 	Menu, View, % MemoryStateZoom ? "Check" : "UnCheck", Remember state zoom
 	IniWrite(oOther.ZoomShow, "ZoomShow")
 	Return
-
+	
 WordWrap:
 	IniWrite(WordWrap := !WordWrap, "WordWrap")
 	Menu, View, % WordWrap ? "Check" : "UnCheck", Word wrap
@@ -1767,75 +1777,24 @@ WordWrap:
 
 	; _________________________________________________ Functions _________________________________________________
 
-WM_ACTIVATE(wp, lp) {
-	Critical
-	If isConfirm
-		Return
-	If ((wp & 0xFFFF = 0) && lp != hGui)  ;	Deactivated
+ShellProc(nCode, wParam) {
+	If (nCode = 4)
 	{
-		ZoomMsg(7, 0)
-		If Hotkey_Arr("Hook")
+		If (wParam = hGui)
+			(ThisMode = "Hotkey" && !isPaused ? Hotkey_Hook(1) : ""), HideMarker(), HideAccMarker(), CheckHideMarker()
+		Else If Hotkey_Arr("Hook")
 			Hotkey_Hook(0)
-	}
-	Else If (wp & 0xFFFF != 0 && WinActive("ahk_id" hGui)) ;	Activated
-	{
-		ZoomMsg(7, 1)
-		If (ThisMode = "Hotkey" && !isPaused)
-			Hotkey_Hook(1)
-		If !ActiveNoPause
-			HideMarker(), HideAccMarker(), CheckHideMarker()
+		ZoomMsg(!ActiveNoPause && wParam = hGui ? 1 : Sleep != 1 && !isPaused && ThisMode != "Hotkey" ? 0 : 1)
 	}
 }
 
-WM_WINDOWPOSCHANGED(Wp, Lp) {
-	Static PtrAdd := A_PtrSize = 8 ? 8 : 0
+WM_ACTIVATE(wp) {
 	Critical
-	If (NumGet(Lp + 0, 0, "UInt") != hGui) || Sleep = 1
-		Return
-	If oOther.ZoomShow
-	{
-		x := NumGet(Lp + 0, 8 + PtrAdd, "UInt")
-		y := NumGet(Lp + 0, 12 + PtrAdd, "UInt")
-		w := NumGet(Lp + 0, 16 + PtrAdd, "UInt")
-		hDWP := DllCall("BeginDeferWindowPos", "Int", 3)
-		hDWP := DllCall("DeferWindowPos"
-		, "Ptr", hDWP, "Ptr", hGui, "UInt", -1  ;	for +AlwaysOnTop
-		, "Int", 0, "Int", 0, "Int", 0, "Int", 0
-		, "UInt", 0x0003)    ;  SWP_NOMOVE := 0x0002 | SWP_NOSIZE := 0x0001
-		hDWP := DllCall("DeferWindowPos"
-		, "Ptr", hDWP, "Ptr", oOther.hZoom, "UInt", 0
-		, "Int", x + w, "Int", y, "Int", 0, "Int", 0
-		, "UInt", 0x0011)    ; 0x0010 := SWP_NOACTIVATE | 0x0001 := SWP_NOSIZE | SWP_NOOWNERZORDER := 0x0200
-		hDWP := DllCall("DeferWindowPos"
-		, "Ptr", hDWP, "Ptr", oOther.hZoomLW, "UInt", 0
-		, "Int", x + w + 1, "Int", y + 46, "Int", 0, "Int", 0
-		, "UInt", 0x0211)    ; 0x0010 := SWP_NOACTIVATE | 0x0001 := SWP_NOSIZE | SWP_NOOWNERZORDER := 0x0200
-		DllCall("EndDeferWindowPos", "Ptr", hDWP)
-	}
-	If MemoryPos
-		SetTimer, SavePos, -400
-}
-
-GuiSize:
-	If A_Gui != 1
-		Return
-	If A_EventInfo = 1
-		ZoomMsg(11, 1)
-	Sleep := A_EventInfo  ;	= 1 minimize
-	If A_EventInfo != 1
-	{
-		ControlsMove(A_GuiWidth, A_GuiHeight)
-		If MemorySize
-			SetTimer, SaveSize, -400
-	}
-	Else
-		HideMarker(), HideAccMarker()
-	Try SetTimer, Loop_%ThisMode%, % A_EventInfo = 1 || isPaused ? "Off" : "On"
-	Return
-
-Minimize() {
-	Sleep := 1
-	Gui, 1: Minimize
+	If (wp & 0xFFFF)
+		(ThisMode = "Hotkey" && !isPaused ? Hotkey_Hook(1) : 0), HideMarker(), HideAccMarker(), CheckHideMarker()
+	Else If (wp & 0xFFFF = 0 && Hotkey_Arr("Hook"))
+		Hotkey_Hook(0)
+	ZoomMsg(!ActiveNoPause && (wp & 0xFFFF) ? 1 : Sleep != 1 && !isPaused && ThisMode != "Hotkey" ? 0 : 1)
 }
 
 WM_NCLBUTTONDOWN(wp) {
@@ -1844,7 +1803,7 @@ WM_NCLBUTTONDOWN(wp) {
 	{
 		SetTimer, Minimize, -10
 		Return 0
-	} 
+	}
 }
 
 WM_LBUTTONDOWN() {
@@ -1855,8 +1814,9 @@ WM_LBUTTONDOWN() {
 		Else
 		{
 			SendInput {LAlt Down}{Escape}{LAlt Up}
+			If (Sleep != 1 && !isPaused)
+				ZoomMsg(0)
 			ToolTip("Alt+Escape", 300)
-			ZoomMsg(7, 0)
 		}
 	}
 }
@@ -1867,7 +1827,7 @@ WM_MBUTTONUP(wp) {
 }
 
 WM_CONTEXTMENU() {
-	MouseGetPos, , , wid, cid, 2
+	MouseGetPos, , , wid, cid, 2 
 	If (hColorProgress = cid) {
 		Gosub, PausedScript
 		ToolTip("Pause", 300)
@@ -1880,12 +1840,33 @@ WM_CONTEXTMENU() {
 	Return 1
 }
 
-ControlsMove(Width, Height) {
+WM_WINDOWPOSCHANGED(Wp, Lp) {
+	Static PtrAdd := A_PtrSize = 8 ? 8 : 0
+	If (NumGet(Lp + 0, 0, "UInt") != hGui)
+		Return
+	If oOther.ZoomShow 
+	{
+		DllCall("EndDeferWindowPos", "Ptr", DllCall("DeferWindowPos"
+		, "Ptr", DllCall("BeginDeferWindowPos", "Int", 1), "Ptr", oOther.hZoom, "UInt", 0
+		, "Int", NumGet(Lp + 0, 8 + PtrAdd, "UInt") + NumGet(Lp + 0, 16 + PtrAdd, "UInt")
+		, "Int", NumGet(Lp + 0, 12 + PtrAdd, "UInt"), "Int", 0, "Int", 0
+		, "UInt", 0x0011))    ; 0x0010 := SWP_NOACTIVATE | 0x0001 := SWP_NOSIZE 
+	}
+	If MemoryPos
+		SetTimer, SavePos, -400
+} 
+
+WM_SIZE() {
+	If MemorySize
+		SetTimer, SaveSize, -400 
+}
+
+ControlsMove(Width, Height) { 
 	hDWP := DllCall("BeginDeferWindowPos", "Int", isFindView ? 3 : 2)
 	hDWP := DllCall("DeferWindowPos"
 	, "Ptr", hDWP, "Ptr", hTBGui, "UInt", 0
 	, "Int", (Width - widthTB) // 2.2, "Int", 0, "Int", 0, "Int", 0
-	, "UInt", 0x0011)    ; 0x0010 := SWP_NOACTIVATE | 0x0001 := SWP_NOSIZE
+	, "UInt", 0x0011)    ; 0x0010 := SWP_NOACTIVATE | 0x0001 := SWP_NOSIZE 
 	hDWP := DllCall("DeferWindowPos"
 	, "Ptr", hDWP, "Ptr", hActiveX, "UInt", 0
 	, "Int", 0, "Int", HeigtButton
@@ -1896,8 +1877,14 @@ ControlsMove(Width, Height) {
 		, "Ptr", hDWP, "Ptr", hFindGui, "UInt", 0
 		, "Int", (Width - widthTB) // 2.2, "Int", (Height - (Height < HeigtButton * 2 ? -2 : 27))
 		, "Int", 0, "Int", 0
-		, "UInt", 0x0011)    ; 0x0010 := SWP_NOACTIVATE | 0x0001 := SWP_NOSIZE
+		, "UInt", 0x0011)    ; 0x0010 := SWP_NOACTIVATE | 0x0001 := SWP_NOSIZE 
 	DllCall("EndDeferWindowPos", "Ptr", hDWP)
+}
+
+Minimize() {
+	Sleep := 1
+	ZoomMsg(1)
+	Gui, 1: Minimize
 }
 
 ZoomSpot() {
@@ -1905,36 +1892,34 @@ ZoomSpot() {
 		(ThisMode = "Control" ? (Spot_Control() (StateAllwaysSpot ? Spot_Win() : 0) Write_Control()) : (Spot_Win() (StateAllwaysSpot ? Spot_Control() : 0) Write_Win()))
 }
 
-MsgZoom(wParam, lParam) {  ;	получает
-	If (wParam = 1)  ;	шаг мыши
-		SetTimer, ZoomSpot, -1
-	Else If (wParam = 2)  ;	ZoomShow
+MsgZoom(wParam, lParam) {
+	If (wParam = 1) 
+		SetTimer, ZoomSpot, -10 
+	Else If (wParam = 2) 
 		oOther.ZoomShow := lParam, (MemoryStateZoom && IniWrite(lParam, "ZoomShow"))
-	Else If (wParam = 0)  ;	хэндл окна
-		oOther.hZoom := lParam
-	Else If (wParam = 3)  ;	хэндл окна LW
-		oOther.hZoomLW := lParam
+	Else If (wParam = 0)
+		oOther.hZoom := lParam, ZoomMsg(Sleep != 1 && !isPaused && (!WinActive("ahk_id" hGui) || ActiveNoPause) ? 0	 : 1)
 }
 
-ZoomMsg(wParam = -1, lParam = -1) {  ;	отправляет
+ZoomMsg(wParam = -1, lParam = -1) {
 	If WinExist("AhkSpyZoom ahk_id" oOther.hZoom)
-		SendMessage, % MsgAhkSpyZoom, wParam, lParam, , % "ahk_id" oOther.hZoom
+		PostMessage, % MsgAhkSpyZoom, wParam, lParam, , % "ahk_id" oOther.hZoom
 }
 
-AhkSpyZoomShow() {
+AhkSpyZoomShow() {  
 	If !WinExist("ahk_id" oOther.hZoom) {
-		Hotkey := ThisMode = "Hotkey"
-		Suspend := !isAhkSpy
 		If A_IsCompiled
-			Run "%A_ScriptFullPath%" "Zoom" "%hGui%" "%ActiveNoPause%" "%isPaused%" "%Suspend%" "%Hotkey%", , , PID
+			Run "%A_ScriptFullPath%" "Zoom" "%hGui%" "%ActiveNoPause%" "%isPaused%", , , PID
 		Else
-			Run "%A_AHKPath%" "%A_ScriptFullPath%" "Zoom" "%hGui%" "%ActiveNoPause%" "%isPaused%" "%Suspend%" "%Hotkey%", , , PID
-		WinWait, % "ahk_pid" PID, , 1
+			Run "%A_AHKPath%" "%A_ScriptFullPath%" "Zoom" "%hGui%" "%ActiveNoPause%" "%isPaused%", , , PID
+		WinWait, % "ahk_pid" PID, , 1 
 	}
-	Else If DllCall("IsWindowVisible", "Ptr", oOther.hZoom)
-		ZoomMsg(0)
+	Else If DllCall("IsWindowVisible", "Ptr", oOther.hZoom) 
+		ZoomMsg(3)
 	Else
-		ZoomMsg(1)
+		ZoomMsg(4)
+	ZoomMsg(7, isPaused), ZoomMsg(8, ActiveNoPause)
+	ZoomMsg(Sleep != 1 && !isPaused && (!WinActive("ahk_id" hGui) || ActiveNoPause) ? 0 : 1)
 }
 
 SavePos() {
@@ -1977,7 +1962,7 @@ FixIE() {
 RunPath(Link, WorkingDir = "", Option = "") {
 	Run %Link%, %WorkingDir%, %Option%
 	Minimize()
-}
+} 
 
 RunRealPath(Path) {
 	SplitPath, Path, , Dir
@@ -1991,40 +1976,41 @@ RunAhkPath(Path) {
 	SplitPath, Path, , , Extension
 	If Extension = exe
 		RunPath(Path)
-	Else If (!A_IsCompiled && Extension = "ahk")
+	Else If (!A_IsCompiled && Extension = "ahk") 
 		RunPath("""" A_AHKPath """ """ Path """")
 }
 
 ExtraFile(Name, GetNoCompile = 0) {
 	Static Dir := A_AppData "\AhkSpy"
 	If FileExist(Dir "\" Name ".exe")
-		Return Dir "\" Name ".exe"
+		Return Dir "\" Name ".exe" 
 	If !A_IsCompiled && FileExist(Dir "\" Name ".ahk")
 		Return Dir "\" Name ".ahk"
 }
 
-ShowMarker(x, y, w, h, b := 4) {
+ShowMarker(x, y, w, h, b := 4) { 
 	If !oShowMarkers
 		ShowMarkersCreate("oShowMarkers", "E14B30")
 	(w < 8 || h < 8) && (b := 2)
 	ShowMarkers(oShowMarkers, x, y, w, h, b)
 }
 
-ShowAccMarker(x, y, w, h, b := 2) {
+ShowAccMarker(x, y, w, h, b := 2) { 
 	If !oShowAccMarkers
 		ShowMarkersCreate("oShowAccMarkers", "26419F")
 	ShowMarkers(oShowAccMarkers, x, y, w, h, b)
 }
 
-HideMarker() {
-	HideMarkers(oShowMarkers)
+HideMarker() {  
+	HideMarkers(oShowMarkers) 
 }
 
 HideAccMarker() {
 	HideMarkers(oShowAccMarkers)
 }
 
-ShowMarkers(arr, x, y, w, h, b) {
+ShowMarkers(arr, x, y, w, h, b) { 
+	ShowMarker := 1 
 	hDWP := DllCall("BeginDeferWindowPos", "Int", 4)
 	for k, v in [[x, y, b, h],[x, y+h-b, w, b],[x+w-b, y, b, h],[x, y, w, b]]
 		{
@@ -2034,10 +2020,10 @@ ShowMarkers(arr, x, y, w, h, b) {
 			, "UInt", 0x0250)    ; 0x0010 := SWP_NOACTIVATE | 0x0040 := SWP_SHOWWINDOW | SWP_NOOWNERZORDER := 0x0200
 		}
 	DllCall("EndDeferWindowPos", "Ptr", hDWP)
-	ShowMarker := 1
 }
 
-HideMarkers(arr) {
+HideMarkers(arr) { 
+	ShowMarker := 0
 	hDWP := DllCall("BeginDeferWindowPos", "Int", 4)
 	Loop 4
 		hDWP := DllCall("DeferWindowPos"
@@ -2045,22 +2031,21 @@ HideMarkers(arr) {
 		, "Int", 0, "Int", 0, "Int", 0, "Int", 0
 		, "UInt", 0x0083)    ; 0x0080 := SWP_HIDEWINDOW | SWP_NOMOVE := 0x0002 | SWP_NOSIZE := 0x0001
 	DllCall("EndDeferWindowPos", "Ptr", hDWP)
-	ShowMarker := 0
 }
 
-ShowMarkersCreate(arr, color) {
+ShowMarkersCreate(arr, color) {  
 	S_DefaultGui := A_DefaultGui, %arr% := {}
 	loop 4
 	{
 		Gui, New
 		Gui, Margin, 0, 0
-		Gui, -DPIScale  +HWNDHWND -Caption +Owner +0x40000000 +E0x20 -0x80000000 +E0x08000000 +AlwaysOnTop
+		Gui, -DPIScale  +HWNDHWND -Caption +Owner +0x40000000 +E0x20 -0x80000000 +E0x08000000 +AlwaysOnTop 
 		Gui, Color, %color%
 		WinSet, TransParent, 250, ahk_id %HWND%
-		%arr%[A_Index] := HWND
+		%arr%[A_Index] := HWND 
 		Gui, Show, NA Hide
 	}
-	Gui, %S_DefaultGui%:Default
+	Gui, %S_DefaultGui%:Default 
 }
 
 CheckHideMarker() {
@@ -2103,17 +2088,17 @@ IniWrite(Value, Key) {
 }
 
 Sleep(time) {
-	Sleep time
+	Sleep time 
 }
 
 InArr(Val, Arr) {
-	For k, v in Arr
+	For k, v in Arr 
 		If (v == Val)
 			Return k
 }
 
 TransformHTML(str) {
-	Transform, str, HTML, %str%, 3
+	Transform, str, HTML, %str%, 3 
 	StringReplace, str, str, <br>, , 1
 	Return str
 }
@@ -2134,7 +2119,7 @@ PausedTitleText() {
 		Return i := 0
 	i := i > 20 ? 2 : i + 1
 	TitleTextP2 := "     " SubStr(Str, i) . SubStr(Str, 1, i - 1)
-	TitleText := TitleTextP1 . TitleTextP2
+	TitleText := TitleTextP1 . TitleTextP2 
 	If !FreezeTitleText
 		SendMessage, 0xC, 0, &TitleText, , ahk_id %hGui%
 	SetTimer, PausedTitleText, -200
@@ -2360,30 +2345,30 @@ ToolTip(text, time = 500) {
 
 ConfirmAction(Action) {
 	If (!isPaused && bool := 1)
-		Gosub, PausedScript
+		Gosub, PausedScript  
 	isConfirm := 1
-	bool2 := MsgConfirm(Action, "AhkSpy", hGui)
+	bool2 := MsgConfirm(Action, "AhkSpy", hGui) 
 	isConfirm := 0
 	If bool
 		Gosub, PausedScript
-	If !bool2
+	If !bool2 
 		Exit
 	Return 1
 }
 
 MsgConfirm(Info, Title, hWnd) {
 	Static IsStart, hMsgBox, Text, Yes, No, WinW, WinH
-	If !IsStart && (IsStart := 1) {
+	If !IsStart && (IsStart := 1) { 
 		Gui, MsgBox:+HWNDhMsgBox -DPIScale -SysMenu +Owner%hWnd% +AlwaysOnTop
 		Gui, MsgBox:Font, % "s" (A_ScreenDPI = 120 ? 10 : 12)
 		Gui, MsgBox:Color, FFFFFF
 		Gui, MsgBox:Add, Text, w200 vText r1 Center
 		Gui, MsgBox:Font
 		Gui, MsgBox:Add, Button, w88 vYes xp+4 y+20 gMsgBoxLabel, Yes
-		Gui, MsgBox:Add, Button, w88 vNo x+20 gMsgBoxLabel, No
+		Gui, MsgBox:Add, Button, w88 vNo x+20 gMsgBoxLabel, No  
 		Gui, MsgBox:Show, Hide NA
-		Gui, MsgBox:Show, Hide AutoSize
-		WinGetPos, , , WinW, WinH, ahk_id %hMsgBox%
+		Gui, MsgBox:Show, Hide AutoSize 
+		WinGetPos, , , WinW, WinH, ahk_id %hMsgBox% 
 	}
 	Gui, MsgBox:+Owner%hWnd% +AlwaysOnTop
 	Gui, %hWnd%:+Disabled
@@ -2409,11 +2394,10 @@ MsgConfirm(Info, Title, hWnd) {
 
 MouseStep(x, y) {
 	MouseMove, x, y, 0, R
-	If WinActive("ahk_id" hGui) && !ActiveNoPause
+	If (Sleep != 1 && !isPaused && ThisMode != "Hotkey" && WinActive("ahk_id" hGui))
 	{
 		(ThisMode = "Control" ? (Spot_Control() (StateAllwaysSpot ? Spot_Win() : 0) Write_Control()) : (Spot_Win() (StateAllwaysSpot ? Spot_Control() : 0) Write_Win()))
-		If DllCall("IsWindowVisible", "Ptr", oOther.hZoom)
-			ZoomMsg(3)
+		ZoomMsg(2)
 	}
 }
 
@@ -2488,11 +2472,11 @@ TaskbarProgress(state, hwnd, pct = "") {
 HighLight(elem, time = "", RemoveFormat = 1) {
 	If (elem.OuterText = "")
 		Return
-	Try SetTimer, UnHighLight, % "-" time
+	Try SetTimer, UnHighLight, % "-" time 
 	R := oBody.createTextRange()
 	(RemoveFormat ? R.execCommand("RemoveFormat") : 0)
 	R.collapse(1), R.select()
-	R.moveToElementText(elem)
+	R.moveToElementText(elem) 
 	R.execCommand("ForeColor", 0, "FFFFFF")
 	R.execCommand("BackColor", 0, "3399FF")
 	Return
@@ -2564,7 +2548,7 @@ FindView() {
 	GuiControlGet, p, 1:Pos, %hActiveX%
 	GuiControl, 1:Move, %hActiveX%, % "x" pX " y" pY " w" pW " h" pH - 28
 	Gui, F: Show, % "NA x" (pW - widthTB) // 2.2 " h26 y" (pY + pH - 27)
-	isFindView := 1
+	isFindView := 1 
 	GuiControl, F:Focus, Edit1
 	FindSearch(1)
 }
@@ -2610,7 +2594,7 @@ FindAll() {
 		GuiControl, F:Text, FindMatches
 		Return
 	}
-	R := oBody.createTextRange()
+	R := oBody.createTextRange() 
 	Matches := 0
 	R.collapse(1)
 	Option := (oFind.Whole ? 2 : 0) ^ (oFind.Registr ? 4 : 0)
@@ -2657,7 +2641,7 @@ FindSearch(New, Back = 0) {
 				Break
 			}
 			El := R.parentElement()
-
+			
 			If (El.TagName = "INPUT" || El.className ~= "^(button|title|param)$") && !R.collapse(Back)
 				Continue
 			R.select(), F := 1
@@ -2710,7 +2694,7 @@ MS_Select(EL) {
 
 	; _________________________________________________ Load JScripts _________________________________________________
 
-ChangeCSS(id, css) {	;  https://webo.in/articles/habrahabr/68-fast-dynamic-css/
+ChangeCSS(id, css) {	;  https://webo.in/articles/habrahabr/68-fast-dynamic-css/ 
 	oDoc.getElementById(id).styleSheet.cssText := css
 }
 
@@ -2721,16 +2705,16 @@ LoadJScript() {
 html =
 (
 <head>
-	<style id='css_ColorBg' type="text/css">.title, .button {background-color: #%ColorBg%;}</style>
+	<style id='css_ColorBg' type="text/css">.title, .button {background-color: #%ColorBg%;}</style> 
 	<style id='css_PreOverflowHide' type="text/css">%PreOver_%</style>
-	<style id='css_Body' type="text/css">%BodyWrap_%</style>
+	<style id='css_Body' type="text/css">%BodyWrap_%</style> 
 </head>
 
 <script type="text/javascript">
 	var prWidth, WordWrap, MoveTitles, key1, key2;
 	function shift(scroll) {
 		var col, Width, clientWidth, scrollLeft, Offset;
-		clientWidth = document.documentElement.clientWidth;
+		clientWidth = document.documentElement.clientWidth; 
 		if (clientWidth < 0)
 			return
 		scrollLeft = document.documentElement.scrollLeft;
@@ -2754,19 +2738,19 @@ html =
 		col = document.querySelectorAll('.con');
 		for (var i = 0; i < col.length; i++) {
 			col[i].style.left = "30`%";
-		}
+		} 
 	}
 	function menuitemdisplay(param) {
 		col = document.querySelectorAll('.menuitemid');
 		for (var i = 0; i < col.length; i++) {
 			col[i].style.display = param;
-		}
+		} 
 	}
 	function removemenuitem(parent, selector) {
 		col = parent.querySelectorAll(selector);
-		for (var i = 0; i < col.length; i++) {
-			parent.removeChild(col[i])
-		}
+		for (var i = 0; i < col.length; i++) {  
+			parent.removeChild(col[i])  
+		} 
 	}
 	onresize = function() {
 		shift(0);
@@ -2776,17 +2760,17 @@ html =
 			return
 		shift(1);
 	}
-	function OnButtonDown (el) {
+	function OnButtonDown (el) { 
 		if (window.event.button != 1)   //  only left button https://msdn.microsoft.com/en-us/library/aa703876(v=vs.85).aspx
 			return
 		el.style.backgroundColor = "#%ColorSelMouseHover%";
 		el.style.color = "#fff";
 		el.style.border = "1px solid black";
 	}
-	function OnButtonUp (el) {
+	function OnButtonUp (el) { 
 		el.style.backgroundColor = "";
 		el.style.color = (el.name != "pre" ? "#%ColorFont%" : "#%ColorParam%");
-		if (window.event.button == 2 && el.parentElement.className == 'BB')
+		if (window.event.button == 2 && el.parentElement.className == 'BB') 
 			document.documentElement.focus();
 	}
 	function OnButtonOver (el) {
@@ -2798,17 +2782,17 @@ html =
 		el.style.backgroundColor = "";
 		el.style.color = (el.name != "pre" ? "#%ColorFont%" : "#%ColorParam%");
 		el.style.border = "1px dotted black";
-	}
+	}  
 	function Assync (param) {
 		setTimeout(param, 1);
 	}
 	//	alert(value);
 </script>
 
-<script id='hkinputevent' type="text/javascript">
+<script id='hkinputevent' type="text/javascript"> 
 	function funchkinputevent(el, event) {
 		key1 = el, key2 = event;
-		hkinputevent.click();
+		hkinputevent.click(); 
 	}
 </script>
 )
@@ -2819,7 +2803,7 @@ ComObjConnect(onhkinput := oDoc.getElementById("hkinputevent"), "onhkinput_")
 	; _________________________________________________ Doc Events _________________________________________________
 
 
-onhkinput_onclick() {  ;	http://forum.script-coding.com/viewtopic.php?id=8206
+onhkinput_onclick() {  ;	http://forum.script-coding.com/viewtopic.php?id=8206 
 	If (oJScript.key2 = "focus")
 		Sleep(1), Hotkey_Hook(0)
 	Else If (WinActive("ahk_id" hGui) && !isPaused && ThisMode = "Hotkey")
@@ -2831,7 +2815,7 @@ Class Events {  ;	http://forum.script-coding.com/viewtopic.php?pid=82283#p82283
 	Global CopyText
 		oevent := oDoc.parentWindow.event.srcElement
 		If (oevent.ClassName = "button" || oevent.tagname = "button")
-			Return ButtonClick(oevent)
+			return ButtonClick(oevent)
 		tagname := oevent.tagname
 		If (ThisMode = "Hotkey" && !Hotkey_Arr("Hook") && !isPaused && tagname ~= "PRE|SPAN")
 			Hotkey_Hook(1)
@@ -2839,7 +2823,7 @@ Class Events {  ;	http://forum.script-coding.com/viewtopic.php?pid=82283#p82283
 	ondblclick() {
 		oevent := oDoc.parentWindow.event.srcElement
 		If (oevent.ClassName = "button" || oevent.tagname = "button")
-			Return ButtonClick(oevent)
+			return ButtonClick(oevent)
 		If (oevent.tagname != "input" && (rng := oDoc.selection.createRange()).text != "" && oevent.isContentEditable)
 		{
 			While !t
@@ -2884,16 +2868,16 @@ Class Events {  ;	http://forum.script-coding.com/viewtopic.php?pid=82283#p82283
 	}
 }
 
-ButtonClick(oevent) {
+ButtonClick(oevent) { 
 	thisid := oevent.id
 	If (thisid = "copy_wintext")
 		o := oDoc.getElementById("wintextcon")
 		, GetKeyState("Shift", "P") ? ClipAdd(o.OuterText, 1) : (Clipboard := o.OuterText), HighLight(o, 500)
 	Else If (thisid = "wintext_hidden")
-	{
+	{    
 		R := oBody.createTextRange(), R.collapse(1), R.select()
 		oDoc.getElementById("wintextcon").disabled := 1
-		DetectHiddenText, % DetectHiddenText := (DetectHiddenText = "on" ? "off" : "on")
+		DetectHiddenText, % DetectHiddenText := (DetectHiddenText = "on" ? "off" : "on") 
 		IniWrite(DetectHiddenText, "DetectHiddenText")
 		If !WinExist("ahk_id" oOther.WinID) && ToolTip("Window not exist", 500)
 			Return oDoc.getElementById("wintext_hidden").innerText := " hidden - " DetectHiddenText " "
@@ -2902,13 +2886,13 @@ ButtonClick(oevent) {
 		HTML_Win := oBody.innerHTML
 		Sleep 200
 		oDoc.getElementById("wintextcon").disabled := 0
-		oDoc.getElementById("wintext_hidden").innerText := " hidden - " DetectHiddenText " "
+		oDoc.getElementById("wintext_hidden").innerText := " hidden - " DetectHiddenText " " 
 	}
 	Else If (thisid = "menu_idview")
-	{
+	{   
 		IniWrite(MenuIdView := !MenuIdView, "MenuIdView")
 		oJScript.menuitemdisplay(!MenuIdView ? "none" : "inline")
-		oDoc.getElementById("menu_idview").innerText :=  " id - " (MenuIdView ? "view" : "hide") " "
+		oDoc.getElementById("menu_idview").innerText :=  " id - " (MenuIdView ? "view" : "hide") " "  
 	}
 	Else If (thisid = "copy_menutext")
 	{
@@ -2916,15 +2900,15 @@ ButtonClick(oevent) {
 		preclone := pre_menutext.cloneNode(true)
 		oJScript.removemenuitem(preclone, ".menuitemsub")
 		If !MenuIdView
-			oJScript.removemenuitem(preclone, ".menuitemid")
+			oJScript.removemenuitem(preclone, ".menuitemid") 
 		GetKeyState("Shift", "P") ? ClipAdd(preclone.OuterText, 1) : (Clipboard := preclone.OuterText)
 		HighLight(pre_menutext, 500), preclone := ""
 	}
-	Else If (thisid = "copy_button")
+	Else If (thisid = "copy_button") 
 		o := oDoc.all.item(oevent.sourceIndex + 2)
-		, GetKeyState("Shift", "P") ? ClipAdd(o.OuterText, 1) : (Clipboard := o.OuterText), HighLight(o, 500)
+		, GetKeyState("Shift", "P") ? ClipAdd(o.OuterText, 1) : (Clipboard := o.OuterText), HighLight(o, 500)  
 	Else If thisid = copy_alltitle
-	{
+	{ 
 		Text := (t:=oDoc.getElementById("wintitle1").OuterText) . (t = "" ? "" : " ")
 		. oDoc.getElementById("wintitle2").OuterText " " oDoc.getElementById("wintitle3").OuterText
 		GetKeyState("Shift", "P") ? ClipAdd(Text, 1) : (Clipboard := Text)
@@ -2933,13 +2917,13 @@ ButtonClick(oevent) {
 		HighLight(oDoc.getElementById("wintitle3"), 500, 0), HighLight(oDoc.getElementById("wintitle3_"), 500, 0)
 	}
 	Else If thisid = copy_sbtext
-	{
+	{  
 		Loop % oDoc.getElementById("copy_sbtext").name
 			el := oDoc.getElementById("sb_field_" A_Index), HighLight(el, 500, (A_Index = 1)), Text .= el.OuterText "`n"
 		Text := RTrim(Text, "`n"), GetKeyState("Shift", "P") ? ClipAdd(Text, 1) : (Clipboard := Text)
 	}
 	Else If thisid = keyname
-	{
+	{ 
 		edithotkey := oDoc.getElementById("edithotkey"), editkeyname := oDoc.getElementById("editkeyname")
 		v_edit := Format("{:L}", edithotkey.value), name := GetKeyName(v_edit)
 		If (name = v_edit)
@@ -2950,9 +2934,9 @@ ButtonClick(oevent) {
 		o.focus(), o.createTextRange().select()
 	}
 	Else If thisid = hook_reload
-	{
+	{ 
 		Suspend On
-		Suspend Off
+		Suspend Off 
 		bool := Hotkey_Arr("Hook"), Hotkey_SetHook(0), Hotkey_SetHook(1), Hotkey_Arr("Hook", bool), ToolTip("Ok", 300)
 	}
 	Else If thisid = pause_button
@@ -3087,7 +3071,7 @@ SingleInstance(Icon = 0) {
 	#NoTrayIcon
 	#SingleInstance Off
 	DetectHiddenWindows, On
-	WinGetTitle, MyTitle, ahk_id %A_ScriptHWND%
+	WinGetTitle, MyTitle, ahk_id %A_ScriptHWND%  
 	WinGet, id, List, %MyTitle% ahk_class AutoHotkey
 	Loop, %id%
 	{
@@ -3100,7 +3084,7 @@ SingleInstance(Icon = 0) {
 		this_id := id%A_Index%
 		If (this_id != A_ScriptHWND)
 		{
-			Start := A_TickCount
+			Start := A_TickCount 
 			While WinExist("ahk_id" this_id)
 			{
 				If (A_TickCount - Start > 1500)
@@ -3137,51 +3121,51 @@ If !WinExist("ahk_id" hAhkSpy)
 
 ActiveNoPause = %3%
 AhkSpyPause = %4%
-Suspend = %5%
-Hotkey = %6%
+oZoom.AhkSpyPause := AhkSpyPause
 
 ListLines Off
 SetBatchLines,-1
 CoordMode, Mouse, Screen
-CoordMode, ToolTip, Screen
-	
-Global oZoom := {}, isZoom := 1, hAhkSpy, MsgAhkSpyZoom, ActiveNoPause, SpyActive
-If !oZoom.pToken := GdipStartup()
-{
-	MsgBox, 4112, Gdiplus Error, Gdiplus failed to start. Please ensure you have Gdiplus on your system.
-	ExitApp
-}
-Z_MsgZoom(8, Suspend)
-Z_MsgZoom(2, AhkSpyPause)
-Z_MsgZoom(6, ActiveNoPause)
-Z_MsgZoom(7, !!WinActive("ahk_id" hAhkSpy))
-Z_MsgZoom(10, Hotkey)
-
-OnMessage(MsgAhkSpyZoom := DllCall("RegisterWindowMessage", "Str", "MsgAhkSpyZoom"), "Z_MsgZoom")
-OnMessage(0x0020, "WM_SETCURSOR")
 OnExit("ZoomOnClose")
+
+Global oZoom := {}, isZoom := 1, hAhkSpy, MsgAhkSpyZoom, ActiveNoPause
+OnMessage(0x0020, "WM_SETCURSOR")
 OnMessage(0x201, "LBUTTONDOWN") ; WM_LBUTTONDOWN
 OnMessage(0xA1, "LBUTTONDOWN") ; WM_NCLBUTTONDOWN
-SetWinEventHook("EVENT_OBJECT_DESTROY", 0x8001)
-SetWinEventHook("EVENT_SYSTEM_MINIMIZESTART", 0x0016)
-SetWinEventHook("EVENT_SYSTEM_MINIMIZEEND", 0x0017)
-SetWinEventHook("EVENT_SYSTEM_MOVESIZESTART", 0x000A)
-SetWinEventHook("EVENT_SYSTEM_MOVESIZEEND", 0x000B)
-
+OnMessage(0xF, "WM_Paint")
 ZoomCreate()
+OnMessage(MsgAhkSpyZoom := DllCall("RegisterWindowMessage", "Str", "MsgAhkSpyZoom"), "Z_MsgZoom")
 PostMessage, % MsgAhkSpyZoom, 0, % oZoom.hGui, , ahk_id %hAhkSpy%
-PostMessage, % MsgAhkSpyZoom, 3, % oZoom.hLW, , ahk_id %hAhkSpy%
+SetWinEventHook("EVENT_OBJECT_DESTROY", 0x8001) 
+SetWinEventHook("EVENT_SYSTEM_MINIMIZESTART", 0x0016, 0x0017)
 WinGet, Min, MinMax, % "ahk_id " hAhkSpy
 If Min != -1
 	ZoomShow()
+SetTimer, CheckAhkSpy, 200
 Return
 
-#If isZoom && oZoom.Show && !oZoom.Work
+#If isZoom && oZoom.Show
 
+^+#Up::
+^+#Down::
 +#WheelUp::
 +#WheelDown:: ChangeZoom(InStr(A_ThisHotKey, "Up") ? oZoom.Zoom + 1 : oZoom.Zoom - 1)
 
+#If isZoom && (!oZoom.AhkSpyPause && oZoom.Show && !IsMinimize(hAhkSpy))
+
++#Up:: Z_MouseStep(0, -1)
++#Down:: Z_MouseStep(0, 1)
++#Left:: Z_MouseStep(-1, 0)
++#Right:: Z_MouseStep(1, 0)
+
 #If
+
+Z_MouseStep(x, y) {
+	MouseMove, x, y, 0, R
+	If oZoom.Pause 
+		oZoom.Pause := 0, Magnify(1), oZoom.Pause := 1   
+	PostMessage, % MsgAhkSpyZoom, 1, 0, , ahk_id %hAhkSpy%
+}
 
 ZoomCreate() {
 	oZoom.Zoom := IniRead("MagnifyZoom", 4)
@@ -3194,69 +3178,100 @@ ZoomCreate() {
 		GuiW := IniRead("MemoryZoomSizeW", oZoom.GuiMinW), GuiH := IniRead("MemoryZoomSizeH", oZoom.GuiMinH)
 	Else
 		GuiW := oZoom.GuiMinW, GuiH := oZoom.GuiMinH
-	Gui, Zoom: -Caption -DPIScale +Border  +LabelZoomOn +HWNDhGui +AlwaysOnTop +E0x08000000    ;	+Owner%hAhkSpy%
+	Gui Zoom: +AlwaysOnTop -DPIScale +hwndhGui +LabelZoomOn -Caption +E0x08000000  ;	 +Owner%hAhkSpy%
 	Gui, Zoom: Color, F0F0F0
-	Gui, Zoom: Add, Text, hwndhStatic +Border
 	DllCall("SetClassLong", "Ptr", hGui, "int", -26
-	, "int", DllCall("GetClassLong", "Ptr", hGui, "int", -26) | 0x20000)
-
-	Gui, LW: -Caption +E0x80000 +AlwaysOnTop +ToolWindow +HWNDhLW +E0x08000000 +Owner%hGui% ;	+E0x08000000 +E0x20
-
+		, "int", DllCall("GetClassLong", "Ptr", hGui, "int", -26) | 0x20000)
+	
 	Gui, ZoomTB: +HWNDhTBGui -Caption -DPIScale +Parent%hGui% +E0x08000000 +0x40000000 -0x80000000
-	Gui, ZoomTB: Color, F0F0F0
 	Gui, ZoomTB: Font, s%FontSize%
 	Gui, ZoomTB: Add, Slider, hwndhSliderZoom gSliderZoom x8 Range1-50 w152 Center AltSubmit NoTicks, % oZoom.Zoom
 	Gui, ZoomTB: Add, Text, hwndhTextZoom Center x+10 yp+3 w36, % oZoom.Zoom
 	Gui, ZoomTB: Font
 	Gui, ZoomTB: Add, Button, hwndhChangeMark gChangeMark x+10 yp w52, % oZoom.Mark
 	Gui, ZoomTB: Add, Button, hwndhZoomHideBut gZoomHide x+10 yp, X
-	Gui, ZoomTB: Show, NA x0 y0
-
-	Gui, Zoom: Show, % "NA Hide w" GuiW " h" GuiH, AhkSpyZoom
+	Gui, ZoomTB: Show, x0 y0
+	Gui, ZoomTB: Color, F0F0F0
+	
+	Gui, Zoom: Show, % "Hide w" GuiW " h" GuiH, AhkSpyZoom
 	Gui, Zoom: +MinSize
-	
-	oZoom.hdcSrc := DllCall("GetDC", "UPtr", 0, "UPtr")
-	oZoom.hDCBuf := CreateCompatibleDC()
-	oZoom.hdcMemory := CreateCompatibleDC()
-	
-	oZoom.hGui := hGui
-	oZoom.hStatic := hStatic
-	oZoom.hTBGui := hTBGui
-	oZoom.hLW := hLW
 
+	Gui, Dev: +HWNDhDev -Caption -DPIScale +Parent%hGui% +Border
+	Gui, Dev: Add, Text, hwndhDevCon +0xE ;	SS_BITMAP := 0xE
+	Gui, Dev: Show, NA
+	Gui, Dev: Color, F0F0F0
+
+	oZoom.hdcSrc := DllCall("GetDC", Ptr, 0, Ptr)
+	oZoom.hdcDest := DllCall("GetDC", Ptr, hDevCon, Ptr)
+	oZoom.hdcMemory := DllCall("CreateCompatibleDC", "Ptr", 0)
+	DllCall("Gdi32.Dll\SetStretchBltMode", "Ptr", oZoom.hdcDest, "Int", 4)
+	oZoom.hGui := hGui
+	oZoom.hDev := hDev
+	oZoom.hDevCon := hDevCon
+	oZoom.hTBGui := hTBGui
+	
 	oZoom.vTextZoom := hTextZoom
 	oZoom.vChangeMark := hChangeMark
 	oZoom.vZoomHideBut := hZoomHideBut
 	oZoom.vSliderZoom := hSliderZoom
+	
+	SysGet, VirtualScreenWidth, 78
+	SysGet, VirtualScreenHeight, 79
+	hBM := DllCall("Gdi32.Dll\CreateCompatibleBitmap", "Ptr", oZoom.hdcDest, "Int", VirtualScreenWidth, "Int", VirtualScreenHeight)
+	DllCall("Gdi32.Dll\SelectObject", "Ptr", oZoom.hdcMemory, "Ptr", hBM), DllCall("DeleteObject", "Ptr", hBM)
+	BitBlt(oZoom.hdcMemory, 0, 0, VirtualScreenWidth, VirtualScreenHeight, oZoom.hdcDest, 0, 0, 0xFF0062)  ;	WHITENESS   
+}
+
+Magnify(one = 0) {
+	Static New
+	If (oZoom.Show && (one || !oZoom.Pause && !oZoom.AhkSpyPause) && oZoom.SIZING != 2)
+	{
+		MouseGetPos, mX, mY, WinID
+		If (WinID != oZoom.hGui && WinID != hAhkSpy)
+		{ 
+			oZoom.MouseX := mX, oZoom.MouseY := mY
+			StretchBlt(oZoom.hdcDest, 0, 0, oZoom.nWidthDest, oZoom.nHeightDest
+				, oZoom.hdcSrc, mX - oZoom.nXOriginSrcOffset, mY - oZoom.nYOriginSrcOffset, oZoom.nWidthSrc, oZoom.nHeightSrc) 
+			For k, v In oZoom.oMarkers[oZoom.Mark]
+				StretchBlt(oZoom.hdcDest, v.x, v.y, v.w, v.h, oZoom.hdcDest, v.x, v.y, v.w, v.h, 0x5A0049)	; PATINVERT 
+			If !New
+				New := 1
+			If one
+				Memory()  
+		}
+		Else If New  
+			Memory(), New := 0
+	}
+	If !oZoom.Pause
+		SetTimer, Magnify, -1 
 }
 
 SetSize() {
 	Static Top := 45, Left := 0, Right := 6, Bottom := 6
-
-	Width := oZoom.LWWidth := oZoom.GuiWidth - Left - Right
-	Height := oZoom.LWHeight := oZoom.GuiHeight - Top - Bottom
-
+	MagnifyOff()
+	Width := oZoom.GuiWidth - Left - Right
+	Height := oZoom.GuiHeight - Top - Bottom
 	Zoom := oZoom.Zoom
 	conW := Mod(Width, Zoom) ? Width - Mod(Width, Zoom) + Zoom : Width
 	conW := Mod(conW // Zoom, 2) ? conW : conW + Zoom
-
 	conH := Mod(Height, Zoom) ? Height - Mod(Height, Zoom) + Zoom : Height
-	conH := Mod(conH // Zoom, 2) ? conH : conH + Zoom
-
-	oZoom.conX := (((conW - Width) // 2)) * -1
-	oZoom.conY :=  (((conH - Height) // 2)) * -1
-
+	conH := Mod(conH // Zoom, 2) ? conH : conH + Zoom 
+	conX := (((conW - Width) // 2) + 1) * -1
+	conY :=  (((conH - Height) // 2) + 1) * -1
+	
 	hDWP := DllCall("BeginDeferWindowPos", "Int", 2)
-	hDWP := DllCall("DeferWindowPos"
-	, "Ptr", hDWP, "Ptr", oZoom.hStatic, "UInt", 0
-	, "Int", Left - 1, "Int", Top - 1, "Int", Width + 2, "Int", Height + 2
-	, "UInt", 0x0010)    ; 0x0010 := SWP_NOACTIVATE
+	hDWP := DllCall("DeferWindowPos"                             	; hDWP := DllCall("DeferWindowPos"
+	, "Ptr", hDWP, "Ptr", oZoom.hDev, "UInt", 0                  	; , "Ptr", hDWP, "Ptr", oZoom.hDevCon, "UInt", 0
+	, "Int", Left, "Int", Top, "Int", Width, "Int", Height		 	; , "Int", conX, "Int", conY, "Int", conW, "Int", conH
+	, "UInt", 0x0010)    ; 0x0010 := SWP_NOACTIVATE  			 	; , "UInt", 0x0010)    ; 0x0010 := SWP_NOACTIVATE   
 	hDWP := DllCall("DeferWindowPos"
 	, "Ptr", hDWP, "Ptr", oZoom.hTBGui, "UInt", 0
 	, "Int", (oZoom.GuiWidth - oZoom.GuiMinW) / 2
 	, "Int", 0, "Int", 0, "Int", 0
-	, "UInt", 0x0011)    ; 0x0010 := SWP_NOACTIVATE | 0x0001 := SWP_NOSIZE
+	, "UInt", 0x0011)    ; 0x0010 := SWP_NOACTIVATE | 0x0001 := SWP_NOSIZE 
 	DllCall("EndDeferWindowPos", "Ptr", hDWP)
+	
+	SetWindowPos(oZoom.hDevCon, conX, conY, conW, conH)
 
 	oZoom.nWidthSrc := conW // Zoom
 	oZoom.nHeightSrc := conH // Zoom
@@ -3264,23 +3279,25 @@ SetSize() {
 	oZoom.nYOriginSrcOffset := oZoom.nHeightSrc//2
 	oZoom.nWidthDest := conW
 	oZoom.nHeightDest := conH
-	oZoom.xCenter := Round(Width / 2 - Zoom / 2)
-	oZoom.yCenter := Round(Height / 2 - Zoom / 2)
-
+	oZoom.xCenter := conW / 2 - Zoom / 2
+	oZoom.yCenter := conH / 2 - Zoom / 2
+	
 	ChangeMarker()
-
+	
+	If !oZoom.Pause
+		SetTimer, Magnify, -10
 	If oZoom.MemoryZoomSize
 		SetTimer, ZoomCheckSize, -100
 }
 
 ChangeMarker() {
 	Try GoTo % "Marker" oZoom.Mark
-
+	
 	MarkerCross:
 		oZoom.oMarkers["Cross"] := [{x:0,y:oZoom.yCenter - 1,w:oZoom.nWidthDest,h:1}
 		, {x:0,y:oZoom.yCenter + oZoom.Zoom,w:oZoom.nWidthDest,h:1}
 		, {x:oZoom.xCenter - 1,y:0,w:1,h:oZoom.nHeightDest}
-		, {x:oZoom.xCenter + oZoom.Zoom,y:0,w:1,h:oZoom.nHeightDest}]
+		, {x:oZoom.xCenter + oZoom.Zoom,y:0,w:1,h:oZoom.nHeightDest}]	
 		Return
 
 	MarkerSquare:
@@ -3289,12 +3306,11 @@ ChangeMarker() {
 		, {x:oZoom.xCenter - 1,y:oZoom.yCenter + 1,w:1,h:oZoom.Zoom}
 		, {x:oZoom.xCenter + oZoom.Zoom,y:oZoom.yCenter + 1,w:1,h:oZoom.Zoom}]
 		Return
-
+		
 	MarkerGrid:
 		If (oZoom.Zoom = 1) {
 			Gosub MarkerSquare
-			oZoom.oMarkers["Grid"] := oZoom.oMarkers["Square"]
-			Return
+			Return oZoom.oMarkers["Grid"] := oZoom.oMarkers["Square"]
 		}
 		oZoom.oMarkers["Grid"] := [{x:oZoom.xCenter - oZoom.Zoom,y:oZoom.yCenter - oZoom.Zoom,w:oZoom.Zoom * 3,h:1}
 		, {x:oZoom.xCenter - oZoom.Zoom,y:oZoom.yCenter,w:oZoom.Zoom * 3,h:1}
@@ -3312,7 +3328,24 @@ ZoomCheckSize() {
 	If (PrWidth = oZoom.GuiWidth && PrHeight = oZoom.GuiHeight)
 		Return
 	PrWidth := oZoom.GuiWidth, PrHeight := oZoom.GuiHeight
-	IniWrite(PrWidth, "MemoryZoomSizeW"), IniWrite(PrHeight, "MemoryZoomSizeH")
+	IniWrite(PrWidth, "MemoryZoomSizeW"), IniWrite(PrHeight, "MemoryZoomSizeH")  
+}
+
+SetWindowPos(hWnd, x, y, w, h, SWP_NOSIZE := 0, SWP_NOREDRAW := 0x0008) {
+	Static SWP_ASYNCWINDOWPOS := 0x4000, SWP_DEFERERASE := 0x2000, SWP_NOACTIVATE := 0x0010, SWP_NOCOPYBITS := 0x0100
+		, SWP_NOOWNERZORDER := 0x0200, SWP_NOSENDCHANGING := 0x0400  ;	, SWP_NOREDRAW := 0x0008
+	DllCall("SetWindowPos"
+		, "Ptr", hWnd
+		, "Ptr", 0
+		, "Int", x
+		, "Int", y
+		, "Int", w
+		, "Int", h
+		, "UInt", SWP_ASYNCWINDOWPOS|SWP_DEFERERASE|SWP_NOACTIVATE|SWP_NOCOPYBITS|SWP_NOOWNERZORDER|SWP_NOREDRAW|SWP_NOSENDCHANGING|SWP_NOSIZE)
+}
+
+RedrawWindow() {
+	DllCall("RedrawWindow", "Ptr", oZoom.hGui, "Uint", 0, "Uint", 0, "Uint", 0x1|0x4)
 }
 
 SliderZoom() {
@@ -3324,6 +3357,7 @@ ChangeZoom(Val = "")  {
 		GuiControlGet, Val, ZoomTB:, % oZoom.vSliderZoom
 	If (Val < 1 || Val > 50)
 		Return
+	MagnifyOff()
 	GuiControl, ZoomTB:, % oZoom.vSliderZoom, % oZoom.Zoom := Val
 	GuiControl, ZoomTB:, % oZoom.vTextZoom, % oZoom.Zoom
 	SetSize()
@@ -3348,6 +3382,73 @@ MagnifyMarkSave() {
 	IniWrite(oZoom.Mark, "MagnifyMark")
 }
 
+Redraw() {
+	StretchBlt(oZoom.hdcDest, 0, 0, oZoom.nWidthDest, oZoom.nHeightDest
+		, oZoom.hdcMemory, oZoom.nXOriginSrc - oZoom.nXOriginSrcOffset, oZoom.nYOriginSrc - oZoom.nYOriginSrcOffset, oZoom.nWidthSrc, oZoom.nHeightSrc)
+	For k, v In oZoom.oMarkers[oZoom.Mark]
+		StretchBlt(oZoom.hdcDest, v.x, v.y, v.w, v.h, oZoom.hdcDest, v.x, v.y, v.w, v.h, 0x5A0049)	; PATINVERT
+}
+
+ZoomShow() { 
+	PostMessage, % MsgAhkSpyZoom, 2, 1, , ahk_id %hAhkSpy% 
+	WinGetPos, WinX, WinY, WinWidth, WinHeight, ahk_id %hAhkSpy%
+	Gui, Zoom:Show, % "NA Hide x" WinX + WinWidth " y" WinY 
+	DllCall("AnimateWindow", "Ptr", oZoom.hGui, "Int", 96 , "UInt", 0x0000001)   
+	DllCall("DeleteObject", Ptr, oZoom.hBM)
+	oZoom.Pause := !(!oZoom.AhkSpyPause && ActiveNoPause || !WinActive("ahk_id" hAhkSpy))
+	oZoom.Pause ? 0 : Magnify()
+	oZoom.Show := 1
+	GuiControl, ZoomTB:, Focus, % oZoom.vTextZoom  
+}
+
+ZoomHide() {
+	oZoom.Show := 0
+	oZoom.Pause := 1
+	MagnifyOff()
+	DCToStatic(oZoom.hdcDest, oZoom.hDevCon, 0, 0, oZoom.nWidthDest, oZoom.nHeightDest)
+	DllCall("AnimateWindow", "Ptr", oZoom.hGui, "Int", 96, "UInt", 0x00010002) 
+	PostMessage, % MsgAhkSpyZoom, 2, 0, , ahk_id %hAhkSpy%
+	GuiControl, ZoomTB:, -0x0001, % oZoom.vZoomHideBut
+	GuiControl, ZoomTB:, Focus, % oZoom.vTextZoom 
+}
+
+DCToStatic(hDC, hWnd, X, Y, W, H) {  
+	tDC := DllCall("CreateCompatibleDC", UInt, 0) 
+	hBM := DllCall("CopyImage", Ptr, DllCall("CreateBitmap", Int, W, Int, H, UInt, 1, UInt, 24
+							, UInt, 0), UInt, 0, Int, 0, Int, 0, UInt, 0x2008, UInt) 
+	oBM := DllCall("SelectObject", Ptr, tDC, Ptr, hBM) 
+	DllCall("BitBlt", Ptr, tDC, UInt, 0, UInt, 0, Int, W, Int, H, Ptr, hDC, UInt, X, UInt, Y, UInt, 0xC000CA|0x40000000) 
+	DllCall("SelectObject", Ptr, tDC, Ptr, oBM)
+	DllCall("DeleteDC", Ptr, tDC) 
+	SendMessage, 0x172, 0, hBM,, ahk_id %hWnd%  ;	STM_SETIMAGE, IMAGE_BITMAP
+	oZoom.hBM := hBM
+}
+
+Memory() {
+	SysGet, VirtualScreenX, 76
+	SysGet, VirtualScreenY, 77
+	SysGet, VirtualScreenWidth, 78
+	SysGet, VirtualScreenHeight, 79
+	oZoom.nXOriginSrc := oZoom.MouseX - VirtualScreenX, oZoom.nYOriginSrc := oZoom.MouseY - VirtualScreenY
+	hBM := DllCall("Gdi32.Dll\CreateCompatibleBitmap", "Ptr", oZoom.hdcSrc, "Int", VirtualScreenWidth, "Int", VirtualScreenHeight)
+	DllCall("Gdi32.Dll\SelectObject", "Ptr", oZoom.hdcMemory, "Ptr", hBM), DllCall("DeleteObject", "Ptr", hBM)
+	BitBlt(oZoom.hdcMemory, 0, 0, VirtualScreenWidth, VirtualScreenHeight, oZoom.hdcSrc, VirtualScreenX, VirtualScreenY) 
+}
+
+CheckAhkSpy() {
+	WinGet, Min, MinMax, % "ahk_id " hAhkSpy
+	If Min =
+		ExitApp
+	If (Min = -1 || (!ActiveNoPause && WinActive("ahk_id" hAhkSpy)))
+		oZoom.Pause := 1
+} 
+
+IsMinimize(hwnd) {
+	WinGet, Min, MinMax, % "ahk_id " hwnd
+	If Min = -1
+		Return 1
+}
+
 SetWinEventHook(EventProc, eventMin, eventMax = 0)  {
 	Return DllCall("SetWinEventHook"
 				, "UInt", eventMin, "UInt", eventMax := !eventMax ? eventMin : eventMax
@@ -3356,147 +3457,99 @@ SetWinEventHook(EventProc, eventMin, eventMax = 0)  {
 				, "UInt", dwflags := 0x0|0x2, "Ptr")	;	WINEVENT_OUTOFCONTEXT | WINEVENT_SKIPOWNPROCESS
 }
 
-ZoomShow() {
-	ShowZoom(1)
-	PostMessage, % MsgAhkSpyZoom, 2, 1, , ahk_id %hAhkSpy%
-	ZoomRules("ZoomHide", 0)
-	GuiControl, ZoomTB:, Focus, % oZoom.vTextZoom
+BitBlt(ddc, dx, dy, dw, dh, sdc, sx, sy, Raster = 0xC000CA) {
+	Return DllCall("Gdi32.Dll\BitBlt"
+					, "Ptr", dDC
+					, "Int", dx
+					, "Int", dy
+					, "Int", dw
+					, "Int", dh
+					, "Ptr", sDC
+					, "Int", sx
+					, "Int", sy
+					, "Uint", Raster|0x40000000)
 }
 
-ZoomHide() {
-	ZoomRules("ZoomHide", 1)
-	ShowZoom(0)
-	PostMessage, % MsgAhkSpyZoom, 2, 0, , ahk_id %hAhkSpy%
-	GuiControl, ZoomTB:, -0x0001, % oZoom.vZoomHideBut
-	GuiControl, ZoomTB:, Focus, % oZoom.vTextZoom
-}
-
-ShowZoom(Show) {
-	oZoom.Show := Show
-	If Show { 
-		WinGetPos, WinX, WinY, WinW, , ahk_id %hAhkSpy%
-		oZoom.LWX := WinX + WinW + 1, oZoom.LWY := WinY + 46
-		Gui,  Zoom: Show, % "NA Hide x" WinX + WinW " y" WinY
-		Gui,  LW: Show, % "NA x" oZoom.LWX " y" oZoom.LWY " w" 0 " h" 0 
-		Gui,  Zoom: Show, NA
-		try Gui, LW: Show, % "NA x" oZoom.LWX " y" oZoom.LWY " w" oZoom.LWWidth " h" oZoom.LWHeight 
-		Return
-	}
-	Gui,  LW: Show, % "NA w" 0 " h" 0  ;	нельзя применять Hide, иначе после появления и ресайза остаётся прозрачный след 
-	Gui,  Zoom: Show, NA Hide  
+StretchBlt(ddc, dx, dy, dw, dh, sdc, sx, sy, sw, sh, Raster = 0xC000CA) {
+	Return DllCall("Gdi32.Dll\StretchBlt"
+					, "Ptr", dDC
+					, "Int", dx
+					, "Int", dy
+					, "Int", dw
+					, "Int", dh
+					, "Ptr", sDC
+					, "Int", sx
+					, "Int", sy
+					, "Int", sw
+					, "Int", sh
+					, "Uint", Raster|0x40000000)  ;	MERGECOPY|CAPTUREBLT
 }
 
 	; _________________________________________________ Events _________________________________________________
 
-ZoomOnSize() {
-	Critical
+ZoomOnSize() { 
 	If A_EventInfo != 0
-		Return
+		Return 
 	oZoom.GuiWidth := A_GuiWidth
 	oZoom.GuiHeight := A_GuiHeight
-	SetSize()
-	Redraw()
+	SetSize()  
 }
 
 ZoomOnClose() {
-	ReleaseDC(oZoom.hdcSrc)
-	DeleteDC(oZoom.hdcSrc)
-	DeleteDC(oZoom.hDCBuf)
-	DeleteDC(oZoom.hdcMemory)
-	GdipShutdown(oZoom.pToken)
+	DllCall("Gdi32.Dll\DeleteDC", "Ptr", oZoom.hdcDest)
+	DllCall("Gdi32.Dll\DeleteDC", "Ptr", oZoom.hdcSrc)
+	DllCall("Gdi32.Dll\DeleteDC", "Ptr", oZoom.hdcMemory)
+	DllCall("DeleteObject", Ptr, oZoom.hBM)
 	RestoreCursors()
 	ExitApp
 }
 
-	; wParam: 0 hide, 1 show, 2 пауза AhkSpy, 3 однократный зум, 4 MemoryZoomSize, 5 MinSize, 6 ActiveNoPause, 7 WinActive AhkSpy, 8 Suspend, 9 Menu, 10 Hotkey, 11 MIN
-	
-Zoom_Msg(wParam, lParam) { 
-	If wParam = 0  ;	hide
-		ZoomHide()
-	Else If wParam = 1  ;	show
-		ZoomShow()
-	If wParam = 2  ;	пауза AhkSpy
-		ZoomRules("Pause", lParam)
-	Else If wParam = 3  ;	однократный зум  ;	AhkSpy отвечает за контекст вызова
+MagnifyOff() {
+	SetTimer, Magnify, Off
+}
+
+	; wParam: 0 снять паузу, 1 пауза, 2 однократный зум, 3 hide, 4 show, 5 MemoryZoomSize, 6 MinSize, 7 пауза AhkSpy, 8 ActiveNoPause, 9 Suspend
+
+Z_MsgZoom(wParam, lParam) {   
+	If (wParam = 0 && oZoom.Show)
+		oZoom.Pause := 0, Magnify()
+	Else If wParam = 1 
+		MagnifyOff(), oZoom.Pause := 1 
+	Else If (wParam = 2 && oZoom.Show)
 		Magnify(1)
-	Else If wParam = 4  ;	MemoryZoomSize
-	{
-		If (oZoom.MemoryZoomSize := lParam)
-			IniWrite(oZoom.GuiWidth, "MemoryZoomSizeW"), IniWrite(oZoom.GuiHeight, "MemoryZoomSizeH")
+	Else If wParam = 3
+		ZoomHide()
+	Else If wParam = 4
+		ZoomShow()
+	Else If wParam = 5
+	{ 
+		If (oZoom.MemoryZoomSize := lParam) 
+			IniWrite(oZoom.GuiWidth, "MemoryZoomSizeW")
+			, IniWrite(oZoom.GuiHeight, "MemoryZoomSizeH") 
 	}
-	Else If (wParam = 5 && DllCall("IsWindowVisible", "Ptr", oZoom.hGui))  ;	MinSize
+	Else If (wParam = 6 && oZoom.Show)
 		Gui, Zoom:Show, % "NA w" oZoom.GuiMinW " h" oZoom.GuiMinH
-	Else If wParam = 6  ;	ActiveNoPause
-		ActiveNoPause := lParam, ZoomRules("Win", ActiveNoPause ? 0 : SpyActive)
-	Else If wParam = 7  ;	WinActive AhkSpy
-		SpyActive := lParam, ZoomRules("Win", ActiveNoPause ? 0 : SpyActive)
-	Else If wParam = 8  ;	Suspend
+	Else If wParam = 7
+		oZoom.AhkSpyPause := lParam
+	Else If wParam = 8
+		ActiveNoPause := lParam
+	Else If wParam = 9
 		Suspend % lParam ? "On" : "Off"
-	Else If wParam = 9  ;	Menu
-		ZoomRules("Menu", lParam)
-	Else If wParam = 10  ;	Menu
-		ZoomRules("Hotkey", lParam)
-	Else If wParam = 11  ;	MIN
-		ZoomRules("MIN", 1)  
+}
+	
+WM_Paint() { 
+	If A_GuiControl =
+		SetTimer, Redraw, -10 
 }
 
-Z_MsgZoom(wParam, lParam) { 
-	obj := Func("Zoom_Msg").Bind(wParam, lParam)
-	SetTimer, % obj, -1
-	Return 0 
-}
-
-ZoomRules(Rule, value) {
-	Static IsStart, Rules, Arr, Len
-	If !IsStart
-	{
-		Arr := {"ZoomHide":1, "Pause":2, "Win":3, "Sleep":4, "Menu":5, "MIN":6, "MOVE":7, "SIZE":8, "Hotkey":9}, Len := 9
-		Loop % VarSetCapacity(Rules, Len - 1)
-			StrPut(0, &Rules + A_Index - 1, 1, "CP0")
-		IsStart := 1
-	}
-	StrPut(!!value, &Rules + Arr[Rule] - 1, 1, "CP0")
-	If oZoom.Work := !(StrGet(&Rules, Len, "CP0") + 0)
-		SetTimer, Magnify, -1 
-	; ToolTip % Rule "`n" Arr[Rule] "`n" value "`n`n`n"  (StrGet(&Rules, Len, "CP0")) "`n123456789" "`n" oZoom.Work,4,55,6
-}
-
-EVENT_OBJECT_DESTROY(hWinEventHook, event, hwnd) {
+EVENT_OBJECT_DESTROY(hWinEventHook, event, hwnd) { 
 	If (hwnd = hAhkSpy)
 		ExitApp
-}
+} 
 
 EVENT_SYSTEM_MINIMIZESTART(hWinEventHook, event, hwnd) {
-	If (hwnd != hAhkSpy)
-		Return  
-	ZoomRules("MIN", 1)
-	If oZoom.Show
-		oZoom.Minimize := 1, ShowZoom(0)
-}
-
-EVENT_SYSTEM_MINIMIZEEND(hWinEventHook, event, hwnd) {
-	If (hwnd != hAhkSpy)
-		Return
-	If oZoom.Minimize
-	{
-		isEnabled := false, DllCall("dwmapi.dll\DwmIsCompositionEnabled", "UInt", &isEnabled)
-		Sleep % !!isEnabled ? 300 : 10
-		ShowZoom(1)
-		oZoom.Minimize := 0
-	}
-	ZoomRules("MIN", 0)
-}
-
-EVENT_SYSTEM_MOVESIZESTART(hWinEventHook, event, hwnd) {
-	If (hwnd != hAhkSpy)
-		Return 
-	ZoomRules("MOVE", 1)
-}
-
-EVENT_SYSTEM_MOVESIZEEND(hWinEventHook, event, hwnd) {
-	If (hwnd != hAhkSpy)
-		Return
-	ZoomRules("MOVE", 0)
+	If (hwnd = hAhkSpy)  
+		oZoom.Pause := 1
 }
 
 	; _________________________________________________ Sizing _________________________________________________
@@ -3510,7 +3563,7 @@ WM_SETCURSOR(W, L, M, H) {
 	If (W = oZoom.hGui)
 	{
 		MouseGetPos, mX, mY
-		WinGetPos, WinX, WinY, WinW, WinH, % "ahk_id " oZoom.hLW
+		WinGetPos, WinX, WinY, WinW, WinH, % "ahk_id " oZoom.hDev
 		If (mX > WinX && mY > WinY)
 		{
 			If (mX < WinX + WinW - 10)
@@ -3518,7 +3571,7 @@ WM_SETCURSOR(W, L, M, H) {
 			Else If (mY < WinY + WinH - 10)
 				DllCall("User32.dll\SetCursor", "Ptr", SIZEWE), oZoom.SIZINGType := "WE"
 			Else
-				DllCall("User32.dll\SetCursor", "Ptr", SIZENWSE), oZoom.SIZINGType := "NWSE"
+				DllCall("User32.dll\SetCursor", "Ptr", SIZENWSE), oZoom.SIZINGType := "NWSE" 
 			Return oZoom.SIZING := 1
 		}
 	}
@@ -3529,14 +3582,12 @@ WM_SETCURSOR(W, L, M, H) {
 LBUTTONDOWN(W, L, M, H) {
 	If oZoom.SIZING
 	{
-		ZoomRules("SIZE", 1)
 		oZoom.SIZING := 2
 		SetSystemCursor("SIZE" oZoom.SIZINGType)
 		SetTimer, Sizing, -10
 		KeyWait LButton
 		SetTimer, Sizing, Off
-		RestoreCursors()
-		ZoomRules("SIZE", 0)
+		RestoreCursors() 
 		oZoom.SIZING := 0, oZoom.SIZINGType := ""
 	}
 }
@@ -3555,163 +3606,15 @@ Sizing() {
 SetSystemCursor(CursorName, cx = 0, cy = 0) {
 	Static SystemCursors := {ARROW:32512, IBEAM:32513, WAIT:32514, CROSS:32515, UPARROW:32516, SIZE:32640, ICON:32641, SIZENWSE:32642
 					, SIZENESW:32643, SIZEWE:32644 ,SIZENS:32645, SIZEALL:32646, NO:32648, HAND:32649, APPSTARTING:32650, HELP:32651}
-	Local CursorHandle, hImage, Name, ID
+    Local CursorHandle, hImage, Name, ID
 	If (CursorHandle := DllCall("LoadCursor", Uint, 0, Int, SystemCursors[CursorName]))
 		For Name, ID in SystemCursors
 			hImage := DllCall("CopyImage", Ptr, CursorHandle, Uint, 0x2, Int, cx, Int, cy, Uint, 0)
 			, DllCall("SetSystemCursor", Ptr, hImage, Int, ID)
 }
 
-RestoreCursors() {
+RestoreCursors() { 
 	DllCall("SystemParametersInfo", UInt, 0x57, UInt, 0, UInt, 0, UInt, 0)  ;	SPI_SETCURSORS := 0x57
 }
 
-	; _________________________________________________ Magnify _________________________________________________
-
-Magnify(one = 0) {
-	If (a := oZoom.Work) || one
-	{
-		MouseGetPos, mX, mY, WinID
-		If b := (WinID != oZoom.hLW && WinID != oZoom.hGui && WinID != hAhkSpy)
-		{
-			oZoom.NewSpot := 1, oZoom.MouseX := mX, oZoom.MouseY := mY
-			UpdateWindow(oZoom.hdcSrc, mX - oZoom.nXOriginSrcOffset, mY - oZoom.nYOriginSrcOffset)
-		}
-	}
-	If oZoom.NewSpot && (!a || one && b || a && !b) 
-		Memory()
-	If a
-		SetTimer, Magnify, -10
-	; ToolTip % A_TickCount "`nMagnify", 4, 4, 4
-}
-
-Redraw() {
-	UpdateWindow(oZoom.hdcMemory, oZoom.nXOriginSrc - oZoom.nXOriginSrcOffset, oZoom.nYOriginSrc - oZoom.nYOriginSrcOffset)
-}
-
-Memory() {    
-	SysGet, VSX, 76
-	SysGet, VSY, 77
-	SysGet, VSWidth, 78
-	SysGet, VSHeight, 79
-	oZoom.nXOriginSrc := oZoom.MouseX - VSX, oZoom.nYOriginSrc := oZoom.MouseY - VSY
-	hBM := DllCall("Gdi32.Dll\CreateCompatibleBitmap", "Ptr", oZoom.hdcSrc, "Int", VSWidth, "Int", VSHeight)
-	DllCall("Gdi32.Dll\SelectObject", "Ptr", oZoom.hdcMemory, "Ptr", hBM), DllCall("DeleteObject", "Ptr", hBM)
-	StretchBlt(oZoom.hdcMemory, 0, 0, VSWidth, VSHeight, oZoom.hdcSrc, VSX, VSY, VSWidth, VSHeight)
-	oZoom.NewSpot := 0
-	; ToolTip % VSX  "`n" VSY "`nMemory" 
-}
-
-	; _________________________________________________ Gdip _________________________________________________
-
-UpdateWindow(Src, X, Y) { 
-	hbm := CreateDIBSection(oZoom.nWidthDest, oZoom.nHeightDest, oZoom.hDCBuf)
-	DllCall("SelectObject", "UPtr", oZoom.hDCBuf, "UPtr", hbm)
-	StretchBlt(oZoom.hDCBuf, oZoom.conX, oZoom.conY, oZoom.nWidthDest, oZoom.nHeightDest
-	, Src, X, Y, oZoom.nWidthSrc, oZoom.nHeightSrc)
-	For k, v In oZoom.oMarkers[oZoom.Mark]
-		StretchBlt(oZoom.hDCBuf, v.x, v.y, v.w, v.h, oZoom.hDCBuf, v.x, v.y, v.w, v.h, 0x5A0049)	; PATINVERT
-	DllCall("gdiplus\GdipCreateBitmapFromHBITMAP", "UPtr", hbm, "UPtr", 0, "UPtr*", pBitmap) 
-	DllCall("SelectObject", "UPtr", oZoom.hDCBuf, "UPtr", hbm)  
-	DllCall("gdiplus\GdipCreateFromHDC", "UPtr", oZoom.hDCBuf, "UPtr*", G)   
-	DllCall("gdiplus\GdipSetInterpolationMode", "UPtr", G, "int", 2)
-	DrawImage(G, pBitmap, 0, 0, oZoom.LWWidth, oZoom.LWHeight)
-	If oZoom.Show
-		UpdateLayeredWindow(oZoom.hLW, oZoom.hDCBuf, oZoom.LWWidth, oZoom.LWHeight)   
-	DllCall("DeleteObject", "UPtr", hbm)
-	DllCall("gdiplus\GdipDeleteGraphics", "UPtr", G)
-	DllCall("gdiplus\GdipDisposeImage", "UPtr", pBitmap)
-}
-
-GdipStartup() {
-	if !DllCall("GetModuleHandle", "str", "gdiplus", UPtr)
-		DllCall("LoadLibrary", "str", "gdiplus")
-	VarSetCapacity(si, A_PtrSize = 8 ? 24 : 16, 0), si := Chr(1)
-	DllCall("gdiplus\GdiplusStartup", A_PtrSize ? "UPtr*" : "uint*", pToken, UPtr, &si, UPtr, 0)
-	Return pToken
-}
-
-GdipShutdown(pToken) {
-	DllCall("gdiplus\GdiplusShutdown", UPtr, pToken)
-	if hModule := DllCall("GetModuleHandle", "str", "gdiplus", UPtr)
-		DllCall("FreeLibrary", UPtr, hModule)
-	Return 0
-}
-
-UpdateLayeredWindow(hwnd, hdc, w, h) { 
-	Return DllCall("UpdateLayeredWindow"
-					, UPtr, hwnd
-					, UPtr, 0
-					, UPtr, 0
-					, "int64*", w|h<<32
-					, UPtr, hdc
-					, "int64*", 0
-					, "uint", 0
-					, "UInt*", 33488896  ;	(Alpha := 255)<<16|1<<24
-					, "uint", 2)
-}
-
-StretchBlt(ddc, dx, dy, dw, dh, sdc, sx, sy, sw, sh, Raster=0x40CC0020) {  ;	0x00CC0020|0x40000000
-	Return DllCall("gdi32\StretchBlt"
-					, UPtr, ddc
-					, "int", dx
-					, "int", dy
-					, "int", dw
-					, "int", dh
-					, UPtr, sdc
-					, "int", sx
-					, "int", sy
-					, "int", sw
-					, "int", sh
-					, "uint", Raster)
-}
-
-CreateDIBSection(w, h, hdc) {
-	Static bi, _ := VarSetCapacity(bi, 40, 0)
-	NumPut(w, bi, 4, "uint")
-	NumPut(h, bi, 8, "uint")
-	NumPut(40, bi, 0, "uint")
-	NumPut(1, bi, 12, "ushort")
-	NumPut(0, bi, 16, "uInt")
-	NumPut(32, bi, 14, "ushort")
-	Return DllCall("CreateDIBSection"
-					, "UPtr", hdc
-					, "UPtr", &bi
-					, "uint", 0
-					, "UPtr*",
-					, "UPtr", 0
-					, "uint", 0, "UPtr")
-}
-
-DrawImage(pGraphics, pBitmap, dx, dy, dw, dh) {
-	Return DllCall("gdiplus\GdipDrawImageRectRect"
-				, "UPtr", pGraphics
-				, "UPtr", pBitmap
-				, "float", dx
-				, "float", dy
-				, "float", dw
-				, "float", dh
-				, "float", dx
-				, "float", dy
-				, "float", dw
-				, "float", dh
-				, "int", 2
-				, "UPtr",
-				, "UPtr", 0
-				, "UPtr", 0)
-}
-
-ReleaseDC(hdc, hwnd=0) {
-	Return DllCall("ReleaseDC", "UPtr", hwnd, "UPtr", hdc)
-}
-
-DeleteDC(hdc) {
-	Return DllCall("DeleteDC", "UPtr", hdc)
-}
-
-CreateCompatibleDC(hdc=0) {
-	Return DllCall("CreateCompatibleDC", "UPtr", hdc)
-}
-
 	;)
-	
