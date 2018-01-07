@@ -3604,23 +3604,20 @@ Memory() {
 
 	; _________________________________________________ Gdip _________________________________________________
 
-UpdateWindow(Src, X, Y) {
-	WinGetPos, WinX, WinY, , , % "ahk_id" oZoom.hGui
-	oZoom.LWX := WinX + 1, oZoom.LWY := WinY + 46
+UpdateWindow(Src, X, Y) { 
 	hbm := CreateDIBSection(oZoom.nWidthDest, oZoom.nHeightDest, oZoom.hDCBuf)
-	DllCall("SelectObject", "UPtr", oZoom.hDCBuf, "UPtr", hbm)   ;	obm :=  
+	DllCall("SelectObject", "UPtr", oZoom.hDCBuf, "UPtr", hbm)
 	StretchBlt(oZoom.hDCBuf, oZoom.conX, oZoom.conY, oZoom.nWidthDest, oZoom.nHeightDest
 	, Src, X, Y, oZoom.nWidthSrc, oZoom.nHeightSrc)
 	For k, v In oZoom.oMarkers[oZoom.Mark]
 		StretchBlt(oZoom.hDCBuf, v.x, v.y, v.w, v.h, oZoom.hDCBuf, v.x, v.y, v.w, v.h, 0x5A0049)	; PATINVERT
-	DllCall("gdiplus\GdipCreateBitmapFromHBITMAP", "UPtr", hbm, "UPtr", 0, "UPtr*", pBitmap)
-	; DllCall("SelectObject", "UPtr", oZoom.hDCBuf, "UPtr", obm)
-	DllCall("SelectObject", "UPtr", oZoom.hDCBuf, "UPtr", hbm)  ;	hDCBuf2
-	DllCall("gdiplus\GdipCreateFromHDC", "UPtr", oZoom.hDCBuf, "UPtr*", G)  ;	hDCBuf2
+	DllCall("gdiplus\GdipCreateBitmapFromHBITMAP", "UPtr", hbm, "UPtr", 0, "UPtr*", pBitmap) 
+	DllCall("SelectObject", "UPtr", oZoom.hDCBuf, "UPtr", hbm)  
+	DllCall("gdiplus\GdipCreateFromHDC", "UPtr", oZoom.hDCBuf, "UPtr*", G)   
+	DllCall("gdiplus\GdipSetInterpolationMode", "UPtr", G, "int", 2)
 	DrawImage(G, pBitmap, 0, 0, oZoom.LWWidth, oZoom.LWHeight)
 	If oZoom.Show
-		UpdateLayeredWindow(oZoom.hLW, oZoom.hDCBuf, oZoom.LWX, oZoom.LWY, oZoom.LWWidth, oZoom.LWHeight)  ;	hDCBuf2
-	; DllCall("SelectObject", "UPtr", oZoom.hDCBuf, "UPtr", obm)   ;	hDCBuf2
+		UpdateLayeredWindow(oZoom.hLW, oZoom.hDCBuf, oZoom.LWWidth, oZoom.LWHeight)   
 	DllCall("DeleteObject", "UPtr", hbm)
 	DllCall("gdiplus\GdipDeleteGraphics", "UPtr", G)
 	DllCall("gdiplus\GdipDisposeImage", "UPtr", pBitmap)
@@ -3641,13 +3638,11 @@ GdipShutdown(pToken) {
 	Return 0
 }
 
-UpdateLayeredWindow(hwnd, hdc, x, y, w, h) {
-	Static pt, _ := VarSetCapacity(pt, 8)
-	NumPut(x, pt, 0, "UInt"), NumPut(y, pt, 4, "UInt")
+UpdateLayeredWindow(hwnd, hdc, w, h) { 
 	Return DllCall("UpdateLayeredWindow"
 					, UPtr, hwnd
 					, UPtr, 0
-					, UPtr, &pt
+					, UPtr, 0
 					, "int64*", w|h<<32
 					, UPtr, hdc
 					, "int64*", 0
