@@ -1844,7 +1844,7 @@ WM_NCLBUTTONDOWN(wp) {
 	{
 		SetTimer, Minimize, -10
 		Return 0
-	} 
+	}
 }
 
 WM_LBUTTONDOWN() {
@@ -2392,7 +2392,7 @@ MsgConfirm(Info, Title, hWnd) {
 	MouseGetPos, X, Y
 	x := X - (WinW / 2)
 	y := Y - WinH - 10
-	Gui, MsgBox: Show, Hide x%x% y%y%, % Title
+	Gui, MsgBox: Show, NA Hide x%x% y%y%, % Title
 	Gui, MsgBox: Show, x%x% y%y%, % Title
 	GuiControl, MsgBox:+Default, No
 	GuiControl, MsgBox:Focus, No
@@ -3144,7 +3144,7 @@ ListLines Off
 SetBatchLines,-1
 CoordMode, Mouse, Screen
 CoordMode, ToolTip, Screen
-	
+
 Global oZoom := {}, isZoom := 1, hAhkSpy, MsgAhkSpyZoom, ActiveNoPause, SpyActive
 If !oZoom.pToken := GdipStartup()
 {
@@ -3214,11 +3214,11 @@ ZoomCreate() {
 
 	Gui, Zoom: Show, % "NA Hide w" GuiW " h" GuiH, AhkSpyZoom
 	Gui, Zoom: +MinSize
-	
+
 	oZoom.hdcSrc := DllCall("GetDC", "UPtr", 0, "UPtr")
 	oZoom.hDCBuf := CreateCompatibleDC()
 	oZoom.hdcMemory := CreateCompatibleDC()
-	
+
 	oZoom.hGui := hGui
 	oZoom.hStatic := hStatic
 	oZoom.hTBGui := hTBGui
@@ -3373,17 +3373,17 @@ ZoomHide() {
 
 ShowZoom(Show) {
 	oZoom.Show := Show
-	If Show { 
+	If Show {
 		WinGetPos, WinX, WinY, WinW, , ahk_id %hAhkSpy%
 		oZoom.LWX := WinX + WinW + 1, oZoom.LWY := WinY + 46
 		Gui,  Zoom: Show, % "NA Hide x" WinX + WinW " y" WinY
-		Gui,  LW: Show, % "NA x" oZoom.LWX " y" oZoom.LWY " w" 0 " h" 0 
+		Gui,  LW: Show, % "NA x" oZoom.LWX " y" oZoom.LWY " w" 0 " h" 0
 		Gui,  Zoom: Show, NA
 		try Gui, LW: Show, % "NA x" oZoom.LWX " y" oZoom.LWY " w" oZoom.LWWidth " h" oZoom.LWHeight 
 		Return
 	}
-	Gui,  LW: Show, % "NA w" 0 " h" 0  ;	нельзя применять Hide, иначе после появления и ресайза остаётся прозрачный след 
-	Gui,  Zoom: Show, NA Hide  
+	Gui,  LW: Show, % "NA w" 0 " h" 0  ;	нельзя применять Hide, иначе после появления и ресайза остаётся прозрачный след
+	Gui,  Zoom: Show, NA Hide
 }
 
 	; _________________________________________________ Events _________________________________________________
@@ -3409,8 +3409,8 @@ ZoomOnClose() {
 }
 
 	; wParam: 0 hide, 1 show, 2 пауза AhkSpy, 3 однократный зум, 4 MemoryZoomSize, 5 MinSize, 6 ActiveNoPause, 7 WinActive AhkSpy, 8 Suspend, 9 Menu, 10 Hotkey, 11 MIN
-	
-Zoom_Msg(wParam, lParam) { 
+
+Zoom_Msg(wParam, lParam) {
 	If wParam = 0  ;	hide
 		ZoomHide()
 	Else If wParam = 1  ;	show
@@ -3437,13 +3437,13 @@ Zoom_Msg(wParam, lParam) {
 	Else If wParam = 10  ;	Menu
 		ZoomRules("Hotkey", lParam)
 	Else If wParam = 11  ;	MIN
-		ZoomRules("MIN", 1)  
+		ZoomRules("MIN", 1)
 }
 
-Z_MsgZoom(wParam, lParam) { 
+Z_MsgZoom(wParam, lParam) {
 	obj := Func("Zoom_Msg").Bind(wParam, lParam)
 	SetTimer, % obj, -1
-	Return 0 
+	Return 0
 }
 
 ZoomRules(Rule, value) {
@@ -3457,7 +3457,7 @@ ZoomRules(Rule, value) {
 	}
 	StrPut(!!value, &Rules + Arr[Rule] - 1, 1, "CP0")
 	If oZoom.Work := !(StrGet(&Rules, Len, "CP0") + 0)
-		SetTimer, Magnify, -1 
+		SetTimer, Magnify, -1
 	; ToolTip % Rule "`n" Arr[Rule] "`n" value "`n`n`n"  (StrGet(&Rules, Len, "CP0")) "`n123456789" "`n" oZoom.Work,4,55,6
 }
 
@@ -3468,7 +3468,7 @@ EVENT_OBJECT_DESTROY(hWinEventHook, event, hwnd) {
 
 EVENT_SYSTEM_MINIMIZESTART(hWinEventHook, event, hwnd) {
 	If (hwnd != hAhkSpy)
-		Return  
+		Return
 	ZoomRules("MIN", 1)
 	If oZoom.Show
 		oZoom.Minimize := 1, ShowZoom(0)
@@ -3489,7 +3489,7 @@ EVENT_SYSTEM_MINIMIZEEND(hWinEventHook, event, hwnd) {
 
 EVENT_SYSTEM_MOVESIZESTART(hWinEventHook, event, hwnd) {
 	If (hwnd != hAhkSpy)
-		Return 
+		Return
 	ZoomRules("MOVE", 1)
 }
 
@@ -3578,7 +3578,7 @@ Magnify(one = 0) {
 			UpdateWindow(oZoom.hdcSrc, mX - oZoom.nXOriginSrcOffset, mY - oZoom.nYOriginSrcOffset)
 		}
 	}
-	If oZoom.NewSpot && (!a || one && b || a && !b) 
+	If oZoom.NewSpot && (!a || one && b || a && !b)
 		Memory()
 	If a
 		SetTimer, Magnify, -10
@@ -3589,7 +3589,7 @@ Redraw() {
 	UpdateWindow(oZoom.hdcMemory, oZoom.nXOriginSrc - oZoom.nXOriginSrcOffset, oZoom.nYOriginSrc - oZoom.nYOriginSrcOffset)
 }
 
-Memory() {    
+Memory() {
 	SysGet, VSX, 76
 	SysGet, VSY, 77
 	SysGet, VSWidth, 78
@@ -3599,25 +3599,25 @@ Memory() {
 	DllCall("Gdi32.Dll\SelectObject", "Ptr", oZoom.hdcMemory, "Ptr", hBM), DllCall("DeleteObject", "Ptr", hBM)
 	StretchBlt(oZoom.hdcMemory, 0, 0, VSWidth, VSHeight, oZoom.hdcSrc, VSX, VSY, VSWidth, VSHeight)
 	oZoom.NewSpot := 0
-	; ToolTip % VSX  "`n" VSY "`nMemory" 
+	; ToolTip % VSX  "`n" VSY "`nMemory"
 }
 
 	; _________________________________________________ Gdip _________________________________________________
 
-UpdateWindow(Src, X, Y) { 
+UpdateWindow(Src, X, Y) {
 	hbm := CreateDIBSection(oZoom.nWidthDest, oZoom.nHeightDest, oZoom.hDCBuf)
 	DllCall("SelectObject", "UPtr", oZoom.hDCBuf, "UPtr", hbm)
 	StretchBlt(oZoom.hDCBuf, oZoom.conX, oZoom.conY, oZoom.nWidthDest, oZoom.nHeightDest
 	, Src, X, Y, oZoom.nWidthSrc, oZoom.nHeightSrc)
 	For k, v In oZoom.oMarkers[oZoom.Mark]
 		StretchBlt(oZoom.hDCBuf, v.x, v.y, v.w, v.h, oZoom.hDCBuf, v.x, v.y, v.w, v.h, 0x5A0049)	; PATINVERT
-	DllCall("gdiplus\GdipCreateBitmapFromHBITMAP", "UPtr", hbm, "UPtr", 0, "UPtr*", pBitmap) 
-	DllCall("SelectObject", "UPtr", oZoom.hDCBuf, "UPtr", hbm)  
-	DllCall("gdiplus\GdipCreateFromHDC", "UPtr", oZoom.hDCBuf, "UPtr*", G)   
-	DllCall("gdiplus\GdipSetInterpolationMode", "UPtr", G, "int", 2)
+	DllCall("gdiplus\GdipCreateBitmapFromHBITMAP", "UPtr", hbm, "UPtr", 0, "UPtr*", pBitmap)
+	DllCall("SelectObject", "UPtr", oZoom.hDCBuf, "UPtr", hbm)
+	DllCall("gdiplus\GdipCreateFromHDC", "UPtr", oZoom.hDCBuf, "UPtr*", G)
+	DllCall("gdiplus\GdipSetInterpolationMode", "UPtr", G, "int", 5)
 	DrawImage(G, pBitmap, 0, 0, oZoom.LWWidth, oZoom.LWHeight)
 	If oZoom.Show
-		UpdateLayeredWindow(oZoom.hLW, oZoom.hDCBuf, oZoom.LWWidth, oZoom.LWHeight)   
+		UpdateLayeredWindow(oZoom.hLW, oZoom.hDCBuf, oZoom.LWWidth, oZoom.LWHeight)
 	DllCall("DeleteObject", "UPtr", hbm)
 	DllCall("gdiplus\GdipDeleteGraphics", "UPtr", G)
 	DllCall("gdiplus\GdipDisposeImage", "UPtr", pBitmap)
@@ -3638,7 +3638,7 @@ GdipShutdown(pToken) {
 	Return 0
 }
 
-UpdateLayeredWindow(hwnd, hdc, w, h) { 
+UpdateLayeredWindow(hwnd, hdc, w, h) {
 	Return DllCall("UpdateLayeredWindow"
 					, UPtr, hwnd
 					, UPtr, 0
@@ -3714,3 +3714,4 @@ CreateCompatibleDC(hdc=0) {
 }
 
 	;)
+	
