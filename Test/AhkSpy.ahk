@@ -827,7 +827,7 @@ GetMenu(hWnd) {
 	hMenu := ErrorLevel
 	If !hMenu || (hMenu + 0 = "")
 		Return
-	Return _T1 " ( Menu text ) </span>" _BT1 " id='copy_menutext'> copy " _BT2 _DB
+	Return _T1 " ( Menu text ) </span><a></a>" _BT1 " id='copy_menutext'> copy " _BT2 _DB
 	. _BT1 " id='menu_idview'> id - " (MenuIdView ? "view" : "hide") " " _BT2 _T2 _LPRE " id='pre_menutext'>" RTrim(GetMenuText(hMenu), "`n")  _PRE2
 }
 
@@ -2294,7 +2294,7 @@ GetCLSIDExplorer(hwnd) {
 ViewStyles(elem) {
 	elem.innerText := (w_ShowStyles := !w_ShowStyles) ? " show styles " : " hide styles "
 	If w_ShowStyles
-		Styles := GetStyles(oDoc.getElementById("c_Style").innerText, oDoc.getElementById("c_ExStyle").innerText)
+		Styles := "<a></a>" GetStyles(oDoc.getElementById("c_Style").innerText, oDoc.getElementById("c_ExStyle").innerText)
 	oDoc.getElementById("WinStyles").innerHTML := Styles
 	HTML_Win := oBody.innerHTML
 }
