@@ -53,7 +53,7 @@ Global ThisMode := IniRead("StartMode", "Control"), LastModeSave := (ThisMode = 
 , StateUpdate := IniRead("StateUpdate", 0), SendMode := IniRead("SendMode", "send"), SendModeStr := Format("{:L}", SendMode)
 , StateAllwaysSpot := IniRead("AllwaysSpot", 0), ScrollPos := {}, AccCoord := [], oOther := {}, oFind := {}, Edits := [], oMS := {}
 , hGui, hTBGui, hActiveX, hFindGui, oDoc, ShowMarker, isFindView, isIE, isPaused, w_ShowStyles, MsgAhkSpyZoom, Sleep, oShowAccMarkers, oShowMarkers
-, HTML_Win, HTML_Control, HTML_Hotkey, rmCtrlX, rmCtrlY, widthTB, FullScreenMode, hColorProgress
+, HTML_Win, HTML_Control, HTML_Hotkey, rmCtrlX, rmCtrlY, widthTB, FullScreenMode, hColorProgress, hFindAllText
 , ClipAdd_Before := 0, ClipAdd_Delimiter := "`r`n", oDocEl, oJScript, oBody, isConfirm, isAhkSpy := 1, WordWrap := IniRead("WordWrap", 0)
 , MoveTitles := IniRead("MoveTitles", 1), PreOverflowHide := IniRead("PreOverflowHide", 1), DetectHiddenText := IniRead("DetectHiddenText", "on")
 , MenuIdView := IniRead("MenuIdView", 0)
@@ -126,7 +126,7 @@ GuiControl, F: Move, FindUpDown, h26 w52
 Gui, F: Font, % (A_ScreenDPI = 120 ? "" : "s10")
 Gui, F: Add, Text, x+10 yp+1 h24 c2F2F2F +0x201 gFindOption, % " case sensitive "
 Gui, F: Add, Text, x+10 yp hp c2F2F2F +0x201 gFindOption, % " whole word "
-Gui, F: Add, Text, x+3 yp hp +0x201 w52 vFindMatches
+Gui, F: Add, Text, x+3 yp hp +0x201 w52 vFindMatches HWNDhFindAllText
 Gui, F: Add, Button, % "+0x300 +0xC00 y3 h20 w20 gFindHide x" widthTB - 21, X
 
 Menu, Sys, Add, Backlight allways, Sys_Backlight
@@ -428,7 +428,7 @@ Mode_Win:
 	SendMessage, 0xC, 0, &TitleText, , ahk_id %hGui%
 	Write_Win(), oDocEl.scrollLeft := ScrollPos[ThisMode,1], oDocEl.scrollTop := ScrollPos[ThisMode,2]
 	If isFindView
-		FindSearch(1)
+		FindNewText()
 
 Loop_Win:
 	If ((WinActive("ahk_id" hGui) && !ActiveNoPause) || Sleep = 1)
@@ -499,7 +499,7 @@ Spot_Win(NotHTML = 0) {
 		. _LPRE  "><pre id='wintextcon'>" TransformHTML(WinText) "</pre>" _PRE2
 	MenuText := GetMenu(WinID)
 	CoordMode, Mouse
-	MouseGetPos, WinXS, WinYS
+	MouseGetPos, WinXS, WinYS 
 	PixelGetColor, ColorRGB, %WinXS%, %WinYS%, RGB
 	GuiControl, TB: -Redraw, ColorProgress
 	GuiControl, % "TB: +c" SubStr(ColorRGB, 3), ColorProgress
@@ -636,7 +636,7 @@ Mode_Control:
 	SendMessage, 0xC, 0, &TitleText, , ahk_id %hGui%
 	Write_Control(), oDocEl.scrollLeft := ScrollPos[ThisMode,1], oDocEl.scrollTop := ScrollPos[ThisMode,2]
 	If isFindView
-		FindSearch(1)
+		FindNewText()
 
 Loop_Control:
 	If (WinActive("ahk_id" hGui) && !ActiveNoPause) || Sleep = 1
@@ -1226,8 +1226,8 @@ Mode_Hotkey:
 	GuiControl, TB: -0x0001, But3
 	WinActivate ahk_id %hGui%
 	GuiControl, 1:Focus, oDoc
-	If isFindView
-		FindSearch(1)
+	If isFindView 
+		FindNewText()
 	Return
 
 Write_HotkeyHTML(K) {
@@ -1383,7 +1383,7 @@ Write_HotkeyHTML(K) {
 	#hotkeybox {
 		position: relative;
 		white-space: pre;
-		left: 5px;
+		left: 8px;
 	}
 	#edithotkey, #keyname, #editkeyname {
 		font-size: 1.2em;
@@ -1847,7 +1847,14 @@ WM_NCLBUTTONDOWN(wp) {
 	}
 }
 
-WM_LBUTTONDOWN() {
+WM_LBUTTONDOWN(wp, lp, msg, hwnd) {
+	If (hwnd = hFindGui)
+	{
+		MouseGetPos, , , , hControl, 2
+		If (hControl = hFindAllText) 
+			SetTimer, FindAll, -250
+		Return
+	}
 	If A_GuiControl = ColorProgress
 	{
 		If ThisMode = Hotkey
@@ -2596,6 +2603,12 @@ FindNew(Hwnd) {
 	hFunc := Func("FindSearch").Bind(1)
 	SetTimer, FindAll, -150
 	SetTimer, % hFunc, -150
+}
+
+FindNewText() {
+	hFunc := Func("FindSearch").Bind(1)
+	SetTimer, % hFunc, -1
+	SetTimer, FindAll, -150
 }
 
 FindNext(Hwnd) {
@@ -3714,4 +3727,3 @@ CreateCompatibleDC(hdc=0) {
 }
 
 	;)
-	
