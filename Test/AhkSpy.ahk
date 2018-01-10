@@ -424,9 +424,9 @@ Mode_Win:
 	ThisMode := "Win"
 	If (HTML_Win = "")
 		Spot_Win(1)
+	Write_Win(), oDocEl.scrollLeft := ScrollPos[ThisMode,1], oDocEl.scrollTop := ScrollPos[ThisMode,2]
 	TitleText := (TitleTextP1 := "AhkSpy - Window") . TitleTextP2
 	SendMessage, 0xC, 0, &TitleText, , ahk_id %hGui%
-	Write_Win(), oDocEl.scrollLeft := ScrollPos[ThisMode,1], oDocEl.scrollTop := ScrollPos[ThisMode,2]
 	If isFindView
 		FindNewText()
 
@@ -632,9 +632,9 @@ Mode_Control:
 	ThisMode := "Control"
 	If (HTML_Control = "")
 		Spot_Control(1)
+	Write_Control(), oDocEl.scrollLeft := ScrollPos[ThisMode,1], oDocEl.scrollTop := ScrollPos[ThisMode,2]
 	TitleText := (TitleTextP1 := "AhkSpy - Control") . TitleTextP2
 	SendMessage, 0xC, 0, &TitleText, , ahk_id %hGui%
-	Write_Control(), oDocEl.scrollLeft := ScrollPos[ThisMode,1], oDocEl.scrollTop := ScrollPos[ThisMode,2]
 	If isFindView
 		FindNewText()
 
@@ -1219,9 +1219,9 @@ Mode_Hotkey:
 		HTML_%ThisMode% := oBody.innerHTML
 	ThisMode := "Hotkey", Hotkey_Hook(!isPaused)
 	TitleText := (TitleTextP1 := "AhkSpy - Button") . TitleTextP2
-	oDocEl.scrollLeft := ScrollPos[ThisMode,1], oDocEl.scrollTop := ScrollPos[ThisMode,2]
 	ShowMarker ? (HideMarker(), HideAccMarker()) : 0
 	(HTML_Hotkey != "") ? Write_Hotkey() : Write_HotkeyHTML({Mods:"Waiting pushed buttons..."})
+	oDocEl.scrollLeft := ScrollPos[ThisMode,1], oDocEl.scrollTop := ScrollPos[ThisMode,2]
 	SendMessage, 0xC, 0, &TitleText, , ahk_id %hGui%
 	GuiControl, TB: -0x0001, But3
 	WinActivate ahk_id %hGui%
@@ -1303,9 +1303,8 @@ Write_HotkeyHTML(K) {
 	%_PRE2%
 	%_T1% ( Get name or code ) </span>%_BT1% id='paste_keyname'> paste %_BT2%%_T2%
 	<br><span id='hotkeybox'>
-	%_INPHK% id='edithotkey' value='%inp_hotkey%'><button id='keyname'> &#8250 &#8250 &#8250 </button>%_INPHK% id='editkeyname' value='%inp_keyname%'></input>
-	</span>
-	%_PRE1%%_PRE2%
+	%_INPHK% id='edithotkey' value='%inp_hotkey%'><button id='keyname'> &#8250 &#8250 &#8250 </button>%_INPHK% id='editkeyname' value='%inp_keyname%'></input>`n
+	</span> 
 	%_T0%
 	</body>
 
@@ -1383,7 +1382,8 @@ Write_HotkeyHTML(K) {
 	#hotkeybox {
 		position: relative;
 		white-space: pre;
-		left: 8px;
+		left: 5px;
+		padding-bottom: 140px;
 	}
 	#edithotkey, #keyname, #editkeyname {
 		font-size: 1.2em;
@@ -2061,7 +2061,7 @@ ShowMarkersCreate(arr, color) {
 	{
 		Gui, New
 		Gui, Margin, 0, 0
-		Gui, -DPIScale  +HWNDHWND -Caption +Owner +0x40000000 +E0x20 -0x80000000 +E0x08000000 +AlwaysOnTop
+		Gui, -DPIScale +HWNDHWND -Caption +Owner +0x40000000 +E0x20 -0x80000000 +E0x08000000 +AlwaysOnTop +ToolWindow
 		Gui, Color, %color%
 		WinSet, TransParent, 250, ahk_id %HWND%
 		%arr%[A_Index] := HWND
@@ -3207,7 +3207,7 @@ ZoomCreate() {
 		GuiW := IniRead("MemoryZoomSizeW", oZoom.GuiMinW), GuiH := IniRead("MemoryZoomSizeH", oZoom.GuiMinH)
 	Else
 		GuiW := oZoom.GuiMinW, GuiH := oZoom.GuiMinH
-	Gui, Zoom: -Caption -DPIScale +Border  +LabelZoomOn +HWNDhGui +AlwaysOnTop +E0x08000000    ;	+Owner%hAhkSpy%
+	Gui, Zoom: -Caption -DPIScale +Border +LabelZoomOn +HWNDhGui +AlwaysOnTop +E0x08000000    ;	+Owner%hAhkSpy%
 	Gui, Zoom: Color, F0F0F0
 	Gui, Zoom: Add, Text, hwndhStatic +Border
 	DllCall("SetClassLong", "Ptr", hGui, "int", -26
