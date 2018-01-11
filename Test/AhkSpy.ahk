@@ -1284,7 +1284,7 @@ Write_HotkeyHTML(K) {
 	HTML_Hotkey =
 	( Ltrim
 	<body id='body'>
-	%_T1% ( Pushed buttons ) </span>%_BT1% id='pause_button'> pause %_BT2%%_T2%
+	%_T1% ( Pushed buttons ) </span>%_BT1% id='pause_button'> pause %_BT2%%_DB%%_BT1% id='LButton_Hotkey'> LButton %_BT2%%_T2%
 	%_PRE1%<br><span name='MS:'>%Mods%%KeyName%</span>%NotPhysical%<br><br>%LRMStr%<br>%_PRE2%
 	%_T1% ( Command syntax ) </span>%_BT1% id='SendCode'> %SendCode% %_BT2%%_DB%%_BT1% id='SendMode'> %SendModeStr% %_BT2%%_T2%
 	%_PRE1%<br><span><span name='MS:'>%Prefix%%Hotkey%::</span>%FComment%</span>%LRPStr%
@@ -1304,7 +1304,7 @@ Write_HotkeyHTML(K) {
 	%_T1% ( Get name or code ) </span>%_BT1% id='paste_keyname'> paste %_BT2%%_T2%
 	<br><span id='hotkeybox'>
 	%_INPHK% id='edithotkey' value='%inp_hotkey%'><button id='keyname'> &#8250 &#8250 &#8250 </button>%_INPHK% id='editkeyname' value='%inp_keyname%'></input>`n
-	</span> 
+	</span>
 	%_T0%
 	</body>
 
@@ -1372,7 +1372,7 @@ Write_HotkeyHTML(K) {
 	#SendCode, #SendMode {
 		text-align: center;
 		position: absolute;
-	}
+	} 
 	#SendCode {
 		width: 3em; left: 12em;
 	}
@@ -1383,7 +1383,6 @@ Write_HotkeyHTML(K) {
 		position: relative;
 		white-space: pre;
 		left: 5px;
-		padding-bottom: 140px;
 	}
 	#edithotkey, #keyname, #editkeyname {
 		font-size: 1.2em;
@@ -1429,7 +1428,9 @@ Hotkey_Main(In) {
 	,"RAlt":">!","RCtrl":">^","RShift":">+","RWin":">#"}, K := {}, ModsOnly
 	Local IsMod, sIsMod
 	IsMod := In.IsMod
-	If (In.Opt = "Down") {
+	If (In = "LButton")
+		GoTo, Hotkey_PressLButton 
+	Else If (In.Opt = "Down") {
 		If (K["M" IsMod] != "")
 			Return 1
 		sIsMod := SubStr(IsMod, 2)
@@ -1473,21 +1474,28 @@ Hotkey_Main(In) {
 	Func(Hotkey_Arr("Func")).Call(K)
 	Return 1
 
+Hotkey_PressLButton:
+	ThisHotkey := "LButton"
+	K.NFP := 0
+	GoTo, Hotkey_Drop
+	
 Hotkey_PressMouseRButton:
 	If !WM_CONTEXTMENU() && !Hotkey_Hook(0)
 		Return
-
+	
 Hotkey_PressJoy:
 Hotkey_PressMouse:
-	K.NFP := !GetKeyState(A_ThisHotkey, "P")
+	ThisHotkey := A_ThisHotkey
+	K.NFP := !GetKeyState(ThisHotkey, "P")
+Hotkey_Drop:
 	K.Time := A_TickCount
 	K.Mods := K.MCtrl K.MAlt K.MShift K.MWin
 	K.LRMods := K.MLCtrl K.MRCtrl K.MLAlt K.MRAlt K.MLShift K.MRShift K.MLWin K.MRWin
 	K.Pref := K.PCtrl K.PAlt K.PShift K.PWin
 	K.LRPref := K.PLCtrl K.PRCtrl K.PLAlt K.PRAlt K.PLShift K.PRShift K.PLWin K.PRWin
-	K.HK := K.Name := K.TK := A_ThisHotkey, ModsOnly := K.UP := K.IsCode := 0, K.IsMod := K.SC := ""
+	K.HK := K.Name := K.TK := ThisHotkey, ModsOnly := K.UP := K.IsCode := 0, K.IsMod := K.SC := ""
 	K.IsJM := A_ThisLabel = "Hotkey_PressJoy" ? 1 : 2
-	K.VK := A_ThisLabel = "Hotkey_PressJoy" ? "" : Format("vk{:X}", GetKeyVK(A_ThisHotkey))
+	K.VK := A_ThisLabel = "Hotkey_PressJoy" ? "" : Format("vk{:X}", GetKeyVK(ThisHotkey))
 	Func(Hotkey_Arr("Func")).Call(K)
 	Return 1
 }
@@ -2889,6 +2897,10 @@ Class Events {  ;	http://forum.script-coding.com/viewtopic.php?pid=82283#p82283
 		IniWrite(SendCode := {vk:"sc",sc:"name",name:"vk"}[SendCode], "SendCode")
 		oDoc.getElementById("SendCode").innerText := " " SendCode " "
 	}
+	LButton_Hotkey() {
+		If Hotkey_Arr("Hook") 
+			Hotkey_Main("LButton")
+	}
 	num_scroll(thisid) {
 		(OnHook := Hotkey_Arr("Hook")) ? Hotkey_Hook(0) : 0
 		SendInput, {%thisid%}
@@ -2991,6 +3003,8 @@ ButtonClick(oevent) {
 		Events.SendCode()
 	Else If (thisid = "SendMode")
 		Events.SendMode()
+	Else If (thisid = "LButton_Hotkey")
+		Events.LButton_Hotkey() 
 	Else If (thisid = "numlock" || thisid = "scrolllock")
 		Events.num_scroll(thisid)
 	Else If thisid = locale_change
