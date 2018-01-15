@@ -499,7 +499,7 @@ Spot_Win(NotHTML = 0) {
 		. _LPRE  "><pre id='wintextcon'>" TransformHTML(WinText) "</pre>" _PRE2
 	MenuText := GetMenu(WinID)
 	CoordMode, Mouse
-	MouseGetPos, WinXS, WinYS 
+	MouseGetPos, WinXS, WinYS
 	PixelGetColor, ColorRGB, %WinXS%, %WinYS%, RGB
 	GuiControl, TB: -Redraw, ColorProgress
 	GuiControl, % "TB: +c" SubStr(ColorRGB, 3), ColorProgress
@@ -1226,7 +1226,7 @@ Mode_Hotkey:
 	GuiControl, TB: -0x0001, But3
 	WinActivate ahk_id %hGui%
 	GuiControl, 1:Focus, oDoc
-	If isFindView 
+	If isFindView
 		FindNewText()
 	Return
 
@@ -1372,7 +1372,7 @@ Write_HotkeyHTML(K) {
 	#SendCode, #SendMode {
 		text-align: center;
 		position: absolute;
-	} 
+	}
 	#SendCode {
 		width: 3em; left: 12em;
 	}
@@ -1428,9 +1428,7 @@ Hotkey_Main(In) {
 	,"RAlt":">!","RCtrl":">^","RShift":">+","RWin":">#"}, K := {}, ModsOnly
 	Local IsMod, sIsMod
 	IsMod := In.IsMod
-	If (In = "LButton")
-		GoTo, Hotkey_PressLButton 
-	Else If (In.Opt = "Down") {
+	If (In.Opt = "Down") {
 		If (K["M" IsMod] != "")
 			Return 1
 		sIsMod := SubStr(IsMod, 2)
@@ -1459,6 +1457,9 @@ Hotkey_Main(In) {
 	}
 	Else If (In.Opt = "GetMod")
 		Return !!(K.PCtrl K.PAlt K.PShift K.PWin)
+	Else If (In = "LButton")
+		GoTo, Hotkey_PressLButton
+
 	K.UP := In.UP, K.IsJM := 0, K.Time := In.Time, K.NFP := In.NFP, K.IsMod := IsMod
 	K.Mods := K.MCtrl K.MAlt K.MShift K.MWin
 	K.LRMods := K.MLCtrl K.MRCtrl K.MLAlt K.MRAlt K.MLShift K.MRShift K.MLWin K.MRWin
@@ -1478,11 +1479,11 @@ Hotkey_PressLButton:
 	ThisHotkey := "LButton"
 	K.NFP := 0
 	GoTo, Hotkey_Drop
-	
+
 Hotkey_PressMouseRButton:
 	If !WM_CONTEXTMENU() && !Hotkey_Hook(0)
 		Return
-	
+
 Hotkey_PressJoy:
 Hotkey_PressMouse:
 	ThisHotkey := A_ThisHotkey
@@ -1859,7 +1860,7 @@ WM_LBUTTONDOWN(wp, lp, msg, hwnd) {
 	If (hwnd = hFindGui)
 	{
 		MouseGetPos, , , , hControl, 2
-		If (hControl = hFindAllText) 
+		If (hControl = hFindAllText)
 			SetTimer, FindAll, -250
 		Return
 	}
@@ -2827,9 +2828,13 @@ html =
 </script>
 
 <script id='hkinputevent' type="text/javascript">
-	function funchkinputevent(el, event) {
-		key1 = el, key2 = event;
+	function funchkinputevent(el, eventname) {
+		key1 = el, key2 = eventname;
 		hkinputevent.click();
+		if (eventname == 'focus')
+			el.style.border = "1px solid #4A8DFF";
+		else
+			el.style.border = "1px dotted black";
 	}
 </script>
 )
@@ -2837,8 +2842,8 @@ oDoc.Write("<!DOCTYPE html><head><meta http-equiv=""X-UA-Compatible"" content=""
 oDoc.Close()
 ComObjConnect(onhkinput := oDoc.getElementById("hkinputevent"), "onhkinput_")
 }
-	; _________________________________________________ Doc Events _________________________________________________
 
+	; _________________________________________________ Doc Events _________________________________________________
 
 onhkinput_onclick() {  ;	http://forum.script-coding.com/viewtopic.php?id=8206
 	If (oJScript.key2 = "focus")
@@ -2898,7 +2903,7 @@ Class Events {  ;	http://forum.script-coding.com/viewtopic.php?pid=82283#p82283
 		oDoc.getElementById("SendCode").innerText := " " SendCode " "
 	}
 	LButton_Hotkey() {
-		If Hotkey_Arr("Hook") 
+		If Hotkey_Arr("Hook")
 			Hotkey_Main("LButton")
 	}
 	num_scroll(thisid) {
@@ -3004,7 +3009,7 @@ ButtonClick(oevent) {
 	Else If (thisid = "SendMode")
 		Events.SendMode()
 	Else If (thisid = "LButton_Hotkey")
-		Events.LButton_Hotkey() 
+		Events.LButton_Hotkey()
 	Else If (thisid = "numlock" || thisid = "scrolllock")
 		Events.num_scroll(thisid)
 	Else If thisid = locale_change
@@ -3406,7 +3411,7 @@ ShowZoom(Show) {
 		Gui,  Zoom: Show, % "NA Hide x" WinX + WinW " y" WinY
 		Gui,  LW: Show, % "NA x" oZoom.LWX " y" oZoom.LWY " w" 0 " h" 0
 		Gui,  Zoom: Show, NA
-		try Gui, LW: Show, % "NA x" oZoom.LWX " y" oZoom.LWY " w" oZoom.LWWidth " h" oZoom.LWHeight 
+		try Gui, LW: Show, % "NA x" oZoom.LWX " y" oZoom.LWY " w" oZoom.LWWidth " h" oZoom.LWHeight
 		Return
 	}
 	Gui,  LW: Show, % "NA w" 0 " h" 0  ;	нельзя применять Hide, иначе после появления и ресайза остаётся прозрачный след
