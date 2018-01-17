@@ -1,13 +1,29 @@
-	;  AhkSpy
+/*
+###################################################################
+###################################################################
+###########     #   ######   #######        #######################
+##########      #   ######   ######    ##    ######################
+#########       #   ######   ######     ###########################
+########    #   #       ##   ##   ##       ###       ##   ##   ####
+#######    ##   #   #    #   #    #####      #   #    #   ##   ####
+######    ###   #   ##   #       ########    #   ##   #   ##   ####
+#####           #   ##   #   #    #    ##    #   #    #    #   ####
+####    #####   #   ##   #   ##   ##        ##       ###       ####
+##############################################   ###########   ####
+##############################################   ######   #    ####
+##############################################   #######      #####
+###AhkSpy##########################################################
+###################################################################
 
-	;  Автор - serzh82saratov
-	;  E-Mail: serzh82saratov@mail.ru
+    Автор - serzh82saratov
+    E-Mail: serzh82saratov@mail.ru
 
-	;  Спасибо wisgest за помощь в создании HTML интерфейса
-	;  Также благодарность teadrinker, Malcev, YMP, Irbis за их решения
-	;  Описание - http://forum.script-coding.com/viewtopic.php?pid=72459#p72459
-	;  Обсуждение - http://forum.script-coding.com/viewtopic.php?pid=72244#p72244
-	;  GitHub - https://github.com/serzh82saratov/AhkSpy/blob/master/AhkSpy.ahk
+    Спасибо wisgest за помощь в создании HTML интерфейса
+    Также благодарность teadrinker, Malcev, YMP, Irbis за их решения
+    Описание - http://forum.script-coding.com/viewtopic.php?pid=72459#p72459
+    Обсуждение - http://forum.script-coding.com/viewtopic.php?pid=72244#p72244
+    GitHub - https://raw.githubusercontent.com/serzh82saratov/AhkSpy/master/AhkSpy.ahk
+*/
 
 p1 = %1%
 If (p1 = "Zoom")
@@ -41,7 +57,7 @@ Global MemoryFontSize := IniRead("MemoryFontSize", 0)
 , HeigtButton := 32														;  Высота кнопок
 , PreMaxHeight := Round(A_ScreenHeight / 3 * 2)							;  Максимальная высота поля "Big text overflow hide" при которой добавлять прокрутку
 
-  HeightStart := 523													;  Высота окна при старте
+  HeightStart := 530													;  Высота окна при старте
   wKey := 142															;  Ширина кнопок
   wColor := wKey//2														;  Ширина цветного фрагмента
   RangeTimer := 100														;  Период опроса данных, увеличьте на слабом ПК
@@ -2347,6 +2363,11 @@ GetStyles(Style, ExStyle) {
 	Return Res
 }
 
+ChangeLocal(hWnd) {
+	Static WM_INPUTLANGCHANGEREQUEST := 0x0050, INPUTLANGCHANGE_FORWARD := 0x0002
+	SendMessage, WM_INPUTLANGCHANGEREQUEST, INPUTLANGCHANGE_FORWARD, , , % "ahk_id" hWnd
+}
+
 GetLangName(hWnd) {
 	Static LOCALE_SENGLANGUAGE := 0x1001
 	Locale := DllCall("GetKeyboardLayout", Ptr, DllCall("GetWindowThreadProcessId", Ptr, hWnd, UInt, 0, Ptr), Ptr) & 0xFFFF
@@ -2354,11 +2375,6 @@ GetLangName(hWnd) {
 	VarSetCapacity(lpLCData, Size, 0)
 	DllCall("GetLocaleInfo", UInt, Locale, UInt, LOCALE_SENGLANGUAGE, Str, lpLCData, UInt, Size)
 	Return lpLCData
-}
-
-ChangeLocal(hWnd) {
-	Static WM_INPUTLANGCHANGEREQUEST := 0x0050, INPUTLANGCHANGE_FORWARD := 0x0002
-	SendMessage, WM_INPUTLANGCHANGEREQUEST, INPUTLANGCHANGE_FORWARD, , , % "ahk_id" hWnd
 }
 
 ToolTip(text, time = 500) {
@@ -3746,3 +3762,4 @@ CreateCompatibleDC(hdc=0) {
 }
 
 	;)
+	
