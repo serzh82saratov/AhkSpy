@@ -37,7 +37,7 @@ ListLines, Off
 DetectHiddenWindows, On
 CoordMode, Pixel
 
-Global AhkSpyVersion := 3.00
+Global AhkSpyVersion := 3.01
 Gosub, CheckAhkVersion
 Menu, Tray, UseErrorLevel
 Menu, Tray, Icon, Shell32.dll, % A_OSVersion = "WIN_XP" ? 222 : 278
