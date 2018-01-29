@@ -1,19 +1,19 @@
 /*
-###################################################################
-###################################################################
-###########     #   ######   #######        #######################
-##########      #   ######   ######    ##    ######################
-#########       #   ######   ######     ###########################
-########    #   #       ##   ##   ##       ###       ##   ##   ####
-#######    ##   #   #    #   #    #####      #   #    #   ##   ####
-######    ###   #   ##   #       ########    #   ##   #   ##   ####
-#####           #   ##   #   #    #    ##    #   #    #    #   ####
-####    #####   #   ##   #   ##   ##        ##       ###       ####
-##############################################   ###########   ####
-##############################################   ######   #    ####
-##############################################   #######      #####
-AhkSpy#############################################################
-###################################################################
+©©©©©©©©©©©©©©©©©©©©©©©©©©©©©©©©©©©©©©©©©©©©©©©©©©©©©©©©©©©©©©©©©©©©
+©©©©©©©©©©©©©©©©©©©©©©©©©©©©©©©©©©©©©©©©©©©©©©©©©©©©©©©©©© AhkSpy ©©
+©©©©©©©©©©©     ©   ©©©©©©   ©©©©©©©©        ©©©©©©©©©©©©©©©©©©©©©©©
+©©©©©©©©©©      ©   ©©©©©©   ©©©©©©©    ©©    ©©©©©©©©©©©©©©©©©©©©©©
+©©©©©©©©©       ©   ©©©©©©   ©©©©©©©     ©©©©©©©©©©©©©©©©©©©©©©©©©©©
+©©©©©©©©    ©   ©       ©©   ©©©  ©©©       ©©©       ©©   ©©   ©©©©
+©©©©©©©    ©©   ©   ©    ©   ©    ©©©©©©      ©   ©    ©   ©©   ©©©©
+©©©©©©    ©©©   ©   ©©   ©       ©©©©©©©©©    ©   ©©   ©   ©©   ©©©©
+©©©©©           ©   ©©   ©   ©    ©©    ©©    ©   ©    ©    ©   ©©©©
+©©©©    ©©©©©   ©   ©©   ©   ©©©  ©©©        ©©       ©©©       ©©©©
+©©©©©©©©©©©©©©©©©©©©©©©©©©©©©©©©©©©©©©©©©©©©©©©   ©©©©©©©©©©©   ©©©©
+©©©©©©©©©©©©©©©©©©©©©©©©©©©©©©©©©©©©©©©©©©©©©©©   ©©©©©©   ©    ©©©©
+©©©©©©©©©©©©©©©©©©©©©©©©©©©©©©©©©©©©©©©©©©©©©©©   ©©©©©©©      ©©©©©
+©© AhkSpy ©©©©©©©©©©©©©©©©©©©©©©©©©©©©©©©©©©©©©©©©©©©©©©©©©©©©©©©©©©
+©©©©©©©©©©©©©©©©©©©©©©©©©©©©©©©©©©©©©©©©©©©©©©©©©©©©©©©©©©©©©©©©©©©©
 
     Автор - serzh82saratov
     E-Mail: serzh82saratov@mail.ru
@@ -57,7 +57,7 @@ Global MemoryFontSize := IniRead("MemoryFontSize", 0)
 , HeigtButton := 32														;  Высота кнопок
 , PreMaxHeight := Round(A_ScreenHeight / 3 * 2)							;  Максимальная высота поля "Big text overflow hide" при которой добавлять прокрутку
 
-  HeightStart := 523													;  Высота окна при старте
+  HeightStart := 530													;  Высота окна при старте
   wKey := 142															;  Ширина кнопок
   wColor := wKey//2														;  Ширина цветного фрагмента
   RangeTimer := 100														;  Период опроса данных, увеличьте на слабом ПК
@@ -2753,7 +2753,7 @@ ChangeCSS(id, css) {	;  https://webo.in/articles/habrahabr/68-fast-dynamic-css/
 }
 
 LoadJScript() {
-	Static onhkinput
+	Static onhkinput, ontooltip
 	PreOver_ := PreOverflowHide ? _PreOverflowHideCSS : ""
 	BodyWrap_ := WordWrap ? _BodyWrapCSS : ""
 html =
@@ -2816,18 +2816,19 @@ html =
 	}
 	function OnButtonDown (el) {
 		if (window.event.button != 1)   //  only left button https://msdn.microsoft.com/en-us/library/aa703876(v=vs.85).aspx
-			return
+			return 
 		el.style.backgroundColor = "#%ColorSelMouseHover%";
 		el.style.color = "#fff";
 		el.style.border = "1px solid black";
 	}
-	function OnButtonUp (el) {
+	function OnButtonUp (el) { 
 		el.style.backgroundColor = "";
 		el.style.color = (el.name != "pre" ? "#%ColorFont%" : "#%ColorParam%");
 		if (window.event.button == 2 && el.parentElement.className == 'BB')
 			document.documentElement.focus();
+			
 	}
-	function OnButtonOver (el) {
+	function OnButtonOver (el) {  
 		el.style.zIndex = "2";
 		el.style.border = "1px solid black";
 	}
@@ -2841,6 +2842,7 @@ html =
 		setTimeout(param, 1);
 	}
 	//	alert(value);
+	//	tooltip(value);
 </script>
 
 <script id='hkinputevent' type="text/javascript">
@@ -2853,10 +2855,18 @@ html =
 			el.style.border = "1px dotted black";
 	}
 </script>
+
+<script id='tooltipevent' type="text/javascript">
+	function tooltip(text) {
+		key1 = text; 
+		tooltipevent.click();
+	}
+</script>
 )
 oDoc.Write("<!DOCTYPE html><head><meta http-equiv=""X-UA-Compatible"" content=""IE=8""></head>" html)
 oDoc.Close()
 ComObjConnect(onhkinput := oDoc.getElementById("hkinputevent"), "onhkinput_")
+ComObjConnect(ontooltip := oDoc.getElementById("tooltipevent"), "tooltip_")
 }
 
 	; _________________________________________________ Doc Events _________________________________________________
@@ -2866,6 +2876,10 @@ onhkinput_onclick() {  ;	http://forum.script-coding.com/viewtopic.php?id=8206
 		Sleep(1), Hotkey_Hook(0)
 	Else If (WinActive("ahk_id" hGui) && !isPaused && ThisMode = "Hotkey")
 		Sleep(1), Hotkey_Hook(1)
+}
+
+tooltip_onclick() {
+	ToolTip(oJScript.key1, 500)
 }
 
 Class Events {  ;	http://forum.script-coding.com/viewtopic.php?pid=82283#p82283
@@ -3762,4 +3776,3 @@ CreateCompatibleDC(hdc=0) {
 }
 
 	;)
-	
