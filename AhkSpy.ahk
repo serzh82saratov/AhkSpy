@@ -18,11 +18,11 @@
     Автор - serzh82saratov
     E-Mail: serzh82saratov@mail.ru
 
-    Спасибо wisgest за помощь в создании HTML интерфейса
-    Также благодарность teadrinker, Malcev, YMP, Irbis за их решения
+    Спасибо wisgest и Malcev за помощь в создании HTML интерфейса
+    Также благодарность teadrinker, YMP, Irbis за их решения
     Описание - http://forum.script-coding.com/viewtopic.php?pid=72459#p72459
     Обсуждение - http://forum.script-coding.com/viewtopic.php?pid=72244#p72244
-    GitHub - https://raw.githubusercontent.com/serzh82saratov/AhkSpy/master/AhkSpy.ahk
+    Исходник - https://raw.githubusercontent.com/serzh82saratov/AhkSpy/master/AhkSpy.ahk
 */
 
 p1 = %1%
@@ -2816,19 +2816,19 @@ html =
 	}
 	function OnButtonDown (el) {
 		if (window.event.button != 1)   //  only left button https://msdn.microsoft.com/en-us/library/aa703876(v=vs.85).aspx
-			return 
+			return
 		el.style.backgroundColor = "#%ColorSelMouseHover%";
 		el.style.color = "#fff";
 		el.style.border = "1px solid black";
 	}
-	function OnButtonUp (el) { 
+	function OnButtonUp (el) {
 		el.style.backgroundColor = "";
 		el.style.color = (el.name != "pre" ? "#%ColorFont%" : "#%ColorParam%");
 		if (window.event.button == 2 && el.parentElement.className == 'BB')
 			document.documentElement.focus();
-			
+
 	}
-	function OnButtonOver (el) {  
+	function OnButtonOver (el) {
 		el.style.zIndex = "2";
 		el.style.border = "1px solid black";
 	}
@@ -2858,7 +2858,7 @@ html =
 
 <script id='tooltipevent' type="text/javascript">
 	function tooltip(text) {
-		key1 = text; 
+		key1 = text;
 		tooltipevent.click();
 	}
 </script>
