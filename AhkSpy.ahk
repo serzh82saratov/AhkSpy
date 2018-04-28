@@ -37,7 +37,7 @@ ListLines, Off
 DetectHiddenWindows, On
 CoordMode, Pixel
 
-Global AhkSpyVersion := 3.02
+Global AhkSpyVersion := 3.03
 Gosub, CheckAhkVersion
 Menu, Tray, UseErrorLevel
 Menu, Tray, Icon, Shell32.dll, % A_OSVersion = "WIN_XP" ? 222 : 278
@@ -1139,7 +1139,7 @@ GetInfo_InternetExplorer_Server(hwnd, ByRef ClassNN) {
 
 WBGet(hwnd) {
 	Static Msg := DllCall("RegisterWindowMessage", "Str", "WM_HTML_GETOBJECT")
-	, IID_IHTMLWindow2 := "{332C4427-26CB-11D0-B483-00C04FD90119}", _ := VarSetCapacity(GUID,16,0)
+	, IID_IHTMLWindow2 := "{332C4427-26CB-11D0-B483-00C04FD90119}", GUID, _ := VarSetCapacity(GUID,16,0)
 	SendMessage, Msg, , , , ahk_id %hwnd%
 	DllCall("oleacc\ObjectFromLresult", "Ptr", ErrorLevel, "Ptr", &GUID, "Ptr", 0, PtrP, pdoc)
 	Return ComObj(9, ComObjQuery(pdoc, IID_IHTMLWindow2, IID_IHTMLWindow2), 1), ObjRelease(pdoc)
