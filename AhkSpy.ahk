@@ -37,7 +37,7 @@ ListLines, Off
 DetectHiddenWindows, On
 CoordMode, Pixel
 
-Global AhkSpyVersion := 3.03
+Global AhkSpyVersion := 3.04
 Gosub, CheckAhkVersion
 Menu, Tray, UseErrorLevel
 Menu, Tray, Icon, Shell32.dll, % A_OSVersion = "WIN_XP" ? 222 : 278
@@ -224,8 +224,9 @@ Gui, Show, % "NA " (MemoryPos ? " x" IniRead("MemoryPosX", "Center") " y" IniRea
 . (MemorySize ? " h" IniRead("MemorySizeH", HeightStart) " w" IniRead("MemorySizeW", widthTB) : " h" HeightStart " w" widthTB)
 Gui, % "+MinSize" widthTB "x" 313
 
-Hotkey_Init("Write_HotkeyHTML", "MLRJ")
 Gosub, Mode_%ThisMode%
+
+Hotkey_Init("Write_HotkeyHTML", "MLRJ")
 
 If (MemoryStateZoom && IniRead("ZoomShow", 0))
 	AhkSpyZoomShow()
@@ -861,7 +862,7 @@ GetMenuText(hMenu, child = 0)
 		IdItem := "<span class='param menuitemid' style='display: " (!MenuIdView ? "none" : "inline") ";'>`t`t`t<span name='MS:'>" idn "</span></span>"
 		isSubMenu := (idn = -1) && (hSubMenu := DllCall("GetSubMenu", "Ptr", hMenu, "int", idx)) ? 1 : 0
 		If isSubMenu
-			sContents .= AddTab(child) "<span class='param'>" idx + 1 ":  </span><span name='MS:' class='titleparam'>" sString "</span><span class='param menuitemsub';'>&#8595;</span>" IdItem "`n"
+			sContents .= AddTab(child) "<span class='param'>" idx + 1 ":  </span><span name='MS:' class='titleparam'>" sString "</span>" IdItem "`n"
 		Else If (sString = "")
 			sContents .= AddTab(child) "<span class='param'>" idx + 1 ":  &#8212; &#8212; &#8212; &#8212; &#8212; &#8212; &#8212;</span>" IdItem "`n"
 		Else
@@ -1250,10 +1251,10 @@ Write_HotkeyHTML(K) {
 	Static PrHK1, PrHK2, Name
 
 	Mods := K.Mods, KeyName := K.Name
-	Prefix := K.Pref, Hotkey := K.HK
+	Prefix := K.Pref
+	Hotkey := K.HK = "" ? K.TK : K.HK
 	LRMods := K.LRMods, LRPref := TransformHTML(K.LRPref)
 	ThisKey := K.TK, VKCode := K.VK, SCCode := K.SC
-
 	If (K.NFP && Mods KeyName != "")
 		NotPhysical	:= " " _DP "<span style='color:#" ColorDelimiter "'> Emulated</span>"
 
@@ -1265,12 +1266,12 @@ Write_HotkeyHTML(K) {
 	If K.IsCode
 		Comment := "<span class='param' name='MS:S'>    `;  """ KeyName """</span>"
 	If (Hotkey != "")
-		FComment := "<span class='param' name='MS:S'>    `;  """ Mods KeyName """</span>"
+		FComment := "<span class='param' name='MS:S'>    `;  """ (K.HK = "" ? K.TK : Mods KeyName) """</span>"
 
 	If (LRMods != "")
 	{
 		LRMStr := "<span name='MS:'>" LRMods KeyName "</span>"
-		If (Hotkey != "")
+		If (K.HK != "")
 			LRPStr := "  " _DP "  <span><span name='MS:'>" LRPref Hotkey "::</span><span class='param' name='MS:S'>    `;  """ LRMods KeyName """</span></span>"
 	}
 	If Prefix !=
@@ -1283,7 +1284,7 @@ Write_HotkeyHTML(K) {
 			. (K.MLShift ? "{LShift Up}" : "") (K.MRShift ? "{RShift Up}" : "")
 			. (K.MLWin ? "{LWin Up}" : "") (K.MRWin ? "{RWin Up}" : "")
 
-	SendHotkey := Hotkey = "" ? ThisKey : Hotkey
+	SendHotkey := Hotkey
 
 	ControlSend := DUMods = "" ? "{" SendHotkey "}" : DUMods
 
