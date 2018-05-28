@@ -37,7 +37,7 @@ ListLines, Off
 DetectHiddenWindows, On
 CoordMode, Pixel
 
-Global AhkSpyVersion := 3.04
+Global AhkSpyVersion := 3.05
 Gosub, CheckAhkVersion
 Menu, Tray, UseErrorLevel
 Menu, Tray, Icon, Shell32.dll, % A_OSVersion = "WIN_XP" ? 222 : 278
@@ -352,9 +352,9 @@ F11:: FullScreenMode()
 
 #If isAhkSpy && WinActive("ahk_id" hGui) && IsIEFocus() && (oDoc.selection.createRange().parentElement.isContentEditable)
 
-^vk43:: Clipboard := oDoc.selection.createRange().text		;  Ctrl+C
+^vk43:: Clipboard := oDoc.selection.createRange().text, ToolTip("copy", 300)		;  Ctrl+C
 
-^vk56:: oDoc.execCommand("Paste")							;  Ctrl+V
+^vk56:: oDoc.execCommand("Paste"), ToolTip("paste", 300)							;  Ctrl+V
 
 ~^vk41:: oDoc.execCommand("SelectAll")						;  Ctrl+A
 
@@ -1494,7 +1494,7 @@ Hotkey_Main(In) {
 
 Hotkey_PressLButton:
 	ThisHotkey := "LButton"
-	K.NFP := 0
+	K.NFP := !GetKeyState(ThisHotkey, "P")
 	GoTo, Hotkey_Drop
 
 Hotkey_PressMouseRButton:
