@@ -34,10 +34,11 @@ SingleInstance()
 #UseHook
 SetBatchLines, -1
 ListLines, Off
+#KeyHistory 0
 DetectHiddenWindows, On
 CoordMode, Pixel
 
-Global AhkSpyVersion := 3.05
+Global AhkSpyVersion := 3.06
 Gosub, CheckAhkVersion
 Menu, Tray, UseErrorLevel
 Menu, Tray, Icon, Shell32.dll, % A_OSVersion = "WIN_XP" ? 222 : 278
@@ -458,7 +459,7 @@ Repeat_Loop_Win:
 	Return
 
 Spot_Win(NotHTML = 0) {
-	Static PrWinPID, ComLine, WinProcessPath, ProcessBitSize, WinProcessName
+	Static PrWinPID, ComLine, WinProcessPath, ProcessBitSize, IsAdmin, WinProcessName
 	If NotHTML
 		GoTo HTML_Win
 	MouseGetPos,,,WinID
@@ -471,7 +472,7 @@ Spot_Win(NotHTML = 0) {
 	WinGetClass, WinClass, ahk_id %WinID%
 	WinGet, WinPID, PID, ahk_id %WinID%
 	If (WinPID != PrWinPID) {
-		GetCommandLineProc(WinPID, ComLine, ProcessBitSize)
+		GetCommandLineProc(WinPID, ComLine, ProcessBitSize, IsAdmin)
 		ComLine := TransformHTML(ComLine), PrWinPID := WinPID
 		WinGet, WinProcessPath, ProcessPath, ahk_pid %WinPID%
 		Loop, %WinProcessPath%
@@ -544,7 +545,7 @@ HTML_Win:
 	%_PRE1%%_BP1% id='set_button_pos'>Pos:%_BP2%  <span name='MS:'>x%WinX% y%WinY%</span>%_DP%<span name='MS:'>x&sup2;%WinX2% y&sup2;%WinY2%</span>%_DP%%_BP1% id='set_button_pos'>Size:%_BP2%  <span name='MS:'>w%WinWidth% h%WinHeight%</span>%_DP%<span name='MS:'>%WinX%, %WinY%, %WinX2%, %WinY2%</span>%_DP%<span name='MS:'>%WinX%, %WinY%, %WinWidth%, %WinHeight%</span>
 	<span class='param'>Client area size:</span>  <span name='MS:'>w%caW% h%caH%</span>%_DP%<span class='param'>left</span> %caX% <span class='param'>top</span> %caY% <span class='param'>right</span> %caWinRight% <span class='param'>bottom</span> %caWinBottom%%_PRE2%
 	%_T1% ( Other ) </span>%_T2%
-	%_PRE1%<span class='param' name='MS:N'>PID:</span>  <span name='MS:'>%WinPID%</span>%_DP%%ProcessBitSize%<span class='param'>Window count:</span> %WinCountProcess%%_DP%%_BB1% id='process_close'> process close %_BB2%
+	%_PRE1%<span class='param' name='MS:N'>PID:</span>  <span name='MS:'>%WinPID%</span>%_DP%%ProcessBitSize%%IsAdmin%<span class='param'>Window count:</span> %WinCountProcess%%_DP%%_BB1% id='process_close'> process close %_BB2%
 	<span class='param' name='MS:N'>HWND:</span>  <span name='MS:'>%WinID%</span>%_DP%%_BB1% id='win_close'> win close %_BB2%%_DP%<span class='param'>Control count:</span>  %CountControl%
 	<span class='param'>Style:  </span><span id='c_Style' name='MS:'>%WinStyle%</span>%_DP%<span class='param'>ExStyle:  </span><span id='c_ExStyle' name='MS:'>%WinExStyle%</span>%_DP%%_BB1% id='get_styles'> %ButtonStyle_% %_BB2%%WinTransparent%%WinTransColor%%CLSID%%_PRE2%
 	<span id=WinStyles>%WinStyles%</span>%SBText%%WinText%%MenuText%<a></a>%_T0%
@@ -1563,6 +1564,7 @@ Hotkey_LowLevelKeyboardProc(nCode, wParam, lParam) {
 	,"A0":"LShift","A1":"RShift","5B":"LWin","5C":"RWin"}, oMem := []
 	, HEAP_ZERO_MEMORY := 0x8, Size := 16, hHeap := DllCall("GetProcessHeap", Ptr)
 	Local pHeap, Lp, Ext, VK, SC, SC1, SC2, IsMod, Time, NFP, KeyUp
+	Critical
 
 	If !Hotkey_Arr("Hook")
 		Return DllCall("CallNextHookEx", "Ptr", 0, "Int", nCode, "UInt", wParam, "UInt", lParam)
@@ -2220,7 +2222,7 @@ CopyCommaParam(Text) {
 
 	;  http://forum.script-coding.com/viewtopic.php?pid=111775#p111775
 
-GetCommandLineProc(PID, ByRef Cmd, ByRef Bit) {
+GetCommandLineProc(PID, ByRef Cmd, ByRef Bit, ByRef IsAdmin) {
 	Static PROCESS_QUERY_INFORMATION := 0x400, PROCESS_VM_READ := 0x10, STATUS_SUCCESS := 0
 
 	hProc := DllCall("OpenProcess", UInt, PROCESS_QUERY_INFORMATION|PROCESS_VM_READ, Int, 0, UInt, PID, Ptr)
@@ -2263,6 +2265,11 @@ GetCommandLineProc(PID, ByRef Cmd, ByRef Bit) {
 	VarSetCapacity(buff, szCMD, 0)
 	DllCall(ReadProcessMemory, Ptr, hProc, PtrType, pCMD, Ptr, &buff, PtrType, szCMD, UIntP, bytes)
 	Cmd := StrGet(&buff, "UTF-16")
+
+	DllCall("advapi32\OpenProcessToken", "ptr", hProc, "uint", 0x0008, "ptr*", hToken)
+	DllCall("advapi32\GetTokenInformation", "ptr", hToken, "int", 20, "uint*", IsAdmin, "uint", 4, "uint*", size)
+	DllCall("CloseHandle", "ptr", hToken)
+	IsAdmin := (IsAdmin ? "Admin" _DP : "")
 
 	DllCall("CloseHandle", Ptr, hProc)
 }
@@ -2943,6 +2950,14 @@ Class Events {  ;	http://forum.script-coding.com/viewtopic.php?pid=82283#p82283
 		(OnHook ? Hotkey_Hook(1) : 0)
 		ToolTip(thisid " " (GetKeyState(thisid, "T") ? "On" : "Off"), 500)
 	}
+	NextChangeLocal() {
+		(OnHook := Hotkey_Arr("Hook")) ? Hotkey_Hook(0) : 0
+		ChangeLocal(hActiveX)
+		ToolTip(GetLangName(hActiveX), 500)
+		(OnHook ? Hotkey_Hook(1) : 0)
+	}
+
+
 }
 
 ButtonClick(oevent) {
@@ -3044,7 +3059,7 @@ ButtonClick(oevent) {
 	Else If (thisid = "numlock" || thisid = "scrolllock")
 		Events.num_scroll(thisid)
 	Else If thisid = locale_change
-		ToolTip(ChangeLocal(hActiveX) GetLangName(hActiveX), 500)
+		Events.NextChangeLocal()
 	Else If thisid = paste_keyname
 		edithotkey := oDoc.getElementById("edithotkey"), edithotkey.value := "", edithotkey.focus()
 		, oDoc.execCommand("Paste"), oDoc.getElementById("keyname").click()
@@ -3239,7 +3254,7 @@ If Min != -1
 	ZoomShow()
 Return
 
-#If isZoom && oZoom.Show && !oZoom.Work
+#If isZoom && oZoom.Show  ;	&& !oZoom.Work
 
 +#WheelUp::
 +#WheelDown:: ChangeZoom(InStr(A_ThisHotKey, "Up") ? oZoom.Zoom + 1 : oZoom.Zoom - 1)
