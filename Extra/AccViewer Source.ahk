@@ -99,6 +99,12 @@ SetBatchLines -1
 	}
 	GoSub, ShowMainGui
 	WinSet, Redraw, , % "ahk_id" Win.Main
+	
+	param1 = %1%  
+	If param1
+		pObj := ComObjActive(param1)
+	If pObj
+		GetAccInfoRun()
 	return
 }
 ShowMainGui:
@@ -324,9 +330,50 @@ RemoveToolTip:
 	ToolTip
 	return
 }
+GetAccInfoRun() {
+	global Whwnd, pObj 
+		
+	Acc := pObj.AccObj.AccObj
+	ChildId := pObj.AccObj.Child
+	Location := GetAccLocation(Acc, ChildId) 
+	Hwnd := Acc_WindowFromObject(Acc) 
+	if parent := DllCall("GetParent", Uint,hwnd) {
+		WinGetTitle, title, ahk_id %parent%
+		ControlGetText, text, , ahk_id %Hwnd%
+		Whwnd := pObj.AccObj.WinID
+		class := GetClassNN(Hwnd,Whwnd)
+		ControlGetPos, posX, posY, posW, posH, , ahk_id %Hwnd%
+		WinGet, proc, ProcessName, ahk_id %parent%
+		WinGet, procid, PID, ahk_id %parent%
+	}
+	else 
+	{
+		WinGetTitle, title, ahk_id %Hwnd%
+		WinGetText, text, ahk_id %Hwnd%
+		WinGetClass, class, ahk_id %Hwnd%
+		WinGetPos, posX, posY, posW, posH, ahk_id %Hwnd%
+		WinGet, proc, ProcessName, ahk_id %Hwnd%
+		WinGet, procid, PID, ahk_id %Hwnd%
+	} 
+		GuiControl, , WinTitle, %title%
+		GuiControl, , Text, %text%
+		SetFormat, IntegerFast, H
+		GuiControl, , Hwnd, % Hwnd+0
+		SetFormat, IntegerFast, D
+		GuiControl, , Class, %class%
+		GuiControl, , Position, x%posX%  y%posY%
+		GuiControl, , Size, w%posW%  h%posH%
+		GuiControl, , Process, %proc%
+		GuiControl, , ProcId, %procid% 
+		
+	UpdateAccInfo(Acc, ChildId) 
+	SB_SetText("Path: " GetAccPath(Acc).path, 2)
+	Gosub ShowStructure
+	Gosub ShowMainGui
+}
 GetAccInfo() {
 	global Whwnd
-	static ShowButtonEnabled
+	static ShowButtonEnabled 
 	MouseGetPos, , , Whwnd
 	if (Whwnd!=Win.Main and Whwnd!=Win.Acc) {
 		{
@@ -339,7 +386,7 @@ GetAccInfo() {
 		if Stored.Location != Location {
 			Hwnd := Acc_WindowFromObject(Acc)
 			if Stored.Hwnd != Hwnd {
-				if DllCall("GetParent", Uint,hwnd) {
+				if parent := DllCall("GetParent", Uint,hwnd) {
 					WinGetTitle, title, ahk_id %parent%
 					ControlGetText, text, , ahk_id %Hwnd%
 					class := GetClassNN(Hwnd,Whwnd)
@@ -392,13 +439,13 @@ UpdateAccInfo(Acc, ChildId, Obj_Path="") {
 		Guicontrol, , AccHelp, % Acc.accHelp(ChildId)
 		GuiControl, , AccHelpTopic, % Acc.accHelpTopic(ChildId)
 		SB_SetText(ChildId? "Child Id: " ChildId:"Object")
-		SB_SetText(DllCall("IsWindowVisible", "Ptr",Win.Acc)? "Path: " Obj_Path:"", 2)
+		SB_SetText(DllCall("IsWindowVisible", "Ptr",Win.Acc)? "Path: " Obj_Path:"", 2) 
 	}
 	Border.Transparent(true)
 	Border.show(x,y,x+w,y+h)
 	Border.setabove(Whwnd)
 	Border.Transparent(false)
-	Stored.Location := Location
+	Stored.Location := Location 
 }
 GetClassNN(Chwnd, Whwnd) {
 	global _GetClassNN := {}
@@ -452,7 +499,8 @@ TV_BuildAccChildren(AccObj, Parent, Selected_Child="", Flag="") {
 	return Flagged_Child
 }
 GetAccPath(Acc, byref hwnd="") {
-	hwnd := Acc_WindowFromObject(Acc)
+	If !hwnd := Acc_WindowFromObject(Acc)
+		return
 	WinObj := Acc_ObjectFromWindow(hwnd)
 	WinObjPos := Acc_Location(WinObj).pos
 	while Acc_WindowFromObject(Parent:=Acc_Parent(Acc)) = hwnd {
