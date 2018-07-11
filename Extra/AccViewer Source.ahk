@@ -93,6 +93,7 @@ SetBatchLines -1
 	}
 	{
 		Gui Acc: New, ToolWindow AlwaysOnTop Resize LabelAcc HWNDhwnd -DPIScale, Acc Structure
+		Gui, Acc:+OwnerMain
 		Win.Acc := hwnd
 		Gui Acc: Add, TreeView, w200 h300 vTView gTreeView R17 AltSubmit
 		Gui Acc: Show, Hide
@@ -269,7 +270,7 @@ ShowStructure:
 	return
 }
 BuildTreeView()
-{
+{ 
 	r := GetAccPath(Acc)
 	AccObj:=r.AccObj, Child_Path:=r.Path, r:=""
 	Gui Acc: Default
@@ -277,6 +278,7 @@ BuildTreeView()
 	GuiControl, -Redraw, TView
 	parent := TV_Add(Acc_Role(AccObj), "", "Bold Expand")
 	TVobj := {(parent): {is_obj:true, obj:AccObj, need_children:false, childid:0, Children:[]}}
+	
 	Loop Parse, Child_Path, .
 	{
 		if A_LoopField is not Digit
@@ -297,6 +299,8 @@ BuildTreeView()
 	else
 		TV_BuildAccChildren(AccObj, parent, ChildId)
 	TV_Expanded(parent)
+	Sleep 100
+	TV_Modify(TV_GetSelection(),"Vis")
 	GuiControl, +Redraw, TView
 }
 AccClose:
@@ -368,8 +372,8 @@ GetAccInfoRun() {
 		
 	UpdateAccInfo(Acc, ChildId) 
 	SB_SetText("Path: " GetAccPath(Acc).path, 2)
-	Gosub ShowStructure
 	Gosub ShowMainGui
+	Gosub ShowStructure 
 }
 GetAccInfo() {
 	global Whwnd
