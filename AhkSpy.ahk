@@ -38,7 +38,7 @@ ListLines, Off
 DetectHiddenWindows, On
 CoordMode, Pixel
 
-Global AhkSpyVersion := 3.06
+Global AhkSpyVersion := 3.07
 Gosub, CheckAhkVersion
 Menu, Tray, UseErrorLevel
 Menu, Tray, Icon, Shell32.dll, % A_OSVersion = "WIN_XP" ? 222 : 278
@@ -64,7 +64,7 @@ Global MemoryFontSize := IniRead("MemoryFontSize", 0)
   RangeTimer := 100														;  Период опроса данных, увеличьте на слабом ПК
 
 Global ThisMode := IniRead("StartMode", "Control"), LastModeSave := (ThisMode = "LastMode"), ThisMode := ThisMode = "LastMode" ? IniRead("LastMode", "Control") : ThisMode
-, ActiveNoPause := IniRead("ActiveNoPause", 0), MemoryPos := IniRead("MemoryPos", 0), MemorySize := IniRead("MemorySize", 0)
+, ActiveNoPause := IniRead("ActiveNoPause", 0), MemoryPos := IniRead("MemoryPos", 0), MemorySize := IniRead("MemorySize", 0), myPublicObj := {}, myPublicObjGUID
 , MemoryZoomSize := IniRead("MemoryZoomSize", 0), MemoryStateZoom := IniRead("MemoryStateZoom", 0), StateLight := IniRead("StateLight", 1)
 , StateLightAcc := IniRead("StateLightAcc", 1), SendCode := IniRead("SendCode", "vk"), StateLightMarker := IniRead("StateLightMarker", 1)
 , StateUpdate := IniRead("StateUpdate", 0), SendMode := IniRead("SendMode", "send"), SendModeStr := Format("{:L}", SendMode)
@@ -96,6 +96,8 @@ Global ThisMode := IniRead("StartMode", "Control"), LastModeSave := (ThisMode = 
 , _ButiWB2Learner := ExtraFile("iWB2 Learner") ? _BT1 " id='run_iWB2Learner'> run iwb2 learner " _BT2 : ""
 , TitleText, FreezeTitleText, TitleTextP1, TitleTextP2 := TitleTextP2_Reserved := "     ( Shift+Tab - Freeze | RButton - CopySelected | Pause - Pause )     v" AhkSpyVersion
 BLGroup := ["Backlight allways","Backlight disable","Backlight hold shift button"]
+
+ObjRegisterActive(myPublicObj, myPublicObjGUID := CreateGUID())
 
 FixIE()
 SeDebugPrivilege()
@@ -702,7 +704,7 @@ Spot_Control(NotHTML = 0) {
 	ControlGetText, CtrlText, , ahk_id %ControlID%
 	If CtrlText !=
 		CtrlText := _T1 " ( Control Text ) </span><a></a>" _BT1 " id='copy_button'> copy " _BT2 _T2 _LPRE ">" TransformHTML(CtrlText) _PRE2
-	AccText := AccInfoUnderMouse(MXS, MYS, WinX, WinY, CtrlX, CtrlY)
+	AccText := AccInfoUnderMouse(MXS, MYS, WinX, WinY, CtrlX, CtrlY, WinID)
 	If AccText !=
 		AccText := _T1 " ( AccInfo ) </span><a></a>" _ButAccViewer _T2 AccText
 
@@ -1151,7 +1153,7 @@ WBGet(hwnd) {
 
 	;  http://www.autohotkey.com/board/topic/77888-accessible-info-viewer-alpha-release-2012-09-20/
 
-AccInfoUnderMouse(x, y, wx, wy, cx, cy) {
+AccInfoUnderMouse(x, y, wx, wy, cx, cy, WinID) {
 	Static h
 	If Not h
 		h := DllCall("LoadLibrary","Str","oleacc","Ptr")
@@ -1197,6 +1199,8 @@ AccInfoUnderMouse(x, y, wx, wy, cx, cy) {
 		code .= _T1P " ( Help ) </span>" _T2 _PRE1 "<span name='MS:'>" TransformHTML(Var) "</span>" _PRE2
 	If ((Var := Acc.AccHelpTopic(child)))
 		code .= _T1P " ( HelpTopic ) </span>" _T2 _PRE1 "<span name='MS:'>" TransformHTML(Var) "</span>" _PRE2
+
+	myPublicObj.AccObj := {AccObj:Acc,child:child,WinID:WinID}
 	Return code
 }
 
@@ -2009,6 +2013,34 @@ FixIE() {
 		RegWrite, REG_DWORD, HKCU, %Key%, %ExeName%, %ver%
 }
 
+ObjRegisterActive(Object, CLSID, Flags := 0) {
+   static cookieJar := {}
+   if !CLSID  {
+      if (( cookie := cookieJar.Delete(Object) ) != "")
+         DllCall("oleaut32\RevokeActiveObject", UInt, cookie, Ptr, 0)
+      return
+   }
+   if cookieJar[Object]
+      throw Exception("Object is already registered", -1)
+   VarSetCapacity(_clsid, 16, 0)
+   if (hr := DllCall("ole32\CLSIDFromString", WStr, CLSID, Ptr, &_clsid)) < 0
+      throw Exception("Invalid CLSID", -1, CLSID)
+   hr := DllCall("oleaut32\RegisterActiveObject", Ptr, &Object, Ptr, &_clsid, UInt, Flags, UIntP, cookie, UInt)
+   if hr < 0
+      throw Exception(format("Error 0x{:x}", hr), -1)
+   cookieJar[Object] := cookie
+}
+
+CreateGUID()
+{
+   VarSetCapacity(pguid, 16, 0)
+   if !DllCall("ole32.dll\CoCreateGuid", Ptr, &pguid)  {
+      size := VarSetCapacity(sguid, (38 << !!A_IsUnicode) + 1, 0)
+      if DllCall("ole32.dll\StringFromGUID2", Ptr, &pguid, Ptr, &sguid, UInt, size)
+         return StrGet(&sguid)
+   }
+}
+
 RunPath(Link, WorkingDir = "", Option = "") {
 	Run %Link%, %WorkingDir%, %Option%
 	Minimize()
@@ -2022,12 +2054,12 @@ RunRealPath(Path) {
 	Run, %Path%, %Dir%
 }
 
-RunAhkPath(Path) {
+RunAhkPath(Path, Param = "") {
 	SplitPath, Path, , , Extension
 	If Extension = exe
 		RunPath(Path)
 	Else If (!A_IsCompiled && Extension = "ahk")
-		RunPath("""" A_AHKPath """ """ Path """")
+		RunPath("""" A_AHKPath """ """ Path """ """ Param """")
 }
 
 ExtraFile(Name, GetNoCompile = 0) {
@@ -2294,10 +2326,10 @@ SeDebugPrivilege() {
 	;  http://www.autohotkey.com/board/topic/69254-func-api-getwindowinfo-ahk-l/#entry438372
 
 GetClientPos(hwnd, ByRef left, ByRef top, ByRef w, ByRef h) {
-	VarSetCapacity(pwi, 60, 0), NumPut(60, pwi, 0, "UInt")
-	DllCall("GetWindowInfo", "Ptr", hwnd, "UInt", &pwi)
+	Static _ := VarSetCapacity(pwi, 60, 0)
+	DllCall("GetWindowInfo", "Ptr", hwnd, "Ptr", &pwi)
+	left := NumGet(pwi, 20, "Int") - NumGet(pwi, 4, "Int")
 	top := NumGet(pwi, 24, "Int") - NumGet(pwi, 8, "Int")
-	left := NumGet(pwi, 52, "Int")
 	w := NumGet(pwi, 28, "Int") - NumGet(pwi, 20, "Int")
 	h := NumGet(pwi, 32, "Int") - NumGet(pwi, 24, "Int")
 }
@@ -3068,7 +3100,7 @@ ButtonClick(oevent) {
 	Else If thisid = get_styles
 		ViewStyles(oevent)
 	Else If thisid = run_AccViewer
-		RunAhkPath(ExtraFile("AccViewer Source"))
+		RunAhkPath(ExtraFile("AccViewer Source"), myPublicObjGUID)
 	Else If thisid = run_iWB2Learner
 		RunAhkPath(ExtraFile("iWB2 Learner"))
 	Else If thisid = set_button_pos
