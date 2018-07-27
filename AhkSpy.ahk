@@ -38,7 +38,7 @@ ListLines, Off
 DetectHiddenWindows, On
 CoordMode, Pixel
 
-Global AhkSpyVersion := 3.07
+Global AhkSpyVersion := 3.08
 Gosub, CheckAhkVersion
 Menu, Tray, UseErrorLevel
 Menu, Tray, Icon, Shell32.dll, % A_OSVersion = "WIN_XP" ? 222 : 278
@@ -470,7 +470,7 @@ Spot_Win(NotHTML = 0) {
 	WinGetTitle, WinTitle, ahk_id %WinID%
 	WinTitle := TransformHTML(WinTitle)
 	WinGetPos, WinX, WinY, WinWidth, WinHeight, ahk_id %WinID%
-	WinX2 := WinX + WinWidth, WinY2 := WinY + WinHeight
+	WinX2 := WinX + WinWidth - 1, WinY2 := WinY + WinHeight - 1
 	WinGetClass, WinClass, ahk_id %WinID%
 	WinGet, WinPID, PID, ahk_id %WinID%
 	If (WinPID != PrWinPID) {
@@ -697,8 +697,8 @@ Spot_Control(NotHTML = 0) {
 	. Round(RWinX / WinW, 4) ", " Round(RWinY / WinH, 4) "</span>  <span class='param'>for</span> <span name='MS:'>w" WinW " h" WinH "</span>" _DP
 	ControlGetPos, CtrlX, CtrlY, CtrlW, CtrlH,, ahk_id %ControlID%
 	CtrlCAX := CtrlX - caX, CtrlCAY := CtrlY - caY
-	CtrlX2 := CtrlX+CtrlW, CtrlY2 := CtrlY+CtrlH
-	CtrlCAX2 := CtrlX2-caX, CtrlCAY2 := CtrlY2-caY
+	CtrlX2 := CtrlX + CtrlW - 1, CtrlY2 := CtrlY + CtrlH - 1
+	CtrlCAX2 := CtrlX2 - caX, CtrlCAY2 := CtrlY2 - caY
 	WithRespectClient := _BP1 " id='set_pos'>Relative client:" _BP2 "  <span name='MS:'>" Round(MXC / caW, 4) ", " Round(MYC / caH, 4)
 		. "</span>  <span class='param'>for</span> <span name='MS:'>w" caW " h" caH "</span>"
 	ControlGetText, CtrlText, , ahk_id %ControlID%
@@ -1135,7 +1135,7 @@ GetInfo_InternetExplorer_Server(hwnd, ByRef ClassNN) {
 	Info := _T1P "<span name='MS:N'> ( Tag name: </span><span name='MS:' style='color: #" ColorFont ";'>"
 	. pelt.TagName "</span>" (Frame ? " - (in frame)" : "") " ) </span>" _T2
 	. _PRE1  "<span class='param'>Pos: </span><span name='MS:'>x" Round(x1) " y" Round(y1) "</span>"
-	. _DP "<span name='MS:'>x&sup2;" Round(x2) " y&sup2;" Round(y2) "</span>"
+	. _DP "<span name='MS:'>x&sup2;" Round(x2) - 1 " y&sup2;" Round(y2) - 1 "</span>"
 	. _DP "<span class='param'>Size: </span><span name='MS:'>w" Round(x2 - x1) " h" Round(y2 - y1) "</span>" Info _PRE2
 
 	Return Topic Info HTML Text Frame
@@ -1153,12 +1153,12 @@ WBGet(hwnd) {
 
 	;  http://www.autohotkey.com/board/topic/77888-accessible-info-viewer-alpha-release-2012-09-20/
 
-AccInfoUnderMouse(x, y, wx, wy, cx, cy, WinID) {
+AccInfoUnderMouse(mx, my, wx, wy, cx, cy, WinID) {
 	Static h
 	If Not h
 		h := DllCall("LoadLibrary","Str","oleacc","Ptr")
 	If DllCall("oleacc\AccessibleObjectFromPoint"
-		, "Int64", x&0xFFFFFFFF|y<<32, "Ptr*", pacc
+		, "Int64", mx&0xFFFFFFFF|my<<32, "Ptr*", pacc
 		, "Ptr", VarSetCapacity(varChild,8+2*A_PtrSize,0)*0+&varChild) = 0
 	Acc := ComObjEnwrap(9,pacc,1), child := NumGet(varChild,8,"UInt")
 	If !IsObject(Acc)
@@ -1168,10 +1168,22 @@ AccInfoUnderMouse(x, y, wx, wy, cx, cy, WinID) {
 		. _DP "<span class='param' name='MS:N'>Parent child count:  </span>" Count
 		: "Parent" _DP "<span class='param' name='MS:N'>ChildCount:  </span>" Count
 	code := _PRE1 "<span class='param'>Type:</span>  " Var _PRE2
-	code .= _T1P " ( Position relative ) </span>" _T2 _PRE1 "<span class='param'>Screen: </span>" AccGetLocation(Acc, child)
-		. "`n<span class='param'>Mouse: </span><span name='MS:'>x" x - AccCoord[1] " y" y - AccCoord[2] "</span>"
-		. _DP "<span class='param'>Window: </span><span name='MS:'>x" AccCoord[1] - wx " y" AccCoord[2] - wy "</span>"
-		. (cx != "" ? _DP "<span class='param'>Control: </span><span name='MS:'>x" (AccCoord[1] - wx - cx) " y" (AccCoord[2] - wy - cy) "</span>" : "") _PRE2
+
+	AccGetLocation(Acc, child)
+	x := AccCoord[1], y := AccCoord[2], w := AccCoord[3], h := AccCoord[4]
+
+	code .= _T1P " ( Position relative ) </span>" _T2 _PRE1 "<span class='param'>Screen: </span>"
+		. "<span name='MS:'>x" x " y" y "</span>"
+		. _DP "<span name='MS:'>x&sup2;" x + w - 1 " y&sup2;" y + h - 1 "</span>"
+		. _DP "<span class='param'>Size: </span><span name='MS:'>w" w " h" h "</span>"
+		.  _DP  "<span class='param'>Mouse: </span><span name='MS:'>x" mx - AccCoord[1] " y" my - AccCoord[2] "</span>`n"
+
+		. "<span class='param'>Window: </span><span name='MS:'>x" x - wx " y" y - wy "</span>"
+		. _DP "<span name='MS:'>x&sup2;" x - wx + w - 1 " y&sup2;" y - wy + h - 1 "</span>"
+
+		. (cx != "" ? _DP "<span class='param'>Control: </span><span name='MS:'>x" (x - wx - cx) " y" (y - wy - cy) "</span>"
+		. _DP "<span name='MS:'>x&sup2;" (x - wx - cx) + w - 1 " y&sup2;" (y - wy - cy) + h - 1 "</span>" : "")  _PRE2
+
 	If ((Var := Acc.accName(child)) != "")
 		code .= _T1P " ( Name ) </span><a></a>" _BT1 " id='copy_button'> copy " _BT2 _T2 _LPRE ">" TransformHTML(Var) _PRE2
 	If ((Var := Acc.accValue(child)) != "")
@@ -1224,8 +1236,7 @@ AccGetStateText(nState) {
 
 AccGetLocation(Acc, Child=0) {
 	Acc.accLocation(ComObj(0x4003,&x:=0), ComObj(0x4003,&y:=0), ComObj(0x4003,&w:=0), ComObj(0x4003,&h:=0), Child)
-	Return "<span name='MS:'>x" (AccCoord[1]:=NumGet(x,0,"int")) " y" (AccCoord[2]:=NumGet(y,0,"int")) "</span>"
-			. _DP "<span class='param'>Size: </span><span name='MS:'>w" (AccCoord[3]:=NumGet(w,0,"int")) " h" (AccCoord[4]:=NumGet(h,0,"int")) "</span>"
+	AccCoord[1]:=NumGet(x,0,"int"), AccCoord[2]:=NumGet(y,0,"int"), AccCoord[3]:=NumGet(w,0,"int"), AccCoord[4]:=NumGet(h,0,"int")
 }
 
 	; _________________________________________________ Mode_Hotkey _________________________________________________
@@ -3305,7 +3316,7 @@ ZoomCreate() {
 	Else
 		GuiW := oZoom.GuiMinW, GuiH := oZoom.GuiMinH
 	Gui, Zoom: -Caption -DPIScale +Border +LabelZoomOn +HWNDhGui +AlwaysOnTop +E0x08000000    ;	+Owner%hAhkSpy%
-	Gui, Zoom: Color, F0F0F0
+	Gui, Zoom: Color, F5F5F5
 	Gui, Zoom: Add, Text, hwndhStatic +Border
 	DllCall("SetClassLong", "Ptr", hGui, "int", -26
 	, "int", DllCall("GetClassLong", "Ptr", hGui, "int", -26) | 0x20000)
@@ -3313,7 +3324,7 @@ ZoomCreate() {
 	Gui, LW: -Caption +E0x80000 +AlwaysOnTop +ToolWindow +HWNDhLW +E0x08000000 +Owner%hGui% ;	+E0x08000000 +E0x20
 
 	Gui, ZoomTB: +HWNDhTBGui -Caption -DPIScale +Parent%hGui% +E0x08000000 +0x40000000 -0x80000000
-	Gui, ZoomTB: Color, F0F0F0
+	Gui, ZoomTB: Color, F5F5F5
 	Gui, ZoomTB: Font, s%FontSize%
 	Gui, ZoomTB: Add, Slider, hwndhSliderZoom gSliderZoom x8 Range1-50 w152 Center AltSubmit NoTicks, % oZoom.Zoom
 	Gui, ZoomTB: Add, Text, hwndhTextZoom Center x+10 yp+3 w36, % oZoom.Zoom
