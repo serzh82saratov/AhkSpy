@@ -22,7 +22,8 @@
     Также благодарность teadrinker, YMP, Irbis за их решения
     Описание - http://forum.script-coding.com/viewtopic.php?pid=72459#p72459
     Обсуждение - http://forum.script-coding.com/viewtopic.php?pid=72244#p72244
-    Исходник - https://raw.githubusercontent.com/serzh82saratov/AhkSpy/master/AhkSpy.ahk
+	Обсуждение на офф. форуме- https://autohotkey.com/boards/viewtopic.php?f=6&t=52872
+    Актуальный исходник - https://raw.githubusercontent.com/serzh82saratov/AhkSpy/master/AhkSpy.ahk
 */
 
 p1 = %1%
@@ -38,7 +39,7 @@ ListLines, Off
 DetectHiddenWindows, On
 CoordMode, Pixel
 
-Global AhkSpyVersion := 3.08
+Global AhkSpyVersion := 3.10
 Gosub, CheckAhkVersion
 Menu, Tray, UseErrorLevel
 Menu, Tray, Icon, Shell32.dll, % A_OSVersion = "WIN_XP" ? 222 : 278
@@ -347,70 +348,56 @@ F8::
 
 F11:: FullScreenMode()
 
-#If isAhkSpy && WinActive("ahk_id" hGui) && IsIEFocus()
+#If isAhkSpy && Sleep != 1 && IsIEFocus() && (oDoc.selection.createRange().parentElement.isContentEditable)
+
+~^+vk41:: oDoc.execCommand("SelectAll")							;  Ctrl+Shift+A
+
+~^vk41:: oBody.createTextRange().select()						;  Ctrl+A
+
+#If isAhkSpy && Sleep != 1 && IsIEFocus()
 
 ^vk5A:: oDoc.execCommand("Undo")							;  Ctrl+Z
 
 ^vk59:: oDoc.execCommand("Redo")							;  Ctrl+Y
 
-#If isAhkSpy && WinActive("ahk_id" hGui) && IsIEFocus() && (oDoc.selection.createRange().parentElement.isContentEditable)
+^vk43:: GetSelected(CopyText) && ((Clipboard := CopyText), ToolTip("copy", 300))		;  Ctrl+C
 
-^vk43:: Clipboard := oDoc.selection.createRange().text, ToolTip("copy", 300)		;  Ctrl+C
+^vk56:: ClipPaste()																		;  Ctrl+V
 
-^vk56:: oDoc.execCommand("Paste"), ToolTip("paste", 300)							;  Ctrl+V
+^vk58:: CutSelection()								;  Ctrl+X
 
-~^vk41:: oDoc.execCommand("SelectAll")						;  Ctrl+A
+Del:: DeleteSelection()							;  Delete
 
-^vk58:: oDoc.execCommand("Cut")								;  Ctrl+X
+Tab:: PasteStrSelection("    ")							;  &emsp
 
-Del:: oDoc.execCommand("Delete")							;  Delete
+Enter:: PasteHTMLSelection("<br>")
 
-Enter:: oDoc.selection.createRange().pasteHTML("<br>")  ; oDoc.selection.createRange().text := "`r`n"
-
-Tab:: oDoc.selection.createRange().text := "    "			;  &emsp
-
-#If isAhkSpy && Sleep != 1 && WinActive("ahk_id" hGui) && !Hotkey_Arr("Hook") && IsIEFocus()
+#If isAhkSpy && Sleep != 1 && ThisMode != "Hotkey" && (IsIEFocus() || MS_IsSelection())
 
 #RButton:: ClipPaste()
 
-#If (isAhkSpy && Sleep != 1 && ThisMode != "Hotkey" && oMS.ELSel) && (oMS.ELSel.OuterText != "" || MS_Cancel())
+#If isAhkSpy && Sleep != 1 && ThisMode != "Hotkey" && (IsIEFocus() || MS_IsSelection()) && IsTextArea() && GetSelected(CopyText)
 
 RButton::
 ^RButton::
-	ToolTip("copy", 300)
-	CopyText := oMS.ELSel.OuterText
 	If (A_ThisHotkey = "^RButton")
 		CopyText := CopyCommaParam(CopyText)
 	Clipboard := CopyText
+	ToolTip("copy", 300)
 	Return
 
-+RButton:: ClipAdd(CopyText := oMS.ELSel.OuterText, 1)
-^+RButton:: ClipAdd(CopyText := CopyCommaParam(oMS.ELSel.OuterText), 1)
++RButton:: ClipAdd(CopyText, 1)
+^+RButton:: ClipAdd(CopyCommaParam(CopyText), 1)
 
-#If (isAhkSpy && Sleep != 1 && oMS.ELSel) && (oMS.ELSel.OuterText != "" || MS_Cancel())  ;	Mode = Hotkey
+#If isAhkSpy && Sleep != 1 && ThisMode = "Hotkey" && (IsIEFocus() || MS_IsSelection()) && IsTextArea() && GetSelected(CopyText) ;	Mode = Hotkey
 
 RButton::
-	CopyText := oMS.ELSel.OuterText
 	KeyWait, RButton, T0.3
 	If ErrorLevel
 		ClipAdd(CopyText, 1)
 	Else
 		Clipboard := CopyText, ToolTip("copy", 300)
 	Return
-
-#If isAhkSpy && Sleep != 1 && WinActive("ahk_id" hGui) && ExistSelectedText(CopyText)
-
-^RButton::
-RButton::
-CopyText:
-	ToolTip("copy", 300)
-	If (A_ThisHotkey = "^RButton")
-		CopyText := CopyCommaParam(CopyText)
-	Clipboard := CopyText
-	Return
-
-+RButton:: ClipAdd(CopyText, 1)
-^+RButton:: ClipAdd(CopyText := CopyCommaParam(CopyText), 1)
 
 #If (isAhkSpy && Sleep != 1 && !isPaused && ThisMode != "Hotkey")
 
@@ -508,7 +495,7 @@ Spot_Win(NotHTML = 0) {
 		while (sb_max := sb_fields.maxindex()) && (sb_fields[sb_max] = "")
 			sb_fields.Delete(sb_max)
 		for k, v in sb_fields
-			SBText .= "<span class='param'>(" k "):</span> <span name='MS:' id='sb_field_" A_Index "'>" TransformHTML(v "`n") "</span>"
+			SBText .= "<span class='param'>(" k "):</span> <span name='MS:' id='sb_field_" A_Index "'>" TransformHTML(v "") "</span>`n"
 		If SBText !=
 			SBText := _T1 "( StatusBarText ) </span>" _BT1 " id='copy_sbtext' name='" sb_max "'> copy " _BT2 _T2 _PRE1 "<span>" SBText "</span></span>" _PRE2
 	}
@@ -1930,6 +1917,11 @@ WM_CONTEXTMENU() {
 	Return 1
 }
 
+IsTextArea() {
+	MouseGetPos, , , , cid, 3
+	Return (DllCall("GetParent", Ptr, cid) = hActiveX)
+}
+
 ControlsMove(Width, Height) {
 	hDWP := DllCall("BeginDeferWindowPos", "Int", isFindView ? 3 : 2)
 	hDWP := DllCall("DeferWindowPos"
@@ -2196,16 +2188,6 @@ TransformHTML(str) {
 	Return str
 }
 
-ExistSelectedText(byref Copy) {
-	MouseGetPos, , , , ControlID, 2
-	If (ControlID != hActiveX)
-		Return 0
-	Copy := oDoc.selection.createRange().text
-	If Copy is space
-		Return 0
-	Return 1
-}
-
 PausedTitleText() {
 	Static i := 0, Str := "           Paused..."
  	If !isPaused
@@ -2243,9 +2225,48 @@ ClipAdd(Text, AddTip = 0) {
 ClipPaste() {
  	If oMS.ELSel && (oMS.ELSel.OuterText != "" || MS_Cancel())
 		oMS.ELSel.innerHTML := TransformHTML(Clipboard), oMS.ELSel.Name := "MS:"
+		, MoveCaretToSelection(0)
 	Else
 		oDoc.execCommand("Paste")
 	ToolTip("paste", 300)
+}
+
+CutSelection() {
+ 	If MS_IsSelection()
+		MoveCaretToSelection(1), oMS.ELSel.OuterText := "", MS_Cancel()
+	Else
+		oDoc.execCommand("Cut")
+	ToolTip("cut", 300)
+}
+
+DeleteSelection() {
+ 	If MS_IsSelection()
+		oMS.ELSel.OuterText := "", MS_Cancel()
+	Else
+		oDoc.execCommand("Delete")
+}
+
+PasteStrSelection(Str) {
+ 	If MS_IsSelection()
+		MoveCaretToSelection(1), oMS.ELSel.OuterText := TransformHTML(Str), MS_Cancel()
+	Else
+		oDoc.selection.createRange().text := Str
+}
+
+PasteHTMLSelection(Str) {
+ 	If MS_IsSelection()
+		oMS.ELSel.innerHTML := Str, MoveCaretToSelection(1)
+	Else
+		oDoc.selection.createRange().pasteHTML(Str)
+}
+
+GetSelected(ByRef Text, ByRef IsoMS = "") {
+	Text := oMS.ELSel.OuterText
+ 	If (Text != "")
+		IsoMS := 1
+	Else
+		Text := oDoc.selection.createRange().text, IsoMS := 0
+	Return (Text != "")
 }
 
 CopyCommaParam(Text) {
@@ -2501,6 +2522,8 @@ MouseStep(x, y) {
 }
 
 IsIEFocus() {
+	If !WinActive("ahk_id" hGui)
+		Return 0
 	ControlGetFocus, Focus
 	Return InStr(Focus, "Internet")
 }
@@ -2786,6 +2809,10 @@ MS_IsSelect(EL) {
 		Return 1
 }
 
+MS_IsSelection() {
+	Return oMS.ELSel.OuterText != ""
+}
+
 MS_Select(EL) {
 	If InStr(EL.Name, ":S")
 		oMS.ELSel := EL.ParentElement, oMS.ELSel.style.background := "#" ColorSelMouseHover
@@ -2795,6 +2822,11 @@ MS_Select(EL) {
 		oMS.ELSel := oDoc.all.item(EL.sourceIndex - 1).ParentElement, oMS.ELSel.style.background := "#" ColorSelMouseHover
 	Else
 		oMS.ELSel := EL, EL.style.background := "#" ColorSelMouseHover
+	MoveCaretToSelection(0)
+}
+
+MoveCaretToSelection(start) {
+	R := oBody.createTextRange(), R.moveToElementText(oMS.ELSel), R.collapse(start), R.select()
 }
 
 	; _________________________________________________ Load JScripts _________________________________________________
@@ -2935,7 +2967,6 @@ tooltip_onclick() {
 
 Class Events {  ;	http://forum.script-coding.com/viewtopic.php?pid=82283#p82283
 	onclick() {
-	Global CopyText
 		oevent := oDoc.parentWindow.event.srcElement
 		If (oevent.ClassName = "button" || oevent.tagname = "button")
 			Return ButtonClick(oevent)
@@ -2999,8 +3030,6 @@ Class Events {  ;	http://forum.script-coding.com/viewtopic.php?pid=82283#p82283
 		ToolTip(GetLangName(hActiveX), 500)
 		(OnHook ? Hotkey_Hook(1) : 0)
 	}
-
-
 }
 
 ButtonClick(oevent) {
@@ -3054,8 +3083,8 @@ ButtonClick(oevent) {
 	Else If thisid = copy_sbtext
 	{
 		Loop % oDoc.getElementById("copy_sbtext").name
-			el := oDoc.getElementById("sb_field_" A_Index), HighLight(el, 500, (A_Index = 1)), Text .= el.OuterText "`n"
-		Text := RTrim(Text, "`n"), GetKeyState("Shift", "P") ? ClipAdd(Text, 1) : (Clipboard := Text)
+			el := oDoc.getElementById("sb_field_" A_Index), HighLight(el, 500, (A_Index = 1)), Text .= el.OuterText "`r`n"
+		Text := RTrim(Text, "`r`n"), GetKeyState("Shift", "P") ? ClipAdd(Text, 1) : (Clipboard := Text)
 	}
 	Else If thisid = keyname
 	{
@@ -3106,8 +3135,6 @@ ButtonClick(oevent) {
 	Else If thisid = paste_keyname
 		edithotkey := oDoc.getElementById("edithotkey"), edithotkey.value := "", edithotkey.focus()
 		, oDoc.execCommand("Paste"), oDoc.getElementById("keyname").click()
-	Else If (thisid = "copy_selected" && ExistSelectedText(CopyText) && ToolTip("copy", 500))
-		GoSub CopyText
 	Else If thisid = get_styles
 		ViewStyles(oevent)
 	Else If thisid = run_AccViewer
