@@ -39,7 +39,7 @@ ListLines, Off
 DetectHiddenWindows, On
 CoordMode, Pixel
 
-Global AhkSpyVersion := 3.10
+Global AhkSpyVersion := 3.11
 Gosub, CheckAhkVersion
 Menu, Tray, UseErrorLevel
 Menu, Tray, Icon, Shell32.dll, % A_OSVersion = "WIN_XP" ? 222 : 278
@@ -2260,6 +2260,10 @@ PasteHTMLSelection(Str) {
 		oDoc.selection.createRange().pasteHTML(Str)
 }
 
+MoveCaretToSelection(start) {
+	R := oBody.createTextRange(), R.moveToElementText(oMS.ELSel), R.collapse(start), R.select()
+}
+
 GetSelected(ByRef Text, ByRef IsoMS = "") {
 	Text := oMS.ELSel.OuterText
  	If (Text != "")
@@ -2821,12 +2825,7 @@ MS_Select(EL) {
 	Else If InStr(EL.Name, ":P")
 		oMS.ELSel := oDoc.all.item(EL.sourceIndex - 1).ParentElement, oMS.ELSel.style.background := "#" ColorSelMouseHover
 	Else
-		oMS.ELSel := EL, EL.style.background := "#" ColorSelMouseHover
-	MoveCaretToSelection(0)
-}
-
-MoveCaretToSelection(start) {
-	R := oBody.createTextRange(), R.moveToElementText(oMS.ELSel), R.collapse(start), R.select()
+		oMS.ELSel := EL, EL.style.background := "#" ColorSelMouseHover 
 }
 
 	; _________________________________________________ Load JScripts _________________________________________________
