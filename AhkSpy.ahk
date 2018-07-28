@@ -39,7 +39,7 @@ ListLines, Off
 DetectHiddenWindows, On
 CoordMode, Pixel
 
-Global AhkSpyVersion := 3.11
+Global AhkSpyVersion := 3.12
 Gosub, CheckAhkVersion
 Menu, Tray, UseErrorLevel
 Menu, Tray, Icon, Shell32.dll, % A_OSVersion = "WIN_XP" ? 222 : 278
@@ -2233,7 +2233,8 @@ ClipPaste() {
 
 CutSelection() {
  	If MS_IsSelection()
-		MoveCaretToSelection(1), oMS.ELSel.OuterText := "", MS_Cancel()
+		MoveCaretToSelection(0), Clipboard := oMS.ELSel.OuterText
+		, oMS.ELSel.OuterText := "", MS_Cancel()
 	Else
 		oDoc.execCommand("Cut")
 	ToolTip("cut", 300)
@@ -2241,23 +2242,23 @@ CutSelection() {
 
 DeleteSelection() {
  	If MS_IsSelection()
-		oMS.ELSel.OuterText := "", MS_Cancel()
+		MoveCaretToSelection(0), oMS.ELSel.OuterText := "", MS_Cancel()
 	Else
 		oDoc.execCommand("Delete")
 }
 
 PasteStrSelection(Str) {
  	If MS_IsSelection()
-		MoveCaretToSelection(1), oMS.ELSel.OuterText := TransformHTML(Str), MS_Cancel()
+		MoveCaretToSelection(0), oMS.ELSel.OuterText := TransformHTML(Str), MS_Cancel()
 	Else
 		oDoc.selection.createRange().text := Str
 }
 
 PasteHTMLSelection(Str) {
  	If MS_IsSelection()
-		oMS.ELSel.innerHTML := Str, MoveCaretToSelection(1)
+		oMS.ELSel.innerHTML := Str, MoveCaretToSelection(0)
 	Else
-		oDoc.selection.createRange().pasteHTML(Str)
+		oDoc.selection.createRange().pasteHTML(Str) 
 }
 
 MoveCaretToSelection(start) {
