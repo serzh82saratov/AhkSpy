@@ -39,7 +39,7 @@ ListLines, Off
 DetectHiddenWindows, On
 CoordMode, Pixel
 
-Global AhkSpyVersion := 3.12
+Global AhkSpyVersion := 3.13
 Gosub, CheckAhkVersion
 Menu, Tray, UseErrorLevel
 Menu, Tray, Icon, Shell32.dll, % A_OSVersion = "WIN_XP" ? 222 : 278
@@ -255,6 +255,8 @@ Return
 
 +Tab::
 SpotProc:
+	If (A_ThisLabel != "SpotProc")
+		Shift_Tab_Down := 1
 	(ThisMode = "Control" ? (Spot_Control() (StateAllwaysSpot ? Spot_Win() : 0) Write_Control()) : (Spot_Win() (StateAllwaysSpot ? Spot_Control() : 0) Write_Win()))
 	If !WinActive("ahk_id" hGui)
 	{
@@ -263,13 +265,13 @@ SpotProc:
 	}
 	Else
 		ZoomMsg(3)
-	KeyWait, Tab, T0.1
+	KeyWait, Tab, T0.1 
 	Return
 
-#If isAhkSpy && (StateLight = 3 || WinActive("ahk_id" hGui))
+#If isAhkSpy && (StateLight = 3 || Shift_Tab_Down)
 
 ~*RShift Up::
-~*LShift Up:: HideMarker(), HideAccMarker()
+~*LShift Up:: HideAllMarkers(), Shift_Tab_Down := 0
 
 #If isAhkSpy && Sleep != 1
 
@@ -288,17 +290,15 @@ PausedScript:
 		Hotkey_Hook(!isPaused)
 	If (isPaused && !WinActive("ahk_id" hGui))
 		(ThisMode = "Control" ? Spot_Win() : ThisMode = "Win" ? Spot_Control() : 0)
-	HideMarker(), HideAccMarker()
+	HideAllMarkers(), CheckHideMarker()
 	Menu, Sys, % (isPaused ? "Check" : "UnCheck"), Pause
 	isPaused ? TaskbarProgress(4, hGui, 100) : TaskbarProgress(0, hGui)
 	TitleText := (TitleTextP1 := "AhkSpy - " ({"Win":"Window","Control":"Control","Hotkey":"Button"}[ThisMode]))
 	. (TitleTextP2 := (isPaused ? "                Paused..." : TitleTextP2_Reserved))
 	SendMessage, 0xC, 0, &TitleText, , ahk_id %hGui%
 	PausedTitleText()
-	Return
+	Return 
 
-~*RShift Up::
-~*LShift Up:: CheckHideMarker()
 #If isAhkSpy && Sleep != 1 && WinActive("ahk_id" hGui)
 
 ^WheelUp::
@@ -453,7 +453,7 @@ Spot_Win(NotHTML = 0) {
 		GoTo HTML_Win
 	MouseGetPos,,,WinID
 	If (WinID = hGui || WinID = oOther.hZoom || WinID = oOther.hZoomLW)
-		Return HideMarker(), HideAccMarker()
+		Return HideAllMarkers()
 	WinGetTitle, WinTitle, ahk_id %WinID%
 	WinTitle := TransformHTML(WinTitle)
 	WinGetPos, WinX, WinY, WinWidth, WinHeight, ahk_id %WinID%
@@ -666,7 +666,7 @@ Spot_Control(NotHTML = 0) {
 	CoordMode, Mouse, Window
 	MouseGetPos, MXWA, MYWA, , tControlID, 2
 	If (WinID = hGui || WinID = oOther.hZoom || WinID = oOther.hZoomLW)
-		Return HideMarker(), HideAccMarker()
+		Return HideAllMarkers()
 	CtrlInfo := "", isIE := 0
 	ControlNN := tControlNN, ControlID := tControlID
 	WinGetPos, WinX, WinY, WinW, WinH, ahk_id %WinID%
@@ -1239,7 +1239,7 @@ Mode_Hotkey:
 		HTML_%ThisMode% := oBody.innerHTML
 	ThisMode := "Hotkey", Hotkey_Hook(!isPaused)
 	TitleText := (TitleTextP1 := "AhkSpy - Button") . TitleTextP2
-	ShowMarker ? (HideMarker(), HideAccMarker()) : 0
+	ShowMarker ? (HideAllMarkers()) : 0
 	(HTML_Hotkey != "") ? Write_Hotkey() : Write_HotkeyHTML({Mods:"Waiting pushed buttons..."})
 	oDocEl.scrollLeft := ScrollPos[ThisMode,1], oDocEl.scrollTop := ScrollPos[ThisMode,2]
 	SendMessage, 0xC, 0, &TitleText, , ahk_id %hGui%
@@ -1813,7 +1813,7 @@ WM_ACTIVATE(wp, lp) {
 		If (ThisMode = "Hotkey" && !isPaused)
 			Hotkey_Hook(1)
 		If !ActiveNoPause
-			HideMarker(), HideAccMarker(), CheckHideMarker()
+			HideAllMarkers(), CheckHideMarker()
 	}
 }
 
@@ -1859,13 +1859,14 @@ GuiSize:
 			SetTimer, SaveSize, -400
 	}
 	Else
-		HideMarker(), HideAccMarker()
+		HideAllMarkers(), CheckHideMarker() 
 	Try SetTimer, Loop_%ThisMode%, % A_EventInfo = 1 || isPaused ? "Off" : "On"
 	Return
 
 Minimize() {
 	Sleep := 1
 	Gui, 1: Minimize
+	
 }
 
 WM_NCLBUTTONDOWN(wp) {
@@ -2094,6 +2095,10 @@ HideAccMarker() {
 	HideMarkers(oShowAccMarkers)
 }
 
+HideAllMarkers() {
+	HideMarker(), HideAccMarker()
+}
+
 ShowMarkers(arr, x, y, w, h, b) {
 	hDWP := DllCall("BeginDeferWindowPos", "Int", 4)
 	for k, v in [[x, y, b, h],[x, y+h-b, w, b],[x+w-b, y, b, h],[x, y, w, b]]
@@ -2134,15 +2139,16 @@ ShowMarkersCreate(arr, color) {
 }
 
 CheckHideMarker() {
-	Static Try := 0
-	SetTimer, CheckHideMarker, -150
+	Static Try
+	Try := 0
+	SetTimer, __CheckHideMarker, -50
 	Return
 
-	CheckHideMarker:
-		If !(Try := ++Try > 2 ? 0 : Try)
-			Return
-		WinActive("ahk_id" hGui) ? (HideMarker(), HideAccMarker()) : 0
-		SetTimer, CheckHideMarker, -250
+	__CheckHideMarker: 
+		If (Sleep = 1 || (WinActive("ahk_id" hGui) && !ActiveNoPause) || isPaused)
+			HideAllMarkers() 
+		If (Try := ++Try > 2 ? 0 : Try) 
+			SetTimer, __CheckHideMarker, -150
 		Return
 }
 
@@ -3222,7 +3228,7 @@ ButtonClick(oevent) {
 		}
 		GoSub, SpotProc
 		Sleep 350
-		HideMarker(), HideAccMarker()
+		HideAllMarkers(), CheckHideMarker()
 		BlockInput, MouseMoveOff
 	}
 	Else If thisid = run_zoom
