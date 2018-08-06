@@ -22,7 +22,7 @@
     Также благодарность teadrinker, YMP, Irbis за их решения
     Описание - http://forum.script-coding.com/viewtopic.php?pid=72459#p72459
     Обсуждение - http://forum.script-coding.com/viewtopic.php?pid=72244#p72244
-	Обсуждение на офф. форуме- https://autohotkey.com/boards/viewtopic.php?f=6&t=52872
+    Обсуждение на офф. форуме- https://autohotkey.com/boards/viewtopic.php?f=6&t=52872
     Актуальный исходник - https://raw.githubusercontent.com/serzh82saratov/AhkSpy/master/AhkSpy.ahk
 */
 
@@ -39,7 +39,7 @@ ListLines, Off
 DetectHiddenWindows, On
 CoordMode, Pixel
 
-Global AhkSpyVersion := 3.13
+Global AhkSpyVersion := 3.14
 Gosub, CheckAhkVersion
 Menu, Tray, UseErrorLevel
 Menu, Tray, Icon, Shell32.dll, % A_OSVersion = "WIN_XP" ? 222 : 278
@@ -448,7 +448,7 @@ Repeat_Loop_Win:
 	Return
 
 Spot_Win(NotHTML = 0) {
-	Static PrWinPID, ComLine, WinProcessPath, ProcessBitSize, IsAdmin, WinProcessName
+	Static PrWinPID, ComLine, ProcessBitSize, IsAdmin, WinProcessPath, WinProcessName
 	If NotHTML
 		GoTo HTML_Win
 	MouseGetPos,,,WinID
@@ -463,7 +463,7 @@ Spot_Win(NotHTML = 0) {
 	If (WinPID != PrWinPID) {
 		GetCommandLineProc(WinPID, ComLine, ProcessBitSize, IsAdmin)
 		ComLine := TransformHTML(ComLine), PrWinPID := WinPID
-		WinGet, WinProcessPath, ProcessPath, ahk_pid %WinPID%
+		WinGet, WinProcessPath, ProcessPath, ahk_id %WinID%
 		Loop, %WinProcessPath%
 			WinProcessPath = %A_LoopFileLongPath%
 		SplitPath, WinProcessPath, WinProcessName
@@ -661,7 +661,7 @@ Spot_Control(NotHTML = 0) {
 	WinGet, ProcessName_A, ProcessName, A
 	WinGet, HWND_A, ID, A
 	WinGetClass, WinClass_A, A
-	CoordMode, Mouse
+	CoordMode, Mouse, Screen
 	MouseGetPos, MXS, MYS, WinID, tControlNN
 	CoordMode, Mouse, Window
 	MouseGetPos, MXWA, MYWA, , tControlID, 2
@@ -1279,12 +1279,12 @@ Write_HotkeyHTML(K) {
 	}
 	If Prefix !=
 		DUMods := (K.MLCtrl ? "{LCtrl Down}" : "") (K.MRCtrl ? "{RCtrl Down}" : "")
-			. (K.MLAlt ? "{LAlt Down}" : "") (K.MRAlt ? "{RAlt Down}" : "")
 			. (K.MLShift ? "{LShift Down}" : "") (K.MRShift ? "{RShift Down}" : "")
+			. (K.MLAlt ? "{LAlt Down}" : "") (K.MRAlt ? "{RAlt Down}" : "")
 			. (K.MLWin ? "{LWin Down}" : "") (K.MRWin ? "{RWin Down}" : "") . "{" Hotkey "}"
 			. (K.MLCtrl ? "{LCtrl Up}" : "") (K.MRCtrl ? "{RCtrl Up}" : "")
-			. (K.MLAlt ? "{LAlt Up}" : "") (K.MRAlt ? "{RAlt Up}" : "")
 			. (K.MLShift ? "{LShift Up}" : "") (K.MRShift ? "{RShift Up}" : "")
+			. (K.MLAlt ? "{LAlt Up}" : "") (K.MRAlt ? "{RAlt Up}" : "")
 			. (K.MLWin ? "{LWin Up}" : "") (K.MRWin ? "{RWin Up}" : "")
 
 	SendHotkey := Hotkey
@@ -1444,8 +1444,8 @@ Hotkey_Init(Func, Options = "") {
 }
 
 Hotkey_Main(In) {
-	Static Prefix := {"LAlt":"<!","LCtrl":"<^","LShift":"<+","LWin":"<#"
-	,"RAlt":">!","RCtrl":">^","RShift":">+","RWin":">#"}, K := {}, ModsOnly
+	Static Prefix := {"LCtrl":"<^","LShift":"<+","LAlt":"<!","LWin":"<#"
+	,"RCtrl":">^","RShift":">+","RAlt":">!","RWin":">#"}, K := {}, ModsOnly
 	Local IsMod, sIsMod
 	IsMod := In.IsMod
 	If (In.Opt = "Down") {
@@ -1466,31 +1466,31 @@ Hotkey_Main(In) {
 	Else If (In.Opt = "OnlyMods") {
 		If !ModsOnly
 			Return 0
-		K.MCtrl := K.MAlt := K.MShift := K.MWin := K.Mods := ""
-		K.PCtrl := K.PAlt := K.PShift := K.PWin := K.Pref := ""
-		K.PRCtrl := K.PRAlt := K.PRShift := K.PRWin := ""
-		K.PLCtrl := K.PLAlt := K.PLShift := K.PLWin := K.LRPref := ""
-		K.MRCtrl := K.MRAlt := K.MRShift := K.MRWin := ""
-		K.MLCtrl := K.MLAlt := K.MLShift := K.MLWin := K.LRMods := ""
+		K.MCtrl := K.MShift := K.MAlt := K.MWin := K.Mods := ""
+		K.PCtrl := K.PShift := K.PAlt := K.PWin := K.Pref := ""
+		K.PRCtrl := K.PRShift := K.PRAlt := K.PRWin := ""
+		K.PLCtrl := K.PLShift := K.PLAlt := K.PLWin := K.LRPref := ""
+		K.MRCtrl := K.MRShift := K.MRAlt := K.MRWin := ""
+		K.MLCtrl := K.MLShift := K.MLAlt := K.MLWin := K.LRMods := ""
 		Func(Hotkey_Arr("Func")).Call(K)
 		Return ModsOnly := 0
 	}
 	Else If (In.Opt = "GetMod")
-		Return !!(K.PCtrl K.PAlt K.PShift K.PWin)
+		Return !!(K.PCtrl K.PShift K.PAlt K.PWin)
 	Else If (In = "LButton")
 		GoTo, Hotkey_PressLButton
 
 	K.UP := In.UP, K.IsJM := 0, K.Time := In.Time, K.NFP := In.NFP, K.IsMod := IsMod
-	K.Mods := K.MCtrl K.MAlt K.MShift K.MWin
-	K.LRMods := K.MLCtrl K.MRCtrl K.MLAlt K.MRAlt K.MLShift K.MRShift K.MLWin K.MRWin
+	K.Mods := K.MCtrl K.MShift K.MAlt K.MWin
+	K.LRMods := K.MLCtrl K.MRCtrl K.MLShift K.MRShift K.MLAlt K.MRAlt K.MLWin K.MRWin
 	K.VK := "vk" In.VK, K.SC := "sc" In.SC, K.TK := GetKeyName(K.VK K.SC)
 	K.TK := K.TK = "" ? K.VK K.SC : (StrLen(K.TK) = 1 ? Format("{:U}", K.TK) : K.TK)
 	(IsMod) ? (K.HK := K.Pref := K.LRPref := K.Name := K.IsCode := "", ModsOnly := K.Mods = "" ? 0 : 1)
 	: (K.IsCode := (SendCode != "name" && StrLen(K.TK) = 1)  ;	 && !Instr("1234567890-=", K.TK)
 	, K.HK := K.IsCode ? K[SendCode] : K.TK
 	, K.Name := K.HK = "vkBF" ? "/" : K.TK
-	, K.Pref := K.PCtrl K.PAlt K.PShift K.PWin
-	, K.LRPref := K.PLCtrl K.PRCtrl K.PLAlt K.PRAlt K.PLShift K.PRShift K.PLWin K.PRWin
+	, K.Pref := K.PCtrl K.PShift K.PAlt K.PWin
+	, K.LRPref := K.PLCtrl K.PRCtrl K.PLShift K.PRShift K.PLAlt K.PRAlt K.PLWin K.PRWin
 	, ModsOnly := 0)
 	Func(Hotkey_Arr("Func")).Call(K)
 	Return 1
@@ -1510,10 +1510,10 @@ Hotkey_PressMouse:
 	K.NFP := !GetKeyState(ThisHotkey, "P")
 Hotkey_Drop:
 	K.Time := A_TickCount
-	K.Mods := K.MCtrl K.MAlt K.MShift K.MWin
-	K.LRMods := K.MLCtrl K.MRCtrl K.MLAlt K.MRAlt K.MLShift K.MRShift K.MLWin K.MRWin
-	K.Pref := K.PCtrl K.PAlt K.PShift K.PWin
-	K.LRPref := K.PLCtrl K.PRCtrl K.PLAlt K.PRAlt K.PLShift K.PRShift K.PLWin K.PRWin
+	K.Mods := K.MCtrl K.MShift K.MAlt K.MWin
+	K.LRMods := K.MLCtrl K.MRCtrl K.MLShift K.MRShift K.MLAlt K.MRAlt K.MLWin K.MRWin
+	K.Pref := K.PCtrl K.PShift K.PAlt K.PWin
+	K.LRPref := K.PLCtrl K.PRCtrl K.PLShift K.PRShift K.PLAlt K.PRAlt K.PLWin K.PRWin
 	K.HK := K.Name := K.TK := ThisHotkey, ModsOnly := K.UP := K.IsCode := 0, K.IsMod := K.SC := ""
 	K.IsJM := A_ThisLabel = "Hotkey_PressJoy" ? 1 : 2
 	K.VK := A_ThisLabel = "Hotkey_PressJoy" ? "" : Format("vk{:X}", GetKeyVK(ThisHotkey))
@@ -2571,6 +2571,7 @@ UpdateAhkSpy(in = 1) {
 				Return (Ver := RegExReplace(Text, "i).*?version\s*(.*?)\R.*", "$1")) > AhkSpyVersion ? UpdateAhkSpy(2) : 0
 			If (!InStr(Text, "AhkSpyVersion"))
 				Return
+			HideAllMarkers()
 			If InStr(FileExist(A_ScriptFullPath), "R")
 			{
 				MsgBox, % 16+262144+8192, AhkSpy, Exist new version %Ver%!`n`nBut the file has an attribute "READONLY".`nUpdate imposible.
