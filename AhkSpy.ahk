@@ -39,7 +39,7 @@ ListLines, Off
 DetectHiddenWindows, On
 CoordMode, Pixel
 
-Global AhkSpyVersion := 3.14
+Global AhkSpyVersion := 3.15
 Gosub, CheckAhkVersion
 Menu, Tray, UseErrorLevel
 Menu, Tray, Icon, Shell32.dll, % A_OSVersion = "WIN_XP" ? 222 : 278
@@ -53,6 +53,7 @@ Global MemoryFontSize := IniRead("MemoryFontSize", 0)
 , ColorBg := ColorBgOriginal := "FFFFFF"								;  Цвет фона          "F0F0F0" E4E4E4     F8F8F8
 , ColorBgPaused := "FAFAFA"												;  Цвет фона при паузе     F0F0F0
 , ColorSelMouseHover := "96C3DC"										;  Цвет фона элемента при наведении мыши     F9D886 96C3DC 8FC5FC AEC7E1
+, ColorSelAnchor := "FFFF80"											;  Цвет фона заголовка для якоря
 , ColorDelimiter := "E14B30"											;  Цвет шрифта разделителя заголовков и параметров
 , ColorTitle := "27419B"												;  Цвет шрифта заголовка
 , ColorParam := "189200"												;  Цвет шрифта параметров
@@ -81,7 +82,7 @@ Global ThisMode := IniRead("StartMode", "Control"), LastModeSave := (ThisMode = 
 	. "onmouseup='OnButtonUp (this)' onmouseover='OnButtonOver (this)' contenteditable='false' ", _BT2 := "</span>"
 , _BP1 := "<span contenteditable='false' oncontextmenu='return false' class='BB'>" _BT1 "style='color: #" ColorParam ";' name='pre' ", _BP2 := "</span></span>"
 , _BB1 := "<span contenteditable='false' oncontextmenu='return false' class='BB' style='height: 0px;'>" _BT1 " ", _BB2 := "</span></span>"
-, _T1 := "<span class='box'><span class='line'><span class='hr'></span><span class='con'><span class='title'>", _T2 := "</span></span></span><br>"
+, _T1 := "<span class='box'><span class='line'><span class='hr'></span><span class='con'><span class='title' name='main'>", _T2 := "</span></span></span><br>"
 , _T1P := "<span class='box'><span class='line'><span class='hr'></span><span class='con'><span class='title' style='color: #" ColorParam ";'>"
 , _T0 := "<span class='box'><span class='hr'></span></span>"
 , _PRE1 := "<pre contenteditable='true'>", _PRE2 := "</pre>"
@@ -96,7 +97,9 @@ Global ThisMode := IniRead("StartMode", "Control"), LastModeSave := (ThisMode = 
 , _ButAccViewer := ExtraFile("AccViewer Source") ? _BT1 " id='run_AccViewer'> run accviewer " _BT2 : ""
 , _ButiWB2Learner := ExtraFile("iWB2 Learner") ? _BT1 " id='run_iWB2Learner'> run iwb2 learner " _BT2 : ""
 , TitleText, FreezeTitleText, TitleTextP1, TitleTextP2 := TitleTextP2_Reserved := "     ( Shift+Tab - Freeze | RButton - CopySelected | Pause - Pause )     v" AhkSpyVersion
+
 BLGroup := ["Backlight allways","Backlight disable","Backlight hold shift button"]
+oOther.anchor := {}
 
 ObjRegisterActive(myPublicObj, myPublicObjGUID := CreateGUID())
 
@@ -265,7 +268,7 @@ SpotProc:
 	}
 	Else
 		ZoomMsg(3)
-	KeyWait, Tab, T0.1 
+	KeyWait, Tab, T0.1
 	Return
 
 #If isAhkSpy && (StateLight = 3 || Shift_Tab_Down)
@@ -297,7 +300,7 @@ PausedScript:
 	. (TitleTextP2 := (isPaused ? "                Paused..." : TitleTextP2_Reserved))
 	SendMessage, 0xC, 0, &TitleText, , ahk_id %hGui%
 	PausedTitleText()
-	Return 
+	Return
 
 #If isAhkSpy && Sleep != 1 && WinActive("ahk_id" hGui)
 
@@ -409,6 +412,13 @@ RButton::
 ^+#Down::MouseStep(0, 10)
 ^+#Left::MouseStep(-10, 0)
 ^+#Right::MouseStep(10, 0)
+
+#If oJScript.ButtonOver
+
++LButton::
+	obj := Func("ButtonClick").Bind(oJScript.ButtonOver)
+	SetTimer, % obj, -10
+	Return
 
 #If
 
@@ -604,6 +614,9 @@ HTML_Win:
 	.titleparam {
 		color: #%ColorTitle%;
 	}
+	#anchor {
+		background-color: #%ColorSelAnchor%;
+	}
 	</style>
 	)
 	oOther.WinPID := WinPID
@@ -614,7 +627,11 @@ HTML_Win:
 }
 
 Write_Win() {
+	If oOther.anchor[ThisMode]
+		HTML_Win := Anchorbefore(HTML_Win)
 	oBody.innerHTML := HTML_Win
+	If oOther.anchor[ThisMode]
+		AnchorScroll()
 	If oDocEl.scrollLeft
 		oDocEl.scrollLeft := 0
 	Return 1
@@ -759,6 +776,7 @@ HTML_Control:
 		margin: 0.3em;
 		background-color: #%ColorBg%;
 		font-size: %FontSize%px;
+		scrollbar-y-position: 111px;
 	}
 	.br {
 		height:0.1em;
@@ -809,6 +827,9 @@ HTML_Control:
 	.param {
 		color: #%ColorParam%;
 	}
+	#anchor {
+		background-color: #%ColorSelAnchor%;
+	}
 	</style>
 	)
 	oOther.MouseControlID := ControlID
@@ -817,7 +838,11 @@ HTML_Control:
 }
 
 Write_Control() {
+	If oOther.anchor[ThisMode]
+		HTML_Control := Anchorbefore(HTML_Control)
 	oBody.innerHTML := HTML_Control
+	If oOther.anchor[ThisMode]
+		AnchorScroll()
 	If oDocEl.scrollLeft
 		oDocEl.scrollLeft := 0
 	Return 1
@@ -1859,14 +1884,14 @@ GuiSize:
 			SetTimer, SaveSize, -400
 	}
 	Else
-		HideAllMarkers(), CheckHideMarker() 
+		HideAllMarkers(), CheckHideMarker()
 	Try SetTimer, Loop_%ThisMode%, % A_EventInfo = 1 || isPaused ? "Off" : "On"
 	Return
 
 Minimize() {
 	Sleep := 1
 	Gui, 1: Minimize
-	
+
 }
 
 WM_NCLBUTTONDOWN(wp) {
@@ -2144,10 +2169,10 @@ CheckHideMarker() {
 	SetTimer, __CheckHideMarker, -50
 	Return
 
-	__CheckHideMarker: 
+	__CheckHideMarker:
 		If (Sleep = 1 || (WinActive("ahk_id" hGui) && !ActiveNoPause) || isPaused)
-			HideAllMarkers() 
-		If (Try := ++Try > 2 ? 0 : Try) 
+			HideAllMarkers()
+		If (Try := ++Try > 2 ? 0 : Try)
 			SetTimer, __CheckHideMarker, -150
 		Return
 }
@@ -2264,7 +2289,7 @@ PasteHTMLSelection(Str) {
  	If MS_IsSelection()
 		oMS.ELSel.innerHTML := Str, MoveCaretToSelection(0)
 	Else
-		oDoc.selection.createRange().pasteHTML(Str) 
+		oDoc.selection.createRange().pasteHTML(Str)
 }
 
 MoveCaretToSelection(start) {
@@ -2553,6 +2578,20 @@ NextLink(s = "") {
 	oDocEl.scrollTop := curpos + res
 }
 
+Anchorbefore(HTML_Control) {
+	Static T1
+	If !T1
+		T1 := SubStr(_T1, 7)
+	Return StrReplace(HTML_Control, T1 oOther.anchor[ThisMode "_text"], "id = 'anchor' " T1 oOther.anchor[ThisMode "_text"], , 1)
+}
+
+AnchorScroll() {
+	EL := oDoc.getElementById("anchor")
+	If !EL
+		Return
+	oDocEl.scrollTop := oDocEl.scrollTop + EL.getBoundingClientRect().top
+}
+
 UpdateAhkSpy(in = 1) {
 	Static att, Ver, req
 		, url1 := "https://raw.githubusercontent.com/serzh82saratov/AhkSpy/master/Readme.txt"
@@ -2833,7 +2872,7 @@ MS_Select(EL) {
 	Else If InStr(EL.Name, ":P")
 		oMS.ELSel := oDoc.all.item(EL.sourceIndex - 1).ParentElement, oMS.ELSel.style.background := "#" ColorSelMouseHover
 	Else
-		oMS.ELSel := EL, EL.style.background := "#" ColorSelMouseHover 
+		oMS.ELSel := EL, EL.style.background := "#" ColorSelMouseHover
 }
 
 	; _________________________________________________ Load JScripts _________________________________________________
@@ -2855,7 +2894,7 @@ html =
 </head>
 
 <script type="text/javascript">
-	var prWidth, WordWrap, MoveTitles, key1, key2;
+	var prWidth, WordWrap, MoveTitles, key1, key2, ButtonOver;
 	function shift(scroll) {
 		var col, Width, clientWidth, scrollLeft, Offset;
 		clientWidth = document.documentElement.clientWidth;
@@ -2921,12 +2960,14 @@ html =
 	function OnButtonOver (el) {
 		el.style.zIndex = "2";
 		el.style.border = "1px solid black";
+		ButtonOver = el;
 	}
 	function OnButtonOut (el) {
 		el.style.zIndex = "0";
 		el.style.backgroundColor = "";
 		el.style.color = (el.name != "pre" ? "#%ColorFont%" : "#%ColorParam%");
 		el.style.border = "1px dotted black";
+		ButtonOver = 0;
 	}
 	function Assync (param) {
 		setTimeout(param, 1);
@@ -2985,6 +3026,28 @@ Class Events {  ;	http://forum.script-coding.com/viewtopic.php?pid=82283#p82283
 		oevent := oDoc.parentWindow.event.srcElement
 		If (oevent.ClassName = "button" || oevent.tagname = "button")
 			Return ButtonClick(oevent)
+
+		If (oevent.ClassName = "title" && oevent.name = "main" && ThisMode != "Hotkey")  ;	anchor
+		{
+			R := oDoc.selection.createRange(), R.collapse(1), R.select()
+
+			If oOther.anchor[ThisMode]
+			{
+				EL := oDoc.getElementById("anchor")
+				EL.style.backgroundColor := "#" ColorBg
+				EL.Id := ""
+				If oevent.OuterText = oOther.anchor[ThisMode "_text"]
+					Return oOther.anchor[ThisMode] := 0, oOther.anchor[ThisMode "_text"] := ""
+			}
+			oOther.anchor[ThisMode] := 1
+			oOther.anchor[ThisMode "_text"] := oevent.OuterText
+			; EL := oDoc.all.item(oevent.sourceIndex - 4)
+			EL := oevent.parentElement.parentElement.parentElement
+			EL.Id := "anchor"
+			EL.style.backgroundColor := "#" ColorSelAnchor
+			Return
+		}
+
 		If (oevent.tagname != "input" && (rng := oDoc.selection.createRange()).text != "" && oevent.isContentEditable)
 		{
 			While !t
@@ -3125,9 +3188,9 @@ ButtonClick(oevent) {
 		RunRealPath(oDoc.getElementById("c_command_line").OuterText)
 	Else If thisid = paste_command_line
 		oDoc.getElementById("c_command_line").innerHTML := TransformHTML(Clipboard)
-	Else If (thisid = "process_close" && (oOther.WinPID || !ToolTip("Invalid parametrs", 500)) && ConfirmAction("Process close?"))
+	Else If (thisid = "process_close" && (oOther.WinPID || !ToolTip("Invalid parametrs", 500)) && (GetKeyState("Shift", "P") || ConfirmAction("Process close?")))
 		Process, Close, % oOther.WinPID
-	Else If (thisid = "win_close" && (oOther.WinPID || !ToolTip("Invalid parametrs", 500)) && ConfirmAction("Window close?"))
+	Else If (thisid = "win_close" && (oOther.WinPID || !ToolTip("Invalid parametrs", 500)) && (GetKeyState("Shift", "P") || ConfirmAction("Window close?")))
 		WinClose, % "ahk_id" oOther.WinID
 	Else If (thisid = "SendCode")
 		Events.SendCode()
