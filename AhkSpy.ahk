@@ -38,8 +38,9 @@ ListLines, Off
 #KeyHistory 0
 DetectHiddenWindows, On
 CoordMode, Pixel
+CoordMode, Menu
 
-Global AhkSpyVersion := 3.17
+Global AhkSpyVersion := 3.18
 Gosub, CheckAhkVersion
 Menu, Tray, UseErrorLevel
 Menu, Tray, Icon, Shell32.dll, % A_OSVersion = "WIN_XP" ? 222 : 278
@@ -99,7 +100,7 @@ Global ThisMode := IniRead("StartMode", "Control"), LastModeSave := (ThisMode = 
 , TitleText, FreezeTitleText, TitleTextP1, TitleTextP2 := TitleTextP2_Reserved := "     ( Shift+Tab - Freeze | RButton - CopySelected | Pause - Pause )     v" AhkSpyVersion
 
 BLGroup := ["Backlight allways","Backlight disable","Backlight hold shift button"]
-oOther.anchor := {}
+oOther.anchor := {}, oOther.CurrentProcessId := DllCall("GetCurrentProcessId")
 
 ObjRegisterActive(myPublicObj, myPublicObjGUID := CreateGUID())
 
@@ -331,7 +332,7 @@ F5:: Write_%ThisMode%()		;  Return original HTML
 F6:: AppsKey
 
 F12::
-F7:: ShowSys(5, 5)
+F7:: MouseGetPosScreen(x, y), ShowSys(x + 5, y + 5)
 
 !Space:: SetTimer, ShowSys, -1
 
@@ -1662,6 +1663,64 @@ CheckAhkVersion:
 	}
 	Return
 
+ShowSys(x, y) {
+ShowSys:
+	ZoomMsg(9, 1)
+	DllCall("SetTimer", Ptr, A_ScriptHwnd, Ptr, 1, UInt, 116, Ptr, RegisterCallback("MenuCheck", "Fast"))
+	Menu, Sys, Show, % x, % y
+	ZoomMsg(9, 0)
+	Return
+}
+
+MenuCheck()  {
+	Static oItems := {Sys:{1:"Sys_Backlight",2:"Sys_Backlight",3:"Sys_Backlight",5:"Sys_WClight",6:"Sys_Acclight",8:"Spot_Together"
+							,9:"Active_No_Pause",10:"CheckUpdate",16:"PausedScript",17:"Suspend",21:"FindView"}
+		, Startmode:{1:"SelStartMode",2:"SelStartMode",3:"SelStartMode",5:"SelStartMode"}
+		, View:{1:"MemoryPos",2:"MemorySize",3:"MemoryFontSize",4:"MemoryStateZoom",5:"MemoryZoomSize",7:"PreOverflowHide",8:"MoveTitles",9:"WordWrap"}}
+
+	DllCall("KillTimer", Ptr, A_ScriptHwnd, Ptr, 1)
+	If !WinExist("ahk_class #32768 ahk_pid " oOther.CurrentProcessId)
+		Return
+	if GetKeyState("RButton", "P")
+	{
+		MouseGetPos, , ,WinID
+		hMenu := GetMenu2(WinID)
+		MenuName := MenuGetName(hMenu)
+		oOther.MenuItemRButton := AccNameUnderMouse(WinID, Id)
+
+		If F := oItems[MenuName][Id]
+		{
+			If IsLabel(F)
+				GoSub, % F
+			Else
+				%F%()
+		}
+		KeyWait, RButton
+	}
+	DllCall("SetTimer", Ptr, A_ScriptHwnd, Ptr, 1, UInt, 16, Ptr, RegisterCallback("MenuCheck", "Fast"))
+}
+
+GetMenu2(hWnd) {
+	SendMessage, 0x1E1, 0, 0, , ahk_id %hWnd%	;  MN_GETHMENU
+	hMenu := ErrorLevel
+	If !hMenu || (hMenu + 0 = "")
+		Return
+	Return hMenu
+}
+
+AccNameUnderMouse(WinID, ByRef child) {
+	Static h
+	If Not h
+		h := DllCall("LoadLibrary","Str","oleacc","Ptr")
+	If DllCall("oleacc\AccessibleObjectFromPoint"
+		, "Int64", 0*DllCall("GetCursorPos","Int64*",pt)+pt, "Ptr*", pacc
+		, "Ptr", VarSetCapacity(varChild,8+2*A_PtrSize,0)*0+&varChild) = 0
+	Acc := ComObjEnwrap(9,pacc,1), child := NumGet(varChild,8,"UInt")
+	If !IsObject(Acc)
+		Return
+	Return Acc.accName(child)
+}
+
 LaunchHelp:
 	If !FileExist(SubStr(A_AhkPath,1,InStr(A_AhkPath,"\",,0,1)) "AutoHotkey.chm")
 		Return
@@ -1689,8 +1748,9 @@ Reload:
 	Return
 
 Suspend:
+	ThisMenuItem := A_ThisMenuItem != "" ? A_ThisMenuItem : oOther.MenuItemRButton
 	isAhkSpy := !isAhkSpy
-	Menu, Sys, % !isAhkSpy ? "Check" : "UnCheck", % A_ThisMenuItem
+	Menu, Sys, % !isAhkSpy ? "Check" : "UnCheck", % ThisMenuItem
 	ZoomMsg(8, !isAhkSpy)
 	Return
 
@@ -1707,27 +1767,21 @@ CheckUpdate:
 	Return
 
 SelStartMode:
+	ThisMenuItem := A_ThisMenuItem != "" ? A_ThisMenuItem : oOther.MenuItemRButton
 	Menu, Startmode, UnCheck, Window
 	Menu, Startmode, UnCheck, Control
 	Menu, Startmode, UnCheck, Button
 	Menu, Startmode, UnCheck, Last Mode
-	IniWrite({"Window":"Win","Control":"Control","Button":"Hotkey","Last Mode":"LastMode"}[A_ThisMenuItem], "StartMode")
-	LastModeSave := (A_ThisMenuItem = "Last Mode")
-	Menu, Startmode, Check, % A_ThisMenuItem
+	IniWrite({"Window":"Win","Control":"Control","Button":"Hotkey","Last Mode":"LastMode"}[ThisMenuItem], "StartMode")
+	LastModeSave := (ThisMenuItem = "Last Mode")
+	Menu, Startmode, Check, % ThisMenuItem
 	Return
-
-ShowSys(x, y) {
-ShowSys:
-	ZoomMsg(9, 1)
-	Menu, Sys, Show, % x, % y
-	ZoomMsg(9, 0)
-	Return
-}
 
 Sys_Backlight:
+	ThisMenuItem := A_ThisMenuItem != "" ? A_ThisMenuItem : oOther.MenuItemRButton
 	Menu, Sys, UnCheck, % BLGroup[StateLight]
-	Menu, Sys, Check, % A_ThisMenuItem
-	IniWrite((StateLight := InArr(A_ThisMenuItem, BLGroup)), "StateLight")
+	Menu, Sys, Check, % ThisMenuItem
+	IniWrite((StateLight := InArr(ThisMenuItem, BLGroup)), "StateLight")
 	Return
 
 Sys_Acclight:
@@ -1741,11 +1795,12 @@ Sys_WClight:
 	Return
 
 Sys_Help:
-	If A_ThisMenuItem = AutoHotKey official help online
+	ThisMenuItem := A_ThisMenuItem != "" ? A_ThisMenuItem : oOther.MenuItemRButton
+	If ThisMenuItem = AutoHotKey official help online
 		RunPath("http://ahkscript.org/docs/AutoHotkey.htm")
-	Else If A_ThisMenuItem = AutoHotKey russian help online
+	Else If ThisMenuItem = AutoHotKey russian help online
 		RunPath("http://www.script-coding.com/AutoHotkeyTranslation.html")
-	Else If A_ThisMenuItem = About
+	Else If ThisMenuItem = About
 		RunPath("http://forum.script-coding.com/viewtopic.php?pid=72459#p72459")
 	Return
 
@@ -1926,6 +1981,14 @@ WM_LBUTTONDOWN(wp, lp, msg, hwnd) {
 			ZoomMsg(7, 0)
 		}
 	}
+}
+
+MouseGetPosScreen(ByRef x, ByRef y) {
+	VarSetCapacity(POINT, 8, 0)
+	NumPut(x, &POINT, 0,"Int")
+	NumPut(y, &POINT, 4,"Int")
+	DllCall("GetCursorPos", "Ptr", &POINT)
+	x := NumGet(POINT, 0, "Int"), y := NumGet(POINT, 4, "Int")
 }
 
 WM_MBUTTONUP(wp) {
@@ -2199,6 +2262,8 @@ WM_CTLCOLOREDIT(wParam, lParam) {
 
 IniRead(Key, Error := " ") {
 	IniRead, Value, %A_AppData%\AhkSpy\Settings.ini, AhkSpy, %Key%, %Error%
+	If (Value = "" && Error != " ")
+		Value := Error
 	Return Value
 }
 
@@ -2381,7 +2446,7 @@ GetCommandLineProc(PID, ByRef Cmd, ByRef Bit, ByRef IsAdmin) {
 SeDebugPrivilege() {
 	Static PROCESS_QUERY_INFORMATION := 0x400, TOKEN_ADJUST_PRIVILEGES := 0x20, SE_PRIVILEGE_ENABLED := 0x2
 
-	hProc := DllCall("OpenProcess", UInt, PROCESS_QUERY_INFORMATION, Int, false, UInt, DllCall("GetCurrentProcessId"), Ptr)
+	hProc := DllCall("OpenProcess", UInt, PROCESS_QUERY_INFORMATION, Int, false, UInt, oOther.CurrentProcessId, Ptr)
 	DllCall("Advapi32\OpenProcessToken", Ptr, hProc, UInt, TOKEN_ADJUST_PRIVILEGES, PtrP, token)
 	DllCall("Advapi32\LookupPrivilegeValue", Ptr, 0, Str, "SeDebugPrivilege", Int64P, luid)
 	VarSetCapacity(TOKEN_PRIVILEGES, 16, 0)
