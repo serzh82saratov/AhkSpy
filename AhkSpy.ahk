@@ -39,7 +39,7 @@ ListLines, Off
 DetectHiddenWindows, On
 CoordMode, Pixel
 
-Global AhkSpyVersion := 3.15
+Global AhkSpyVersion := 3.16
 Gosub, CheckAhkVersion
 Menu, Tray, UseErrorLevel
 Menu, Tray, Icon, Shell32.dll, % A_OSVersion = "WIN_XP" ? 222 : 278
@@ -3045,6 +3045,7 @@ Class Events {  ;	http://forum.script-coding.com/viewtopic.php?pid=82283#p82283
 			EL := oevent.parentElement.parentElement.parentElement
 			EL.Id := "anchor"
 			EL.style.backgroundColor := "#" ColorSelAnchor
+			oDocEl.scrollTop := oDocEl.scrollTop + EL.getBoundingClientRect().top
 			Return
 		}
 
