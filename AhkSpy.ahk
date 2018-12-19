@@ -39,7 +39,7 @@ ListLines, Off
 DetectHiddenWindows, On
 CoordMode, Pixel
 
-Global AhkSpyVersion := 3.16
+Global AhkSpyVersion := 3.17
 Gosub, CheckAhkVersion
 Menu, Tray, UseErrorLevel
 Menu, Tray, Icon, Shell32.dll, % A_OSVersion = "WIN_XP" ? 222 : 278
@@ -441,7 +441,9 @@ Mode_Win:
 	ThisMode := "Win"
 	If (HTML_Win = "")
 		Spot_Win(1)
-	Write_Win(), oDocEl.scrollLeft := ScrollPos[ThisMode,1], oDocEl.scrollTop := ScrollPos[ThisMode,2]
+	Write_Win(), oDocEl.scrollLeft := ScrollPos[ThisMode,1]
+	If !oOther.anchor[ThisMode]
+		oDocEl.scrollTop := ScrollPos[ThisMode,2]
 	TitleText := (TitleTextP1 := "AhkSpy - Window") . TitleTextP2
 	SendMessage, 0xC, 0, &TitleText, , ahk_id %hGui%
 	If isFindView
@@ -656,7 +658,9 @@ Mode_Control:
 	ThisMode := "Control"
 	If (HTML_Control = "")
 		Spot_Control(1)
-	Write_Control(), oDocEl.scrollLeft := ScrollPos[ThisMode,1], oDocEl.scrollTop := ScrollPos[ThisMode,2]
+	Write_Control(), oDocEl.scrollLeft := ScrollPos[ThisMode,1]
+	If !oOther.anchor[ThisMode]
+		oDocEl.scrollTop := ScrollPos[ThisMode,2]
 	TitleText := (TitleTextP1 := "AhkSpy - Control") . TitleTextP2
 	SendMessage, 0xC, 0, &TitleText, , ahk_id %hGui%
 	If isFindView
