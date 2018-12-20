@@ -40,7 +40,7 @@ DetectHiddenWindows, On
 CoordMode, Pixel
 CoordMode, Menu
 
-Global AhkSpyVersion := 3.18
+Global AhkSpyVersion := 3.19
 Gosub, CheckAhkVersion
 Menu, Tray, UseErrorLevel
 Menu, Tray, Icon, Shell32.dll, % A_OSVersion = "WIN_XP" ? 222 : 278
@@ -1688,7 +1688,7 @@ MenuCheck()  {
 		MenuName := MenuGetName(hMenu)
 		oOther.MenuItemRButton := AccNameUnderMouse(WinID, Id)
 
-		If F := oItems[MenuName][Id]
+		If (F := oItems[MenuName][Id]) && oOther.MenuItemRButton != ""
 		{
 			If IsLabel(F)
 				GoSub, % F
