@@ -40,7 +40,7 @@ DetectHiddenWindows, On
 CoordMode, Pixel
 CoordMode, Menu
 
-Global AhkSpyVersion := 3.21
+Global AhkSpyVersion := 3.22
 Gosub, CheckAhkVersion
 Menu, Tray, UseErrorLevel
 Menu, Tray, Icon, Shell32.dll, % A_OSVersion = "WIN_XP" ? 222 : 278
@@ -685,6 +685,7 @@ Spot_Control(NotHTML = 0) {
 	MouseGetPos, MXS, MYS, WinID, tControlNN
 	CoordMode, Mouse, Window
 	MouseGetPos, MXWA, MYWA, , tControlID, 2
+	
 	If (WinID = hGui || WinID = oOther.hZoom || WinID = oOther.hZoomLW)
 		Return HideAllMarkers()
 	CtrlInfo := "", isIE := 0
@@ -746,24 +747,34 @@ Spot_Control(NotHTML = 0) {
 	WinGet, ProcessName, ProcessName, ahk_id %WinID%
 	WinGetClass, WinClass, ahk_id %WinID%
 
+	
+	
+	
+	
 HTML_Control:
+	If ControlID
+	HTML_ControlExist =
+	( Ltrim 
+	%_T1% ( Control ) </span>%_T2%
+	%_PRE1%<span class='param'>Class NN:</span>  <span name='MS:'>%ControlNN%</span>%_DP%<span class='param'>Win class:</span>  <span name='MS:'>%CtrlClass%</span>
+	%_BP1% id='set_button_pos'>Pos:%_BP2%  <span name='MS:'>x%CtrlX% y%CtrlY%</span>%_DP%<span name='MS:'>x&sup2;%CtrlX2% y&sup2;%CtrlY2%</span>%_DP%%_BP1% id='set_button_pos'>Size:%_BP2%  <span name='MS:'>w%CtrlW% h%CtrlH%</span>%_DP%<span name='MS:'>%CtrlX%, %CtrlY%, %CtrlX2%, %CtrlY2%</span>%_DP%<span name='MS:'>%CtrlX%, %CtrlY%, %CtrlW%, %CtrlH%</span>
+	<span class='param'>Pos relative client area:</span>  <span name='MS:'>x%CtrlCAX% y%CtrlCAY%</span>%_DP%<span name='MS:'>x&sup2;%CtrlCAX2% y&sup2;%CtrlCAY2%</span>%_DP%<span name='MS:'>%CtrlCAX%, %CtrlCAY%, %CtrlCAX2%, %CtrlCAY2%</span>%_DP%<span name='MS:'>%CtrlCAX%, %CtrlCAY%, %CtrlW%, %CtrlH%</span>
+	%_BP1% id='set_pos'>Mouse relative control:%_BP2%  <span name='MS:'>x%rmCtrlX% y%rmCtrlY%</span>%WithRespectControl%
+	<span class='param'>HWND:</span>  <span name='MS:'>%ControlID%</span>%_DP%<span class='param'>Style:</span>  <span name='MS:'>%CtrlStyle%</span>%_DP%<span class='param'>ExStyle:</span>  <span name='MS:'>%CtrlExStyle%</span>
+	%_BP1% id='set_button_focus_ctrl'>Focus control:%_BP2%  <span name='MS:'>%CtrlFocus%</span>%_PRE2%
+	)
 	HTML_Control =
 	( Ltrim
 	<body id='body'>
 	%_T1% ( Mouse ) </span>%_BT1% id='pause_button'> pause %_BT2%%_DB%%_DB%%_BT1% id='run_zoom'> zoom %_BT2%%_T2%%_BR%
 	%_PRE1%%_BP1% id='set_pos'>Screen:%_BP2%  <span name='MS:'>x%MXS% y%MYS%</span>%_DP%%_BP1% id='set_pos'>Window:%_BP2%  <span name='MS:'>x%RWinX% y%RWinY%</span>%_DP%%_BP1% id='set_pos'>Client:%_BP2%  <span name='MS:'>x%MXC% y%MYC%</span>%WithRespectWin%%WithRespectClient%
 	<span class='param'>Relative active window:</span>  <span name='MS:'>x%MXWA% y%MYWA%</span>%_DP%<span class='param'>exe</span> <span name='MS:'>%ProcessName_A%</span> <span class='param'>class</span> <span name='MS:'>%WinClass_A%</span> <span class='param'>hwnd</span> <span name='MS:'>%HWND_A%</span>%_PRE2%
-	%_T1% ( PixelGetColor ) </span>%_T2%
+	%_T1% ( PixelColor ) </span>%_T2%
 	%_PRE1%<span class='param'>RGB: </span> <span name='MS:'>%ColorRGB%</span>%_DP%<span name='MS:'>#%sColorRGB%</span>%_DP%<span class='param'>BGR: </span> <span name='MS:'>%ColorBGR%</span>%_DP%<span name='MS:'>#%sColorBGR%</span>%_PRE2%
 	%_T1% ( Window ) </span>%_T2%
-	%_PRE1%<span><span class='param' name='MS:S'>ahk_class</span> <span name='MS:'>%WinClass%</span></span> <span><span class='param' name='MS:S'>ahk_exe</span> <span name='MS:'>%ProcessName%</span></span> <span><span class='param' name='MS:S'>ahk_id</span> <span name='MS:'>%WinID%</span></span>%_PRE2%
-	%_T1% ( Control ) </span>%_T2%
-	%_PRE1%<span class='param'>Class NN:</span>  <span name='MS:'>%ControlNN%</span>%_DP%<span class='param'>Win class:</span>  <span name='MS:'>%CtrlClass%</span>
-	%_BP1% id='set_button_pos'>Pos:%_BP2%  <span name='MS:'>x%CtrlX% y%CtrlY%</span>%_DP%<span name='MS:'>x&sup2;%CtrlX2% y&sup2;%CtrlY2%</span>%_DP%%_BP1% id='set_button_pos'>Size:%_BP2%  <span name='MS:'>w%CtrlW% h%CtrlH%</span>%_DP%<span name='MS:'>%CtrlX%, %CtrlY%, %CtrlX2%, %CtrlY2%</span>%_DP%<span name='MS:'>%CtrlX%, %CtrlY%, %CtrlW%, %CtrlH%</span>
-	<span class='param'>Pos relative client area:</span>  <span name='MS:'>x%CtrlCAX% y%CtrlCAY%</span>%_DP%<span name='MS:'>x&sup2;%CtrlCAX2% y&sup2;%CtrlCAY2%</span>%_DP%<span name='MS:'>%CtrlCAX%, %CtrlCAY%, %CtrlCAX2%, %CtrlCAY2%</span>%_DP%<span name='MS:'>%CtrlCAX%, %CtrlCAY%, %CtrlW%, %CtrlH%</span>
-	%_BP1% id='set_pos'>Mouse relative control:%_BP2%  <span name='MS:'>x%rmCtrlX% y%rmCtrlY%</span>%WithRespectControl%%_DP%<span class='param'>Client area:</span>  <span name='MS:'>x%caX% y%caY% w%caW% h%caH%</span>
-	<span class='param'>HWND:</span>  <span name='MS:'>%ControlID%</span>%_DP%<span class='param'>Style:</span>  <span name='MS:'>%CtrlStyle%</span>%_DP%<span class='param'>ExStyle:</span>  <span name='MS:'>%CtrlExStyle%</span>
-	%_BP1% id='set_button_focus_ctrl'>Focus control:%_BP2%  <span name='MS:'>%CtrlFocus%</span>%_DP%<span class='param'>Cursor type:</span>  <span name='MS:'>%A_Cursor%</span>%_DP%<span class='param'>Caret pos:</span>  <span name='MS:'>x%A_CaretX% y%A_CaretY%</span>%_PRE2%
+	%_PRE1%<span><span class='param' name='MS:S'>ahk_class</span> <span name='MS:'>%WinClass%</span></span> <span><span class='param' name='MS:S'>ahk_exe</span> <span name='MS:'>%ProcessName%</span></span> <span><span class='param' name='MS:S'>ahk_id</span> <span name='MS:'>%WinID%</span></span>
+	<span class='param'>Cursor:</span>  <span name='MS:'>%A_Cursor%</span>%_DP%<span class='param'>Caret:</span>  <span name='MS:'>x%A_CaretX% y%A_CaretY%</span>%_DP%<span class='param'>Client:</span>  <span name='MS:'>x%caX% y%caY% w%caW% h%caH%</span>%_PRE2%
+	%HTML_ControlExist%
 	%CtrlInfo%%CtrlText%%AccText%
 	<a></a>%_T0%
 	</body>
@@ -2658,7 +2669,7 @@ AnchorScroll() {
 	EL := oDoc.getElementById("anchor")
 	If !EL
 		Return
-	oDocEl.scrollTop := oDocEl.scrollTop + EL.getBoundingClientRect().top
+	oDocEl.scrollTop := oDocEl.scrollTop + EL.getBoundingClientRect().top - 5
 }
 
 UpdateAhkSpy(in = 1) {
@@ -3114,7 +3125,7 @@ Class Events {  ;	http://forum.script-coding.com/viewtopic.php?pid=82283#p82283
 			EL := oevent.parentElement.parentElement.parentElement
 			EL.Id := "anchor"
 			EL.style.backgroundColor := "#" ColorSelAnchor
-			oDocEl.scrollTop := oDocEl.scrollTop + EL.getBoundingClientRect().top
+			oDocEl.scrollTop := oDocEl.scrollTop + EL.getBoundingClientRect().top - 5
 			Return
 		}
 
