@@ -40,7 +40,7 @@ DetectHiddenWindows, On
 CoordMode, Pixel
 CoordMode, Menu
 
-Global AhkSpyVersion := 3.20
+Global AhkSpyVersion := 3.21
 Gosub, CheckAhkVersion
 Menu, Tray, UseErrorLevel
 Menu, Tray, Icon, Shell32.dll, % A_OSVersion = "WIN_XP" ? 222 : 278
@@ -1216,8 +1216,10 @@ AccInfoUnderMouse(mx, my, wx, wy, cx, cy, WinID) {
 		code .= _T1P " ( Action ) </span>" _T2 _PRE1 "<span name='MS:'>" TransformHTML(Var) "</span>" _PRE2
 	If ((Var := Acc.accSelection) > 0)
 		code .= _T1P " ( Selection - parent ) </span>" _T2 _PRE1 "<span name='MS:'>" TransformHTML(Var) "</span>" _PRE2
-	If ((Var := Acc.accFocus) > 0)
-		code .= _T1P " ( Focus - parent ) </span>" _T2 _PRE1 "<span name='MS:'>" TransformHTML(Var) "</span>" _PRE2
+	If ((Var := Acc.accFocus.accValue(0))!= "")
+		code .= _T1P " ( Focus - value ) </span>" _T2 _PRE1 "<span name='MS:'>" TransformHTML(Var) "</span>" _PRE2
+	If ((Var := Acc.accFocus.accName(0))!= "")
+		code .= _T1P " ( Focus - name ) </span>" _T2 _PRE1 "<span name='MS:'>" TransformHTML(Var) "</span>" _PRE2
 	If ((Var := Acc.accDescription(child)) != "")
 		code .= _T1P " ( Description ) </span>" _T2 _PRE1 "<span name='MS:'>" TransformHTML(Var) "</span>" _PRE2
 	If ((Var := Acc.accKeyboardShortCut(child)) != "")
@@ -1226,7 +1228,7 @@ AccInfoUnderMouse(mx, my, wx, wy, cx, cy, WinID) {
 		code .= _T1P " ( Help ) </span>" _T2 _PRE1 "<span name='MS:'>" TransformHTML(Var) "</span>" _PRE2
 	If ((Var := Acc.AccHelpTopic(child)))
 		code .= _T1P " ( HelpTopic ) </span>" _T2 _PRE1 "<span name='MS:'>" TransformHTML(Var) "</span>" _PRE2
-
+		
 	myPublicObj.AccObj := {AccObj:Acc,child:child,WinID:WinID}
 	Return code
 }
@@ -1671,7 +1673,9 @@ ShowSys:
 }
 
 MenuCheck()  {
-	Static oItems := {Sys:{1:"Sys_Backlight",2:"Sys_Backlight",3:"Sys_Backlight",5:"Sys_WClight",6:"Sys_Acclight",8:"Spot_Together"
+	Static oItems
+	If !oItems
+		oItems:= {Sys:{1:"Sys_Backlight",2:"Sys_Backlight",3:"Sys_Backlight",5:"Sys_WClight",6:"Sys_Acclight",8:"Spot_Together"
 							,9:"Active_No_Pause",10:"CheckUpdate",16:"PausedScript",17:"Suspend",21:"FindView"}
 		, Startmode:{1:"SelStartMode",2:"SelStartMode",3:"SelStartMode",5:"SelStartMode"}
 		, View:{1:"MemoryPos",2:"MemorySize",3:"MemoryFontSize",4:"MemoryStateZoom",5:"MemoryZoomSize",7:"PreOverflowHide",8:"MoveTitles",9:"WordWrap"}}
