@@ -40,7 +40,7 @@ DetectHiddenWindows, On
 CoordMode, Pixel
 CoordMode, Menu
 
-Global AhkSpyVersion := 3.19
+Global AhkSpyVersion := 3.20
 Gosub, CheckAhkVersion
 Menu, Tray, UseErrorLevel
 Menu, Tray, Icon, Shell32.dll, % A_OSVersion = "WIN_XP" ? 222 : 278
@@ -329,8 +329,6 @@ F4::
 
 F5:: Write_%ThisMode%()		;  Return original HTML
 
-F6:: AppsKey
-
 F12::
 F7:: MouseGetPosScreen(x, y), ShowSys(x + 5, y + 5)
 
@@ -347,7 +345,7 @@ Esc::
 
 +#Tab:: AhkSpyZoomShow()
 
-F8::
+F6::
 ^vk46:: FindView()											;  Ctrl+F
 
 F11:: FullScreenMode()
@@ -1681,19 +1679,20 @@ MenuCheck()  {
 	DllCall("KillTimer", Ptr, A_ScriptHwnd, Ptr, 1)
 	If !WinExist("ahk_class #32768 ahk_pid " oOther.CurrentProcessId)
 		Return
+
 	if GetKeyState("RButton", "P")
 	{
 		MouseGetPos, , ,WinID
-		hMenu := GetMenu2(WinID)
-		MenuName := MenuGetName(hMenu)
-		oOther.MenuItemRButton := AccNameUnderMouse(WinID, Id)
+		Acc := AccUnderMouse(WinID, Id)
 
-		If (F := oItems[MenuName][Id]) && oOther.MenuItemRButton != ""
+		If (F := oItems[MenuGetName(GetMenu2(WinID))][Id]) && (oOther.MenuItemRButton := Acc.accName(Id)) != ""
 		{
+			oOther.MenuItemExist := 1
 			If IsLabel(F)
 				GoSub, % F
 			Else
 				%F%()
+			oOther.MenuItemExist := 0
 		}
 		KeyWait, RButton
 	}
@@ -1703,23 +1702,49 @@ MenuCheck()  {
 GetMenu2(hWnd) {
 	SendMessage, 0x1E1, 0, 0, , ahk_id %hWnd%	;  MN_GETHMENU
 	hMenu := ErrorLevel
-	If !hMenu || (hMenu + 0 = "")
-		Return
-	Return hMenu
+	If (hMenu + 0)
+		Return hMenu
 }
 
-AccNameUnderMouse(WinID, ByRef child) {
+AccUnderMouse(WinID, ByRef child) {
 	Static h
 	If Not h
 		h := DllCall("LoadLibrary","Str","oleacc","Ptr")
 	If DllCall("oleacc\AccessibleObjectFromPoint"
 		, "Int64", 0*DllCall("GetCursorPos","Int64*",pt)+pt, "Ptr*", pacc
 		, "Ptr", VarSetCapacity(varChild,8+2*A_PtrSize,0)*0+&varChild) = 0
-	Acc := ComObjEnwrap(9,pacc,1), child := NumGet(varChild,8,"UInt")
-	If !IsObject(Acc)
-		Return
-	Return Acc.accName(child)
+	Acc := ComObjEnwrap(9,pacc,1)
+	If IsObject(Acc)
+		Return Acc, child := NumGet(varChild,8,"UInt")
 }
+
+SelStartMode:
+	ThisMenuItem := oOther.MenuItemExist ? oOther.MenuItemRButton : A_ThisMenuItem
+	Menu, Startmode, UnCheck, Window
+	Menu, Startmode, UnCheck, Control
+	Menu, Startmode, UnCheck, Button
+	Menu, Startmode, UnCheck, Last Mode
+	IniWrite({"Window":"Win","Control":"Control","Button":"Hotkey","Last Mode":"LastMode"}[ThisMenuItem], "StartMode")
+	LastModeSave := (ThisMenuItem = "Last Mode")
+	Menu, Startmode, Check, % ThisMenuItem
+	Return
+
+Sys_Backlight:
+	ThisMenuItem := oOther.MenuItemExist ? oOther.MenuItemRButton : A_ThisMenuItem
+	Menu, Sys, UnCheck, % BLGroup[StateLight]
+	Menu, Sys, Check, % ThisMenuItem
+	IniWrite((StateLight := InArr(ThisMenuItem, BLGroup)), "StateLight")
+	Return
+
+Sys_Help:
+	ThisMenuItem := oOther.MenuItemExist ? oOther.MenuItemRButton : A_ThisMenuItem
+	If ThisMenuItem = AutoHotKey official help online
+		RunPath("http://ahkscript.org/docs/AutoHotkey.htm")
+	Else If ThisMenuItem = AutoHotKey russian help online
+		RunPath("http://www.script-coding.com/AutoHotkeyTranslation.html")
+	Else If ThisMenuItem = About
+		RunPath("http://forum.script-coding.com/viewtopic.php?pid=72459#p72459")
+	Return
 
 LaunchHelp:
 	If !FileExist(SubStr(A_AhkPath,1,InStr(A_AhkPath,"\",,0,1)) "AutoHotkey.chm")
@@ -1748,9 +1773,8 @@ Reload:
 	Return
 
 Suspend:
-	ThisMenuItem := A_ThisMenuItem != "" ? A_ThisMenuItem : oOther.MenuItemRButton
 	isAhkSpy := !isAhkSpy
-	Menu, Sys, % !isAhkSpy ? "Check" : "UnCheck", % ThisMenuItem
+	Menu, Sys, % !isAhkSpy ? "Check" : "UnCheck", Suspend hotkeys
 	ZoomMsg(8, !isAhkSpy)
 	Return
 
@@ -1766,24 +1790,6 @@ CheckUpdate:
 	}
 	Return
 
-SelStartMode:
-	ThisMenuItem := A_ThisMenuItem != "" ? A_ThisMenuItem : oOther.MenuItemRButton
-	Menu, Startmode, UnCheck, Window
-	Menu, Startmode, UnCheck, Control
-	Menu, Startmode, UnCheck, Button
-	Menu, Startmode, UnCheck, Last Mode
-	IniWrite({"Window":"Win","Control":"Control","Button":"Hotkey","Last Mode":"LastMode"}[ThisMenuItem], "StartMode")
-	LastModeSave := (ThisMenuItem = "Last Mode")
-	Menu, Startmode, Check, % ThisMenuItem
-	Return
-
-Sys_Backlight:
-	ThisMenuItem := A_ThisMenuItem != "" ? A_ThisMenuItem : oOther.MenuItemRButton
-	Menu, Sys, UnCheck, % BLGroup[StateLight]
-	Menu, Sys, Check, % ThisMenuItem
-	IniWrite((StateLight := InArr(ThisMenuItem, BLGroup)), "StateLight")
-	Return
-
 Sys_Acclight:
 	StateLightAcc := IniWrite(!StateLightAcc, "StateLightAcc"), HideAccMarker()
 	Menu, Sys, % (StateLightAcc ? "Check" : "UnCheck"), Acc object backlight
@@ -1792,16 +1798,6 @@ Sys_Acclight:
 Sys_WClight:
 	StateLightMarker := IniWrite(!StateLightMarker, "StateLightMarker"), HideMarker()
 	Menu, Sys, % (StateLightMarker ? "Check" : "UnCheck"), Window or control backlight
-	Return
-
-Sys_Help:
-	ThisMenuItem := A_ThisMenuItem != "" ? A_ThisMenuItem : oOther.MenuItemRButton
-	If ThisMenuItem = AutoHotKey official help online
-		RunPath("http://ahkscript.org/docs/AutoHotkey.htm")
-	Else If ThisMenuItem = AutoHotKey russian help online
-		RunPath("http://www.script-coding.com/AutoHotkeyTranslation.html")
-	Else If ThisMenuItem = About
-		RunPath("http://forum.script-coding.com/viewtopic.php?pid=72459#p72459")
 	Return
 
 Help_OpenUserDir:
