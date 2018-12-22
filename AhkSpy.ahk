@@ -40,7 +40,7 @@ DetectHiddenWindows, On
 CoordMode, Pixel
 CoordMode, Menu
 
-Global AhkSpyVersion := 3.22
+Global AhkSpyVersion := 3.23
 Gosub, CheckAhkVersion
 Menu, Tray, UseErrorLevel
 Menu, Tray, Icon, Shell32.dll, % A_OSVersion = "WIN_XP" ? 222 : 278
@@ -2661,15 +2661,15 @@ NextLink(s = "") {
 Anchorbefore(HTML_Control) {
 	Static T1
 	If !T1
-		T1 := SubStr(_T1, 7)
-	Return StrReplace(HTML_Control, T1 oOther.anchor[ThisMode "_text"], "id = 'anchor' " T1 oOther.anchor[ThisMode "_text"], , 1)
+		T1 := SubStr(_T1, 54)
+	Return StrReplace(HTML_Control, T1 oOther.anchor[ThisMode "_text"], " id = 'anchor' " T1 oOther.anchor[ThisMode "_text"], , 1)
 }
 
 AnchorScroll() {
 	EL := oDoc.getElementById("anchor")
 	If !EL
 		Return
-	oDocEl.scrollTop := oDocEl.scrollTop + EL.getBoundingClientRect().top - 5
+	oDocEl.scrollTop := oDocEl.scrollTop + EL.getBoundingClientRect().top - 6
 }
 
 UpdateAhkSpy(in = 1) {
@@ -3113,19 +3113,19 @@ Class Events {  ;	http://forum.script-coding.com/viewtopic.php?pid=82283#p82283
 
 			If oOther.anchor[ThisMode]
 			{
-				EL := oDoc.getElementById("anchor")
-				EL.style.backgroundColor := "#" ColorBg
+				EL := oDoc.getElementById("anchor") 
+				EL.style.background := "'none'"
 				EL.Id := ""
 				If oevent.OuterText = oOther.anchor[ThisMode "_text"]
-					Return oOther.anchor[ThisMode] := 0, oOther.anchor[ThisMode "_text"] := ""
+					Return oOther.anchor[ThisMode] := 0, oOther.anchor[ThisMode "_text"] := "", HTML_%ThisMode% := oBody.innerHTML
 			}
 			oOther.anchor[ThisMode] := 1
 			oOther.anchor[ThisMode "_text"] := oevent.OuterText
-			; EL := oDoc.all.item(oevent.sourceIndex - 4)
-			EL := oevent.parentElement.parentElement.parentElement
+			EL := oevent.parentElement.parentElement.firstChild
 			EL.Id := "anchor"
 			EL.style.backgroundColor := "#" ColorSelAnchor
-			oDocEl.scrollTop := oDocEl.scrollTop + EL.getBoundingClientRect().top - 5
+			oDocEl.scrollTop := oDocEl.scrollTop + EL.getBoundingClientRect().top - 6
+			HTML_%ThisMode% := oBody.innerHTML
 			Return
 		}
 
