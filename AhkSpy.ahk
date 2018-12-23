@@ -40,7 +40,7 @@ DetectHiddenWindows, On
 CoordMode, Pixel
 CoordMode, Menu
 
-Global AhkSpyVersion := 3.23
+Global AhkSpyVersion := 3.24
 Gosub, CheckAhkVersion
 Menu, Tray, UseErrorLevel
 Menu, Tray, Icon, Shell32.dll, % A_OSVersion = "WIN_XP" ? 222 : 278
@@ -629,7 +629,7 @@ HTML_Win:
 
 Write_Win() {
 	If oOther.anchor[ThisMode]
-		HTML_Win := Anchorbefore(HTML_Win)
+		HTML_Win := AnchorBefore(HTML_Win)
 	oBody.innerHTML := HTML_Win
 	If oOther.anchor[ThisMode]
 		AnchorScroll()
@@ -853,7 +853,7 @@ HTML_Control:
 
 Write_Control() {
 	If oOther.anchor[ThisMode]
-		HTML_Control := Anchorbefore(HTML_Control)
+		HTML_Control := AnchorBefore(HTML_Control)
 	oBody.innerHTML := HTML_Control
 	If oOther.anchor[ThisMode]
 		AnchorScroll()
@@ -1216,7 +1216,9 @@ AccInfoUnderMouse(mx, my, wx, wy, cx, cy, WinID) {
 		code .= _T1P " ( Value ) </span><a></a>" _BT1 " id='copy_button'> copy " _BT2 _T2 _LPRE ">" TransformHTML(Var) _PRE2
 	If ((Var := AccGetStateText(Var2 := Acc.accState(child))) != "")
 		code .= _T1P " ( State ) </span>" _T2 _PRE1 "<span name='MS:'>" TransformHTML(Var) "</span>"
-		. _DP "<span class='param' name='MS:N'>code: </span><span name='MS:'>" Var2 "</span>" _PRE2
+		. _DP "<span class='param' name='MS:N'>code: </span><span name='MS:'>" Var2 "</span>" 
+		. ((Var2 & 0x100000) ? _DP "<span class='param'>focusable</span>" : "")
+		. ((Var2 & 0x4) ? _DP "<span class='param'>focused</span>" : "") _PRE2
 	If ((Var := AccRole(Acc, child)) != "")
 		code .= _T1P " ( Role ) </span>" _T2 _PRE1 "<span name='MS:'>" TransformHTML(Var) "</span>"
 		. _DP "<span class='param' name='MS:N'>code: </span><span name='MS:'>" Acc.accRole(child) "</span>" _PRE2
@@ -2658,11 +2660,11 @@ NextLink(s = "") {
 	oDocEl.scrollTop := curpos + res
 }
 
-Anchorbefore(HTML_Control) {
+AnchorBefore(HTML) {
 	Static T1
 	If !T1
 		T1 := SubStr(_T1, 54)
-	Return StrReplace(HTML_Control, T1 oOther.anchor[ThisMode "_text"], " id = 'anchor' " T1 oOther.anchor[ThisMode "_text"], , 1)
+	Return StrReplace(HTML, T1 oOther.anchor[ThisMode "_text"], " id = 'anchor' " T1 oOther.anchor[ThisMode "_text"], , 1)
 }
 
 AnchorScroll() {
@@ -3106,7 +3108,7 @@ Class Events {  ;	http://forum.script-coding.com/viewtopic.php?pid=82283#p82283
 		oevent := oDoc.parentWindow.event.srcElement
 		If (oevent.ClassName = "button" || oevent.tagname = "button")
 			Return ButtonClick(oevent)
-
+			
 		If (oevent.ClassName = "title" && oevent.name = "main" && ThisMode != "Hotkey")  ;	anchor
 		{
 			R := oDoc.selection.createRange(), R.collapse(1), R.select()
