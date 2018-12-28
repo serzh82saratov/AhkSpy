@@ -26,6 +26,8 @@
     Актуальный исходник - https://raw.githubusercontent.com/serzh82saratov/AhkSpy/master/AhkSpy.ahk
 */
 
+	; _________________________________________________ Header _________________________________________________
+	
 p1 = %1%
 If (p1 = "Zoom")
 	GoTo ShowZoom
@@ -40,7 +42,7 @@ DetectHiddenWindows, On
 CoordMode, Pixel
 CoordMode, Menu
 
-Global AhkSpyVersion := 3.25
+Global AhkSpyVersion := 3.26
 Gosub, CheckAhkVersion
 Menu, Tray, UseErrorLevel
 Menu, Tray, Icon, Shell32.dll, % A_OSVersion = "WIN_XP" ? 222 : 278
@@ -153,6 +155,8 @@ Gui, F: Add, Text, x+10 yp hp c2F2F2F +0x201 gFindOption, % " whole word "
 Gui, F: Add, Text, x+3 yp hp +0x201 w52 vFindMatches HWNDhFindAllText
 Gui, F: Add, Button, % "+0x300 +0xC00 y3 h20 w20 gFindHide x" widthTB - 21, X
 
+	; _________________________________________________ Menu _________________________________________________
+	
 Menu, Sys, Add, Backlight allways, Sys_Backlight
 Menu, Sys, Add, Backlight hold shift button, Sys_Backlight
 Menu, Sys, Add, Backlight disable, Sys_Backlight
@@ -750,12 +754,11 @@ Spot_Control(NotHTML = 0) {
 HTML_Control:
 	If ControlID
 	{
-		If GetControlStyles(ControlNN_Sub, "E")
-		{
-			If c_ShowStyles
-				ControlStyles := GetControlStyles(ControlNN_Sub, CtrlStyle, CtrlExStyle)
-			ButtonStyle_ := _DP _BB1 " id='get_styles_c'> " (c_ShowStyles ? "show styles" : "hide styles") " " _BB2
-		}
+		ControlStyleExist := GetControlStyles(ControlNN_Sub, "E") 
+		If c_ShowStyles
+			ControlStyles := GetControlStyles(ControlNN_Sub, CtrlStyle, CtrlExStyle)
+		ButtonStyle_ := _DP _BB1 " id='get_styles_c'" (ControlStyleExist ? "" : " style='color: #C0C0C0'") "> " (c_ShowStyles ? "show styles" : "hide styles") " " _BB2 
+		
 		HTML_ControlExist =
 		( Ltrim
 		%_T1% ( Control ) </span>%_T2%
@@ -1221,10 +1224,10 @@ AccInfoUnderMouse(mx, my, wx, wy, cx, cy, WinID) {
 	If ((Var := Acc.accValue(child)) != "")
 		code .= _T1P " ( Value ) </span><a></a>" _BT1 " id='copy_button'> copy " _BT2 _T2 _LPRE ">" TransformHTML(Var) _PRE2
 	If ((Var := AccGetStateText(Var2 := Acc.accState(child))) != "")
-		code .= _T1P " ( State ) </span>" _T2 _PRE1 "<span name='MS:'>" TransformHTML(Var) "</span>"
-		. _DP "<span class='param' name='MS:N'>code: </span><span name='MS:'>" Var2 "</span>"
-		. ((Var2 & 0x100000) ? _DP "<span class='param'>focusable</span>" : "")
-		. ((Var2 & 0x4) ? _DP "<span class='param'>focused</span>" : "") _PRE2
+		code .= _T1P " ( State ) </span>" _T2 _PRE1 "<span name='MS:'>" TransformHTML(Var) "</span>"  ;	https://docs.microsoft.com/ru-ru/windows/desktop/WinAuto/object-state-constants
+		. _DP "<span class='param' name='MS:N'>code: </span><span name='MS:'>" Var2 "</span>" 
+		. ((Var2 & 0x100000) ? _DP "<span class='param'>focusable</span>" : "")  ;	STATE_SYSTEM_FOCUSABLE
+		. ((Var2 & 0x4) ? _DP "<span class='param'>focused</span>" : "") _PRE2  ;	STATE_SYSTEM_FOCUSED 
 	If ((Var := AccRole(Acc, child)) != "")
 		code .= _T1P " ( Role ) </span>" _T2 _PRE1 "<span name='MS:'>" TransformHTML(Var) "</span>"
 		. _DP "<span class='param' name='MS:N'>code: </span><span name='MS:'>" Acc.accRole(child) "</span>" _PRE2
@@ -2758,6 +2761,8 @@ ViewStylesControl(elem) {
 	If c_ShowStyles
 		Styles := "<a></a>" GetControlStyles(oOther.ControlNN_Sub, oDoc.getElementById("c_Style").innerText, oDoc.getElementById("c_ExStyle").innerText)
 	oDoc.getElementById("ControlStyles").innerHTML := Styles
+	If !GetControlStyles(oOther.ControlNN_Sub, "E")
+		oDoc.getElementById("get_styles_c").style.color := "#C0C0C0" 
 	HTML_Control := oBody.innerHTML
 }
 
@@ -3067,7 +3072,7 @@ html =
 </head>
 
 <script type="text/javascript">
-	var prWidth, WordWrap, MoveTitles, key1, key2, ButtonOver;
+	var prWidth, WordWrap, MoveTitles, key1, key2, ButtonOver, ButtonOverColor;
 	function shift(scroll) {
 		var col, Width, clientWidth, scrollLeft, Offset;
 		clientWidth = document.documentElement.clientWidth;
@@ -3125,12 +3130,14 @@ html =
 	}
 	function OnButtonUp (el) {
 		el.style.backgroundColor = "";
-		el.style.color = (el.name != "pre" ? "#%ColorFont%" : "#%ColorParam%");
+		// el.style.color = (el.name != "pre" ? "#%ColorFont%" : "#%ColorParam%");
+		el.style.color = ButtonOverColor;
 		if (window.event.button == 2 && el.parentElement.className == 'BB')
 			document.documentElement.focus();
 
 	}
 	function OnButtonOver (el) {
+		ButtonOverColor = el.style.color;
 		el.style.zIndex = "2";
 		el.style.border = "1px solid black";
 		ButtonOver = el;
@@ -3138,7 +3145,8 @@ html =
 	function OnButtonOut (el) {
 		el.style.zIndex = "0";
 		el.style.backgroundColor = "";
-		el.style.color = (el.name != "pre" ? "#%ColorFont%" : "#%ColorParam%");
+		// el.style.color = (el.name != "pre" ? "#%ColorFont%" : "#%ColorParam%");
+		el.style.color = ButtonOverColor;
 		el.style.border = "1px dotted black";
 		ButtonOver = 0;
 	}
