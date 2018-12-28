@@ -40,7 +40,7 @@ DetectHiddenWindows, On
 CoordMode, Pixel
 CoordMode, Menu
 
-Global AhkSpyVersion := 3.24
+Global AhkSpyVersion := 3.25
 Gosub, CheckAhkVersion
 Menu, Tray, UseErrorLevel
 Menu, Tray, Icon, Shell32.dll, % A_OSVersion = "WIN_XP" ? 222 : 278
@@ -72,8 +72,8 @@ Global ThisMode := IniRead("StartMode", "Control"), LastModeSave := (ThisMode = 
 , StateLightAcc := IniRead("StateLightAcc", 1), SendCode := IniRead("SendCode", "vk"), StateLightMarker := IniRead("StateLightMarker", 1)
 , StateUpdate := IniRead("StateUpdate", 0), SendMode := IniRead("SendMode", "send"), SendModeStr := Format("{:L}", SendMode)
 , StateAllwaysSpot := IniRead("AllwaysSpot", 0), ScrollPos := {}, AccCoord := [], oOther := {}, oFind := {}, Edits := [], oMS := {}
-, hGui, hTBGui, hActiveX, hFindGui, oDoc, ShowMarker, isFindView, isIE, isPaused, w_ShowStyles, MsgAhkSpyZoom, Sleep, oShowAccMarkers, oShowMarkers
-, HTML_Win, HTML_Control, HTML_Hotkey, rmCtrlX, rmCtrlY, widthTB, FullScreenMode, hColorProgress, hFindAllText
+, hGui, hTBGui, hActiveX, hFindGui, oDoc, ShowMarker, isFindView, isIE, isPaused, w_ShowStyles := IniRead("w_ShowStyles", 0), c_ShowStyles := IniRead("c_ShowStyles", 0)
+, HTML_Win, HTML_Control, HTML_Hotkey, rmCtrlX, rmCtrlY, widthTB, FullScreenMode, hColorProgress, hFindAllText, MsgAhkSpyZoom, Sleep, oShowMarkers, oShowAccMarkers
 , ClipAdd_Before := 0, ClipAdd_Delimiter := "`r`n", oDocEl, oJScript, oBody, isConfirm, isAhkSpy := 1, WordWrap := IniRead("WordWrap", 0)
 , MoveTitles := IniRead("MoveTitles", 1), PreOverflowHide := IniRead("PreOverflowHide", 1), DetectHiddenText := IniRead("DetectHiddenText", "on")
 , MenuIdView := IniRead("MenuIdView", 0)
@@ -547,7 +547,7 @@ HTML_Win:
 	%_T1% ( Other ) </span>%_T2%
 	%_PRE1%<span class='param' name='MS:N'>PID:</span>  <span name='MS:'>%WinPID%</span>%_DP%%ProcessBitSize%%IsAdmin%<span class='param'>Window count:</span> %WinCountProcess%%_DP%%_BB1% id='process_close'> process close %_BB2%
 	<span class='param' name='MS:N'>HWND:</span>  <span name='MS:'>%WinID%</span>%_DP%%_BB1% id='win_close'> win close %_BB2%%_DP%<span class='param'>Control count:</span>  %CountControl%
-	<span class='param'>Style:  </span><span id='c_Style' name='MS:'>%WinStyle%</span>%_DP%<span class='param'>ExStyle:  </span><span id='c_ExStyle' name='MS:'>%WinExStyle%</span>%_DP%%_BB1% id='get_styles'> %ButtonStyle_% %_BB2%%WinTransparent%%WinTransColor%%CLSID%%_PRE2%
+	<span class='param'>Style:  </span><span id='w_Style' name='MS:'>%WinStyle%</span>%_DP%<span class='param'>ExStyle:  </span><span id='c_ExStyle' name='MS:'>%WinExStyle%</span>%_DP%%_BB1% id='get_styles'> %ButtonStyle_% %_BB2%%WinTransparent%%WinTransColor%%CLSID%%_PRE2%
 	<span id=WinStyles>%WinStyles%</span>%SBText%%WinText%%MenuText%<a></a>%_T0%
 	</body>
 
@@ -685,7 +685,7 @@ Spot_Control(NotHTML = 0) {
 	MouseGetPos, MXS, MYS, WinID, tControlNN
 	CoordMode, Mouse, Window
 	MouseGetPos, MXWA, MYWA, , tControlID, 2
-	
+
 	If (WinID = hGui || WinID = oOther.hZoom || WinID = oOther.hZoomLW)
 		Return HideAllMarkers()
 	CtrlInfo := "", isIE := 0
@@ -747,22 +747,27 @@ Spot_Control(NotHTML = 0) {
 	WinGet, ProcessName, ProcessName, ahk_id %WinID%
 	WinGetClass, WinClass, ahk_id %WinID%
 
-	
-	
-	
-	
 HTML_Control:
 	If ControlID
-	HTML_ControlExist =
-	( Ltrim 
-	%_T1% ( Control ) </span>%_T2%
-	%_PRE1%<span class='param'>Class NN:</span>  <span name='MS:'>%ControlNN%</span>%_DP%<span class='param'>Win class:</span>  <span name='MS:'>%CtrlClass%</span>
-	%_BP1% id='set_button_pos'>Pos:%_BP2%  <span name='MS:'>x%CtrlX% y%CtrlY%</span>%_DP%<span name='MS:'>x&sup2;%CtrlX2% y&sup2;%CtrlY2%</span>%_DP%%_BP1% id='set_button_pos'>Size:%_BP2%  <span name='MS:'>w%CtrlW% h%CtrlH%</span>%_DP%<span name='MS:'>%CtrlX%, %CtrlY%, %CtrlX2%, %CtrlY2%</span>%_DP%<span name='MS:'>%CtrlX%, %CtrlY%, %CtrlW%, %CtrlH%</span>
-	<span class='param'>Pos relative client area:</span>  <span name='MS:'>x%CtrlCAX% y%CtrlCAY%</span>%_DP%<span name='MS:'>x&sup2;%CtrlCAX2% y&sup2;%CtrlCAY2%</span>%_DP%<span name='MS:'>%CtrlCAX%, %CtrlCAY%, %CtrlCAX2%, %CtrlCAY2%</span>%_DP%<span name='MS:'>%CtrlCAX%, %CtrlCAY%, %CtrlW%, %CtrlH%</span>
-	%_BP1% id='set_pos'>Mouse relative control:%_BP2%  <span name='MS:'>x%rmCtrlX% y%rmCtrlY%</span>%WithRespectControl%
-	<span class='param'>HWND:</span>  <span name='MS:'>%ControlID%</span>%_DP%<span class='param'>Style:</span>  <span name='MS:'>%CtrlStyle%</span>%_DP%<span class='param'>ExStyle:</span>  <span name='MS:'>%CtrlExStyle%</span>
-	%_BP1% id='set_button_focus_ctrl'>Focus control:%_BP2%  <span name='MS:'>%CtrlFocus%</span>%_PRE2%
-	)
+	{
+		If GetControlStyles(ControlNN_Sub, "E")
+		{
+			If c_ShowStyles
+				ControlStyles := GetControlStyles(ControlNN_Sub, CtrlStyle, CtrlExStyle)
+			ButtonStyle_ := _DP _BB1 " id='get_styles_c'> " (c_ShowStyles ? "show styles" : "hide styles") " " _BB2
+		}
+		HTML_ControlExist =
+		( Ltrim
+		%_T1% ( Control ) </span>%_T2%
+		%_PRE1%<span class='param'>Class NN:</span>  <span name='MS:'>%ControlNN%</span>%_DP%<span class='param'>Win class:</span>  <span name='MS:'>%CtrlClass%</span>
+		%_BP1% id='set_button_pos'>Pos:%_BP2%  <span name='MS:'>x%CtrlX% y%CtrlY%</span>%_DP%<span name='MS:'>x&sup2;%CtrlX2% y&sup2;%CtrlY2%</span>%_DP%%_BP1% id='set_button_pos'>Size:%_BP2%  <span name='MS:'>w%CtrlW% h%CtrlH%</span>%_DP%<span name='MS:'>%CtrlX%, %CtrlY%, %CtrlX2%, %CtrlY2%</span>%_DP%<span name='MS:'>%CtrlX%, %CtrlY%, %CtrlW%, %CtrlH%</span>
+		<span class='param'>Pos relative client area:</span>  <span name='MS:'>x%CtrlCAX% y%CtrlCAY%</span>%_DP%<span name='MS:'>x&sup2;%CtrlCAX2% y&sup2;%CtrlCAY2%</span>%_DP%<span name='MS:'>%CtrlCAX%, %CtrlCAY%, %CtrlCAX2%, %CtrlCAY2%</span>%_DP%<span name='MS:'>%CtrlCAX%, %CtrlCAY%, %CtrlW%, %CtrlH%</span>
+		%_BP1% id='set_pos'>Mouse relative control:%_BP2%  <span name='MS:'>x%rmCtrlX% y%rmCtrlY%</span>%WithRespectControl%
+		<span class='param'>HWND:</span>  <span name='MS:'>%ControlID%</span>%_DP%%_BP1% id='set_button_focus_ctrl'>Focus control:%_BP2%  <span name='MS:'>%CtrlFocus%</span>
+		<span class='param'>Style:</span>  <span id='c_Style' name='MS:'>%CtrlStyle%</span>%_DP%<span class='param'>ExStyle:</span>  <span id='c_ExStyle' name='MS:'>%CtrlExStyle%</span>%ButtonStyle_%%_PRE2%
+		<span id=ControlStyles>%ControlStyles%</span>
+		)
+	}
 	HTML_Control =
 	( Ltrim
 	<body id='body'>
@@ -848,6 +853,7 @@ HTML_Control:
 	)
 	oOther.MouseControlID := ControlID
 	oOther.MouseWinID := WinID
+	oOther.ControlNN_Sub := ControlNN_Sub
 	Return 1
 }
 
@@ -1216,7 +1222,7 @@ AccInfoUnderMouse(mx, my, wx, wy, cx, cy, WinID) {
 		code .= _T1P " ( Value ) </span><a></a>" _BT1 " id='copy_button'> copy " _BT2 _T2 _LPRE ">" TransformHTML(Var) _PRE2
 	If ((Var := AccGetStateText(Var2 := Acc.accState(child))) != "")
 		code .= _T1P " ( State ) </span>" _T2 _PRE1 "<span name='MS:'>" TransformHTML(Var) "</span>"
-		. _DP "<span class='param' name='MS:N'>code: </span><span name='MS:'>" Var2 "</span>" 
+		. _DP "<span class='param' name='MS:N'>code: </span><span name='MS:'>" Var2 "</span>"
 		. ((Var2 & 0x100000) ? _DP "<span class='param'>focusable</span>" : "")
 		. ((Var2 & 0x4) ? _DP "<span class='param'>focused</span>" : "") _PRE2
 	If ((Var := AccRole(Acc, child)) != "")
@@ -1241,7 +1247,7 @@ AccInfoUnderMouse(mx, my, wx, wy, cx, cy, WinID) {
 		code .= _T1P " ( Help ) </span>" _T2 _PRE1 "<span name='MS:'>" TransformHTML(Var) "</span>" _PRE2
 	If ((Var := Acc.AccHelpTopic(child)))
 		code .= _T1P " ( HelpTopic ) </span>" _T2 _PRE1 "<span name='MS:'>" TransformHTML(Var) "</span>" _PRE2
-		
+
 	myPublicObj.AccObj := {AccObj:Acc,child:child,WinID:WinID}
 	Return code
 }
@@ -2513,46 +2519,6 @@ GetCLSIDExplorer(hwnd) {
 			Return (CLSID := window.Document.Folder.Self.Path) ~= "^::\{" ? "`n<span class='param'>CLSID: </span><span name='MS:'>" CLSID "</span>": ""
 }
 
-ViewStyles(elem) {
-	elem.innerText := (w_ShowStyles := !w_ShowStyles) ? " show styles " : " hide styles "
-	If w_ShowStyles
-		Styles := "<a></a>" GetStyles(oDoc.getElementById("c_Style").innerText, oDoc.getElementById("c_ExStyle").innerText)
-	oDoc.getElementById("WinStyles").innerHTML := Styles
-	HTML_Win := oBody.innerHTML
-}
-
-	;  http://msdn.microsoft.com/en-us/library/windows/desktop/ms632600(v=vs.85).aspx
-	;  http://msdn.microsoft.com/en-us/library/windows/desktop/ff700543(v=vs.85).aspx
-
-GetStyles(Style, ExStyle) {
-	Static Styles := {"WS_BORDER":"0x00800000", "WS_CAPTION":"0x00C00000", "WS_CHILD":"0x40000000", "WS_CHILDWINDOW":"0x40000000"
-		, "WS_CLIPCHILDREN":"0x02000000", "WS_CLIPSIBLINGS":"0x04000000", "WS_DISABLED":"0x08000000", "WS_DLGFRAME":"0x00400000"
-		, "WS_GROUP":"0x00020000", "WS_HSCROLL":"0x00100000", "WS_ICONIC":"0x20000000", "WS_MAXIMIZE":"0x01000000"
-		, "WS_MAXIMIZEBOX":"0x00010000", "WS_MINIMIZE":"0x20000000", "WS_MINIMIZEBOX":"0x00020000", "WS_POPUP":"0x80000000"
-		, "WS_OVERLAPPED":"0x00000000", "WS_SIZEBOX":"0x00040000", "WS_SYSMENU":"0x00080000", "WS_TABSTOP":"0x00010000"
-		, "WS_THICKFRAME":"0x00040000", "WS_TILED":"0x00000000", "WS_VISIBLE":"0x10000000", "WS_VSCROLL":"0x00200000"}
-
-		, ExStyles := {"WS_EX_ACCEPTFILES":"0x00000010", "WS_EX_APPWINDOW":"0x00040000", "WS_EX_CLIENTEDGE":"0x00000200"
-		, "WS_EX_COMPOSITED":"0x02000000", "WS_EX_CONTEXTHELP":"0x00000400", "WS_EX_CONTROLPARENT":"0x00010000"
-		, "WS_EX_DLGMODALFRAME":"0x00000001", "WS_EX_LAYERED":"0x00080000", "WS_EX_LAYOUTRTL":"0x00400000"
-		, "WS_EX_LEFT":"0x00000000", "WS_EX_LEFTSCROLLBAR":"0x00004000", "WS_EX_LTRREADING":"0x00000000"
-		, "WS_EX_MDICHILD":"0x00000040", "WS_EX_NOACTIVATE":"0x08000000", "WS_EX_NOINHERITLAYOUT":"0x00100000"
-		, "WS_EX_NOPARENTNOTIFY":"0x00000004", "WS_EX_NOREDIRECTIONBITMAP":"0x00200000", "WS_EX_RIGHT":"0x00001000"
-		, "WS_EX_RIGHTSCROLLBAR":"0x00000000", "WS_EX_RTLREADING":"0x00002000", "WS_EX_STATICEDGE":"0x00020000"
-		, "WS_EX_TOOLWINDOW":"0x00000080", "WS_EX_TOPMOST":"0x00000008", "WS_EX_TRANSPARENT":"0x00000020"
-		, "WS_EX_WINDOWEDGE":"0x00000100"}
-
-	For K, V In Styles
-		Ret .= Style & V ? "<span name='MS:'>" K " := <span class='param' name='MS:'>" V "</span></span>`n" : ""
-	For K, V In ExStyles
-		RetEx .= ExStyle & V ? "<span name='MS:'>" K " := <span class='param' name='MS:'>" V "</span></span>`n" : ""
-	If Ret !=
-		Res .= _T1 " ( Styles ) </span>" _T2 _PRE1 Ret _PRE2
-	If RetEx !=
-		Res .= _T1 " ( ExStyles )</span>" _T2 _PRE1 RetEx _PRE2
-	Return Res
-}
-
 ChangeLocal(hWnd) {
 	Static WM_INPUTLANGCHANGEREQUEST := 0x0050, INPUTLANGCHANGE_FORWARD := 0x0002
 	SendMessage, WM_INPUTLANGCHANGEREQUEST, INPUTLANGCHANGE_FORWARD, , , % "ahk_id" hWnd
@@ -2741,6 +2707,131 @@ HighLight(elem, time = "", RemoveFormat = 1) {
 		Return
 }
 
+	; _________________________________________________ Styles _________________________________________________
+
+ViewStylesWin(elem) {  ;
+	elem.innerText := (w_ShowStyles := !w_ShowStyles) ? " show styles " : " hide styles "
+	IniWrite(w_ShowStyles, "w_ShowStyles")
+	If w_ShowStyles
+		Styles := "<a></a>" GetStyles(oDoc.getElementById("w_Style").innerText, oDoc.getElementById("c_ExStyle").innerText)
+	oDoc.getElementById("WinStyles").innerHTML := Styles
+	HTML_Win := oBody.innerHTML
+}
+
+	;  http://msdn.microsoft.com/en-us/library/windows/desktop/ms632600(v=vs.85).aspx
+	;  http://msdn.microsoft.com/en-us/library/windows/desktop/ff700543(v=vs.85).aspx
+
+GetStyles(Style, ExStyle) {
+	Static Styles, ExStyles
+	If !Styles
+		Styles := {"WS_BORDER":"0x00800000", "WS_CAPTION":"0x00C00000", "WS_CHILD":"0x40000000", "WS_CHILDWINDOW":"0x40000000"
+		, "WS_CLIPCHILDREN":"0x02000000", "WS_CLIPSIBLINGS":"0x04000000", "WS_DISABLED":"0x08000000", "WS_DLGFRAME":"0x00400000"
+		, "WS_GROUP":"0x00020000", "WS_HSCROLL":"0x00100000", "WS_ICONIC":"0x20000000", "WS_MAXIMIZE":"0x01000000"
+		, "WS_MAXIMIZEBOX":"0x00010000", "WS_MINIMIZE":"0x20000000", "WS_MINIMIZEBOX":"0x00020000", "WS_POPUP":"0x80000000"
+		, "WS_OVERLAPPED":"0x00000000", "WS_SIZEBOX":"0x00040000", "WS_SYSMENU":"0x00080000", "WS_TABSTOP":"0x00010000"
+		, "WS_THICKFRAME":"0x00040000", "WS_TILED":"0x00000000", "WS_VISIBLE":"0x10000000", "WS_VSCROLL":"0x00200000"}
+
+		, ExStyles := {"WS_EX_ACCEPTFILES":"0x00000010", "WS_EX_APPWINDOW":"0x00040000", "WS_EX_CLIENTEDGE":"0x00000200"
+		, "WS_EX_COMPOSITED":"0x02000000", "WS_EX_CONTEXTHELP":"0x00000400", "WS_EX_CONTROLPARENT":"0x00010000"
+		, "WS_EX_DLGMODALFRAME":"0x00000001", "WS_EX_LAYERED":"0x00080000", "WS_EX_LAYOUTRTL":"0x00400000"
+		, "WS_EX_LEFT":"0x00000000", "WS_EX_LEFTSCROLLBAR":"0x00004000", "WS_EX_LTRREADING":"0x00000000"
+		, "WS_EX_MDICHILD":"0x00000040", "WS_EX_NOACTIVATE":"0x08000000", "WS_EX_NOINHERITLAYOUT":"0x00100000"
+		, "WS_EX_NOPARENTNOTIFY":"0x00000004", "WS_EX_NOREDIRECTIONBITMAP":"0x00200000", "WS_EX_RIGHT":"0x00001000"
+		, "WS_EX_RIGHTSCROLLBAR":"0x00000000", "WS_EX_RTLREADING":"0x00002000", "WS_EX_STATICEDGE":"0x00020000"
+		, "WS_EX_TOOLWINDOW":"0x00000080", "WS_EX_TOPMOST":"0x00000008", "WS_EX_TRANSPARENT":"0x00000020"
+		, "WS_EX_WINDOWEDGE":"0x00000100"}
+
+	For K, V In Styles
+		Ret .= Style & V ? "<span name='MS:'>" K " := <span class='param' name='MS:'>" V "</span></span>`n" : ""
+	For K, V In ExStyles
+		RetEx .= ExStyle & V ? "<span name='MS:'>" K " := <span class='param' name='MS:'>" V "</span></span>`n" : ""
+	If Ret !=
+		Res .= _T1 " ( Styles ) </span>" _T2 _PRE1 Ret _PRE2
+	If RetEx !=
+		Res .= _T1 " ( ExStyles )</span>" _T2 _PRE1 RetEx _PRE2
+	Return Res
+}
+
+ViewStylesControl(elem) {
+	elem.innerText := (c_ShowStyles := !c_ShowStyles) ? " show styles " : " hide styles "
+	IniWrite(c_ShowStyles, "c_ShowStyles")
+	If c_ShowStyles
+		Styles := "<a></a>" GetControlStyles(oOther.ControlNN_Sub, oDoc.getElementById("c_Style").innerText, oDoc.getElementById("c_ExStyle").innerText)
+	oDoc.getElementById("ControlStyles").innerHTML := Styles
+	HTML_Control := oBody.innerHTML
+}
+
+GetControlStyles(Class, Style, ExStyle = "")  {  ;	https://autohotkey.com/board/topic/70454-gui-constants/
+	Static Styles, ExStyles
+	If !Styles
+	{
+		Styles := {}
+		Styles.Static := {"SS_LEFT":0x0000,"SS_CENTER":0x0001,"SS_RIGHT":0x0002,"SS_ICON":0x0003,"SS_BLACKRECT":0x0004,"SS_GRAYRECT":0x0005,"SS_WHITERECT":0x0006
+			,"SS_BLACKFRAME":0x0007,"SS_GRAYFRAME":0x0008,"SS_WHITEFRAME":0x0009,"SS_USERITEM":0x000A,"SS_SIMPLE":0x000B,"SS_LEFTNOWORDWRAP":0x000C,"SS_OWNERDRAW":0x000D
+			,"SS_BITMAP":0x000E,"SS_ENHMETAFILE":0x000F,"SS_ETCHEDHORZ":0x0010,"SS_ETCHEDVERT":0x0011,"SS_ETCHEDFRAME":0x0012,"SS_TYPEMASK":0x001F,"SS_REALSIZECONTROL":0x0040
+			,"SS_NOPREFIX":0x0080,"SS_NOTIFY":0x0100,"SS_CENTERIMAGE":0x0200,"SS_RIGHTJUST":0x0400,"SS_REALSIZEIMAGE":0x0800,"SS_SUNKEN":0x1000,"SS_EDITCONTROL":0x2000
+			,"SS_ENDELLIPSIS":0x4000,"SS_PATHELLIPSIS":0x8000,"SS_WORDELLIPSIS":0xC000,"SS_ELLIPSISMASK":0xC000}
+		Styles.Edit := {"ES_LEFT":0,"ES_CENTER":1,"ES_RIGHT":2,"ES_MULTILINE":4,"ES_UPPERCASE":8,"ES_LOWERCASE":16,"ES_PASSWORD":32,"ES_AUTOVSCROLL":64,"ES_AUTOHSCROLL":128
+			,"ES_NOHIDESEL":256,"ES_OEMCONVERT":1024,"ES_READONLY":2048,"ES_WANTRETURN":4096,"ES_NUMBER":8192}
+		Styles.Button := {"BS_PUSHBUTTON":0x0000,"BS_DEFPUSHBUTTON":0x0001,"BS_CHECKBOX":0x0002,"BS_AUTOCHECKBOX":0x0003,"BS_RADIOBUTTON":0x0004,"BS_3STATE":0x0005
+			,"BS_AUTO3STATE":0x0006,"BS_GROUPBOX":0x0007,"BS_USERBUTTON":0x0008,"BS_AUTORADIOBUTTON":0x0009,"BS_PUSHBOX":0x000A,"BS_OWNERDRAW":0x000B
+			,"BS_TYPEMASK":0x000F,"BS_LEFTTEXT":0x0020,"BS_TEXT":0x0000,"BS_ICON":0x0040,"BS_BITMAP":0x0080,"BS_LEFT":0x0100,"BS_RIGHT":0x0200,"BS_CENTER":0x0300
+			,"BS_TOP":0x0400,"BS_BOTTOM":0x0800,"BS_VCENTER":0x0C00,"BS_PUSHLIKE":0x1000,"BS_MULTILINE":0x2000,"BS_NOTIFY":0x4000,"BS_FLAT":0x8000
+			,"BS_RIGHTBUTTON":BS_LEFTTEXT,"BS_SPLITBUTTON":0x000C,"BS_DEFSPLITBUTTON":0x000D,"BS_COMMANDLINK":0x000E,"BS_DEFCOMMANDLINK":0x000F}
+		Styles.ComboBox := {"CBS_SIMPLE":0x0001,"CBS_DROPDOWN":0x0002,"CBS_DROPDOWNLIST":0x0003,"CBS_OWNERDRAWFIXED":0x0010,"CBS_OWNERDRAWVARIABLE":0x0020
+			,"CBS_AUTOHSCROLL":0x0040,"CBS_OEMCONVERT":0x0080,"CBS_SORT":0x0100,"CBS_HASSTRINGS":0x0200,"CBS_NOINTEGRALHEIGHT":0x0400,"CBS_DISABLENOSCROLL":0x0800
+			,"CBS_UPPERCASE":0x2000,"CBS_LOWERCASE":0x4000}
+		Styles.ListBox := {"LBS_NOTIFY":0x0001,"LBS_SORT":0x0002,"LBS_NOREDRAW":0x0004,"LBS_MULTIPLESEL":0x0008,"LBS_OWNERDRAWFIXED":0x0010,"LBS_OWNERDRAWVARIABLE":0x0020
+			,"LBS_HASSTRINGS":0x0040,"LBS_USETABSTOPS":0x0080,"LBS_NOINTEGRALHEIGHT":0x0100,"LBS_MULTICOLUMN":0x0200,"LBS_WANTKEYBOARDINPUT":0x0400,"LBS_EXTENDEDSEL":0x0800
+			,"LBS_DISABLENOSCROLL":0x1000,"LBS_NODATA":0x2000,"LBS_NOSEL":0x4000,"LBS_COMBOBOX":0x8000,"LBS_STANDARD":0x3," LBS_STANDARD":0xa00000}
+		Styles.msctls_updown := {"UDS_WRAP":0x0001,"UDS_SETBUDDYINT":0x0002,"UDS_ALIGNRIGHT":0x0004,"UDS_ALIGNLEFT":0x0008,"UDS_AUTOBUDDY":0x0010,"UDS_ARROWKEYS":0x0020
+			,"UDS_HORZ":0x0040,"UDS_NOTHOUSANDS":0x0080,"UDS_HOTTRACK":0x0100}
+		Styles.SysDateTimePick := {"DTS_SHORTDATEFORMAT":0x0000,"DTS_UPDOWN":0x0001,"DTS_SHOWNONE":0x0002,"DTS_LONGDATEFORMAT":0x0004,"DTS_TIMEFORMAT":0x0009
+			,"DTS_SHORTDATECENTURYFORMAT":0x000C,"DTS_APPCANPARSE":0x0010,"DTS_RIGHTALIGN":0x0020}
+		Styles.SysMonthCal := {"MCS_DAYSTATE":0x0001,"MCS_MULTISELECT":0x0002,"MCS_WEEKNUMBERS":0x0004,"MCS_NOTODAYCIRCLE":0x0008,"MCS_NOTODAY":0x0010,"MCS_NOTRAILINGDATES":0x0040
+			,"MCS_SHORTDAYSOFWEEK":0x0080,"MCS_NOSELCHANGEONNAV":0x0100}
+		Styles.SysTabControl := {"TCS_SCROLLOPPOSITE":0x0001,"TCS_BOTTOM":0x0002,"TCS_RIGHT":0x0002,"TCS_MULTISELECT":0x0004,"TCS_FLATBUTTONS":0x0008,"TCS_FORCEICONLEFT":0x0010
+			,"TCS_FORCELABELLEFT":0x0020,"TCS_HOTTRACK":0x0040,"TCS_VERTICAL":0x0080,"TCS_TABS":0x0000,"TCS_BUTTONS":0x0100,"TCS_SINGLELINE":0x0000,"TCS_MULTILINE":0x0200
+			,"TCS_RIGHTJUSTIFY":0x0000,"TCS_FIXEDWIDTH":0x0400,"TCS_RAGGEDRIGHT":0x0800,"TCS_FOCUSONBUTTONDOWN":0x1000,"TCS_OWNERDRAWFIXED":0x2000,"TCS_TOOLTIPS":0x4000,"TCS_FOCUSNEVER":0x8000}
+		Styles.msctls_trackbar := {"TBS_AUTOTICKS":0x0001,"TBS_VERT":0x0002,"TBS_HORZ":0x0000,"TBS_TOP":0x0004,"TBS_BOTTOM":0x0000,"TBS_LEFT":0x0004,"TBS_RIGHT":0x0000
+			,"TBS_BOTH":0x0008,"TBS_NOTICKS":0x0010,"TBS_ENABLESELRANGE":0x0020,"TBS_FIXEDLENGTH":0x0040,"TBS_NOTHUMB":0x0080,"TBS_TOOLTIPS":0x0100
+			,"TBS_REVERSED":0x0200,"TBS_DOWNISLEFT":0x0400,"TBS_NOTIFYBEFOREMOVE":0x0800,"TBS_TRANSPARENTBKGND":0x1000}
+		Styles.msctls_statusbar := {"SBARS_SIZEGRIP":0x0100,"SBARS_TOOLTIPS":0x0800,"SBT_TOOLTIPS":0x0800}
+		Styles.msctls_progress := {"PBS_SMOOTH":0x01,"PBS_VERTICAL":0x04,"PBS_MARQUEE":0x08,"PBS_SMOOTHREVERSE":0x10}
+		Styles.SysListView := {"LVS_ALIGNLEFT":0x0800,"LVS_ALIGNMASK":0x0c00,"LVS_ALIGNTOP":0x0000,"LVS_AUTOARRANGE":0x0100,"LVS_EDITLABELS":0x0200,"LVS_ICON":0x0000
+			,"LVS_LIST":0x0003,"LVS_NOCOLUMNHEADER":0x4000,"LVS_NOLABELWRAP":0x0080,"LVS_NOSCROLL":0x2000,"LVS_NOSORTHEADER":0x8000,"LVS_OWNERDATA":0x1000
+			,"LVS_OWNERDRAWFIXED":0x0400,"LVS_REPORT":0x0001,"LVS_SHAREIMAGELISTS":0x0040,"LVS_SHOWSELALWAYS":0x0008,"LVS_SINGLESEL":0x0004,"LVS_SMALLICON":0x0002
+			,"LVS_SORTASCENDING":0x0010,"LVS_SORTDESCENDING":0x0020,"LVS_TYPEMASK":0x0003,"LVS_TYPESTYLEMASK":0xfc00}
+		Styles.SysTreeView := {"TVS_CHECKBOXES":0x0100,"TVS_DISABLEDRAGDROP":0x0010,"TVS_EDITLABELS":0x0008,"TVS_FULLROWSELECT":0x1000,"TVS_HASBUTTONS":0x0001
+			,"TVS_HASLINES":0x0002,"TVS_INFOTIP":0x0800,"TVS_LINESATROOT":0x0004,"TVS_NOHSCROLL":0x8000,"TVS_NONEVENHEIGHT":0x4000,"TVS_NOSCROLL":0x2000
+			,"TVS_NOTOOLTIPS":0x0080,"TVS_RTLREADING":0x0040,"TVS_SHOWSELALWAYS":0x0020,"TVS_SINGLEEXPAND":0x0400,"TVS_TRACKSELECT":0x0200}
+
+		ExStyles := {}
+		ExStyles.SysTabControl := {"TCS_EX_FLATSEPARATORS":0x00000001,"TCS_EX_REGISTERDROP":0x00000002}
+		ExStyles.SysListView := {"LVS_EX_AUTOAUTOARRANGE":0x01000000,"LVS_EX_AUTOCHECKSELECT":0x08000000,"LVS_EX_AUTOSIZECOLUMNS":0x10000000,"LVS_EX_BORDERSELECT":0x00008000
+			,"LVS_EX_CHECKBOXES":0x00000004,"LVS_EX_COLUMNOVERFLOW":0x80000000,"LVS_EX_COLUMNSNAPPOINTS":0x40000000,"LVS_EX_DOUBLEBUFFER":0x00010000,"LVS_EX_FLATSB":0x00000100
+			,"LVS_EX_FULLROWSELECT":0x00000020,"LVS_EX_GRIDLINES":0x00000001,"LVS_EX_HEADERDRAGDROP":0x00000010,"LVS_EX_HEADERINALLVIEWS":0x02000000,"LVS_EX_HIDELABELS":0x00020000
+			,"LVS_EX_INFOTIP":0x00000400,"LVS_EX_JUSTIFYCOLUMNS":0x00200000,"LVS_EX_LABELTIP":0x00004000,"LVS_EX_MULTIWORKAREAS":0x00002000,"LVS_EX_ONECLICKACTIVATE":0x00000040
+			,"LVS_EX_REGIONAL":0x00000200,"LVS_EX_SIMPLESELECT":0x00100000,"LVS_EX_SINGLEROW":0x00040000,"LVS_EX_SNAPTOGRID":0x00080000,"LVS_EX_SUBITEMIMAGES":0x00000002
+			,"LVS_EX_TRACKSELECT":0x00000008,"LVS_EX_TRANSPARENTBKGND":0x00400000,"LVS_EX_TRANSPARENTSHADOWTEXT":0x00800000,"LVS_EX_TWOCLICKACTIVATE":0x00000080
+			,"LVS_EX_UNDERLINECOLD":0x00001000,"LVS_EX_UNDERLINEHOT":0x00000800}
+		ExStyles.SysTreeView := {"TVS_EX_AUTOHSCROLL":0x0020,"TVS_EX_DIMMEDCHECKBOXES":0x0200,"TVS_EX_DOUBLEBUFFER":0x0004,"TVS_EX_DRAWIMAGEASYNC":0x0400,"TVS_EX_EXCLUSIONCHECKBOXES":0x0100
+			,"TVS_EX_FADEINOUTEXPANDOS":0x0040,"TVS_EX_MULTISELECT":0x0002,"TVS_EX_NOINDENTSTATE":0x0008,"TVS_EX_NOSINGLECOLLAPSE":0x0001,"TVS_EX_PARTIALCHECKBOXES":0x0080,"TVS_EX_RICHTOOLTIP":0x0010}
+	}
+
+	If (Style = "E")
+		Return Styles.HasKey(Class)
+
+	For K, V In Styles[Class]
+		Ret .= Style & V ? "<span name='MS:'>" K " := <span class='param' name='MS:'>" V "</span></span>`n" : ""
+	For K, V In ExStyles[Class]
+		RetEx .= ExStyle & V ? "<span name='MS:'>" K " := <span class='param' name='MS:'>" V "</span></span>`n" : ""
+	If Ret !=
+		Res .= _T1 " ( Styles ) </span>" _T2 _PRE1 Ret _PRE2
+	If RetEx !=
+		Res .= _T1 " ( ExStyles )</span>" _T2 _PRE1 RetEx _PRE2
+	Return Res
+}
 	; _________________________________________________ FullScreen _________________________________________________
 
 FullScreenMode() {
@@ -3108,14 +3199,14 @@ Class Events {  ;	http://forum.script-coding.com/viewtopic.php?pid=82283#p82283
 		oevent := oDoc.parentWindow.event.srcElement
 		If (oevent.ClassName = "button" || oevent.tagname = "button")
 			Return ButtonClick(oevent)
-			
+
 		If (oevent.ClassName = "title" && oevent.name = "main" && ThisMode != "Hotkey")  ;	anchor
 		{
 			R := oDoc.selection.createRange(), R.collapse(1), R.select()
 
 			If oOther.anchor[ThisMode]
 			{
-				EL := oDoc.getElementById("anchor") 
+				EL := oDoc.getElementById("anchor")
 				EL.style.background := "'none'"
 				EL.Id := ""
 				If oevent.OuterText = oOther.anchor[ThisMode "_text"]
@@ -3289,7 +3380,9 @@ ButtonClick(oevent) {
 		edithotkey := oDoc.getElementById("edithotkey"), edithotkey.value := "", edithotkey.focus()
 		, oDoc.execCommand("Paste"), oDoc.getElementById("keyname").click()
 	Else If thisid = get_styles
-		ViewStyles(oevent)
+		ViewStylesWin(oevent)
+	Else If thisid = get_styles_c
+		ViewStylesControl(oevent)
 	Else If thisid = run_AccViewer
 		RunAhkPath(ExtraFile("AccViewer Source"), myPublicObjGUID)
 	Else If thisid = run_iWB2Learner
@@ -3687,7 +3780,7 @@ ShowZoom(Show) {
 	Gui,  Zoom: Show, NA Hide
 }
 
-	; _________________________________________________ Events _________________________________________________
+	; _________________________________________________ Zoom Events _________________________________________________
 
 ZoomOnSize() {
 	Critical
@@ -3800,7 +3893,7 @@ EVENT_SYSTEM_MOVESIZEEND(hWinEventHook, event, hwnd) {
 	ZoomRules("MOVE", 0)
 }
 
-	; _________________________________________________ Sizing _________________________________________________
+	; _________________________________________________ Zoom Sizing _________________________________________________
 
 WM_SETCURSOR(W, L, M, H) {
 	Static SIZENWSE := DllCall("User32.dll\LoadCursor", "Ptr", NULL, "Int", 32642, "UPtr")
@@ -3867,7 +3960,7 @@ RestoreCursors() {
 	DllCall("SystemParametersInfo", UInt, 0x57, UInt, 0, UInt, 0, UInt, 0)  ;	SPI_SETCURSORS := 0x57
 }
 
-	; _________________________________________________ Magnify _________________________________________________
+	; _________________________________________________ Zoom Magnify _________________________________________________
 
 Magnify(one = 0) {
 	If (a := oZoom.Work) || one
@@ -3903,7 +3996,7 @@ Memory() {
 	; ToolTip % VSX  "`n" VSY "`nMemory"
 }
 
-	; _________________________________________________ Gdip _________________________________________________
+	; _________________________________________________ Zoom Gdip _________________________________________________
 
 UpdateWindow(Src, X, Y) {
 	hbm := CreateDIBSection(oZoom.nWidthDest, oZoom.nHeightDest, oZoom.hDCBuf)
