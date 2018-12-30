@@ -42,7 +42,7 @@ DetectHiddenWindows, On
 CoordMode, Pixel
 CoordMode, Menu
 
-Global AhkSpyVersion := 3.30
+Global AhkSpyVersion := 3.31
 Gosub, CheckAhkVersion
 Menu, Tray, UseErrorLevel
 Menu, Tray, Icon, Shell32.dll, % A_OSVersion = "WIN_XP" ? 222 : 278
@@ -235,6 +235,7 @@ Menu, Overflow, Add, 1 / 5, MenuOverflowLabel
 Menu, Overflow, Add, 1 / 6, MenuOverflowLabel 
 Menu, Overflow, Add, 1 / 8, MenuOverflowLabel
 Menu, Overflow, Add, 1 / 10, MenuOverflowLabel
+Menu, Overflow, Add, 1 / 15, MenuOverflowLabel
 Menu, View, Add, Big text overflow hide, :Overflow
  
 Menu, Overflow, Check, %PreMaxHeightStr%
@@ -1696,8 +1697,8 @@ MenuCheck()  {
 		oItems:= {Sys:{1:"Sys_Backlight",2:"Sys_Backlight",3:"Sys_Backlight",5:"Sys_WClight",6:"Sys_Acclight",8:"Spot_Together"
 							,9:"Active_No_Pause",10:"CheckUpdate",16:"PausedScript",17:"Suspend",21:"FindView"}
 		, Startmode:{1:"SelStartMode",2:"SelStartMode",3:"SelStartMode",5:"SelStartMode"}
-		, View:{1:"MemoryPos",2:"MemorySize",3:"MemoryFontSize",4:"MemoryStateZoom",5:"MemoryZoomSize",7:"PreOverflowHide",8:"MoveTitles",9:"WordWrap"}
-		, Overflow:{1:"MenuOverflowLabel",2:"MenuOverflowLabel",3:"MenuOverflowLabel",4:"MenuOverflowLabel",5:"MenuOverflowLabel",6:"MenuOverflowLabel",7:"MenuOverflowLabel",8:"MenuOverflowLabel",9:"MenuOverflowLabel"}}
+		, View:{1:"MemoryPos",2:"MemorySize",3:"MemoryFontSize",4:"MemoryStateZoom",5:"MemoryZoomSize",7:"MoveTitles",8:"WordWrap"}
+		, Overflow:{1:"MenuOverflowLabel",2:"MenuOverflowLabel",3:"MenuOverflowLabel",4:"MenuOverflowLabel",5:"MenuOverflowLabel",6:"MenuOverflowLabel",7:"MenuOverflowLabel",8:"MenuOverflowLabel",9:"MenuOverflowLabel",10:"MenuOverflowLabel"}}
 
 	DllCall("KillTimer", Ptr, A_ScriptHwnd, Ptr, 1)
 	If !WinExist("ahk_class #32768 ahk_pid " oOther.CurrentProcessId)
@@ -1754,7 +1755,7 @@ MenuOverflowLabel:
 	ThisMenuItem := oOther.MenuItemExist ? oOther.MenuItemRButton : A_ThisMenuItem
 	PreOverflowHide := ThisMenuItem = "Switch off" ? 0 : 1
 	IniWrite(ThisMenuItem, "MaxHeightOverFlow") 
-	for k, v in ["Switch off","1 / 1","1 / 2","1 / 3","1 / 4","1 / 5","1 / 6","1 / 8","1 / 10"]
+	for k, v in ["Switch off","1 / 1","1 / 2","1 / 3","1 / 4","1 / 5","1 / 6","1 / 8","1 / 10","1 / 15"]
 		Menu, Overflow, UnCheck, % v
 	Menu, Overflow, Check, % PreMaxHeightStr := ThisMenuItem 
 	PreMaxHeight := MaxHeightStrToNum() 
