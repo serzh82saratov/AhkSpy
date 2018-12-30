@@ -27,7 +27,7 @@
 */
 
 	; _________________________________________________ Header _________________________________________________
-	
+
 p1 = %1%
 If (p1 = "Zoom")
 	GoTo ShowZoom
@@ -42,7 +42,7 @@ DetectHiddenWindows, On
 CoordMode, Pixel
 CoordMode, Menu
 
-Global AhkSpyVersion := 3.31
+Global AhkSpyVersion := 3.32
 Gosub, CheckAhkVersion
 Menu, Tray, UseErrorLevel
 Menu, Tray, Icon, Shell32.dll, % A_OSVersion = "WIN_XP" ? 222 : 278
@@ -68,7 +68,7 @@ Global MemoryFontSize := IniRead("MemoryFontSize", 0)
 
 Global ThisMode := IniRead("StartMode", "Control"), LastModeSave := (ThisMode = "LastMode"), ThisMode := ThisMode = "LastMode" ? IniRead("LastMode", "Control") : ThisMode
 , ActiveNoPause := IniRead("ActiveNoPause", 0), MemoryPos := IniRead("MemoryPos", 0), MemorySize := IniRead("MemorySize", 0), myPublicObj := {}, myPublicObjGUID
-, MemoryZoomSize := IniRead("MemoryZoomSize", 0), MemoryStateZoom := IniRead("MemoryStateZoom", 0), StateLight := IniRead("StateLight", 1)
+, MemoryZoomSize := IniRead("MemoryZoomSize", 0), MemoryStateZoom := IniRead("MemoryStateZoom", 0), StateLight := IniRead("StateLight", 1), MemoryAnchor := IniRead("MemoryAnchor", 1)
 , StateLightAcc := IniRead("StateLightAcc", 1), SendCode := IniRead("SendCode", "vk"), StateLightMarker := IniRead("StateLightMarker", 1)
 , StateUpdate := IniRead("StateUpdate", 0), SendMode := IniRead("SendMode", "send"), SendModeStr := Format("{:L}", SendMode)
 , StateAllwaysSpot := IniRead("AllwaysSpot", 0), ScrollPos := {}, AccCoord := [], oOther := {}, oFind := {}, Edits := [], oMS := {}
@@ -83,8 +83,8 @@ Global ThisMode := IniRead("StartMode", "Control"), LastModeSave := (ThisMode = 
 	. "onmouseup='OnButtonUp (this)' onmouseover='OnButtonOver (this)' contenteditable='false' ", _BT2 := "</span>"
 , _BP1 := "<span contenteditable='false' oncontextmenu='return false' class='BB'>" _BT1 "style='color: #" ColorParam ";' name='pre' ", _BP2 := "</span></span>"
 , _BB1 := "<span contenteditable='false' oncontextmenu='return false' class='BB' style='height: 0px;'>" _BT1 " ", _BB2 := "</span></span>"
-, _T1 := "<span class='box'><span class='line'><span class='hr'></span><span class='con'><span class='title' name='main'>", _T2 := "</span></span></span><br>"
-, _T1P := "<span class='box'><span class='line'><span class='hr'></span><span class='con'><span class='title' style='color: #" ColorParam ";'>"
+, _T1 := "<span class='box'><span class='line'><span class='hr'></span><span class='con'><span class='title' ", _T2 := "</span></span></span><br>"
+, _T1P := " style='color: #" ColorParam "' "
 , _T0 := "<span class='box'><span class='hr'></span></span>"
 , _PRE1 := "<pre contenteditable='true'>", _PRE2 := "</pre>"
 , _LPRE := "<pre contenteditable='true' class='lpre'"
@@ -101,7 +101,13 @@ Global ThisMode := IniRead("StartMode", "Control"), LastModeSave := (ThisMode = 
 
 BLGroup := ["Backlight allways","Backlight disable","Backlight hold shift button"]
 oOther.anchor := {}, oOther.CurrentProcessId := DllCall("GetCurrentProcessId")
-
+If MemoryAnchor
+{
+	If oOther.anchor["Win_text"] := IniRead("Win_Anchor")
+		oOther.anchor["Win"] := 1
+	If oOther.anchor["Control_text"] := IniRead("Control_Anchor")
+		oOther.anchor["Control"] := 1
+}
 ObjRegisterActive(myPublicObj, myPublicObjGUID := CreateGUID())
 
 FixIE()
@@ -154,7 +160,7 @@ Gui, F: Add, Text, x+3 yp hp +0x201 w52 vFindMatches HWNDhFindAllText
 Gui, F: Add, Button, % "+0x300 +0xC00 y3 h20 w20 gFindHide x" widthTB - 21, X
 
 	; _________________________________________________ Menu _________________________________________________
-	
+
 Menu, Sys, Add, Backlight allways, Sys_Backlight
 Menu, Sys, Add, Backlight hold shift button, Sys_Backlight
 Menu, Sys, Add, Backlight disable, Sys_Backlight
@@ -218,26 +224,28 @@ Menu, View, Add, Remember state zoom, MemoryStateZoom
 Menu, View, % MemoryStateZoom ? "Check" : "UnCheck", Remember state zoom
 Menu, View, Add, Remember zoom size, MemoryZoomSize
 Menu, View, % MemoryZoomSize ? "Check" : "UnCheck", Remember zoom size
+Menu, View, Add, Remember anchor, MemoryAnchor
+Menu, View, % MemoryAnchor ? "Check" : "UnCheck", Remember anchor
 Menu, View, Add
 Menu, View, Add, Moving titles, MoveTitles
 Menu, View, % MoveTitles ? "Check" : "UnCheck", Moving titles
 Menu, View, Add, Word wrap, WordWrap
 Menu, View, % WordWrap ? "Check" : "UnCheck", Word wrap
 Menu, Sys, Add, View settings, :View
-Menu, Sys, Add, Find to page, FindView 
- 
+Menu, Sys, Add, Find to page, FindView
+
 Menu, Overflow, Add, Switch off, MenuOverflowLabel
 Menu, Overflow, Add, 1 / 1, MenuOverflowLabel
 Menu, Overflow, Add, 1 / 2, MenuOverflowLabel
 Menu, Overflow, Add, 1 / 3, MenuOverflowLabel
 Menu, Overflow, Add, 1 / 4, MenuOverflowLabel
 Menu, Overflow, Add, 1 / 5, MenuOverflowLabel
-Menu, Overflow, Add, 1 / 6, MenuOverflowLabel 
+Menu, Overflow, Add, 1 / 6, MenuOverflowLabel
 Menu, Overflow, Add, 1 / 8, MenuOverflowLabel
 Menu, Overflow, Add, 1 / 10, MenuOverflowLabel
 Menu, Overflow, Add, 1 / 15, MenuOverflowLabel
 Menu, View, Add, Big text overflow hide, :Overflow
- 
+
 Menu, Overflow, Check, %PreMaxHeightStr%
 
 Menu, Sys, Color, % ColorBgOriginal
@@ -525,12 +533,12 @@ Spot_Win(NotHTML = 0) {
 		for k, v in sb_fields
 			SBText .= "<span class='param'>(" k "):</span> <span name='MS:' id='sb_field_" A_Index "'>" TransformHTML(v "") "</span>`n"
 		If SBText !=
-			SBText := _T1 "( StatusBarText ) </span>" _BT1 " id='copy_sbtext' name='" sb_max "'> copy " _BT2 _T2 _PRE1 "<span>" SBText "</span></span>" _PRE2
+			SBText := _T1 " id='__StatusBarText'> ( StatusBarText ) </span>" _BT1 " id='copy_sbtext' name='" sb_max "'> copy " _BT2 _T2 _PRE1 "<span>" SBText "</span></span>" _PRE2
 	}
 	DetectHiddenText, % DetectHiddenText
 	WinGetText, WinText, ahk_id %WinID%
 	If WinText !=
-		WinText := _T1 " ( Window Text ) </span><a></a>" _BT1 " id='copy_wintext'> copy " _BT2 _DB _BT1 " id='wintext_hidden'> hidden - " DetectHiddenText " " _BT2 _T2
+		WinText := _T1 " id='__WindowText'> ( Window Text ) </span><a></a>" _BT1 " id='copy_wintext'> copy " _BT2 _DB _BT1 " id='wintext_hidden'> hidden - " DetectHiddenText " " _BT2 _T2
 		. _LPRE  "><pre id='wintextcon'>" TransformHTML(WinText) "</pre>" _PRE2
 	MenuText := GetMenu(WinID)
 	CoordMode, Mouse
@@ -548,20 +556,20 @@ HTML_Win:
 	HTML_Win =
 	( Ltrim
 	<body id='body'>
-	%_T1% ( Title ) </span>%_BT1% id='pause_button'> pause %_BT2%%_DB%%_DB%%_BT1% id='run_zoom'> zoom %_BT2%%_T2%%_BR%
+	%_T1% id='__Title'> ( Title ) </span>%_BT1% id='pause_button'> pause %_BT2%%_DB%%_DB%%_BT1% id='run_zoom'> zoom %_BT2%%_T2%%_BR%
 	%_PRE1%<span id='wintitle1' name='MS:'>%WinTitle%</span>%_PRE2%
-	%_T1% ( Class ) </span>%_T2%
+	%_T1% id='__Class'> ( Class ) </span>%_T2%
 	%_PRE1%<span id='wintitle2'><span class='param' id='wintitle2_' name='MS:S'>ahk_class </span><span name='MS:'>%WinClass%</span></span>%_PRE2%
-	%_T1% ( ProcessName ) </span>%_BT1% id='copy_alltitle'> copy titles %_BT2%%_T2%
+	%_T1% id='__ProcessName'> ( ProcessName ) </span>%_BT1% id='copy_alltitle'> copy titles %_BT2%%_T2%
 	%_PRE1%<span id='wintitle3'><span class='param' name='MS:S' id='wintitle3_'>ahk_exe </span><span name='MS:'>%WinProcessName%</span></span>%_PRE2%
-	%_T1% ( ProcessPath ) </span>%_BT1% id='infolder'> in folder %_BT2%%_DB%%_BT1% id='paste_process_path'> paste %_BT2%%_T2%
+	%_T1% id='__ProcessPath'> ( ProcessPath ) </span>%_BT1% id='infolder'> in folder %_BT2%%_DB%%_BT1% id='paste_process_path'> paste %_BT2%%_T2%
 	%_PRE1%<span><span class='param' name='MS:S'>ahk_exe </span><span id='copy_processpath' name='MS:'>%WinProcessPath%</span></span>%_PRE2%
-	%_T1% ( CommandLine ) </span>%_BT1% id='w_command_line'> launch %_BT2%%_DB%%_BT1% id='paste_command_line'> paste %_BT2%%_T2%
+	%_T1% id='__CommandLine'> ( CommandLine ) </span>%_BT1% id='w_command_line'> launch %_BT2%%_DB%%_BT1% id='paste_command_line'> paste %_BT2%%_T2%
 	%_PRE1%<span id='c_command_line' name='MS:'>%ComLine%</span>%_PRE2%
-	%_T1% ( Position ) </span>%_T2%
+	%_T1% id='__Position'> ( Position ) </span>%_T2%
 	%_PRE1%%_BP1% id='set_button_pos'>Pos:%_BP2%  <span name='MS:'>x%WinX% y%WinY%</span>%_DP%<span name='MS:'>x&sup2;%WinX2% y&sup2;%WinY2%</span>%_DP%%_BP1% id='set_button_pos'>Size:%_BP2%  <span name='MS:'>w%WinWidth% h%WinHeight%</span>%_DP%<span name='MS:'>%WinX%, %WinY%, %WinX2%, %WinY2%</span>%_DP%<span name='MS:'>%WinX%, %WinY%, %WinWidth%, %WinHeight%</span>
 	<span class='param'>Client area size:</span>  <span name='MS:'>w%caW% h%caH%</span>%_DP%<span class='param'>left</span> %caX% <span class='param'>top</span> %caY% <span class='param'>right</span> %caWinRight% <span class='param'>bottom</span> %caWinBottom%%_PRE2%
-	%_T1% ( Other ) </span>%_T2%
+	%_T1% id='__Other'> ( Other ) </span>%_T2%
 	%_PRE1%<span class='param' name='MS:N'>PID:</span>  <span name='MS:'>%WinPID%</span>%_DP%%ProcessBitSize%%IsAdmin%<span class='param'>Window count:</span> %WinCountProcess%%_DP%%_BB1% id='process_close'> process close %_BB2%
 	<span class='param' name='MS:N'>HWND:</span>  <span name='MS:'>%WinID%</span>%_DP%%_BB1% id='win_close'> win close %_BB2%%_DP%<span class='param'>Control count:</span>  %CountControl%
 	<span class='param'>Style:  </span><span id='w_Style' name='MS:'>%WinStyle%</span>%_DP%<span class='param'>ExStyle:  </span><span id='c_ExStyle' name='MS:'>%WinExStyle%</span>%_DP%%_BB1% id='get_styles'> %ButtonStyle_% %_BB2%%WinTransparent%%WinTransColor%%CLSID%%_PRE2%
@@ -615,7 +623,7 @@ HTML_Win:
 		margin-bottom: 0.1em;
 		margin-top: 0.1em;
 		line-height: 1.3em;
-	} 
+	}
 	.button {
 		position: relative;
 		border: 1px dotted;
@@ -636,13 +644,13 @@ HTML_Win:
 		background-color: #%ColorSelAnchor%;
 	}
 	</style>
-	) 
+	)
 	oOther.WinPID := WinPID
 	oOther.WinID := WinID
 	If StateLightMarker && (ThisMode = "Win") && (StateLight = 1 || (StateLight = 3 && GetKeyState("Shift", "P")))
 		ShowMarker(WinX, WinY, WinWidth, WinHeight, 5)
 	Return 1
-} 
+}
 
 Write_Win() {
 	If oOther.anchor[ThisMode]
@@ -651,7 +659,7 @@ Write_Win() {
 	If oOther.anchor[ThisMode]
 		AnchorScroll()
 	If oDocEl.scrollLeft
-		oDocEl.scrollLeft := 0  
+		oDocEl.scrollLeft := 0
 	Return 1
 }
 
@@ -728,10 +736,10 @@ Spot_Control(NotHTML = 0) {
 		. "</span>  <span class='param'>for</span> <span name='MS:'>w" caW " h" caH "</span>"
 	ControlGetText, CtrlText, , ahk_id %ControlID%
 	If CtrlText !=
-		CtrlText := _T1 " ( Control Text ) </span><a></a>" _BT1 " id='copy_button'> copy " _BT2 _T2 _LPRE ">" TransformHTML(CtrlText) _PRE2
+		CtrlText := _T1 " id='__Control_Text'> ( Control Text ) </span><a></a>" _BT1 " id='copy_button'> copy " _BT2 _T2 _LPRE ">" TransformHTML(CtrlText) _PRE2
 	AccText := AccInfoUnderMouse(MXS, MYS, WinX, WinY, CtrlX, CtrlY, WinID)
 	If AccText !=
-		AccText := _T1 " ( AccInfo ) </span><a></a>" _ButAccViewer _T2 AccText
+		AccText := _T1 " id='__AccInfo'> ( AccInfo ) </span><a></a>" _ButAccViewer _T2 AccText
 
 	If ControlNN !=
 	{
@@ -743,9 +751,9 @@ Spot_Control(NotHTML = 0) {
 			If CtrlInfo !=
 			{
 				If isIE
-					CtrlInfo = %_T1% ( Info - %ClassName% ) </span><a></a>%_ButiWB2Learner%%_T2%%CtrlInfo%
+					CtrlInfo = %_T1% id='__Info_Class'> ( Info - %ClassName% ) </span><a></a>%_ButiWB2Learner%%_T2%%CtrlInfo%
 				Else
-					CtrlInfo = %_T1% ( Info - %ClassName% ) </span><a></a>%_T2%%_PRE1%%CtrlInfo%%_PRE2%
+					CtrlInfo = %_T1% id='__Info_Class'> ( Info - %ClassName% ) </span><a></a>%_T2%%_PRE1%%CtrlInfo%%_PRE2%
 			}
 		}
 		WithRespectControl := _DP "<span name='MS:'>" Round(rmCtrlX / CtrlW, 4) ", " Round(rmCtrlY / CtrlH, 4) "</span>"
@@ -767,14 +775,14 @@ Spot_Control(NotHTML = 0) {
 HTML_Control:
 	If ControlID
 	{
-		ControlStyleExist := GetControlStyles(ControlNN_Sub, "E") 
+		ControlStyleExist := GetControlStyles(ControlNN_Sub, "E")
 		If c_ShowStyles
 			ControlStyles := GetControlStyles(ControlNN_Sub, CtrlStyle, CtrlExStyle)
-		ButtonStyle_ := _DP _BB1 " id='get_styles_c'" (ControlStyleExist ? "" : " style='color: #C0C0C0'") "> " (c_ShowStyles ? "show styles" : "hide styles") " " _BB2 
-		
+		ButtonStyle_ := _DP _BB1 " id='get_styles_c'" (ControlStyleExist ? "" : " style='color: #C0C0C0'") "> " (c_ShowStyles ? "show styles" : "hide styles") " " _BB2
+
 		HTML_ControlExist =
 		( Ltrim
-		%_T1% ( Control ) </span>%_T2%
+		%_T1% id='__Control'> ( Control ) </span>%_T2%
 		%_PRE1%<span class='param'>Class NN:</span>  <span name='MS:'>%ControlNN%</span>%_DP%<span class='param'>Win class:</span>  <span name='MS:'>%CtrlClass%</span>
 		%_BP1% id='set_button_pos'>Pos:%_BP2%  <span name='MS:'>x%CtrlX% y%CtrlY%</span>%_DP%<span name='MS:'>x&sup2;%CtrlX2% y&sup2;%CtrlY2%</span>%_DP%%_BP1% id='set_button_pos'>Size:%_BP2%  <span name='MS:'>w%CtrlW% h%CtrlH%</span>%_DP%<span name='MS:'>%CtrlX%, %CtrlY%, %CtrlX2%, %CtrlY2%</span>%_DP%<span name='MS:'>%CtrlX%, %CtrlY%, %CtrlW%, %CtrlH%</span>
 		<span class='param'>Pos relative client area:</span>  <span name='MS:'>x%CtrlCAX% y%CtrlCAY%</span>%_DP%<span name='MS:'>x&sup2;%CtrlCAX2% y&sup2;%CtrlCAY2%</span>%_DP%<span name='MS:'>%CtrlCAX%, %CtrlCAY%, %CtrlCAX2%, %CtrlCAY2%</span>%_DP%<span name='MS:'>%CtrlCAX%, %CtrlCAY%, %CtrlW%, %CtrlH%</span>
@@ -787,12 +795,12 @@ HTML_Control:
 	HTML_Control =
 	( Ltrim
 	<body id='body'>
-	%_T1% ( Mouse ) </span>%_BT1% id='pause_button'> pause %_BT2%%_DB%%_DB%%_BT1% id='run_zoom'> zoom %_BT2%%_T2%%_BR%
+	%_T1% id='__Mouse'> ( Mouse ) </span>%_BT1% id='pause_button'> pause %_BT2%%_DB%%_DB%%_BT1% id='run_zoom'> zoom %_BT2%%_T2%%_BR%
 	%_PRE1%%_BP1% id='set_pos'>Screen:%_BP2%  <span name='MS:'>x%MXS% y%MYS%</span>%_DP%%_BP1% id='set_pos'>Window:%_BP2%  <span name='MS:'>x%RWinX% y%RWinY%</span>%_DP%%_BP1% id='set_pos'>Client:%_BP2%  <span name='MS:'>x%MXC% y%MYC%</span>%WithRespectWin%%WithRespectClient%
 	<span class='param'>Relative active window:</span>  <span name='MS:'>x%MXWA% y%MYWA%</span>%_DP%<span class='param'>exe</span> <span name='MS:'>%ProcessName_A%</span> <span class='param'>class</span> <span name='MS:'>%WinClass_A%</span> <span class='param'>hwnd</span> <span name='MS:'>%HWND_A%</span>%_PRE2%
-	%_T1% ( PixelColor ) </span>%_T2%
+	%_T1% id='__PixelColor'> ( PixelColor ) </span>%_T2%
 	%_PRE1%<span class='param'>RGB: </span> <span name='MS:'>%ColorRGB%</span>%_DP%<span name='MS:'>#%sColorRGB%</span>%_DP%<span class='param'>BGR: </span> <span name='MS:'>%ColorBGR%</span>%_DP%<span name='MS:'>#%sColorBGR%</span>%_PRE2%
-	%_T1% ( Window ) </span>%_T2%
+	%_T1% id='__Window'> ( Window ) </span>%_T2%
 	%_PRE1%<span><span class='param' name='MS:S'>ahk_class</span> <span name='MS:'>%WinClass%</span></span> <span><span class='param' name='MS:S'>ahk_exe</span> <span name='MS:'>%ProcessName%</span></span> <span><span class='param' name='MS:S'>ahk_id</span> <span name='MS:'>%WinID%</span></span>
 	<span class='param'>Cursor:</span>  <span name='MS:'>%A_Cursor%</span>%_DP%<span class='param'>Caret:</span>  <span name='MS:'>x%A_CaretX% y%A_CaretY%</span>%_DP%<span class='param'>Client:</span>  <span name='MS:'>x%caX% y%caY% w%caW% h%caH%</span>%_PRE2%
 	%HTML_ControlExist%
@@ -895,7 +903,7 @@ GetMenu(hWnd) {
 	hMenu := ErrorLevel
 	If !hMenu || (hMenu + 0 = "")
 		Return
-	Return _T1 " ( Menu text ) </span><a></a>" _BT1 " id='copy_menutext'> copy " _BT2 _DB
+	Return _T1 " id='__Menu_text'> ( Menu text ) </span><a></a>" _BT1 " id='copy_menutext'> copy " _BT2 _DB
 	. _BT1 " id='menu_idview'> id - " (MenuIdView ? "view" : "hide") " " _BT2 _T2 _LPRE " id='pre_menutext'>" RTrim(GetMenuText(hMenu), "`n")  _PRE2
 }
 
@@ -943,7 +951,7 @@ GetInfo_SysListView(hwnd, ByRef ClassNN) {
 			. "<span class='param' name='MS:N'>Column count:</span> <span name='MS:'>" ColCount "</span>`n"
 			. "<span class='param' name='MS:N'>Selected count:</span> <span name='MS:'>" SelectedCount "</span>" _DP
 			. "<span class='param' name='MS:N'>Focused row:</span> <span name='MS:'>" FocusedCount "</span>" _PRE2
-			. _T1 " ( Content ) </span>" _BT1 " id='copy_button'> copy " _BT2 _T2 _LPRE ">" TransformHTML(ListText)
+			. _T1 " id='__Content_SysListView'> ( Content ) </span>" _BT1 " id='copy_button'> copy " _BT2 _T2 _LPRE ">" TransformHTML(ListText)
 }
 
 GetInfo_SysTreeView(hwnd, ByRef ClassNN) {
@@ -974,7 +982,7 @@ GetInfo_ComboBox(hwnd, ByRef ClassNN, ListBox = 0) {
 	RegExReplace(ListText, "m`a)$", "", RowCount)
 	Return	"<span class='param' name='MS:N'>Row count:</span> <span name='MS:'>" RowCount "</span>" _DP
 			. "<span class='param' name='MS:N'>Row selected:</span> <span name='MS:'>" SelPos "</span>" _PRE2
-			. _T1 " ( Content ) </span>" _BT1 " id='copy_button'> copy " _BT2 _T2 _LPRE ">" TransformHTML(ListText)
+			. _T1 " id='__Content_ComboBox'> ( Content ) </span>" _BT1 " id='copy_button'> copy " _BT2 _T2 _LPRE ">" TransformHTML(ListText)
 }
 
 GetInfo_CtrlNotifySink(hwnd, ByRef ClassNN) {
@@ -1108,7 +1116,8 @@ GetInfo_InternetExplorer_Server(hwnd, ByRef ClassNN) {
 	ratio := ratios[hwnd]
 	pelt := pwin.document.elementFromPoint(rmCtrlX / ratio, rmCtrlY / ratio)
 	Tag := pelt.TagName
-	If (Tag = "IFRAME" || Tag = "FRAME") {
+	If (Tag = "IFRAME" || Tag = "FRAME")
+	{
 		If pFrame := ComObjQuery(pwin.document.parentWindow.frames[pelt.id], IID_IHTMLWindow2, IID_IHTMLWindow2)
 			iFrame := ComObject(9, pFrame, 1)
 		Else
@@ -1132,11 +1141,11 @@ GetInfo_InternetExplorer_Server(hwnd, ByRef ClassNN) {
 			Frame .= "`n<span class='param' name='MS:N'>Name:  </span><span name='MS:'>" TransformHTML(Var) "</span>"
 
 		If ((Var := pelt.OuterHtml) != "")
-			HTML := _T1P " ( Outer HTML ) </span><a></a>" _BT1 " id='copy_button'> copy " _BT2 _T2 _LPRE ">" TransformHTML(Var) _PRE2
+			HTML := _T1 " id='P__Outer_HTML_FRAME'" _T1P "> ( Outer HTML ) </span><a></a>" _BT1 " id='copy_button'> copy " _BT2 _T2 _LPRE ">" TransformHTML(Var) _PRE2
 		If ((Var := pelt.OuterText) != "")
-			Text := _T1P " ( Outer Text ) </span><a></a>" _BT1 " id='copy_button'> copy " _BT2 _T2 _LPRE ">" TransformHTML(Var) _PRE2
+			Text := _T1 " id='P__Outer_Text_FRAME'" _T1P "> ( Outer Text ) </span><a></a>" _BT1 " id='copy_button'> copy " _BT2 _T2 _LPRE ">" TransformHTML(Var) _PRE2
 		If Frame !=
-			Frame := _T1 " ( FrameInfo ) </span>" _T2 "<a></a>" _PRE1 Frame _PRE2 HTML Text
+			Frame := _T1 " id='__FrameInfo_FRAME'> ( FrameInfo ) </span>" _T2 "<a></a>" _PRE1 Frame _PRE2 HTML Text
 
 		_pbrt := pelt.getBoundingClientRect()
 		pelt := iFrame.document.elementFromPoint((rmCtrlX / ratio) - _pbrt.left, (rmCtrlY / ratio) - _pbrt.top)
@@ -1166,9 +1175,9 @@ GetInfo_InternetExplorer_Server(hwnd, ByRef ClassNN) {
 		Info .= "`n<span class='param' name='MS:N'>Name:  </span><span name='MS:'>" TransformHTML(Var) "</span>"
 
 	If ((Var := pelt.OuterHtml) != "")
-		HTML := _T1P " ( Outer HTML ) </span><a></a>" _BT1 " id='copy_button'> copy " _BT2 _T2 _LPRE ">" TransformHTML(Var) _PRE2
+		HTML := _T1 " id='P__Outer_HTML'" _T1P "> ( Outer HTML ) </span><a></a>" _BT1 " id='copy_button'> copy " _BT2 _T2 _LPRE ">" TransformHTML(Var) _PRE2
 	If ((Var := pelt.OuterText) != "")
-		Text := _T1P " ( Outer Text ) </span><a></a>" _BT1 " id='copy_button'> copy " _BT2 _T2 _LPRE ">" TransformHTML(Var) _PRE2
+		Text := _T1 " id='P__Outer_Text'" _T1P "> ( Outer Text ) </span><a></a>" _BT1 " id='copy_button'> copy " _BT2 _T2 _LPRE ">" TransformHTML(Var) _PRE2
 
 	x1 := pbrt.left * ratio, y1 := pbrt.top * ratio
 	x2 := pbrt.right * ratio, y2 := pbrt.bottom * ratio
@@ -1180,7 +1189,7 @@ GetInfo_InternetExplorer_Server(hwnd, ByRef ClassNN) {
 		StateLightMarker ? ShowMarker(sX + x1, sY + y1, x2 - x1, y2 - y1) : 0
 		StateLightAcc ? ShowAccMarker(AccCoord[1], AccCoord[2], AccCoord[3], AccCoord[4]) : 0
 	}
-	Info := _T1P "<span name='MS:N'> ( Tag name: </span><span name='MS:' style='color: #" ColorFont ";'>"
+	Info := _T1 " id='P__Tag_name'><span name='MS:N'> ( Tag name: </span><span name='MS:' style='color: #" ColorFont ";'>"
 	. pelt.TagName "</span>" (Frame ? " - (in frame)" : "") " ) </span>" _T2
 	. _PRE1  "<span class='param'>Pos: </span><span name='MS:'>x" Round(x1) " y" Round(y1) "</span>"
 	. _DP "<span name='MS:'>x&sup2;" Round(x2) - 1 " y&sup2;" Round(y2) - 1 "</span>"
@@ -1220,7 +1229,7 @@ AccInfoUnderMouse(mx, my, wx, wy, cx, cy, WinID) {
 	AccGetLocation(Acc, child)
 	x := AccCoord[1], y := AccCoord[2], w := AccCoord[3], h := AccCoord[4]
 
-	code .= _T1P " ( Position relative ) </span>" _T2 _PRE1 "<span class='param'>Screen: </span>"
+	code .= _T1 " id='P__Position_relative_Acc'" _T1P "> ( Position relative ) </span>" _T2 _PRE1 "<span class='param'>Screen: </span>"
 		. "<span name='MS:'>x" x " y" y "</span>"
 		. _DP "<span name='MS:'>x&sup2;" x + w - 1 " y&sup2;" y + h - 1 "</span>"
 		. _DP "<span class='param'>Size: </span><span name='MS:'>w" w " h" h "</span>"
@@ -1233,36 +1242,36 @@ AccInfoUnderMouse(mx, my, wx, wy, cx, cy, WinID) {
 		. _DP "<span name='MS:'>x&sup2;" (x - wx - cx) + w - 1 " y&sup2;" (y - wy - cy) + h - 1 "</span>" : "")  _PRE2
 
 	If ((Var := Acc.accName(child)) != "")
-		code .= _T1P " ( Name ) </span><a></a>" _BT1 " id='copy_button'> copy " _BT2 _T2 _LPRE ">" TransformHTML(Var) _PRE2
+		code .= _T1 " id='P__Name_Acc'" _T1P "> ( Name ) </span><a></a>" _BT1 " id='copy_button'> copy " _BT2 _T2 _LPRE ">" TransformHTML(Var) _PRE2
 	If ((Var := Acc.accValue(child)) != "")
-		code .= _T1P " ( Value ) </span><a></a>" _BT1 " id='copy_button'> copy " _BT2 _T2 _LPRE ">" TransformHTML(Var) _PRE2
+		code .= _T1 " id='P__Value_Acc'" _T1P "> ( Value ) </span><a></a>" _BT1 " id='copy_button'> copy " _BT2 _T2 _LPRE ">" TransformHTML(Var) _PRE2
 	If ((Var := AccGetStateText(Var2 := Acc.accState(child))) != "")
-		code .= _T1P " ( State ) </span>" _T2 _PRE1 "<span name='MS:'>" TransformHTML(Var) "</span>"  ;	https://docs.microsoft.com/ru-ru/windows/desktop/WinAuto/object-state-constants
-		. _DP "<span class='param' name='MS:N'>code: </span><span name='MS:'>" Var2 "</span>" 
+		code .= _T1 " id='P__State_Acc'" _T1P "> ( State ) </span>" _T2 _PRE1 "<span name='MS:'>" TransformHTML(Var) "</span>"  ;	https://docs.microsoft.com/ru-ru/windows/desktop/WinAuto/object-state-constants
+		. _DP "<span class='param' name='MS:N'>code: </span><span name='MS:'>" Var2 "</span>"
 		. ((Var2 & 0x100000) ? _DP "<span class='param'>focusable</span>" : "")  ;	STATE_SYSTEM_FOCUSABLE
-		. ((Var2 & 0x4) ? _DP "<span class='param'>focused</span>" : "") _PRE2  ;	STATE_SYSTEM_FOCUSED 
+		. ((Var2 & 0x4) ? _DP "<span class='param'>focused</span>" : "") _PRE2  ;	STATE_SYSTEM_FOCUSED
 	If ((Var := AccRole(Acc, child)) != "")
-		code .= _T1P " ( Role ) </span>" _T2 _PRE1 "<span name='MS:'>" TransformHTML(Var) "</span>"
+		code .= _T1 " id='P__Role_Acc'" _T1P "> ( Role ) </span>" _T2 _PRE1 "<span name='MS:'>" TransformHTML(Var) "</span>"
 		. _DP "<span class='param' name='MS:N'>code: </span><span name='MS:'>" Acc.accRole(child) "</span>" _PRE2
 	If (child &&(Var := AccRole(Acc)) != "")
-		code .= _T1P " ( Role - parent ) </span>" _T2 _PRE1 "<span name='MS:'>" TransformHTML(Var) "</span>"
+		code .= _T1 " id='P__Role_parent_Acc'" _T1P "> ( Role - parent ) </span>" _T2 _PRE1 "<span name='MS:'>" TransformHTML(Var) "</span>"
 		. _DP "<span class='param' name='MS:N'>code: </span><span name='MS:'>" Acc.accRole(0) "</span>" _PRE2
 	If ((Var := Acc.accDefaultAction(child)) != "")
-		code .= _T1P " ( Action ) </span>" _T2 _PRE1 "<span name='MS:'>" TransformHTML(Var) "</span>" _PRE2
+		code .= _T1 " id='P__Action_Acc'" _T1P "> ( Action ) </span>" _T2 _PRE1 "<span name='MS:'>" TransformHTML(Var) "</span>" _PRE2
 	If ((Var := Acc.accSelection) > 0)
-		code .= _T1P " ( Selection - parent ) </span>" _T2 _PRE1 "<span name='MS:'>" TransformHTML(Var) "</span>" _PRE2
+		code .= _T1 " id='P__Selection_parent_Acc'" _T1P "> ( Selection - parent ) </span>" _T2 _PRE1 "<span name='MS:'>" TransformHTML(Var) "</span>" _PRE2
 	If ((Var := Acc.accFocus.accValue(0))!= "")
-		code .= _T1P " ( Focus - value ) </span>" _T2 _PRE1 "<span name='MS:'>" TransformHTML(Var) "</span>" _PRE2
+		code .= _T1 " id='P__Focus_value_Acc'" _T1P "> ( Focus - value ) </span>" _T2 _PRE1 "<span name='MS:'>" TransformHTML(Var) "</span>" _PRE2
 	If ((Var := Acc.accFocus.accName(0))!= "")
-		code .= _T1P " ( Focus - name ) </span>" _T2 _PRE1 "<span name='MS:'>" TransformHTML(Var) "</span>" _PRE2
+		code .= _T1 " id='P__Focus_name_Acc'" _T1P "> ( Focus - name ) </span>" _T2 _PRE1 "<span name='MS:'>" TransformHTML(Var) "</span>" _PRE2
 	If ((Var := Acc.accDescription(child)) != "")
-		code .= _T1P " ( Description ) </span>" _T2 _PRE1 "<span name='MS:'>" TransformHTML(Var) "</span>" _PRE2
+		code .= _T1 " id='P__Description_Acc'" _T1P "> ( Description ) </span>" _T2 _PRE1 "<span name='MS:'>" TransformHTML(Var) "</span>" _PRE2
 	If ((Var := Acc.accKeyboardShortCut(child)) != "")
-		code .= _T1P " ( ShortCut ) </span>" _T2 _PRE1 "<span name='MS:'>" TransformHTML(Var) "</span>" _PRE2
+		code .= _T1 " id='P__ShortCut_Acc'" _T1P "> ( ShortCut ) </span>" _T2 _PRE1 "<span name='MS:'>" TransformHTML(Var) "</span>" _PRE2
 	If ((Var := Acc.accHelp(child)) != "")
-		code .= _T1P " ( Help ) </span>" _T2 _PRE1 "<span name='MS:'>" TransformHTML(Var) "</span>" _PRE2
+		code .= _T1 " id='P__Help_Acc'" _T1P "> ( Help ) </span>" _T2 _PRE1 "<span name='MS:'>" TransformHTML(Var) "</span>" _PRE2
 	If ((Var := Acc.AccHelpTopic(child)))
-		code .= _T1P " ( HelpTopic ) </span>" _T2 _PRE1 "<span name='MS:'>" TransformHTML(Var) "</span>" _PRE2
+		code .= _T1 " id='P__HelpTopic_Acc'" _T1P "> ( HelpTopic ) </span>" _T2 _PRE1 "<span name='MS:'>" TransformHTML(Var) "</span>" _PRE2
 
 	myPublicObj.AccObj := {AccObj:Acc,child:child,WinID:WinID}
 	Return code
@@ -1369,9 +1378,9 @@ Write_HotkeyHTML(K) {
 	HTML_Hotkey =
 	( Ltrim
 	<body id='body'>
-	%_T1% ( Pushed buttons ) </span>%_BT1% id='pause_button'> pause %_BT2%%_DB%%_BT1% id='LButton_Hotkey'> LButton %_BT2%%_T2%
+	%_T1%> ( Pushed buttons ) </span>%_BT1% id='pause_button'> pause %_BT2%%_DB%%_BT1% id='LButton_Hotkey'> LButton %_BT2%%_T2%
 	%_PRE1%<br><span name='MS:'>%Mods%%KeyName%</span>%NotPhysical%<br><br>%LRMStr%<br>%_PRE2%
-	%_T1% ( Command syntax ) </span>%_BT1% id='SendCode'> %SendCode% %_BT2%%_DB%%_BT1% id='SendMode'> %SendModeStr% %_BT2%%_T2%
+	%_T1%> ( Command syntax ) </span>%_BT1% id='SendCode'> %SendCode% %_BT2%%_DB%%_BT1% id='SendMode'> %SendModeStr% %_BT2%%_T2%
 	%_PRE1%<br><span><span name='MS:'>%Prefix%%Hotkey%::</span>%FComment%</span>%LRPStr%
 	<span name='MS:P'>        </span>
 	<span><span name='MS:'>%SendMode% %Prefix%{%SendHotkey%}</span>%Comment%</span>  %_DP%  <span><span name='MS:'>ControlSend, ahk_parent, %ControlSend%, WinTitle</span>%Comment%</span>
@@ -1382,11 +1391,11 @@ Write_HotkeyHTML(K) {
 	<span name='MS:P'>        </span>
 	<span><span name='MS:'>%HK2% & %HK1%::</span><span class='param' name='MS:S'>%HKComm1% & %HKComm2%</span></span>   %_DP%   <span><span name='MS:'>%HK2%::%HK1%</span><span class='param' name='MS:S'>%HKComm1% &#8250 &#8250 %HKComm2%</span></span>
 	<span name='MS:P'>        </span>%_PRE2%
-	%_T1% ( Key ) </span>%_BT1% id='numlock'> num %_BT2%%_DB%%_BT1% id='locale_change'> locale %_BT2%%_DB%%_BT1% id='hook_reload'> hook reload %_BT2%%_T2%
+	%_T1%> ( Key ) </span>%_BT1% id='numlock'> num %_BT2%%_DB%%_BT1% id='locale_change'> locale %_BT2%%_DB%%_BT1% id='hook_reload'> hook reload %_BT2%%_T2%
 	%_PRE1%<br><span name='MS:'>%ThisKey%</span>   %_DP%   <span name='MS:'>%VKCode%%SCCode%</span>%ThisKeySC%
 
 	%_PRE2%
-	%_T1% ( Get name or code ) </span>%_BT1% id='paste_keyname'> paste %_BT2%%_T2%
+	%_T1%> ( Get name or code ) </span>%_BT1% id='paste_keyname'> paste %_BT2%%_T2%
 	<br><span id='hotkeybox'>
 	%_INPHK% id='edithotkey' value='%inp_hotkey%'><button id='keyname'> &#8250 &#8250 &#8250 </button>%_INPHK% id='editkeyname' value='%inp_keyname%'></input>`n
 	</span>
@@ -1689,7 +1698,7 @@ ShowSys:
 	Menu, Sys, Show, % x, % y
 	ZoomMsg(9, 0)
 	Return
-}  
+}
 
 MenuCheck()  {
 	Static oItems
@@ -1697,7 +1706,7 @@ MenuCheck()  {
 		oItems:= {Sys:{1:"Sys_Backlight",2:"Sys_Backlight",3:"Sys_Backlight",5:"Sys_WClight",6:"Sys_Acclight",8:"Spot_Together"
 							,9:"Active_No_Pause",10:"CheckUpdate",16:"PausedScript",17:"Suspend",21:"FindView"}
 		, Startmode:{1:"SelStartMode",2:"SelStartMode",3:"SelStartMode",5:"SelStartMode"}
-		, View:{1:"MemoryPos",2:"MemorySize",3:"MemoryFontSize",4:"MemoryStateZoom",5:"MemoryZoomSize",7:"MoveTitles",8:"WordWrap"}
+		, View:{1:"MemoryPos",2:"MemorySize",3:"MemoryFontSize",4:"MemoryStateZoom",5:"MemoryZoomSize",6:"MemoryAnchor",8:"MoveTitles",9:"WordWrap"}
 		, Overflow:{1:"MenuOverflowLabel",2:"MenuOverflowLabel",3:"MenuOverflowLabel",4:"MenuOverflowLabel",5:"MenuOverflowLabel",6:"MenuOverflowLabel",7:"MenuOverflowLabel",8:"MenuOverflowLabel",9:"MenuOverflowLabel",10:"MenuOverflowLabel"}}
 
 	DllCall("KillTimer", Ptr, A_ScriptHwnd, Ptr, 1)
@@ -1725,7 +1734,7 @@ MenuCheck()  {
 		MouseGetPos, , , WinID
 		Acc := AccUnderMouse(WinID, Id)
 		If (MenuGetName(GetMenu2(WinID)) = "View" && Id = 7)
-			Menu, Overflow, Show 
+			Menu, Overflow, Show
 			ToolTip % "|" MenuGetName(GetMenu2(WinID)) "|`n" Id
 		KeyWait, MButton
 	}
@@ -1754,19 +1763,27 @@ AccUnderMouse(WinID, ByRef child) {
 MenuOverflowLabel:
 	ThisMenuItem := oOther.MenuItemExist ? oOther.MenuItemRButton : A_ThisMenuItem
 	PreOverflowHide := ThisMenuItem = "Switch off" ? 0 : 1
-	IniWrite(ThisMenuItem, "MaxHeightOverFlow") 
+	IniWrite(ThisMenuItem, "MaxHeightOverFlow")
 	for k, v in ["Switch off","1 / 1","1 / 2","1 / 3","1 / 4","1 / 5","1 / 6","1 / 8","1 / 10","1 / 15"]
 		Menu, Overflow, UnCheck, % v
-	Menu, Overflow, Check, % PreMaxHeightStr := ThisMenuItem 
-	PreMaxHeight := MaxHeightStrToNum() 
+	Menu, Overflow, Check, % PreMaxHeightStr := ThisMenuItem
+	PreMaxHeight := MaxHeightStrToNum()
 	_PreOverflowHideCSS := ".lpre {max-width: 99`%; max-height: " PreMaxHeight "px; overflow: auto; border: 1px solid #E2E2E2;}"
-	ChangeCSS("css_PreOverflowHide", PreOverflowHide ? _PreOverflowHideCSS : "") 
+	ChangeCSS("css_PreOverflowHide", PreOverflowHide ? _PreOverflowHideCSS : "")
 	AnchorScroll()
-	Return 
-	
-MaxHeightStrToNum()  { 
+	Return
+
+MaxHeightStrToNum()  {
 	Return Round(A_ScreenHeight / SubStr(PreMaxHeightStr, 5))
 }
+
+MemoryAnchor:
+	IniWrite(MemoryAnchor := !MemoryAnchor, "MemoryAnchor")
+	If MemoryAnchor
+		IniWrite(oOther.anchor["Win_text"], "Win_Anchor")
+		, IniWrite(oOther.anchor["Control_text"], "Control_Anchor")
+	Menu, View, % MemoryAnchor ? "Check" : "UnCheck", Remember anchor
+	Return
 
 SelStartMode:
 	ThisMenuItem := oOther.MenuItemExist ? oOther.MenuItemRButton : A_ThisMenuItem
@@ -1915,7 +1932,7 @@ WordWrap:
 	Menu, View, % WordWrap ? "Check" : "UnCheck", Word wrap
 	If WordWrap
 		oDocEl.scrollLeft := 0
-	oJScript.WordWrap := WordWrap 
+	oJScript.WordWrap := WordWrap
 	ChangeCSS("css_Body", WordWrap ? _BodyWrapCSS : "")
 	Return
 
@@ -2008,7 +2025,7 @@ CheckAhkVersion:
 		ExitApp
 	}
 	Return
-	
+
 WM_NCLBUTTONDOWN(wp) {
 	Static HTMINBUTTON := 8
 	If (wp = HTMINBUTTON)
@@ -2667,7 +2684,8 @@ AnchorBefore(HTML) {
 	Static T1
 	If !T1
 		T1 := SubStr(_T1, 54)
-	Return StrReplace(HTML, T1 oOther.anchor[ThisMode "_text"], " id = 'anchor' " T1 oOther.anchor[ThisMode "_text"], , 1)
+	N := " id='" oOther.anchor[ThisMode "_text"] "'"
+	Return StrReplace(HTML, T1 N, " id = 'anchor' " T1 N, , 1)
 }
 
 AnchorScroll() {
@@ -2783,9 +2801,9 @@ GetStyles(Style, ExStyle) {
 	For K, V In ExStyles
 		RetEx .= ExStyle & V ? "<span name='MS:'>" K " := <span class='param' name='MS:'>" V "</span></span>`n" : ""
 	If Ret !=
-		Res .= _T1 " ( Styles ) </span>" _T2 _PRE1 Ret _PRE2
+		Res .= _T1 " id='__Styles_Win'> ( Styles ) </span>" _T2 _PRE1 Ret _PRE2
 	If RetEx !=
-		Res .= _T1 " ( ExStyles )</span>" _T2 _PRE1 RetEx _PRE2
+		Res .= _T1 " id='__ExStyles_Win'> ( ExStyles )</span>" _T2 _PRE1 RetEx _PRE2
 	Return Res
 }
 
@@ -2796,7 +2814,7 @@ ViewStylesControl(elem) {
 		Styles := "<a></a>" GetControlStyles(oOther.ControlNN_Sub, oDoc.getElementById("c_Style").innerText, oDoc.getElementById("c_ExStyle").innerText)
 	oDoc.getElementById("ControlStyles").innerHTML := Styles
 	If !GetControlStyles(oOther.ControlNN_Sub, "E")
-		oDoc.getElementById("get_styles_c").style.color := "#C0C0C0" 
+		oDoc.getElementById("get_styles_c").style.color := "#C0C0C0"
 	HTML_Control := oBody.innerHTML
 }
 
@@ -2864,9 +2882,9 @@ GetControlStyles(Class, Style, ExStyle = "")  {  ;	https://autohotkey.com/board/
 	For K, V In ExStyles[Class]
 		RetEx .= ExStyle & V ? "<span name='MS:'>" K " := <span class='param' name='MS:'>" V "</span></span>`n" : ""
 	If Ret !=
-		Res .= _T1 " ( Styles ) </span>" _T2 _PRE1 Ret _PRE2
+		Res .= _T1 " id='__Styles_Control'> ( Styles ) </span>" _T2 _PRE1 Ret _PRE2
 	If RetEx !=
-		Res .= _T1 " ( ExStyles )</span>" _T2 _PRE1 RetEx _PRE2
+		Res .= _T1 " id='__ExStyles_Control'> ( ExStyles )</span>" _T2 _PRE1 RetEx _PRE2
 	Return Res
 }
 	; _________________________________________________ FullScreen _________________________________________________
@@ -3087,7 +3105,7 @@ MS_Select(EL) {
 
 	; _________________________________________________ Load JScripts _________________________________________________
 
-ChangeCSS(id, css) {	;  https://webo.in/articles/habrahabr/68-fast-dynamic-css/ 
+ChangeCSS(id, css) {	;  https://webo.in/articles/habrahabr/68-fast-dynamic-css/
 	oDoc.getElementById(id).styleSheet.cssText := css
 }
 
@@ -3185,6 +3203,14 @@ html =
 	function Assync (param) {
 		setTimeout(param, 1);
 	}
+	function ElementName (param) {
+		try {
+			el = document.querySelector("[name=" + param + "]");
+		} catch (e) {
+			return
+		}
+		return el
+	}
 	//	alert(value);
 	//	tooltip(value);
 </script>
@@ -3240,7 +3266,7 @@ Class Events {  ;	http://forum.script-coding.com/viewtopic.php?pid=82283#p82283
 		If (oevent.ClassName = "button" || oevent.tagname = "button")
 			Return ButtonClick(oevent)
 
-		If (oevent.ClassName = "title" && oevent.name = "main" && ThisMode != "Hotkey")  ;	anchor
+		If (oevent.ClassName = "title" && ThisMode != "Hotkey")  ;	anchor
 		{
 			R := oDoc.selection.createRange(), R.collapse(1), R.select()
 
@@ -3249,16 +3275,22 @@ Class Events {  ;	http://forum.script-coding.com/viewtopic.php?pid=82283#p82283
 				EL := oDoc.getElementById("anchor")
 				EL.style.background := "'none'"
 				EL.Id := ""
-				If oevent.OuterText = oOther.anchor[ThisMode "_text"]
+				If oevent.id = oOther.anchor[ThisMode "_text"]
+				{
+					If MemoryAnchor
+						IniWrite("", ThisMode "_Anchor")
 					Return oOther.anchor[ThisMode] := 0, oOther.anchor[ThisMode "_text"] := "", HTML_%ThisMode% := oBody.innerHTML
+				}
 			}
 			oOther.anchor[ThisMode] := 1
-			oOther.anchor[ThisMode "_text"] := oevent.OuterText
+			oOther.anchor[ThisMode "_text"] := oevent.id
 			EL := oevent.parentElement.parentElement.firstChild
 			EL.Id := "anchor"
 			EL.style.backgroundColor := "#" ColorSelAnchor
 			oDocEl.scrollTop := oDocEl.scrollTop + EL.getBoundingClientRect().top - 6
 			HTML_%ThisMode% := oBody.innerHTML
+			If MemoryAnchor
+				IniWrite(oOther.anchor[ThisMode "_text"], ThisMode "_Anchor")
 			Return
 		}
 
