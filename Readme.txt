@@ -1,3 +1,3 @@
-version 3.29
+version 3.30
 Have questions?
 http://forum.script-coding.com/viewtopic.php?id=8336
