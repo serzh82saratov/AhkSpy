@@ -42,7 +42,7 @@ DetectHiddenWindows, On
 CoordMode, Pixel
 CoordMode, Menu
 
-Global AhkSpyVersion := 3.29
+Global AhkSpyVersion := 3.30
 Gosub, CheckAhkVersion
 Menu, Tray, UseErrorLevel
 Menu, Tray, Icon, Shell32.dll, % A_OSVersion = "WIN_XP" ? 222 : 278
@@ -61,8 +61,6 @@ Global MemoryFontSize := IniRead("MemoryFontSize", 0)
 , ColorTitle := "27419B"												;  Цвет шрифта заголовка
 , ColorParam := "189200"												;  Цвет шрифта параметров
 , HeigtButton := 32														;  Высота кнопок
-, PreMaxHeight := Round(A_ScreenHeight / 3)						;  Максимальная высота поля "Big text overflow hide" при которой добавлять прокрутку
-
   HeightStart := 530													;  Высота окна при старте
   wKey := 142															;  Ширина кнопок
   wColor := wKey//2														;  Ширина цветного фрагмента
@@ -77,8 +75,8 @@ Global ThisMode := IniRead("StartMode", "Control"), LastModeSave := (ThisMode = 
 , hGui, hTBGui, hActiveX, hFindGui, oDoc, ShowMarker, isFindView, isIE, isPaused, w_ShowStyles := IniRead("w_ShowStyles", 0), c_ShowStyles := IniRead("c_ShowStyles", 0)
 , HTML_Win, HTML_Control, HTML_Hotkey, rmCtrlX, rmCtrlY, widthTB, FullScreenMode, hColorProgress, hFindAllText, MsgAhkSpyZoom, Sleep, oShowMarkers, oShowAccMarkers
 , ClipAdd_Before := 0, ClipAdd_Delimiter := "`r`n", oDocEl, oJScript, oBody, isConfirm, isAhkSpy := 1, WordWrap := IniRead("WordWrap", 0)
-, MoveTitles := IniRead("MoveTitles", 1), PreOverflowHide := IniRead("PreOverflowHide", 1), DetectHiddenText := IniRead("DetectHiddenText", "on")
-, MenuIdView := IniRead("MenuIdView", 0)
+, MoveTitles := IniRead("MoveTitles", 1), DetectHiddenText := IniRead("DetectHiddenText", "on"), MenuIdView := IniRead("MenuIdView", 0)
+, PreMaxHeightStr := IniRead("MaxHeightOverFlow", "1 / 3"), PreMaxHeight := MaxHeightStrToNum(), PreOverflowHide := !!PreMaxHeight
 
 , _DB := "<span style='position: relative; margin-right: 1em;'></span>"
 , _BT1 := "<span class='button' unselectable='on' oncontextmenu='return false' onmouseleave='OnButtonOut (this)' onmousedown='OnButtonDown (this)' "
@@ -221,16 +219,28 @@ Menu, View, % MemoryStateZoom ? "Check" : "UnCheck", Remember state zoom
 Menu, View, Add, Remember zoom size, MemoryZoomSize
 Menu, View, % MemoryZoomSize ? "Check" : "UnCheck", Remember zoom size
 Menu, View, Add
-Menu, View, Add, Big text overflow hide, PreOverflowHide
-Menu, View, % PreOverflowHide ? "Check" : "UnCheck", Big text overflow hide
 Menu, View, Add, Moving titles, MoveTitles
 Menu, View, % MoveTitles ? "Check" : "UnCheck", Moving titles
 Menu, View, Add, Word wrap, WordWrap
 Menu, View, % WordWrap ? "Check" : "UnCheck", Word wrap
 Menu, Sys, Add, View settings, :View
+Menu, Sys, Add, Find to page, FindView 
+ 
+Menu, Overflow, Add, Switch off, MenuOverflowLabel
+Menu, Overflow, Add, 1 / 1, MenuOverflowLabel
+Menu, Overflow, Add, 1 / 2, MenuOverflowLabel
+Menu, Overflow, Add, 1 / 3, MenuOverflowLabel
+Menu, Overflow, Add, 1 / 4, MenuOverflowLabel
+Menu, Overflow, Add, 1 / 5, MenuOverflowLabel
+Menu, Overflow, Add, 1 / 6, MenuOverflowLabel 
+Menu, Overflow, Add, 1 / 8, MenuOverflowLabel
+Menu, Overflow, Add, 1 / 10, MenuOverflowLabel
+Menu, View, Add, Big text overflow hide, :Overflow
+ 
+Menu, Overflow, Check, %PreMaxHeightStr%
 
-Menu, Sys, Add, Find to page, FindView
 Menu, Sys, Color, % ColorBgOriginal
+Menu, Overflow, Color, % ColorBgOriginal
 
 #Include *i %A_AppData%\AhkSpy\Include.ahk  ;	Для обхода своего кода используйте GoTo IncludeLabel
 IncludeLabel:
@@ -334,8 +344,14 @@ F4::
 
 F5:: Write_%ThisMode%()		;  Return original HTML
 
-F12::
-F7:: MouseGetPosScreen(x, y), ShowSys(x + 5, y + 5)
+F6::
+^vk46:: FindView()											;  Ctrl+F
+
+F7:: AnchorScroll()
+
+F11:: FullScreenMode()
+
+F12:: MouseGetPosScreen(x, y), ShowSys(x + 5, y + 5)
 
 !Space:: SetTimer, ShowSys, -1
 
@@ -349,11 +365,6 @@ Esc::
 	Return
 
 +#Tab:: AhkSpyZoomShow()
-
-F6::
-^vk46:: FindView()											;  Ctrl+F
-
-F11:: FullScreenMode()
 
 #If isAhkSpy && Sleep != 1 && IsIEFocus() && (oDoc.selection.createRange().parentElement.isContentEditable)
 
@@ -1668,23 +1679,7 @@ Hotkey_SetHook(On = 1) {
 		DllCall("UnhookWindowsHookEx", "Ptr", hHook), hHook := "", Hotkey_Hook(0)
 }
 
-	; _________________________________________________ Labels _________________________________________________
-
-Exit:
-GuiClose:
-	oDoc := ""
-	If LastModeSave
-		IniWrite(ThisMode, "LastMode")
-	ExitApp
-
-CheckAhkVersion:
-	If A_AhkVersion < 1.1.17.00
-	{
-		MsgBox Requires AutoHotkey_L version 1.1.17.00+
-		RunPath("http://ahkscript.org/download/")
-		ExitApp
-	}
-	Return
+	; _________________________________________________ Menu Labels _________________________________________________
 
 ShowSys(x, y) {
 ShowSys:
@@ -1693,7 +1688,7 @@ ShowSys:
 	Menu, Sys, Show, % x, % y
 	ZoomMsg(9, 0)
 	Return
-}
+}  
 
 MenuCheck()  {
 	Static oItems
@@ -1701,15 +1696,16 @@ MenuCheck()  {
 		oItems:= {Sys:{1:"Sys_Backlight",2:"Sys_Backlight",3:"Sys_Backlight",5:"Sys_WClight",6:"Sys_Acclight",8:"Spot_Together"
 							,9:"Active_No_Pause",10:"CheckUpdate",16:"PausedScript",17:"Suspend",21:"FindView"}
 		, Startmode:{1:"SelStartMode",2:"SelStartMode",3:"SelStartMode",5:"SelStartMode"}
-		, View:{1:"MemoryPos",2:"MemorySize",3:"MemoryFontSize",4:"MemoryStateZoom",5:"MemoryZoomSize",7:"PreOverflowHide",8:"MoveTitles",9:"WordWrap"}}
+		, View:{1:"MemoryPos",2:"MemorySize",3:"MemoryFontSize",4:"MemoryStateZoom",5:"MemoryZoomSize",7:"PreOverflowHide",8:"MoveTitles",9:"WordWrap"}
+		, Overflow:{1:"MenuOverflowLabel",2:"MenuOverflowLabel",3:"MenuOverflowLabel",4:"MenuOverflowLabel",5:"MenuOverflowLabel",6:"MenuOverflowLabel",7:"MenuOverflowLabel",8:"MenuOverflowLabel",9:"MenuOverflowLabel"}}
 
 	DllCall("KillTimer", Ptr, A_ScriptHwnd, Ptr, 1)
 	If !WinExist("ahk_class #32768 ahk_pid " oOther.CurrentProcessId)
 		Return
 
-	if GetKeyState("RButton", "P")
+	If GetKeyState("RButton", "P")
 	{
-		MouseGetPos, , ,WinID
+		MouseGetPos, , , WinID
 		Acc := AccUnderMouse(WinID, Id)
 
 		If (F := oItems[MenuGetName(GetMenu2(WinID))][Id]) && (oOther.MenuItemRButton := Acc.accName(Id)) != ""
@@ -1722,6 +1718,15 @@ MenuCheck()  {
 			oOther.MenuItemExist := 0
 		}
 		KeyWait, RButton
+	}
+	If GetKeyState("MButton", "P")
+	{
+		MouseGetPos, , , WinID
+		Acc := AccUnderMouse(WinID, Id)
+		If (MenuGetName(GetMenu2(WinID)) = "View" && Id = 7)
+			Menu, Overflow, Show 
+			ToolTip % "|" MenuGetName(GetMenu2(WinID)) "|`n" Id
+		KeyWait, MButton
 	}
 	DllCall("SetTimer", Ptr, A_ScriptHwnd, Ptr, 1, UInt, 16, Ptr, RegisterCallback("MenuCheck", "Fast"))
 }
@@ -1743,6 +1748,23 @@ AccUnderMouse(WinID, ByRef child) {
 	Acc := ComObjEnwrap(9,pacc,1)
 	If IsObject(Acc)
 		Return Acc, child := NumGet(varChild,8,"UInt")
+}
+
+MenuOverflowLabel:
+	ThisMenuItem := oOther.MenuItemExist ? oOther.MenuItemRButton : A_ThisMenuItem
+	PreOverflowHide := ThisMenuItem = "Switch off" ? 0 : 1
+	IniWrite(ThisMenuItem, "MaxHeightOverFlow") 
+	for k, v in ["Switch off","1 / 1","1 / 2","1 / 3","1 / 4","1 / 5","1 / 6","1 / 8","1 / 10"]
+		Menu, Overflow, UnCheck, % v
+	Menu, Overflow, Check, % PreMaxHeightStr := ThisMenuItem 
+	PreMaxHeight := MaxHeightStrToNum() 
+	_PreOverflowHideCSS := ".lpre {max-width: 99`%; max-height: " PreMaxHeight "px; overflow: auto; border: 1px solid #E2E2E2;}"
+	ChangeCSS("css_PreOverflowHide", PreOverflowHide ? _PreOverflowHideCSS : "") 
+	AnchorScroll()
+	Return 
+	
+MaxHeightStrToNum()  { 
+	Return Round(A_ScreenHeight / SubStr(PreMaxHeightStr, 5))
 }
 
 SelStartMode:
@@ -1872,12 +1894,6 @@ MemoryZoomSize:
 	ZoomMsg(4, MemoryZoomSize)
 	Return
 
-PreOverflowHide:
-	IniWrite(PreOverflowHide := !PreOverflowHide, "PreOverflowHide")
-	Menu, View, % PreOverflowHide ? "Check" : "UnCheck", Big text overflow hide 
-	ChangeCSS("css_PreOverflowHide", PreOverflowHide ? _PreOverflowHideCSS : "") 
-	Return
-
 MoveTitles:
 	IniWrite(MoveTitles := !MoveTitles, "MoveTitles")
 	Menu, View, % MoveTitles ? "Check" : "UnCheck", Moving titles
@@ -1976,6 +1992,22 @@ Minimize() {
 
 }
 
+Exit:
+GuiClose:
+	oDoc := ""
+	If LastModeSave
+		IniWrite(ThisMode, "LastMode")
+	ExitApp
+
+CheckAhkVersion:
+	If A_AhkVersion < 1.1.17.00
+	{
+		MsgBox Requires AutoHotkey_L version 1.1.17.00+
+		RunPath("http://ahkscript.org/download/")
+		ExitApp
+	}
+	Return
+	
 WM_NCLBUTTONDOWN(wp) {
 	Static HTMINBUTTON := 8
 	If (wp = HTMINBUTTON)
