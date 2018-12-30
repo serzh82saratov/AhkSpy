@@ -42,7 +42,7 @@ DetectHiddenWindows, On
 CoordMode, Pixel
 CoordMode, Menu
 
-Global AhkSpyVersion := 3.28
+Global AhkSpyVersion := 3.29
 Gosub, CheckAhkVersion
 Menu, Tray, UseErrorLevel
 Menu, Tray, Icon, Shell32.dll, % A_OSVersion = "WIN_XP" ? 222 : 278
@@ -61,7 +61,7 @@ Global MemoryFontSize := IniRead("MemoryFontSize", 0)
 , ColorTitle := "27419B"												;  Цвет шрифта заголовка
 , ColorParam := "189200"												;  Цвет шрифта параметров
 , HeigtButton := 32														;  Высота кнопок
-, PreMaxHeight := Round(A_ScreenHeight / 3 * 2)							;  Максимальная высота поля "Big text overflow hide" при которой добавлять прокрутку
+, PreMaxHeight := Round(A_ScreenHeight / 3)						;  Максимальная высота поля "Big text overflow hide" при которой добавлять прокрутку
 
   HeightStart := 530													;  Высота окна при старте
   wKey := 142															;  Ширина кнопок
@@ -232,6 +232,9 @@ Menu, Sys, Add, View settings, :View
 Menu, Sys, Add, Find to page, FindView
 Menu, Sys, Color, % ColorBgOriginal
 
+#Include *i %A_AppData%\AhkSpy\Include.ahk  ;	Для обхода своего кода используйте GoTo IncludeLabel
+IncludeLabel:
+
 Gui, Show, % "NA " (MemoryPos ? " x" IniRead("MemoryPosX", "Center") " y" IniRead("MemoryPosY", "Center") : "")
 . (MemorySize ? " h" IniRead("MemorySizeH", HeightStart) " w" IniRead("MemorySizeW", widthTB) : " h" HeightStart " w" widthTB)
 Gui, % "+MinSize" widthTB "x" 313
@@ -249,8 +252,6 @@ If !DllCall("WindowFromPoint", "Int64", WinX & 0xFFFFFFFF | WinY << 32)
 && !DllCall("WindowFromPoint", "Int64", (WinX + WinWidth) & 0xFFFFFFFF | (WinY + WinHeight) << 32)
 && !DllCall("WindowFromPoint", "Int64", (WinX) & 0xFFFFFFFF | (WinY + WinHeight) << 32)
 	Gui, Show, NA xCenter yCenter
-
-#Include *i %A_AppData%\AhkSpy\Include.ahk
 Return
 
 	; _________________________________________________ Hotkey`s _________________________________________________
@@ -602,7 +603,7 @@ HTML_Win:
 		margin-bottom: 0.1em;
 		margin-top: 0.1em;
 		line-height: 1.3em;
-	}
+	} 
 	.button {
 		position: relative;
 		border: 1px dotted;
@@ -623,13 +624,13 @@ HTML_Win:
 		background-color: #%ColorSelAnchor%;
 	}
 	</style>
-	)
+	) 
 	oOther.WinPID := WinPID
 	oOther.WinID := WinID
 	If StateLightMarker && (ThisMode = "Win") && (StateLight = 1 || (StateLight = 3 && GetKeyState("Shift", "P")))
 		ShowMarker(WinX, WinY, WinWidth, WinHeight, 5)
 	Return 1
-}
+} 
 
 Write_Win() {
 	If oOther.anchor[ThisMode]
@@ -638,7 +639,7 @@ Write_Win() {
 	If oOther.anchor[ThisMode]
 		AnchorScroll()
 	If oDocEl.scrollLeft
-		oDocEl.scrollLeft := 0
+		oDocEl.scrollLeft := 0  
 	Return 1
 }
 
@@ -1873,8 +1874,8 @@ MemoryZoomSize:
 
 PreOverflowHide:
 	IniWrite(PreOverflowHide := !PreOverflowHide, "PreOverflowHide")
-	Menu, View, % PreOverflowHide ? "Check" : "UnCheck", Big text overflow hide
-	ChangeCSS("css_PreOverflowHide", PreOverflowHide ? _PreOverflowHideCSS : "")
+	Menu, View, % PreOverflowHide ? "Check" : "UnCheck", Big text overflow hide 
+	ChangeCSS("css_PreOverflowHide", PreOverflowHide ? _PreOverflowHideCSS : "") 
 	Return
 
 MoveTitles:
@@ -1897,7 +1898,7 @@ WordWrap:
 	Menu, View, % WordWrap ? "Check" : "UnCheck", Word wrap
 	If WordWrap
 		oDocEl.scrollLeft := 0
-	oJScript.WordWrap := WordWrap
+	oJScript.WordWrap := WordWrap 
 	ChangeCSS("css_Body", WordWrap ? _BodyWrapCSS : "")
 	Return
 
@@ -2823,10 +2824,8 @@ GetControlStyles(Class, Style, ExStyle = "")  {  ;	https://autohotkey.com/board/
 		ExStyles.SysTreeView := {"TVS_EX_AUTOHSCROLL":"0x00000020","TVS_EX_DIMMEDCHECKBOXES":"0x00000200","TVS_EX_DOUBLEBUFFER":"0x00000004","TVS_EX_DRAWIMAGEASYNC":"0x00000400","TVS_EX_EXCLUSIONCHECKBOXES":"0x00000100"
 			,"TVS_EX_FADEINOUTEXPANDOS":"0x00000040","TVS_EX_MULTISELECT":"0x00000002","TVS_EX_NOINDENTSTATE":"0x00000008","TVS_EX_NOSINGLECOLLAPSE":"0x00000001","TVS_EX_PARTIALCHECKBOXES":"0x00000080","TVS_EX_RICHTOOLTIP":"0x00000010"}
 	}
-
 	If (Style = "E")
 		Return Styles.HasKey(Class)
-
 	For K, V In Styles[Class]
 		Ret .= Style & V ? "<span name='MS:'>" K " := <span class='param' name='MS:'>" V "</span></span>`n" : ""
 	For K, V In ExStyles[Class]
@@ -3055,7 +3054,7 @@ MS_Select(EL) {
 
 	; _________________________________________________ Load JScripts _________________________________________________
 
-ChangeCSS(id, css) {	;  https://webo.in/articles/habrahabr/68-fast-dynamic-css/
+ChangeCSS(id, css) {	;  https://webo.in/articles/habrahabr/68-fast-dynamic-css/ 
 	oDoc.getElementById(id).styleSheet.cssText := css
 }
 
