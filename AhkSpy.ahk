@@ -42,7 +42,7 @@ DetectHiddenWindows, On
 CoordMode, Pixel
 CoordMode, Menu
 
-Global AhkSpyVersion := 3.32
+Global AhkSpyVersion := 3.33
 Gosub, CheckAhkVersion
 Menu, Tray, UseErrorLevel
 Menu, Tray, Icon, Shell32.dll, % A_OSVersion = "WIN_XP" ? 222 : 278
@@ -296,6 +296,8 @@ SpotProc:
 	KeyWait, Tab, T0.1
 	Return
 
+F8 Up:: ChangeMode()
+
 #If isAhkSpy && (StateLight = 3 || Shift_Tab_Down)
 
 ~*RShift Up::
@@ -479,7 +481,7 @@ Loop_Win:
 	If Spot_Win()
 		Write_Win(), StateAllwaysSpot ? Spot_Control() : 0
 Repeat_Loop_Win:
-	If !isPaused
+	If (!isPaused && ThisMode = "Win")
 		SetTimer, Loop_Win, -%RangeTimer%
 	Return
 
@@ -653,6 +655,8 @@ HTML_Win:
 }
 
 Write_Win() {
+	If (ThisMode != "Win")
+		Return 0
 	If oOther.anchor[ThisMode]
 		HTML_Win := AnchorBefore(HTML_Win)
 	oBody.innerHTML := HTML_Win
@@ -696,7 +700,7 @@ Loop_Control:
 	If Spot_Control()
 		Write_Control(), StateAllwaysSpot ? Spot_Win() : 0
 Repeat_Loop_Control:
-	If !isPaused
+	If (!isPaused && ThisMode = "Control")
 		SetTimer, Loop_Control, -%RangeTimer%
 	Return
 
@@ -881,7 +885,9 @@ HTML_Control:
 	Return 1
 }
 
-Write_Control() {
+Write_Control() { 
+	If (ThisMode != "Control")
+		Return 0
 	If oOther.anchor[ThisMode]
 		HTML_Control := AnchorBefore(HTML_Control)
 	oBody.innerHTML := HTML_Control
@@ -2025,6 +2031,12 @@ CheckAhkVersion:
 		ExitApp
 	}
 	Return
+
+ChangeMode() { 
+	Try SetTimer, Loop_%ThisMode%, Off
+	HideAllMarkers()
+	GoSub % "Mode_" (ThisMode = "Control" ? "Win" : "Control")
+}
 
 WM_NCLBUTTONDOWN(wp) {
 	Static HTMINBUTTON := 8
