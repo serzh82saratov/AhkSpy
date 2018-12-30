@@ -42,7 +42,7 @@ DetectHiddenWindows, On
 CoordMode, Pixel
 CoordMode, Menu
 
-Global AhkSpyVersion := 3.33
+Global AhkSpyVersion := 3.34
 Gosub, CheckAhkVersion
 Menu, Tray, UseErrorLevel
 Menu, Tray, Icon, Shell32.dll, % A_OSVersion = "WIN_XP" ? 222 : 278
@@ -296,6 +296,7 @@ SpotProc:
 	KeyWait, Tab, T0.1
 	Return
 
+#Tab Up::
 F8 Up:: ChangeMode()
 
 #If isAhkSpy && (StateLight = 3 || Shift_Tab_Down)
