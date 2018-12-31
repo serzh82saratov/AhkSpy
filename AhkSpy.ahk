@@ -42,7 +42,7 @@ DetectHiddenWindows, On
 CoordMode, Pixel
 CoordMode, Menu
 
-Global AhkSpyVersion := 3.34
+Global AhkSpyVersion := 3.35
 Gosub, CheckAhkVersion
 Menu, Tray, UseErrorLevel
 Menu, Tray, Icon, Shell32.dll, % A_OSVersion = "WIN_XP" ? 222 : 278
@@ -73,9 +73,9 @@ Global ThisMode := IniRead("StartMode", "Control"), LastModeSave := (ThisMode = 
 , StateUpdate := IniRead("StateUpdate", 0), SendMode := IniRead("SendMode", "send"), SendModeStr := Format("{:L}", SendMode)
 , StateAllwaysSpot := IniRead("AllwaysSpot", 0), ScrollPos := {}, AccCoord := [], oOther := {}, oFind := {}, Edits := [], oMS := {}
 , hGui, hTBGui, hActiveX, hFindGui, oDoc, ShowMarker, isFindView, isIE, isPaused, w_ShowStyles := IniRead("w_ShowStyles", 0), c_ShowStyles := IniRead("c_ShowStyles", 0)
-, HTML_Win, HTML_Control, HTML_Hotkey, rmCtrlX, rmCtrlY, widthTB, FullScreenMode, hColorProgress, hFindAllText, MsgAhkSpyZoom, Sleep, oShowMarkers, oShowAccMarkers
+, HTML_Win, HTML_Control, HTML_Hotkey, rmCtrlX, rmCtrlY, widthTB, FullScreenMode, hColorProgress, hFindAllText, MsgAhkSpyZoom, Sleep, oShowMarkers, oShowAccMarkers, oShowMarkersTmp
 , ClipAdd_Before := 0, ClipAdd_Delimiter := "`r`n", oDocEl, oJScript, oBody, isConfirm, isAhkSpy := 1, WordWrap := IniRead("WordWrap", 0)
-, MoveTitles := IniRead("MoveTitles", 1), DetectHiddenText := IniRead("DetectHiddenText", "on"), MenuIdView := IniRead("MenuIdView", 0)
+, MoveTitles := IniRead("MoveTitles", 1), DetectHiddenText := IniRead("DetectHiddenText", "on"), MenuIdView := IniRead("MenuIdView", 0), oMenu := {}
 , PreMaxHeightStr := IniRead("MaxHeightOverFlow", "1 / 3"), PreMaxHeight := MaxHeightStrToNum(), PreOverflowHide := !!PreMaxHeight
 
 , _DB := "<span style='position: relative; margin-right: 1em;'></span>"
@@ -161,46 +161,66 @@ Gui, F: Add, Button, % "+0x300 +0xC00 y3 h20 w20 gFindHide x" widthTB - 21, X
 
 	; _________________________________________________ Menu _________________________________________________
 
-Menu, Sys, Add, Backlight allways, Sys_Backlight
-Menu, Sys, Add, Backlight hold shift button, Sys_Backlight
-Menu, Sys, Add, Backlight disable, Sys_Backlight
+Menu, Sys, Add, % name := "Backlight allways", % oMenu.Sys[name] := "_Sys_Backlight"
+Menu, Sys, Add, % name := "Backlight hold shift button", % oMenu.Sys[name] := "_Sys_Backlight"
+Menu, Sys, Add, % name := "Backlight disable", % oMenu.Sys[name] := "_Sys_Backlight"
 Menu, Sys, Check, % BLGroup[StateLight]
 Menu, Sys, Add
-Menu, Sys, Add, Window or control backlight, Sys_WClight
-Menu, Sys, % StateLightMarker ? "Check" : "UnCheck", Window or control backlight
-Menu, Sys, Add, Acc object backlight, Sys_Acclight
-Menu, Sys, % StateLightAcc ? "Check" : "UnCheck", Acc object backlight
+Menu, Sys, Add, % name := "Window or control backlight", % oMenu.Sys[name] := "_Sys_WClight"
+Menu, Sys, % StateLightMarker ? "Check" : "UnCheck", % name
+Menu, Sys, Add, % name := "Acc object backlight", % oMenu.Sys[name] := "_Sys_Acclight"
+Menu, Sys, % StateLightAcc ? "Check" : "UnCheck", % name
 Menu, Sys, Add
-Menu, Sys, Add, Spot together (low speed), Spot_Together
-Menu, Sys, % StateAllwaysSpot ? "Check" : "UnCheck", Spot together (low speed)
-Menu, Sys, Add, Work with the active window, Active_No_Pause
-Menu, Sys, % ActiveNoPause ? "Check" : "UnCheck", Work with the active window
+Menu, Sys, Add, % name := "Spot together (low speed)", % oMenu.Sys[name] := "_Spot_Together"
+Menu, Sys, % StateAllwaysSpot ? "Check" : "UnCheck", % name
+Menu, Sys, Add, % name := "Work with the active window", % oMenu.Sys[name] := "_Active_No_Pause"
+Menu, Sys, % ActiveNoPause ? "Check" : "UnCheck", % name
 If !A_IsCompiled
 {
-	Menu, Sys, Add, Check updates, CheckUpdate
-	Menu, Sys, % StateUpdate ? "Check" : "UnCheck", Check updates
-	Menu, Sys, Add
+	Menu, Sys, Add, % name := "Check updates", % oMenu.Sys[name] := "_CheckUpdate"
+	Menu, Sys, % StateUpdate ? "Check" : "UnCheck", % name
 	If StateUpdate
 		SetTimer, UpdateAhkSpy, -1000
 }
 Else
 	StateUpdate := 0
 
-Menu, Startmode, Add, Window, SelStartMode
-Menu, Startmode, Add, Control, SelStartMode
-Menu, Startmode, Add, Button, SelStartMode
+Menu, Sys, Add
+Menu, Startmode, Add, % name := "Window", % oMenu.Startmode[name] := "_SelStartMode"
+Menu, Startmode, Add, % name := "Control", % oMenu.Startmode[name] := "_SelStartMode"
+Menu, Startmode, Add, % name := "Button", % oMenu.Startmode[name] := "_SelStartMode"
 Menu, Startmode, Add
-Menu, Startmode, Add, Last Mode, SelStartMode
+Menu, Startmode, Add, % name := "Last Mode", % oMenu.Startmode[name] := "_SelStartMode"
+
+Menu, View, Add, % name := "Remember position", % oMenu.View[name] := "_MemoryPos"
+Menu, View, % MemoryPos ? "Check" : "UnCheck", % name
+Menu, View, Add, % name := "Remember size", % oMenu.View[name] := "_MemorySize"
+Menu, View, % MemorySize ? "Check" : "UnCheck", % name
+Menu, View, Add, % name := "Remember font size", % oMenu.View[name] := "_MemoryFontSize"
+Menu, View, % MemoryFontSize ? "Check" : "UnCheck", % name
+Menu, View, Add, % name := "Remember state zoom", % oMenu.View[name] := "_MemoryStateZoom"
+Menu, View, % MemoryStateZoom ? "Check" : "UnCheck", % name
+Menu, View, Add, % name := "Remember zoom size", % oMenu.View[name] := "_MemoryZoomSize"
+Menu, View, % MemoryZoomSize ? "Check" : "UnCheck", % name
+Menu, View, Add, % name := "Remember anchor", % oMenu.View[name] := "_MemoryAnchor"
+Menu, View, % MemoryAnchor ? "Check" : "UnCheck", % name
+Menu, View, Add
+Menu, View, Add, % name := "Moving titles", % oMenu.View[name] := "_MoveTitles"
+Menu, View, % MoveTitles ? "Check" : "UnCheck", % name
+Menu, View, Add, % name := "Word wrap", % oMenu.View[name] := "_WordWrap"
+Menu, View, % WordWrap ? "Check" : "UnCheck", % name
+Menu, Sys, Add, View settings, :View
+
 Menu, Sys, Add, Start mode, :Startmode
 Menu, Startmode, Check, % {"Win":"Window","Control":"Control","Hotkey":"Button","LastMode":"Last Mode"}[IniRead("StartMode", "Control")]
 
-Menu, Help, Add, Open script dir, Help_OpenScriptDir
-Menu, Help, Add, Open user dir, Help_OpenUserDir
+Menu, Help, Add, % name := "Open script dir", % oMenu.Help[name] := "Help_OpenScriptDir"
+Menu, Help, Add, % name := "Open user dir", % oMenu.Help[name] := "Help_OpenUserDir"
 Menu, Help, Add
 If FileExist(SubStr(A_AhkPath,1,InStr(A_AhkPath,"\",,0,1)) "AutoHotkey.chm")
-	Menu, Help, Add, AutoHotKey help file, LaunchHelp
-Menu, Help, Add, AutoHotKey official help online, Sys_Help
-Menu, Help, Add, AutoHotKey russian help online, Sys_Help
+	Menu, Help, Add, % name := "AutoHotKey help file", % oMenu.Help[name] := "LaunchHelp"
+Menu, Help, Add, % name := "AutoHotKey official help online", % oMenu.Help[name] := "Sys_Help"
+Menu, Help, Add, % name := "AutoHotKey russian help online", % oMenu.Help[name] := "Sys_Help"
 Menu, Help, Add
 Menu, Help, Add, About, Sys_Help
 Menu, Sys, Add, Help, :Help
@@ -210,40 +230,22 @@ Menu, Script, Add, Exit, Exit
 Menu, Sys, Add, Script, :Script
 
 Menu, Sys, Add
-Menu, Sys, Add, Pause, PausedScript
-Menu, Sys, Add, Suspend hotkeys, Suspend
-Menu, Sys, Add, Default size, DefaultSize
-Menu, Sys, Add, Full screen, FullScreenMode
-Menu, View, Add, Remember position, MemoryPos
-Menu, View, % MemoryPos ? "Check" : "UnCheck", Remember position
-Menu, View, Add, Remember size, MemorySize
-Menu, View, % MemorySize ? "Check" : "UnCheck", Remember size
-Menu, View, Add, Remember font size, MemoryFontSize
-Menu, View, % MemoryFontSize ? "Check" : "UnCheck", Remember font size
-Menu, View, Add, Remember state zoom, MemoryStateZoom
-Menu, View, % MemoryStateZoom ? "Check" : "UnCheck", Remember state zoom
-Menu, View, Add, Remember zoom size, MemoryZoomSize
-Menu, View, % MemoryZoomSize ? "Check" : "UnCheck", Remember zoom size
-Menu, View, Add, Remember anchor, MemoryAnchor
-Menu, View, % MemoryAnchor ? "Check" : "UnCheck", Remember anchor
-Menu, View, Add
-Menu, View, Add, Moving titles, MoveTitles
-Menu, View, % MoveTitles ? "Check" : "UnCheck", Moving titles
-Menu, View, Add, Word wrap, WordWrap
-Menu, View, % WordWrap ? "Check" : "UnCheck", Word wrap
-Menu, Sys, Add, View settings, :View
-Menu, Sys, Add, Find to page, FindView
+Menu, Sys, Add, % name := "Pause", % oMenu.Sys[name] := "_PausedScript"
+Menu, Sys, Add, % name := "Suspend hotkeys", % oMenu.Sys[name] := "_Suspend"
+Menu, Sys, Add, % name := "Default size", % oMenu.Sys[name] := "DefaultSize"
+Menu, Sys, Add, % name := "Full screen", % oMenu.Sys[name] := "FullScreenMode"
+Menu, Sys, Add, % name := "Find to page", % oMenu.Sys[name] := "_FindView"
 
-Menu, Overflow, Add, Switch off, MenuOverflowLabel
-Menu, Overflow, Add, 1 / 1, MenuOverflowLabel
-Menu, Overflow, Add, 1 / 2, MenuOverflowLabel
-Menu, Overflow, Add, 1 / 3, MenuOverflowLabel
-Menu, Overflow, Add, 1 / 4, MenuOverflowLabel
-Menu, Overflow, Add, 1 / 5, MenuOverflowLabel
-Menu, Overflow, Add, 1 / 6, MenuOverflowLabel
-Menu, Overflow, Add, 1 / 8, MenuOverflowLabel
-Menu, Overflow, Add, 1 / 10, MenuOverflowLabel
-Menu, Overflow, Add, 1 / 15, MenuOverflowLabel
+Menu, Overflow, Add, % name := "Switch off", % oMenu.Overflow[name] := "_MenuOverflowLabel"
+Menu, Overflow, Add, % name := "1 / 1", % oMenu.Overflow[name] := "_MenuOverflowLabel"
+Menu, Overflow, Add, % name := "1 / 2", % oMenu.Overflow[name] := "_MenuOverflowLabel"
+Menu, Overflow, Add, % name := "1 / 3", % oMenu.Overflow[name] := "_MenuOverflowLabel"
+Menu, Overflow, Add, % name := "1 / 4", % oMenu.Overflow[name] := "_MenuOverflowLabel"
+Menu, Overflow, Add, % name := "1 / 5", % oMenu.Overflow[name] := "_MenuOverflowLabel"
+Menu, Overflow, Add, % name := "1 / 6", % oMenu.Overflow[name] := "_MenuOverflowLabel"
+Menu, Overflow, Add, % name := "1 / 8", % oMenu.Overflow[name] := "_MenuOverflowLabel"
+Menu, Overflow, Add, % name := "1 / 10", % oMenu.Overflow[name] := "_MenuOverflowLabel"
+Menu, Overflow, Add,% name := "1 / 15", % oMenu.Overflow[name] := "_MenuOverflowLabel"
 Menu, View, Add, Big text overflow hide, :Overflow
 
 Menu, Overflow, Check, %PreMaxHeightStr%
@@ -309,6 +311,7 @@ F8 Up:: ChangeMode()
 Break::
 Pause::
 PausedScript:
+_PausedScript:
 	If isConfirm
 		Return
 	isPaused := !isPaused
@@ -357,7 +360,7 @@ F4::
 F5:: Write_%ThisMode%()		;  Return original HTML
 
 F6::
-^vk46:: FindView()											;  Ctrl+F
+^vk46:: _FindView()											;  Ctrl+F
 
 F7:: AnchorScroll()
 
@@ -886,7 +889,7 @@ HTML_Control:
 	Return 1
 }
 
-Write_Control() { 
+Write_Control() {
 	If (ThisMode != "Control")
 		Return 0
 	If oOther.anchor[ThisMode]
@@ -1196,7 +1199,7 @@ GetInfo_InternetExplorer_Server(hwnd, ByRef ClassNN) {
 		StateLightMarker ? ShowMarker(sX + x1, sY + y1, x2 - x1, y2 - y1) : 0
 		StateLightAcc ? ShowAccMarker(AccCoord[1], AccCoord[2], AccCoord[3], AccCoord[4]) : 0
 	}
-	Info := _T1 " id='P__Tag_name'><span name='MS:N'> ( Tag name: </span><span name='MS:' style='color: #" ColorFont ";'>"
+	Info := _T1 " id='P__Tag_name'> ( Tag name: <span name='MS:' style='color: #" ColorFont ";'>"
 	. pelt.TagName "</span>" (Frame ? " - (in frame)" : "") " ) </span>" _T2
 	. _PRE1  "<span class='param'>Pos: </span><span name='MS:'>x" Round(x1) " y" Round(y1) "</span>"
 	. _DP "<span name='MS:'>x&sup2;" Round(x2) - 1 " y&sup2;" Round(y2) - 1 "</span>"
@@ -1708,24 +1711,14 @@ ShowSys:
 }
 
 MenuCheck()  {
-	Static oItems
-	If !oItems
-		oItems:= {Sys:{1:"Sys_Backlight",2:"Sys_Backlight",3:"Sys_Backlight",5:"Sys_WClight",6:"Sys_Acclight",8:"Spot_Together"
-							,9:"Active_No_Pause",10:"CheckUpdate",16:"PausedScript",17:"Suspend",21:"FindView"}
-		, Startmode:{1:"SelStartMode",2:"SelStartMode",3:"SelStartMode",5:"SelStartMode"}
-		, View:{1:"MemoryPos",2:"MemorySize",3:"MemoryFontSize",4:"MemoryStateZoom",5:"MemoryZoomSize",6:"MemoryAnchor",8:"MoveTitles",9:"WordWrap"}
-		, Overflow:{1:"MenuOverflowLabel",2:"MenuOverflowLabel",3:"MenuOverflowLabel",4:"MenuOverflowLabel",5:"MenuOverflowLabel",6:"MenuOverflowLabel",7:"MenuOverflowLabel",8:"MenuOverflowLabel",9:"MenuOverflowLabel",10:"MenuOverflowLabel"}}
-
 	DllCall("KillTimer", Ptr, A_ScriptHwnd, Ptr, 1)
 	If !WinExist("ahk_class #32768 ahk_pid " oOther.CurrentProcessId)
 		Return
-
 	If GetKeyState("RButton", "P")
 	{
 		MouseGetPos, , , WinID
-		Acc := AccUnderMouse(WinID, Id)
-
-		If (F := oItems[MenuGetName(GetMenu2(WinID))][Id]) && (oOther.MenuItemRButton := Acc.accName(Id)) != ""
+		Menu := MenuGetName(GetMenu2(WinID))
+		If Menu && (F := oMenu[Menu][oOther.MenuItemRButton := AccUnderMouse(WinID, Id).accName(Id)]) && F ~= "^_"
 		{
 			oOther.MenuItemExist := 1
 			If IsLabel(F)
@@ -1735,15 +1728,6 @@ MenuCheck()  {
 			oOther.MenuItemExist := 0
 		}
 		KeyWait, RButton
-	}
-	If GetKeyState("MButton", "P")
-	{
-		MouseGetPos, , , WinID
-		Acc := AccUnderMouse(WinID, Id)
-		If (MenuGetName(GetMenu2(WinID)) = "View" && Id = 7)
-			Menu, Overflow, Show
-			ToolTip % "|" MenuGetName(GetMenu2(WinID)) "|`n" Id
-		KeyWait, MButton
 	}
 	DllCall("SetTimer", Ptr, A_ScriptHwnd, Ptr, 1, UInt, 16, Ptr, RegisterCallback("MenuCheck", "Fast"))
 }
@@ -1767,7 +1751,7 @@ AccUnderMouse(WinID, ByRef child) {
 		Return Acc, child := NumGet(varChild,8,"UInt")
 }
 
-MenuOverflowLabel:
+_MenuOverflowLabel:
 	ThisMenuItem := oOther.MenuItemExist ? oOther.MenuItemRButton : A_ThisMenuItem
 	PreOverflowHide := ThisMenuItem = "Switch off" ? 0 : 1
 	IniWrite(ThisMenuItem, "MaxHeightOverFlow")
@@ -1784,7 +1768,7 @@ MaxHeightStrToNum()  {
 	Return Round(A_ScreenHeight / SubStr(PreMaxHeightStr, 5))
 }
 
-MemoryAnchor:
+_MemoryAnchor:
 	IniWrite(MemoryAnchor := !MemoryAnchor, "MemoryAnchor")
 	If MemoryAnchor
 		IniWrite(oOther.anchor["Win_text"], "Win_Anchor")
@@ -1792,7 +1776,7 @@ MemoryAnchor:
 	Menu, View, % MemoryAnchor ? "Check" : "UnCheck", Remember anchor
 	Return
 
-SelStartMode:
+_SelStartMode:
 	ThisMenuItem := oOther.MenuItemExist ? oOther.MenuItemRButton : A_ThisMenuItem
 	Menu, Startmode, UnCheck, Window
 	Menu, Startmode, UnCheck, Control
@@ -1803,7 +1787,7 @@ SelStartMode:
 	Menu, Startmode, Check, % ThisMenuItem
 	Return
 
-Sys_Backlight:
+_Sys_Backlight:
 	ThisMenuItem := oOther.MenuItemExist ? oOther.MenuItemRButton : A_ThisMenuItem
 	Menu, Sys, UnCheck, % BLGroup[StateLight]
 	Menu, Sys, Check, % ThisMenuItem
@@ -1846,13 +1830,13 @@ Reload:
 	Reload
 	Return
 
-Suspend:
+_Suspend:
 	isAhkSpy := !isAhkSpy
 	Menu, Sys, % !isAhkSpy ? "Check" : "UnCheck", Suspend hotkeys
 	ZoomMsg(8, !isAhkSpy)
 	Return
 
-CheckUpdate:
+_CheckUpdate:
 	StateUpdate := IniWrite(!StateUpdate, "StateUpdate")
 	Menu, Sys, % (StateUpdate ? "Check" : "UnCheck"), Check updates
 	If StateUpdate
@@ -1864,12 +1848,12 @@ CheckUpdate:
 	}
 	Return
 
-Sys_Acclight:
+_Sys_Acclight:
 	StateLightAcc := IniWrite(!StateLightAcc, "StateLightAcc"), HideAccMarker()
 	Menu, Sys, % (StateLightAcc ? "Check" : "UnCheck"), Acc object backlight
 	Return
 
-Sys_WClight:
+_Sys_WClight:
 	StateLightMarker := IniWrite(!StateLightMarker, "StateLightMarker"), HideMarker()
 	Menu, Sys, % (StateLightMarker ? "Check" : "UnCheck"), Window or control backlight
 	Return
@@ -1883,43 +1867,43 @@ Help_OpenScriptDir:
 	Minimize()
 	Return
 
-Spot_Together:
+_Spot_Together:
 	StateAllwaysSpot := IniWrite(!StateAllwaysSpot, "AllwaysSpot")
 	Menu, Sys, % (StateAllwaysSpot ? "Check" : "UnCheck"), Spot together (low speed)
 	Return
 
-Active_No_Pause:
+_Active_No_Pause:
 	ActiveNoPause := IniWrite(!ActiveNoPause, "ActiveNoPause")
 	Menu, Sys, % (ActiveNoPause ? "Check" : "UnCheck"), Work with the active window
 	ZoomMsg(6, ActiveNoPause)
 	Return
 
-MemoryPos:
+_MemoryPos:
 	IniWrite(MemoryPos := !MemoryPos, "MemoryPos")
 	Menu, View, % MemoryPos ? "Check" : "UnCheck", Remember position
 	SavePos()
 	Return
 
-MemorySize:
+_MemorySize:
 	IniWrite(MemorySize := !MemorySize, "MemorySize")
 	Menu, View, % MemorySize ? "Check" : "UnCheck", Remember size
 	SaveSize()
 	Return
 
-MemoryFontSize:
+_MemoryFontSize:
 	IniWrite(MemoryFontSize := !MemoryFontSize, "MemoryFontSize")
 	Menu, View, % MemoryFontSize ? "Check" : "UnCheck", Remember font size
 	If MemoryFontSize
 		IniWrite(FontSize, "FontSize")
 	Return
 
-MemoryZoomSize:
+_MemoryZoomSize:
 	IniWrite(MemoryZoomSize := !MemoryZoomSize, "MemoryZoomSize")
 	Menu, View, % MemoryZoomSize ? "Check" : "UnCheck", Remember zoom size
 	ZoomMsg(4, MemoryZoomSize)
 	Return
 
-MoveTitles:
+_MoveTitles:
 	IniWrite(MoveTitles := !MoveTitles, "MoveTitles")
 	Menu, View, % MoveTitles ? "Check" : "UnCheck", Moving titles
 	if oJScript.MoveTitles := MoveTitles
@@ -1928,13 +1912,13 @@ MoveTitles:
 		oDocEl.scrollLeft := 0, oJScript.conleft30()
 	Return
 
-MemoryStateZoom:
+_MemoryStateZoom:
 	IniWrite(MemoryStateZoom := !MemoryStateZoom, "MemoryStateZoom")
 	Menu, View, % MemoryStateZoom ? "Check" : "UnCheck", Remember state zoom
 	IniWrite(oOther.ZoomShow, "ZoomShow")
 	Return
 
-WordWrap:
+_WordWrap:
 	IniWrite(WordWrap := !WordWrap, "WordWrap")
 	Menu, View, % WordWrap ? "Check" : "UnCheck", Word wrap
 	If WordWrap
@@ -2033,7 +2017,7 @@ CheckAhkVersion:
 	}
 	Return
 
-ChangeMode() { 
+ChangeMode() {
 	Try SetTimer, Loop_%ThisMode%, Off
 	HideAllMarkers()
 	GoSub % "Mode_" (ThisMode = "Control" ? "Win" : "Control")
@@ -2302,6 +2286,8 @@ HideMarkers(arr) {
 }
 
 ShowMarkersCreate(arr, color) {
+	If !!%arr%
+		Return
 	S_DefaultGui := A_DefaultGui, %arr% := {}
 	loop 4
 	{
@@ -2841,8 +2827,8 @@ GetControlStyles(Class, Style, ExStyle = "")  {  ;	https://autohotkey.com/board/
 			,"SS_BITMAP":"0x0000000E","SS_ENHMETAFILE":"0x0000000F","SS_ETCHEDHORZ":"0x00000010","SS_ETCHEDVERT":"0x00000011","SS_ETCHEDFRAME":"0x00000012","SS_TYPEMASK":"0x0000001F","SS_REALSIZECONTROL":"0x00000040"
 			,"SS_NOPREFIX":"0x00000080","SS_NOTIFY":"0x00000100","SS_CENTERIMAGE":"0x00000200","SS_RIGHTJUST":"0x00000400","SS_REALSIZEIMAGE":"0x00000800","SS_SUNKEN":"0x00001000","SS_EDITCONTROL":"0x00002000"
 			,"SS_ENDELLIPSIS":"0x00004000","SS_PATHELLIPSIS":"0x00008000","SS_WORDELLIPSIS":"0x0000C000","SS_ELLIPSISMASK":"0x0000C000"}
-		Styles.Edit := {"ES_LEFT":"0x00000000","ES_CENTER":"0x00000001","ES_RIGHT":"0x00000002","ES_MULTILINE":"0x00000004","ES_UPPERCASE":"0x00000008","ES_LOWERCASE":"0x00000010","ES_PASSWORD":"0x00000020","ES_AUTOVSCROLL":"0x00000040","ES_AUTOHSCROLL":"0x00000080"
-			,"ES_NOHIDESEL":"0x00000100","ES_OEMCONVERT":"0x00000400","ES_READONLY":"0x00000800","ES_WANTRETURN":"0x00001000","ES_NUMBER":"0x00002000"}
+		Styles.Edit := {"ES_LEFT":"0x00000000","ES_CENTER":"0x00000001","ES_RIGHT":"0x00000002","ES_MULTILINE":"0x00000004","ES_UPPERCASE":"0x00000008","ES_LOWERCASE":"0x00000010","ES_PASSWORD":"0x00000020"
+			,"ES_AUTOVSCROLL":"0x00000040","ES_AUTOHSCROLL":"0x00000080","ES_NOHIDESEL":"0x00000100","ES_OEMCONVERT":"0x00000400","ES_READONLY":"0x00000800","ES_WANTRETURN":"0x00001000","ES_NUMBER":"0x00002000"}
 		Styles.Button := {"BS_PUSHBUTTON":"0x00000000","BS_DEFPUSHBUTTON":"0x00000001","BS_CHECKBOX":"0x00000002","BS_AUTOCHECKBOX":"0x00000003","BS_RADIOBUTTON":"0x00000004","BS_3STATE":"0x00000005"
 			,"BS_AUTO3STATE":"0x00000006","BS_GROUPBOX":"0x00000007","BS_USERBUTTON":"0x00000008","BS_AUTORADIOBUTTON":"0x00000009","BS_PUSHBOX":"0x0000000A","BS_OWNERDRAW":"0x0000000B"
 			,"BS_TYPEMASK":"0x0000000F","BS_LEFTTEXT":"0x00000020","BS_TEXT":"0x00000000","BS_ICON":"0x00000040","BS_BITMAP":"0x00000080","BS_LEFT":"0x00000100","BS_RIGHT":"0x00000200","BS_CENTER":"0x00000300"
@@ -2853,7 +2839,7 @@ GetControlStyles(Class, Style, ExStyle = "")  {  ;	https://autohotkey.com/board/
 			,"CBS_UPPERCASE":"0x00002000","CBS_LOWERCASE":"0x00004000"}
 		Styles.ListBox := {"LBS_NOTIFY":"0x00000001","LBS_SORT":"0x00000002","LBS_NOREDRAW":"0x00000004","LBS_MULTIPLESEL":"0x00000008","LBS_OWNERDRAWFIXED":"0x00000010","LBS_OWNERDRAWVARIABLE":"0x00000020"
 			,"LBS_HASSTRINGS":"0x00000040","LBS_USETABSTOPS":"0x00000080","LBS_NOINTEGRALHEIGHT":"0x00000100","LBS_MULTICOLUMN":"0x00000200","LBS_WANTKEYBOARDINPUT":"0x00000400","LBS_EXTENDEDSEL":"0x00000800"
-			,"LBS_DISABLENOSCROLL":"0x00001000","LBS_NODATA":"0x00002000","LBS_NOSEL":"0x00004000","LBS_COMBOBOX":"0x00008000","LBS_STANDARD":"0x00000003"," LBS_STANDARD":"0x00A00000"}
+			,"LBS_DISABLENOSCROLL":"0x00001000","LBS_NODATA":"0x00002000","LBS_NOSEL":"0x00004000","LBS_COMBOBOX":"0x00008000","LBS_STANDARD":"0x00000003","#LBS_STANDARD":"0x00A00000"}
 		Styles.msctls_updown := {"UDS_WRAP":"0x00000001","UDS_SETBUDDYINT":"0x00000002","UDS_ALIGNRIGHT":"0x00000004","UDS_ALIGNLEFT":"0x00000008","UDS_AUTOBUDDY":"0x00000010","UDS_ARROWKEYS":"0x00000020"
 			,"UDS_HORZ":"0x00000040","UDS_NOTHOUSANDS":"0x00000080","UDS_HOTTRACK":"0x00000100"}
 		Styles.SysDateTimePick := {"DTS_SHORTDATEFORMAT":"0x00000000","DTS_UPDOWN":"0x00000001","DTS_SHOWNONE":"0x00000002","DTS_LONGDATEFORMAT":"0x00000004","DTS_TIMEFORMAT":"0x00000009"
@@ -2898,7 +2884,7 @@ GetControlStyles(Class, Style, ExStyle = "")  {  ;	https://autohotkey.com/board/
 		Res .= _T1 " id='__Styles_Control'> ( Styles ) </span>" _T2 _PRE1 Ret _PRE2
 	If RetEx !=
 		Res .= _T1 " id='__ExStyles_Control'> ( ExStyles )</span>" _T2 _PRE1 RetEx _PRE2
-	Return Res
+	Return StrReplace(Res, "#")
 }
 	; _________________________________________________ FullScreen _________________________________________________
 
@@ -2956,7 +2942,7 @@ WinSetNormalPos(hwnd, x, y, w, h) {
 
 	; _________________________________________________ Find _________________________________________________
 
-FindView() {
+_FindView() {
 	If isFindView
 		Return FindHide()
 	GuiControlGet, p, 1:Pos, %hActiveX%
@@ -2964,6 +2950,7 @@ FindView() {
 	Gui, F: Show, % "NA x" (pW - widthTB) // 2.2 " h26 y" (pY + pH - 27)
 	isFindView := 1
 	GuiControl, F:Focus, Edit1
+	Menu, Sys, Check, Find to page
 	FindSearch(1)
 }
 
@@ -2973,6 +2960,7 @@ FindHide() {
 	GuiControl, 1:Move, %hActiveX%, % "x" aX "y" aY "w" aW "h" aH + 28
 	isFindView := 0
 	GuiControl, Focus, %hActiveX%
+	Menu, Sys, UnCheck, Find to page
 }
 
 FindOption(Hwnd) {
@@ -3197,7 +3185,6 @@ html =
 		el.style.color = ButtonOverColor;
 		if (window.event.button == 2 && el.parentElement.className == 'BB')
 			document.documentElement.focus();
-
 	}
 	function OnButtonOver (el) {
 		ButtonOverColor = el.style.color;
@@ -3490,8 +3477,12 @@ ButtonClick(oevent) {
 		hWnd := oOther.MouseControlID
 		ControlFocus, , ahk_id %hWnd%
 		WinGetPos, X, Y, W, H, ahk_id %hWnd%
-		If (X + Y != "")
-			DllCall("SetCursorPos", "Uint", X + W // 2, "Uint", Y + H // 2)
+		ShowMarkersCreate("oShowMarkersTmp", "E14B30")
+		ShowMarkers(oShowMarkersTmp, x, y, w, h, 6)
+		Sleep 555
+		HideMarkers(oShowMarkersTmp)
+		; If (X + Y != "")
+			; DllCall("SetCursorPos", "Uint", X + W // 2, "Uint", Y + H // 2)
 	}
 	Else If thisid = set_pos
 	{
@@ -4078,7 +4069,6 @@ Memory() {
 	DllCall("Gdi32.Dll\SelectObject", "Ptr", oZoom.hdcMemory, "Ptr", hBM), DllCall("DeleteObject", "Ptr", hBM)
 	StretchBlt(oZoom.hdcMemory, 0, 0, VSWidth, VSHeight, oZoom.hdcSrc, VSX, VSY, VSWidth, VSHeight)
 	oZoom.NewSpot := 0
-	; ToolTip % VSX  "`n" VSY "`nMemory"
 }
 
 	; _________________________________________________ Zoom Gdip _________________________________________________
