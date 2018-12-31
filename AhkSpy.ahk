@@ -42,7 +42,7 @@ DetectHiddenWindows, On
 CoordMode, Pixel
 CoordMode, Menu
 
-Global AhkSpyVersion := 3.35
+Global AhkSpyVersion := 3.36
 Gosub, CheckAhkVersion
 Menu, Tray, UseErrorLevel
 Menu, Tray, Icon, Shell32.dll, % A_OSVersion = "WIN_XP" ? 222 : 278
@@ -211,6 +211,18 @@ Menu, View, Add, % name := "Word wrap", % oMenu.View[name] := "_WordWrap"
 Menu, View, % WordWrap ? "Check" : "UnCheck", % name
 Menu, Sys, Add, View settings, :View
 
+Menu, Overflow, Add, % name := "Switch off", % oMenu.Overflow[name] := "_MenuOverflowLabel"
+Menu, Overflow, Add, % name := "1 / 1", % oMenu.Overflow[name] := "_MenuOverflowLabel"
+Menu, Overflow, Add, % name := "1 / 2", % oMenu.Overflow[name] := "_MenuOverflowLabel"
+Menu, Overflow, Add, % name := "1 / 3", % oMenu.Overflow[name] := "_MenuOverflowLabel"
+Menu, Overflow, Add, % name := "1 / 4", % oMenu.Overflow[name] := "_MenuOverflowLabel"
+Menu, Overflow, Add, % name := "1 / 5", % oMenu.Overflow[name] := "_MenuOverflowLabel"
+Menu, Overflow, Add, % name := "1 / 6", % oMenu.Overflow[name] := "_MenuOverflowLabel"
+Menu, Overflow, Add, % name := "1 / 8", % oMenu.Overflow[name] := "_MenuOverflowLabel"
+Menu, Overflow, Add, % name := "1 / 10", % oMenu.Overflow[name] := "_MenuOverflowLabel"
+Menu, Overflow, Add,% name := "1 / 15", % oMenu.Overflow[name] := "_MenuOverflowLabel"
+Menu, View, Add, Big text overflow hide, :Overflow
+
 Menu, Sys, Add, Start mode, :Startmode
 Menu, Startmode, Check, % {"Win":"Window","Control":"Control","Hotkey":"Button","LastMode":"Last Mode"}[IniRead("StartMode", "Control")]
 
@@ -236,24 +248,12 @@ Menu, Sys, Add, % name := "Default size", % oMenu.Sys[name] := "DefaultSize"
 Menu, Sys, Add, % name := "Full screen", % oMenu.Sys[name] := "FullScreenMode"
 Menu, Sys, Add, % name := "Find to page", % oMenu.Sys[name] := "_FindView"
 
-Menu, Overflow, Add, % name := "Switch off", % oMenu.Overflow[name] := "_MenuOverflowLabel"
-Menu, Overflow, Add, % name := "1 / 1", % oMenu.Overflow[name] := "_MenuOverflowLabel"
-Menu, Overflow, Add, % name := "1 / 2", % oMenu.Overflow[name] := "_MenuOverflowLabel"
-Menu, Overflow, Add, % name := "1 / 3", % oMenu.Overflow[name] := "_MenuOverflowLabel"
-Menu, Overflow, Add, % name := "1 / 4", % oMenu.Overflow[name] := "_MenuOverflowLabel"
-Menu, Overflow, Add, % name := "1 / 5", % oMenu.Overflow[name] := "_MenuOverflowLabel"
-Menu, Overflow, Add, % name := "1 / 6", % oMenu.Overflow[name] := "_MenuOverflowLabel"
-Menu, Overflow, Add, % name := "1 / 8", % oMenu.Overflow[name] := "_MenuOverflowLabel"
-Menu, Overflow, Add, % name := "1 / 10", % oMenu.Overflow[name] := "_MenuOverflowLabel"
-Menu, Overflow, Add,% name := "1 / 15", % oMenu.Overflow[name] := "_MenuOverflowLabel"
-Menu, View, Add, Big text overflow hide, :Overflow
-
 Menu, Overflow, Check, %PreMaxHeightStr%
 
 Menu, Sys, Color, % ColorBgOriginal
 Menu, Overflow, Color, % ColorBgOriginal
 
-#Include *i %A_AppData%\AhkSpy\Include.ahk  ;	Для обхода своего кода используйте GoTo IncludeLabel
+#Include *i %A_AppData%\AhkSpy\Include.ahk  ;	Для продолжения выполнения кода используйте GoTo IncludeLabel
 IncludeLabel:
 
 Gui, Show, % "NA " (MemoryPos ? " x" IniRead("MemoryPosX", "Center") " y" IniRead("MemoryPosY", "Center") : "")
@@ -1199,11 +1199,12 @@ GetInfo_InternetExplorer_Server(hwnd, ByRef ClassNN) {
 		StateLightMarker ? ShowMarker(sX + x1, sY + y1, x2 - x1, y2 - y1) : 0
 		StateLightAcc ? ShowAccMarker(AccCoord[1], AccCoord[2], AccCoord[3], AccCoord[4]) : 0
 	}
-	Info := _T1 " id='P__Tag_name'> ( Tag name: <span name='MS:' style='color: #" ColorFont ";'>"
-	. pelt.TagName "</span>" (Frame ? " - (in frame)" : "") " ) </span>" _T2
-	. _PRE1  "<span class='param'>Pos: </span><span name='MS:'>x" Round(x1) " y" Round(y1) "</span>"
-	. _DP "<span name='MS:'>x&sup2;" Round(x2) - 1 " y&sup2;" Round(y2) - 1 "</span>"
-	. _DP "<span class='param'>Size: </span><span name='MS:'>w" Round(x2 - x1) " h" Round(y2 - y1) "</span>" Info _PRE2
+	If (pelt.TagName)
+		Info := _T1 " id='P__Tag_name' name='MS:N'> ( Tag name: <span name='MS:' style='color: #" ColorFont ";'>"
+		. pelt.TagName "</span>" (Frame ? " - (in frame)" : "") " ) </span>" _T2
+		. _PRE1  "<span class='param'>Pos: </span><span name='MS:'>x" Round(x1) " y" Round(y1) "</span>"
+		. _DP "<span name='MS:'>x&sup2;" Round(x2) - 1 " y&sup2;" Round(y2) - 1 "</span>"
+		. _DP "<span class='param'>Size: </span><span name='MS:'>w" Round(x2 - x1) " h" Round(y2 - y1) "</span>" Info _PRE2
 
 	Return Topic Info HTML Text Frame
 }
@@ -1406,9 +1407,10 @@ Write_HotkeyHTML(K) {
 
 	%_PRE2%
 	%_T1%> ( Get name or code ) </span>%_BT1% id='paste_keyname'> paste %_BT2%%_T2%
-	<br><span id='hotkeybox'>
-	%_INPHK% id='edithotkey' value='%inp_hotkey%'><button id='keyname'> &#8250 &#8250 &#8250 </button>%_INPHK% id='editkeyname' value='%inp_keyname%'></input>`n
-	</span>
+	<br>
+	<span id='hotkeybox'>%_INPHK% id='edithotkey' value='%inp_hotkey%'><button id='keyname'> &#8250 </button>%_INPHK% id='editkeyname' value='%inp_keyname%'></span>
+	<br>
+	<br>
 	%_T0%
 	</body>
 
@@ -1487,17 +1489,18 @@ Write_HotkeyHTML(K) {
 		position: relative;
 		white-space: pre;
 		left: 5px;
+		display: inline;
 	}
 	#edithotkey, #keyname, #editkeyname {
 		font-size: 1.2em;
 		text-align: center;
 		border: 1px dotted black;
-		display: inline-block;
 	}
 	#keyname {
 		position: relative;
 		background-color: #%ColorParam%;
 		top: 0px; left: 2px; width: 3em;
+		width: 3em;
 	}
 	#editkeyname {
 		position: relative;
@@ -1718,7 +1721,7 @@ MenuCheck()  {
 	{
 		MouseGetPos, , , WinID
 		Menu := MenuGetName(GetMenu2(WinID))
-		If Menu && (F := oMenu[Menu][oOther.MenuItemRButton := AccUnderMouse(WinID, Id).accName(Id)]) && F ~= "^_"
+		If Menu && (F := oMenu[Menu][oOther.ThisMenuItem := AccUnderMouse(WinID, Id).accName(Id)]) && F ~= "^_"
 		{
 			oOther.MenuItemExist := 1
 			If IsLabel(F)
@@ -1752,7 +1755,7 @@ AccUnderMouse(WinID, ByRef child) {
 }
 
 _MenuOverflowLabel:
-	ThisMenuItem := oOther.MenuItemExist ? oOther.MenuItemRButton : A_ThisMenuItem
+	ThisMenuItem := oOther.MenuItemExist ? oOther.ThisMenuItem : A_ThisMenuItem
 	PreOverflowHide := ThisMenuItem = "Switch off" ? 0 : 1
 	IniWrite(ThisMenuItem, "MaxHeightOverFlow")
 	for k, v in ["Switch off","1 / 1","1 / 2","1 / 3","1 / 4","1 / 5","1 / 6","1 / 8","1 / 10","1 / 15"]
@@ -1768,6 +1771,13 @@ MaxHeightStrToNum()  {
 	Return Round(A_ScreenHeight / SubStr(PreMaxHeightStr, 5))
 }
 
+_Sys_Backlight:
+	ThisMenuItem := oOther.MenuItemExist ? oOther.ThisMenuItem : A_ThisMenuItem
+	Menu, Sys, UnCheck, % BLGroup[StateLight]
+	Menu, Sys, Check, % ThisMenuItem
+	IniWrite((StateLight := InArr(ThisMenuItem, BLGroup)), "StateLight")
+	Return
+
 _MemoryAnchor:
 	IniWrite(MemoryAnchor := !MemoryAnchor, "MemoryAnchor")
 	If MemoryAnchor
@@ -1777,7 +1787,7 @@ _MemoryAnchor:
 	Return
 
 _SelStartMode:
-	ThisMenuItem := oOther.MenuItemExist ? oOther.MenuItemRButton : A_ThisMenuItem
+	ThisMenuItem := oOther.MenuItemExist ? oOther.ThisMenuItem : A_ThisMenuItem
 	Menu, Startmode, UnCheck, Window
 	Menu, Startmode, UnCheck, Control
 	Menu, Startmode, UnCheck, Button
@@ -1787,15 +1797,8 @@ _SelStartMode:
 	Menu, Startmode, Check, % ThisMenuItem
 	Return
 
-_Sys_Backlight:
-	ThisMenuItem := oOther.MenuItemExist ? oOther.MenuItemRButton : A_ThisMenuItem
-	Menu, Sys, UnCheck, % BLGroup[StateLight]
-	Menu, Sys, Check, % ThisMenuItem
-	IniWrite((StateLight := InArr(ThisMenuItem, BLGroup)), "StateLight")
-	Return
-
 Sys_Help:
-	ThisMenuItem := oOther.MenuItemExist ? oOther.MenuItemRButton : A_ThisMenuItem
+	ThisMenuItem := oOther.MenuItemExist ? oOther.ThisMenuItem : A_ThisMenuItem
 	If ThisMenuItem = AutoHotKey official help online
 		RunPath("http://ahkscript.org/docs/AutoHotkey.htm")
 	Else If ThisMenuItem = AutoHotKey russian help online
@@ -3479,10 +3482,10 @@ ButtonClick(oevent) {
 		WinGetPos, X, Y, W, H, ahk_id %hWnd%
 		ShowMarkersCreate("oShowMarkersTmp", "E14B30")
 		ShowMarkers(oShowMarkersTmp, x, y, w, h, 6)
+		If GetKeyState("Shift", "P") && (X + Y != "")
+			DllCall("SetCursorPos", "Uint", X + W // 2, "Uint", Y + H // 2)
 		Sleep 555
-		HideMarkers(oShowMarkersTmp)
-		; If (X + Y != "")
-			; DllCall("SetCursorPos", "Uint", X + W // 2, "Uint", Y + H // 2)
+		HideMarkers(oShowMarkersTmp) 
 	}
 	Else If thisid = set_pos
 	{
