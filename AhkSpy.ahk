@@ -26,6 +26,8 @@
     Актуальный исходник - https://raw.githubusercontent.com/serzh82saratov/AhkSpy/master/AhkSpy.ahk
 */
 
+Global AhkSpyVersion := 3.36
+
 	; _________________________________________________ Header _________________________________________________
 
 p1 = %1%
@@ -42,7 +44,6 @@ DetectHiddenWindows, On
 CoordMode, Pixel
 CoordMode, Menu
 
-Global AhkSpyVersion := 3.36
 Gosub, CheckAhkVersion
 Menu, Tray, UseErrorLevel
 Menu, Tray, Icon, Shell32.dll, % A_OSVersion = "WIN_XP" ? 222 : 278
