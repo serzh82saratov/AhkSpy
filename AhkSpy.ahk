@@ -26,7 +26,7 @@
     Актуальный исходник - https://raw.githubusercontent.com/serzh82saratov/AhkSpy/master/AhkSpy.ahk
 */
 
-Global AhkSpyVersion := 3.36
+Global AhkSpyVersion := 3.37
 
 	; _________________________________________________ Header _________________________________________________
 
@@ -75,9 +75,9 @@ Global ThisMode := IniRead("StartMode", "Control"), LastModeSave := (ThisMode = 
 , StateAllwaysSpot := IniRead("AllwaysSpot", 0), ScrollPos := {}, AccCoord := [], oOther := {}, oFind := {}, Edits := [], oMS := {}
 , hGui, hTBGui, hActiveX, hFindGui, oDoc, ShowMarker, isFindView, isIE, isPaused, w_ShowStyles := IniRead("w_ShowStyles", 0), c_ShowStyles := IniRead("c_ShowStyles", 0)
 , HTML_Win, HTML_Control, HTML_Hotkey, rmCtrlX, rmCtrlY, widthTB, FullScreenMode, hColorProgress, hFindAllText, MsgAhkSpyZoom, Sleep, oShowMarkers, oShowAccMarkers, oShowMarkersTmp
-, ClipAdd_Before := 0, ClipAdd_Delimiter := "`r`n", oDocEl, oJScript, oBody, isConfirm, isAhkSpy := 1, WordWrap := IniRead("WordWrap", 0)
-, MoveTitles := IniRead("MoveTitles", 1), DetectHiddenText := IniRead("DetectHiddenText", "on"), MenuIdView := IniRead("MenuIdView", 0), oMenu := {}
-, PreMaxHeightStr := IniRead("MaxHeightOverFlow", "1 / 3"), PreMaxHeight := MaxHeightStrToNum(), PreOverflowHide := !!PreMaxHeight
+, ClipAdd_Before := 0, ClipAdd_Delimiter := "`r`n", oDocEl, oJScript, oBody, isConfirm, ViewStrPos, isAhkSpy := 1, WordWrap := IniRead("WordWrap", 0)
+, MoveTitles := IniRead("MoveTitles", 1), DetectHiddenText := IniRead("DetectHiddenText", "on"), MenuIdView := IniRead("MenuIdView", 0), ViewStrPos := IniRead("ViewStrPos", 0)
+, PreMaxHeightStr := IniRead("MaxHeightOverFlow", "1 / 3"), PreMaxHeight := MaxHeightStrToNum(), PreOverflowHide := !!PreMaxHeight, oMenu := {}
 
 , _DB := "<span style='position: relative; margin-right: 1em;'></span>"
 , _BT1 := "<span class='button' unselectable='on' oncontextmenu='return false' onmouseleave='OnButtonOut (this)' onmousedown='OnButtonDown (this)' "
@@ -160,7 +160,7 @@ Gui, F: Add, Text, x+10 yp hp c2F2F2F +0x201 gFindOption, % " whole word "
 Gui, F: Add, Text, x+3 yp hp +0x201 w52 vFindMatches HWNDhFindAllText
 Gui, F: Add, Button, % "+0x300 +0xC00 y3 h20 w20 gFindHide x" widthTB - 21, X
 
-	; _________________________________________________ Menu _________________________________________________
+	; _________________________________________________ Menu Create _________________________________________________
 
 Menu, Sys, Add, % name := "Backlight allways", % oMenu.Sys[name] := "_Sys_Backlight"
 Menu, Sys, Add, % name := "Backlight hold shift button", % oMenu.Sys[name] := "_Sys_Backlight"
@@ -208,6 +208,9 @@ Menu, View, % MemoryAnchor ? "Check" : "UnCheck", % name
 Menu, View, Add
 Menu, View, Add, % name := "Moving titles", % oMenu.View[name] := "_MoveTitles"
 Menu, View, % MoveTitles ? "Check" : "UnCheck", % name
+Menu, View, Add, % name := "View position string for command", % oMenu.View[name] := "_ViewStrPos"
+Menu, View, % ViewStrPos ? "Check" : "UnCheck", % name
+
 Menu, View, Add, % name := "Word wrap", % oMenu.View[name] := "_WordWrap"
 Menu, View, % WordWrap ? "Check" : "UnCheck", % name
 Menu, Sys, Add, View settings, :View
@@ -286,10 +289,11 @@ Return
 
 +Tab::
 SpotProc:
-	If (A_ThisLabel != "SpotProc")
+SpotProc2: 
+	If (A_ThisHotkey != "")
 		Shift_Tab_Down := 1
 	(ThisMode = "Control" ? (Spot_Control() (StateAllwaysSpot ? Spot_Win() : 0) Write_Control()) : (Spot_Win() (StateAllwaysSpot ? Spot_Control() : 0) Write_Win()))
-	If !WinActive("ahk_id" hGui)
+	If (!WinActive("ahk_id" hGui) && A_ThisLabel != "SpotProc2")
 	{
 		WinActivate ahk_id %hGui%
 		GuiControl, 1:Focus, oDoc
@@ -554,7 +558,10 @@ Spot_Win(NotHTML = 0) {
 	GuiControl, TB: -Redraw, ColorProgress
 	GuiControl, % "TB: +c" SubStr(ColorRGB, 3), ColorProgress
 	GuiControl, TB: +Redraw, ColorProgress
-
+	
+	If ViewStrPos 
+		ViewStrPos1 := _DP "<span name='MS:'>" WinX ", " WinY ", " WinX2 ", " WinY2 "</span>" _DP "<span name='MS:'>" WinX ", " WinY ", " WinWidth ", " WinHeight "</span>"
+		
 HTML_Win:
 	If w_ShowStyles
 		WinStyles := GetStyles(WinStyle, WinExStyle)
@@ -574,7 +581,7 @@ HTML_Win:
 	%_T1% id='__CommandLine'> ( CommandLine ) </span>%_BT1% id='w_command_line'> launch %_BT2%%_DB%%_BT1% id='paste_command_line'> paste %_BT2%%_T2%
 	%_PRE1%<span id='c_command_line' name='MS:'>%ComLine%</span>%_PRE2%
 	%_T1% id='__Position'> ( Position ) </span>%_T2%
-	%_PRE1%%_BP1% id='set_button_pos'>Pos:%_BP2%  <span name='MS:'>x%WinX% y%WinY%</span>%_DP%<span name='MS:'>x&sup2;%WinX2% y&sup2;%WinY2%</span>%_DP%%_BP1% id='set_button_pos'>Size:%_BP2%  <span name='MS:'>w%WinWidth% h%WinHeight%</span>%_DP%<span name='MS:'>%WinX%, %WinY%, %WinX2%, %WinY2%</span>%_DP%<span name='MS:'>%WinX%, %WinY%, %WinWidth%, %WinHeight%</span>
+	%_PRE1%%_BP1% id='set_button_pos'>Pos:%_BP2%  <span name='MS:'>x%WinX% y%WinY%</span>%_DP%<span name='MS:'>x&sup2;%WinX2% y&sup2;%WinY2%</span>%_DP%%_BP1% id='set_button_pos'>Size:%_BP2%  <span name='MS:'>w%WinWidth% h%WinHeight%</span>%ViewStrPos1%
 	<span class='param'>Client area size:</span>  <span name='MS:'>w%caW% h%caH%</span>%_DP%<span class='param'>left</span> %caX% <span class='param'>top</span> %caY% <span class='param'>right</span> %caWinRight% <span class='param'>bottom</span> %caWinBottom%%_PRE2%
 	%_T1% id='__Other'> ( Other ) </span>%_T2%
 	%_PRE1%<span class='param' name='MS:N'>PID:</span>  <span name='MS:'>%WinPID%</span>%_DP%%ProcessBitSize%%IsAdmin%<span class='param'>Window count:</span> %WinCountProcess%%_DP%%_BB1% id='process_close'> process close %_BB2%
@@ -781,6 +788,10 @@ Spot_Control(NotHTML = 0) {
 	WinGet, ProcessName, ProcessName, ahk_id %WinID%
 	WinGetClass, WinClass, ahk_id %WinID%
 
+	If ViewStrPos 
+		ViewStrPos1 := _DP "<span name='MS:'>" CtrlX ", " CtrlY ", " CtrlX2 ", " CtrlY2 "</span>" _DP "<span name='MS:'>" CtrlX ", " CtrlY ", " CtrlW ", " CtrlH "</span>"
+		, ViewStrPos2 := _DP "<span name='MS:'>" CtrlCAX ", " CtrlCAY ", " CtrlCAX2 ", " CtrlCAY2 "</span>" _DP "<span name='MS:'>" CtrlCAX ", " CtrlCAY ", " CtrlW ", " CtrlH "</span>"
+	
 HTML_Control:
 	If ControlID
 	{
@@ -793,8 +804,8 @@ HTML_Control:
 		( Ltrim
 		%_T1% id='__Control'> ( Control ) </span>%_T2%
 		%_PRE1%<span class='param'>Class NN:</span>  <span name='MS:'>%ControlNN%</span>%_DP%<span class='param'>Win class:</span>  <span name='MS:'>%CtrlClass%</span>
-		%_BP1% id='set_button_pos'>Pos:%_BP2%  <span name='MS:'>x%CtrlX% y%CtrlY%</span>%_DP%<span name='MS:'>x&sup2;%CtrlX2% y&sup2;%CtrlY2%</span>%_DP%%_BP1% id='set_button_pos'>Size:%_BP2%  <span name='MS:'>w%CtrlW% h%CtrlH%</span>%_DP%<span name='MS:'>%CtrlX%, %CtrlY%, %CtrlX2%, %CtrlY2%</span>%_DP%<span name='MS:'>%CtrlX%, %CtrlY%, %CtrlW%, %CtrlH%</span>
-		<span class='param'>Pos relative client area:</span>  <span name='MS:'>x%CtrlCAX% y%CtrlCAY%</span>%_DP%<span name='MS:'>x&sup2;%CtrlCAX2% y&sup2;%CtrlCAY2%</span>%_DP%<span name='MS:'>%CtrlCAX%, %CtrlCAY%, %CtrlCAX2%, %CtrlCAY2%</span>%_DP%<span name='MS:'>%CtrlCAX%, %CtrlCAY%, %CtrlW%, %CtrlH%</span>
+		%_BP1% id='set_button_pos'>Pos:%_BP2%  <span name='MS:'>x%CtrlX% y%CtrlY%</span>%_DP%<span name='MS:'>x&sup2;%CtrlX2% y&sup2;%CtrlY2%</span>%_DP%%_BP1% id='set_button_pos'>Size:%_BP2%  <span name='MS:'>w%CtrlW% h%CtrlH%</span>%ViewStrPos1%
+		<span class='param'>Pos relative client area:</span>  <span name='MS:'>x%CtrlCAX% y%CtrlCAY%</span>%_DP%<span name='MS:'>x&sup2;%CtrlCAX2% y&sup2;%CtrlCAY2%</span>%ViewStrPos2%
 		%_BP1% id='set_pos'>Mouse relative control:%_BP2%  <span name='MS:'>x%rmCtrlX% y%rmCtrlY%</span>%WithRespectControl%
 		<span class='param'>HWND:</span>  <span name='MS:'>%ControlID%</span>%_DP%%_BP1% id='set_button_focus_ctrl'>Focus control:%_BP2%  <span name='MS:'>%CtrlFocus%</span>
 		<span class='param'>Style:</span>  <span id='c_Style' name='MS:'>%CtrlStyle%</span>%_DP%<span class='param'>ExStyle:</span>  <span id='c_ExStyle' name='MS:'>%CtrlExStyle%</span>%ButtonStyle_%%_PRE2%
@@ -1915,6 +1926,11 @@ _MoveTitles:
 	else
 		oDocEl.scrollLeft := 0, oJScript.conleft30()
 	Return
+	
+_ViewStrPos:
+	IniWrite(ViewStrPos := !ViewStrPos, "ViewStrPos")
+	Menu, View, % ViewStrPos ? "Check" : "UnCheck", View position string for command
+	Return
 
 _MemoryStateZoom:
 	IniWrite(MemoryStateZoom := !MemoryStateZoom, "MemoryStateZoom")
@@ -2013,9 +2029,9 @@ GuiClose:
 	ExitApp
 
 CheckAhkVersion:
-	If A_AhkVersion < 1.1.17.00
+	If A_AhkVersion < 1.1.23.00
 	{
-		MsgBox Requires AutoHotkey_L version 1.1.17.00+
+		MsgBox Requires AutoHotkey_L version 1.1.23.00+
 		RunPath("http://ahkscript.org/download/")
 		ExitApp
 	}
@@ -2055,6 +2071,11 @@ WM_LBUTTONDOWN(wp, lp, msg, hwnd) {
 			ZoomMsg(7, 0)
 		}
 	}
+}
+
+ActivateUnderMouse() {
+	MouseGetPos, , , WinID
+ 	WinActivate, ahk_id %WinID%
 }
 
 MouseGetPosScreen(ByRef x, ByRef y) {
@@ -2890,6 +2911,7 @@ GetControlStyles(Class, Style, ExStyle = "")  {  ;	https://autohotkey.com/board/
 		Res .= _T1 " id='__ExStyles_Control'> ( ExStyles )</span>" _T2 _PRE1 RetEx _PRE2
 	Return StrReplace(Res, "#")
 }
+
 	; _________________________________________________ FullScreen _________________________________________________
 
 FullScreenMode() {
@@ -3546,10 +3568,12 @@ ButtonClick(oevent) {
 			BlockInput, MouseMoveOff
 			Return
 		}
-		GoSub, SpotProc
-		Sleep 350
-		HideAllMarkers(), CheckHideMarker()
+		If Shift := GetKeyState("Shift", "P")
+			ActivateUnderMouse()
+		GoSub, SpotProc2
 		BlockInput, MouseMoveOff
+		If !Shift
+			Sleep(500), HideAllMarkers(), CheckHideMarker()
 	}
 	Else If thisid = run_zoom
 		AhkSpyZoomShow()
@@ -4185,5 +4209,7 @@ DeleteDC(hdc) {
 CreateCompatibleDC(hdc=0) {
 	Return DllCall("CreateCompatibleDC", "UPtr", hdc)
 }
+
+	; _________________________________________________ End _________________________________________________
 
 	;)
