@@ -26,7 +26,7 @@
     Актуальный исходник - https://raw.githubusercontent.com/serzh82saratov/AhkSpy/master/AhkSpy.ahk
 */
 
-Global AhkSpyVersion := 3.37
+Global AhkSpyVersion := 3.38
 
 	; _________________________________________________ Header _________________________________________________
 
@@ -75,7 +75,7 @@ Global ThisMode := IniRead("StartMode", "Control"), LastModeSave := (ThisMode = 
 , StateAllwaysSpot := IniRead("AllwaysSpot", 0), ScrollPos := {}, AccCoord := [], oOther := {}, oFind := {}, Edits := [], oMS := {}
 , hGui, hTBGui, hActiveX, hFindGui, oDoc, ShowMarker, isFindView, isIE, isPaused, w_ShowStyles := IniRead("w_ShowStyles", 0), c_ShowStyles := IniRead("c_ShowStyles", 0)
 , HTML_Win, HTML_Control, HTML_Hotkey, rmCtrlX, rmCtrlY, widthTB, FullScreenMode, hColorProgress, hFindAllText, MsgAhkSpyZoom, Sleep, oShowMarkers, oShowAccMarkers, oShowMarkersTmp
-, ClipAdd_Before := 0, ClipAdd_Delimiter := "`r`n", oDocEl, oJScript, oBody, isConfirm, ViewStrPos, isAhkSpy := 1, WordWrap := IniRead("WordWrap", 0)
+, ClipAdd_Before := 0, ClipAdd_Delimiter := "`r`n", oDocEl, oJScript, oBody, isConfirm, isAhkSpy := 1, WordWrap := IniRead("WordWrap", 0)
 , MoveTitles := IniRead("MoveTitles", 1), DetectHiddenText := IniRead("DetectHiddenText", "on"), MenuIdView := IniRead("MenuIdView", 0), ViewStrPos := IniRead("ViewStrPos", 0)
 , PreMaxHeightStr := IniRead("MaxHeightOverFlow", "1 / 3"), PreMaxHeight := MaxHeightStrToNum(), PreOverflowHide := !!PreMaxHeight, oMenu := {}
 
@@ -210,7 +210,6 @@ Menu, View, Add, % name := "Moving titles", % oMenu.View[name] := "_MoveTitles"
 Menu, View, % MoveTitles ? "Check" : "UnCheck", % name
 Menu, View, Add, % name := "View position string for command", % oMenu.View[name] := "_ViewStrPos"
 Menu, View, % ViewStrPos ? "Check" : "UnCheck", % name
-
 Menu, View, Add, % name := "Word wrap", % oMenu.View[name] := "_WordWrap"
 Menu, View, % WordWrap ? "Check" : "UnCheck", % name
 Menu, Sys, Add, View settings, :View
@@ -224,7 +223,7 @@ Menu, Overflow, Add, % name := "1 / 5", % oMenu.Overflow[name] := "_MenuOverflow
 Menu, Overflow, Add, % name := "1 / 6", % oMenu.Overflow[name] := "_MenuOverflowLabel"
 Menu, Overflow, Add, % name := "1 / 8", % oMenu.Overflow[name] := "_MenuOverflowLabel"
 Menu, Overflow, Add, % name := "1 / 10", % oMenu.Overflow[name] := "_MenuOverflowLabel"
-Menu, Overflow, Add,% name := "1 / 15", % oMenu.Overflow[name] := "_MenuOverflowLabel"
+Menu, Overflow, Add, % name := "1 / 15", % oMenu.Overflow[name] := "_MenuOverflowLabel"
 Menu, View, Add, Big text overflow hide, :Overflow
 
 Menu, Sys, Add, Start mode, :Startmode
@@ -1017,7 +1016,21 @@ GetInfo_CtrlNotifySink(hwnd, ByRef ClassNN) {
 
 GetInfo_Edit(hwnd, ByRef ClassNN) {
 	ClassNN = Edit
-	Return GetInfo_Scintilla(hwnd, "") "`n<span class='param' name='MS:N'>DlgCtrlID:</span> <span name='MS:'>" DllCall("GetDlgCtrlID", Ptr, hwnd) "</span>"
+	Edit_GetFont(hwnd, FName, FSize)
+	Return GetInfo_Scintilla(hwnd, "") "`n<span class='param' name='MS:N'>FontSize:</span> <span name='MS:'>" FSize "</span>" _DP "<span class='param' name='MS:N'>FontName:</span> <span name='MS:'>" FName "</span>"
+		. "`n<span class='param' name='MS:N'>DlgCtrlID:</span> <span name='MS:'>" DllCall("GetDlgCtrlID", Ptr, hwnd) "</span>"
+			
+}
+
+Edit_GetFont(hwnd, byref FontName, byref FontSize) {
+	SendMessage 0x31, 0, 0, , ahk_id %hwnd% ; WM_GETFONT
+	If ErrorLevel = FAIL
+		Return 
+	hFont := Errorlevel, VarSetCapacity(LF, szLF := 60 * (A_IsUnicode ? 2 : 1))
+	DllCall("GetObject", UInt, hFont, Int, szLF, UInt, &LF)
+	hDC := DllCall("GetDC", UInt,hwnd ), DPI := DllCall("GetDeviceCaps", UInt, hDC, Int, 90)
+	DllCall("ReleaseDC", Int, 0, UInt, hDC), FontSize := Round((-NumGet(LF, 0, "Int") * 72) / DPI)
+	FontName := DllCall("MulDiv", Int, &LF + 28, Int, 1, Int, 1, Str)
 }
 
 GetInfo_Scintilla(hwnd, ByRef ClassNN) {
@@ -1030,25 +1043,12 @@ GetInfo_Scintilla(hwnd, ByRef ClassNN) {
 	EM_GETSEL := ErrorLevel >> 16
 	SendMessage, 0x00CE, , , , ahk_id %hwnd%			;  EM_GETFIRSTVISIBLELINE
 	EM_GETFIRSTVISIBLELINE := ErrorLevel + 1
-	; Control_GetFont(hwnd, FName, FSize)
 	Return	"<span class='param' name='MS:N'>Row count:</span> <span name='MS:'>" LineCount "</span>" _DP
 			. "<span class='param' name='MS:N'>Selected length:</span> <span name='MS:'>" StrLen(Selected) "</span>"
 			. "`n<span class='param' name='MS:N'>Current row:</span> <span name='MS:'>" CurrentLine "</span>" _DP
 			. "<span class='param' name='MS:N'>Current column:</span> <span name='MS:'>" CurrentCol "</span>"
 			. "`n<span class='param' name='MS:N'>Current select:</span> <span name='MS:'>" EM_GETSEL "</span>" _DP
 			. "<span class='param' name='MS:N'>First visible line:</span> <span name='MS:'>" EM_GETFIRSTVISIBLELINE "</span>"
-			; . "`n<span class='param'>FontSize:</span> " FSize _DP "<span class='param'>FontName:</span> " FName
-}
-
-Control_GetFont(hwnd, byref FontName, byref FontSize) {
-	SendMessage 0x31, 0, 0, , ahk_id %hwnd% ; WM_GETFONT
-	IfEqual, ErrorLevel, FAIL, Return
-	hFont := Errorlevel, VarSetCapacity(LF, szLF := 60 * (A_IsUnicode ? 2 : 1))
-	DllCall("GetObject", UInt, hFont, Int, szLF, UInt, &LF)
-	hDC := DllCall("GetDC", UInt,hwnd ), DPI := DllCall("GetDeviceCaps", UInt, hDC, Int, 90)
-	DllCall("ReleaseDC", Int, 0, UInt, hDC), S := Round((-NumGet(LF, 0, "Int") * 72) / DPI)
-	FontName := DllCall("MulDiv", Int, &LF + 28, Int, 1, Int, 1, Str)
-	DllCall("SetLastError", UInt, S), FontSize := A_LastError
 }
 
 GetInfo_msctls_progress(hwnd, ByRef ClassNN) {
@@ -1766,6 +1766,10 @@ AccUnderMouse(WinID, ByRef child) {
 		Return Acc, child := NumGet(varChild,8,"UInt")
 }
 
+MaxHeightStrToNum()  {
+	Return Round(A_ScreenHeight / SubStr(PreMaxHeightStr, 5))
+}
+
 _MenuOverflowLabel:
 	ThisMenuItem := oOther.MenuItemExist ? oOther.ThisMenuItem : A_ThisMenuItem
 	PreOverflowHide := ThisMenuItem = "Switch off" ? 0 : 1
@@ -1778,10 +1782,6 @@ _MenuOverflowLabel:
 	ChangeCSS("css_PreOverflowHide", PreOverflowHide ? _PreOverflowHideCSS : "")
 	AnchorScroll()
 	Return
-
-MaxHeightStrToNum()  {
-	Return Round(A_ScreenHeight / SubStr(PreMaxHeightStr, 5))
-}
 
 _Sys_Backlight:
 	ThisMenuItem := oOther.MenuItemExist ? oOther.ThisMenuItem : A_ThisMenuItem
@@ -1807,42 +1807,6 @@ _SelStartMode:
 	IniWrite({"Window":"Win","Control":"Control","Button":"Hotkey","Last Mode":"LastMode"}[ThisMenuItem], "StartMode")
 	LastModeSave := (ThisMenuItem = "Last Mode")
 	Menu, Startmode, Check, % ThisMenuItem
-	Return
-
-Sys_Help:
-	ThisMenuItem := oOther.MenuItemExist ? oOther.ThisMenuItem : A_ThisMenuItem
-	If ThisMenuItem = AutoHotKey official help online
-		RunPath("http://ahkscript.org/docs/AutoHotkey.htm")
-	Else If ThisMenuItem = AutoHotKey russian help online
-		RunPath("http://www.script-coding.com/AutoHotkeyTranslation.html")
-	Else If ThisMenuItem = About
-		RunPath("http://forum.script-coding.com/viewtopic.php?pid=72459#p72459")
-	Return
-
-LaunchHelp:
-	If !FileExist(SubStr(A_AhkPath,1,InStr(A_AhkPath,"\",,0,1)) "AutoHotkey.chm")
-		Return
-	IfWinNotExist AutoHotkey Help ahk_class HH Parent ahk_exe hh.exe
-		Run % SubStr(A_AhkPath,1,InStr(A_AhkPath,"\",,0,1)) "AutoHotkey.chm"
-	WinActivate
-	Minimize()
-	Return
-
-DefaultSize:
-	If FullScreenMode
-	{
-		FullScreenMode()
-		Gui, 1: Restore
-		Sleep 200
-	}
-	Gui, 1: Show, % "NA w" widthTB "h" HeightStart
-	ZoomMsg(5)
-	If !MemoryFontSize
-		oDoc.getElementById("pre").style.fontSize := FontSize := 15
-	Return
-
-Reload:
-	Reload
 	Return
 
 _Suspend:
@@ -1871,15 +1835,6 @@ _Sys_Acclight:
 _Sys_WClight:
 	StateLightMarker := IniWrite(!StateLightMarker, "StateLightMarker"), HideMarker()
 	Menu, Sys, % (StateLightMarker ? "Check" : "UnCheck"), Window or control backlight
-	Return
-
-Help_OpenUserDir:
-	RunPath(A_AppData "\AhkSpy")
-	Return
-
-Help_OpenScriptDir:
-	SelectFilePath(A_ScriptFullPath)
-	Minimize()
 	Return
 
 _Spot_Together:
@@ -1926,7 +1881,7 @@ _MoveTitles:
 	else
 		oDocEl.scrollLeft := 0, oJScript.conleft30()
 	Return
-	
+
 _ViewStrPos:
 	IniWrite(ViewStrPos := !ViewStrPos, "ViewStrPos")
 	Menu, View, % ViewStrPos ? "Check" : "UnCheck", View position string for command
@@ -1945,6 +1900,51 @@ _WordWrap:
 		oDocEl.scrollLeft := 0
 	oJScript.WordWrap := WordWrap
 	ChangeCSS("css_Body", WordWrap ? _BodyWrapCSS : "")
+	Return
+
+Sys_Help:
+	ThisMenuItem := oOther.MenuItemExist ? oOther.ThisMenuItem : A_ThisMenuItem
+	If ThisMenuItem = AutoHotKey official help online
+		RunPath("http://ahkscript.org/docs/AutoHotkey.htm")
+	Else If ThisMenuItem = AutoHotKey russian help online
+		RunPath("http://www.script-coding.com/AutoHotkeyTranslation.html")
+	Else If ThisMenuItem = About
+		RunPath("http://forum.script-coding.com/viewtopic.php?pid=72459#p72459")
+	Return
+
+LaunchHelp:
+	If !FileExist(SubStr(A_AhkPath,1,InStr(A_AhkPath,"\",,0,1)) "AutoHotkey.chm")
+		Return
+	IfWinNotExist AutoHotkey Help ahk_class HH Parent ahk_exe hh.exe
+		Run % SubStr(A_AhkPath,1,InStr(A_AhkPath,"\",,0,1)) "AutoHotkey.chm"
+	WinActivate
+	Minimize()
+	Return
+
+DefaultSize:
+	If FullScreenMode
+	{
+		FullScreenMode()
+		Gui, 1: Restore
+		Sleep 200
+	}
+	Gui, 1: Show, % "NA w" widthTB "h" HeightStart
+	ZoomMsg(5)
+	If !MemoryFontSize
+		oDoc.getElementById("pre").style.fontSize := FontSize := 15
+	Return
+
+Reload:
+	Reload
+	Return
+
+Help_OpenUserDir:
+	RunPath(A_AppData "\AhkSpy")
+	Return
+
+Help_OpenScriptDir:
+	SelectFilePath(A_ScriptFullPath)
+	Minimize()
 	Return
 
 	; _________________________________________________ Functions _________________________________________________
@@ -3291,7 +3291,6 @@ Class Events {  ;	http://forum.script-coding.com/viewtopic.php?pid=82283#p82283
 		oevent := oDoc.parentWindow.event.srcElement
 		If (oevent.ClassName = "button" || oevent.tagname = "button")
 			Return ButtonClick(oevent)
-
 		If (oevent.ClassName = "title" && ThisMode != "Hotkey")  ;	anchor
 		{
 			R := oDoc.selection.createRange(), R.collapse(1), R.select()
@@ -3319,7 +3318,6 @@ Class Events {  ;	http://forum.script-coding.com/viewtopic.php?pid=82283#p82283
 				IniWrite(oOther.anchor[ThisMode "_text"], ThisMode "_Anchor")
 			Return
 		}
-
 		If (oevent.tagname != "input" && (rng := oDoc.selection.createRange()).text != "" && oevent.isContentEditable)
 		{
 			While !t
