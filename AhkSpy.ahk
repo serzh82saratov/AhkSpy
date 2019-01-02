@@ -26,7 +26,7 @@
     Актуальный исходник - https://raw.githubusercontent.com/serzh82saratov/AhkSpy/master/AhkSpy.ahk
 */
 
-Global AhkSpyVersion := 3.39
+Global AhkSpyVersion := 3.40
 
 	; _________________________________________________ Header _________________________________________________
 
@@ -1267,8 +1267,7 @@ AccInfoUnderMouse(mx, my, wx, wy, cx, cy, WinID) {
 		code .= _T1 " id='P__Value_Acc'" _T1P "> ( Value ) </span><a></a>" _BT1 " id='copy_button'> copy " _BT2 _T2 _LPRE ">" TransformHTML(Var) _PRE2
 	AccState(Acc, child, style, strstyles)
 	If (strstyles != "")
-		code .= _T1 " id='P__State_Acc'" _T1P "> ( State: <span name='MS:' style='color: #" ColorFont ";'>"
-		. style "</span> ) </span>" _T2 _PRE1 strstyles _PRE2
+		code .= _T1 " id='P__State_Acc'" _T1P "> ( State: <span name='MS:' style='color: #" ColorFont ";'>" style "</span> ) </span>" _T2 _PRE1 strstyles _PRE2
 	If ((Var := AccRole(Acc, child)) != "")
 		code .= _T1 " id='P__Role_Acc'" _T1P "> ( Role ) </span>" _T2 _PRE1 "<span name='MS:'>" TransformHTML(Var) "</span>"
 		. _DP "<span class='param' name='MS:N'>code: </span><span name='MS:'>" Acc.accRole(child) "</span>" _PRE2
@@ -1281,9 +1280,9 @@ AccInfoUnderMouse(mx, my, wx, wy, cx, cy, WinID) {
 		code .= _T1 " id='P__Selection_parent_Acc'" _T1P "> ( Selection - parent ) </span>" _T2 _PRE1 "<span name='MS:'>" TransformHTML(Var) "</span>" _PRE2
 	AccAccFocus(WinID, accFocusName, accFocusValue)
 	If (accFocusName != "")
-		code .= _T1 " id='P__Focus_value_Acc'" _T1P "> ( Focus - value ) </span><a></a>" _BT1 " id='copy_button'> copy " _BT2 _T2 _LPRE "<span name='MS:'>" TransformHTML(accFocusName) "</span>" _PRE2
+		code .= _T1 " id='P__Focus_name_Acc'" _T1P "> ( Focus - name ) </span><a></a>" _BT1 " id='copy_button'> copy " _BT2 _T2 _LPRE ">" TransformHTML(accFocusName) _PRE2
 	If (accFocusValue != "")
-		code .= _T1 " id='P__Focus_name_Acc'" _T1P "> ( Focus - name ) </span><a></a>" _BT1 " id='copy_button'> copy " _BT2 _T2 _LPRE "<span name='MS:'>" TransformHTML(accFocusValue) "</span>" _PRE2
+		code .= _T1 " id='P__Focus_value_Acc'" _T1P "> ( Focus - value ) </span><a></a>" _BT1 " id='copy_button'> copy " _BT2 _T2 _LPRE ">" TransformHTML(accFocusValue) _PRE2
 	If ((Var := Acc.accDescription(child)) != "")
 		code .= _T1 " id='P__Description_Acc'" _T1P "> ( Description ) </span>" _T2 _PRE1 "<span name='MS:'>" TransformHTML(Var) "</span>" _PRE2
 	If ((Var := Acc.accKeyboardShortCut(child)) != "")
