@@ -26,7 +26,7 @@
     Актуальный исходник - https://raw.githubusercontent.com/serzh82saratov/AhkSpy/master/AhkSpy.ahk
 */
 
-Global AhkSpyVersion := 3.38
+Global AhkSpyVersion := 3.39
 
 	; _________________________________________________ Header _________________________________________________
 
@@ -258,7 +258,6 @@ Menu, Overflow, Color, % ColorBgOriginal
 
 #Include *i %A_AppData%\AhkSpy\Include.ahk  ;	Для продолжения выполнения кода используйте GoTo IncludeLabel
 IncludeLabel:
-
 Gui, Show, % "NA " (MemoryPos ? " x" IniRead("MemoryPosX", "Center") " y" IniRead("MemoryPosY", "Center") : "")
 . (MemorySize ? " h" IniRead("MemorySizeH", HeightStart) " w" IniRead("MemorySizeW", widthTB) : " h" HeightStart " w" widthTB)
 Gui, % "+MinSize" widthTB "x" 313
@@ -288,7 +287,7 @@ Return
 
 +Tab::
 SpotProc:
-SpotProc2: 
+SpotProc2:
 	If (A_ThisHotkey != "")
 		Shift_Tab_Down := 1
 	(ThisMode = "Control" ? (Spot_Control() (StateAllwaysSpot ? Spot_Win() : 0) Write_Control()) : (Spot_Win() (StateAllwaysSpot ? Spot_Control() : 0) Write_Win()))
@@ -557,10 +556,10 @@ Spot_Win(NotHTML = 0) {
 	GuiControl, TB: -Redraw, ColorProgress
 	GuiControl, % "TB: +c" SubStr(ColorRGB, 3), ColorProgress
 	GuiControl, TB: +Redraw, ColorProgress
-	
-	If ViewStrPos 
+
+	If ViewStrPos
 		ViewStrPos1 := _DP "<span name='MS:'>" WinX ", " WinY ", " WinX2 ", " WinY2 "</span>" _DP "<span name='MS:'>" WinX ", " WinY ", " WinWidth ", " WinHeight "</span>"
-		
+
 HTML_Win:
 	If w_ShowStyles
 		WinStyles := GetStyles(WinStyle, WinExStyle)
@@ -754,7 +753,7 @@ Spot_Control(NotHTML = 0) {
 		CtrlText := _T1 " id='__Control_Text'> ( Control Text ) </span><a></a>" _BT1 " id='copy_button'> copy " _BT2 _T2 _LPRE ">" TransformHTML(CtrlText) _PRE2
 	AccText := AccInfoUnderMouse(MXS, MYS, WinX, WinY, CtrlX, CtrlY, WinID)
 	If AccText !=
-		AccText := _T1 " id='__AccInfo'> ( AccInfo ) </span><a></a>" _ButAccViewer _T2 AccText
+		AccText := _T1 " id='__AccInfo'> ( Accesible ) </span><a></a>" _ButAccViewer _T2 AccText
 
 	If ControlNN !=
 	{
@@ -787,10 +786,10 @@ Spot_Control(NotHTML = 0) {
 	WinGet, ProcessName, ProcessName, ahk_id %WinID%
 	WinGetClass, WinClass, ahk_id %WinID%
 
-	If ViewStrPos 
+	If ViewStrPos
 		ViewStrPos1 := _DP "<span name='MS:'>" CtrlX ", " CtrlY ", " CtrlX2 ", " CtrlY2 "</span>" _DP "<span name='MS:'>" CtrlX ", " CtrlY ", " CtrlW ", " CtrlH "</span>"
 		, ViewStrPos2 := _DP "<span name='MS:'>" CtrlCAX ", " CtrlCAY ", " CtrlCAX2 ", " CtrlCAY2 "</span>" _DP "<span name='MS:'>" CtrlCAX ", " CtrlCAY ", " CtrlW ", " CtrlH "</span>"
-	
+
 HTML_Control:
 	If ControlID
 	{
@@ -821,7 +820,7 @@ HTML_Control:
 	%_PRE1%<span class='param'>RGB: </span> <span name='MS:'>%ColorRGB%</span>%_DP%<span name='MS:'>#%sColorRGB%</span>%_DP%<span class='param'>BGR: </span> <span name='MS:'>%ColorBGR%</span>%_DP%<span name='MS:'>#%sColorBGR%</span>%_PRE2%
 	%_T1% id='__Window'> ( Window ) </span>%_T2%
 	%_PRE1%<span><span class='param' name='MS:S'>ahk_class</span> <span name='MS:'>%WinClass%</span></span> <span><span class='param' name='MS:S'>ahk_exe</span> <span name='MS:'>%ProcessName%</span></span> <span><span class='param' name='MS:S'>ahk_id</span> <span name='MS:'>%WinID%</span></span>
-	<span class='param'>Cursor:</span>  <span name='MS:'>%A_Cursor%</span>%_DP%<span class='param'>Caret:</span>  <span name='MS:'>x%A_CaretX% y%A_CaretY%</span>%_DP%<span class='param'>Client:</span>  <span name='MS:'>x%caX% y%caY% w%caW% h%caH%</span>%_PRE2%
+	<span class='param'>Cursor:</span>  <span name='MS:'>%A_Cursor%</span>%_DP%<span class='param'>Caret:</span>  <span name='MS:'>x%A_CaretX% y%A_CaretY%</span>%_DP%<span class='param'>Client area:</span>  <span name='MS:'>x%caX% y%caY% w%caW% h%caH%</span>%_PRE2%
 	%HTML_ControlExist%
 	%CtrlInfo%%CtrlText%%AccText%
 	<a></a>%_T0%
@@ -1019,13 +1018,12 @@ GetInfo_Edit(hwnd, ByRef ClassNN) {
 	Edit_GetFont(hwnd, FName, FSize)
 	Return GetInfo_Scintilla(hwnd, "") "`n<span class='param' name='MS:N'>FontSize:</span> <span name='MS:'>" FSize "</span>" _DP "<span class='param' name='MS:N'>FontName:</span> <span name='MS:'>" FName "</span>"
 		. "`n<span class='param' name='MS:N'>DlgCtrlID:</span> <span name='MS:'>" DllCall("GetDlgCtrlID", Ptr, hwnd) "</span>"
-			
 }
 
 Edit_GetFont(hwnd, byref FontName, byref FontSize) {
 	SendMessage 0x31, 0, 0, , ahk_id %hwnd% ; WM_GETFONT
 	If ErrorLevel = FAIL
-		Return 
+		Return
 	hFont := Errorlevel, VarSetCapacity(LF, szLF := 60 * (A_IsUnicode ? 2 : 1))
 	DllCall("GetObject", UInt, hFont, Int, szLF, UInt, &LF)
 	hDC := DllCall("GetDC", UInt,hwnd ), DPI := DllCall("GetDeviceCaps", UInt, hDC, Int, 90)
@@ -1263,16 +1261,14 @@ AccInfoUnderMouse(mx, my, wx, wy, cx, cy, WinID) {
 
 		. (cx != "" ? _DP "<span class='param'>Control: </span><span name='MS:'>x" (x - wx - cx) " y" (y - wy - cy) "</span>"
 		. _DP "<span name='MS:'>x&sup2;" (x - wx - cx) + w - 1 " y&sup2;" (y - wy - cy) + h - 1 "</span>" : "")  _PRE2
-
 	If ((Var := Acc.accName(child)) != "")
 		code .= _T1 " id='P__Name_Acc'" _T1P "> ( Name ) </span><a></a>" _BT1 " id='copy_button'> copy " _BT2 _T2 _LPRE ">" TransformHTML(Var) _PRE2
 	If ((Var := Acc.accValue(child)) != "")
 		code .= _T1 " id='P__Value_Acc'" _T1P "> ( Value ) </span><a></a>" _BT1 " id='copy_button'> copy " _BT2 _T2 _LPRE ">" TransformHTML(Var) _PRE2
-	If ((Var := AccGetStateText(Var2 := Acc.accState(child))) != "")
-		code .= _T1 " id='P__State_Acc'" _T1P "> ( State ) </span>" _T2 _PRE1 "<span name='MS:'>" TransformHTML(Var) "</span>"  ;	https://docs.microsoft.com/ru-ru/windows/desktop/WinAuto/object-state-constants
-		. _DP "<span class='param' name='MS:N'>code: </span><span name='MS:'>" Var2 "</span>"
-		. ((Var2 & 0x100000) ? _DP "<span class='param'>focusable</span>" : "")  ;	STATE_SYSTEM_FOCUSABLE
-		. ((Var2 & 0x4) ? _DP "<span class='param'>focused</span>" : "") _PRE2  ;	STATE_SYSTEM_FOCUSED
+	AccState(Acc, child, style, strstyles)
+	If (strstyles != "")
+		code .= _T1 " id='P__State_Acc'" _T1P "> ( State: <span name='MS:' style='color: #" ColorFont ";'>"
+		. style "</span> ) </span>" _T2 _PRE1 strstyles _PRE2
 	If ((Var := AccRole(Acc, child)) != "")
 		code .= _T1 " id='P__Role_Acc'" _T1P "> ( Role ) </span>" _T2 _PRE1 "<span name='MS:'>" TransformHTML(Var) "</span>"
 		. _DP "<span class='param' name='MS:N'>code: </span><span name='MS:'>" Acc.accRole(child) "</span>" _PRE2
@@ -1283,10 +1279,11 @@ AccInfoUnderMouse(mx, my, wx, wy, cx, cy, WinID) {
 		code .= _T1 " id='P__Action_Acc'" _T1P "> ( Action ) </span>" _T2 _PRE1 "<span name='MS:'>" TransformHTML(Var) "</span>" _PRE2
 	If ((Var := Acc.accSelection) > 0)
 		code .= _T1 " id='P__Selection_parent_Acc'" _T1P "> ( Selection - parent ) </span>" _T2 _PRE1 "<span name='MS:'>" TransformHTML(Var) "</span>" _PRE2
-	If ((Var := Acc.accFocus.accValue(0))!= "")
-		code .= _T1 " id='P__Focus_value_Acc'" _T1P "> ( Focus - value ) </span>" _T2 _PRE1 "<span name='MS:'>" TransformHTML(Var) "</span>" _PRE2
-	If ((Var := Acc.accFocus.accName(0))!= "")
-		code .= _T1 " id='P__Focus_name_Acc'" _T1P "> ( Focus - name ) </span>" _T2 _PRE1 "<span name='MS:'>" TransformHTML(Var) "</span>" _PRE2
+	AccAccFocus(WinID, accFocusName, accFocusValue)
+	If (accFocusName != "")
+		code .= _T1 " id='P__Focus_value_Acc'" _T1P "> ( Focus - value ) </span><a></a>" _BT1 " id='copy_button'> copy " _BT2 _T2 _LPRE "<span name='MS:'>" TransformHTML(accFocusName) "</span>" _PRE2
+	If (accFocusValue != "")
+		code .= _T1 " id='P__Focus_name_Acc'" _T1P "> ( Focus - name ) </span><a></a>" _BT1 " id='copy_button'> copy " _BT2 _T2 _LPRE "<span name='MS:'>" TransformHTML(accFocusValue) "</span>" _PRE2
 	If ((Var := Acc.accDescription(child)) != "")
 		code .= _T1 " id='P__Description_Acc'" _T1P "> ( Description ) </span>" _T2 _PRE1 "<span name='MS:'>" TransformHTML(Var) "</span>" _PRE2
 	If ((Var := Acc.accKeyboardShortCut(child)) != "")
@@ -1298,6 +1295,36 @@ AccInfoUnderMouse(mx, my, wx, wy, cx, cy, WinID) {
 
 	myPublicObj.AccObj := {AccObj:Acc,child:child,WinID:WinID}
 	Return code
+}
+
+	;	https://docs.microsoft.com/ru-ru/windows/desktop/WinAuto/object-state-constants
+	;	http://forum.script-coding.com/viewtopic.php?pid=130762#p130762
+
+AccState(Acc, child, byref style, byref str, i := 1) {
+	style := Format("0x{1:08X}", Acc.accState(child))
+	If (style = 0)
+		Return "", str := "<span class='param' name='MS:'>" AccGetStateText(0) "</span>" _DP "<span name='MS:'>" 0x00000000 "</span>`n"
+	While (i <= style) {
+		if (i & style)
+			str .= "<span class='param' name='MS:'>" AccGetStateText(i) "</span>" _DP "<span name='MS:'>" Format("0x{1:08X}", i) "</span>`n"
+		i <<= 1
+	}
+}
+
+	;	http://forum.script-coding.com/viewtopic.php?pid=130762#p130762
+
+AccAccFocus(hWnd, byref name, byref value) {
+	Acc := AccObjectFromWindow(hWnd)
+	While IsObject(Acc.accFocus)
+		Acc := Acc.accFocus
+	Child := Acc.accFocus
+	try name := Acc.accName(child)
+	try value := Acc.accValue(child)
+}
+
+AccObjectFromWindow(hWnd, idObject = -4) {
+	If DllCall("oleacc\AccessibleObjectFromWindow", "Ptr", hWnd, "UInt", idObject&=0xFFFFFFFF, "Ptr", -VarSetCapacity(IID,16)+NumPut(idObject==0xFFFFFFF0?0x46000000000000C0:0x719B3800AA000C81,NumPut(idObject==0xFFFFFFF0?0x0000000000020400:0x11CF3C3D618736E0,IID,"Int64"),"Int64"), "Ptr*", pacc)=0
+		Return ComObjEnwrap(9,pacc,1)
 }
 
 AccRole(Acc, ChildId=0) {
@@ -1800,10 +1827,8 @@ _MemoryAnchor:
 
 _SelStartMode:
 	ThisMenuItem := oOther.MenuItemExist ? oOther.ThisMenuItem : A_ThisMenuItem
-	Menu, Startmode, UnCheck, Window
-	Menu, Startmode, UnCheck, Control
-	Menu, Startmode, UnCheck, Button
-	Menu, Startmode, UnCheck, Last Mode
+	for k, v in ["Window","Control","Button","Last Mode"]
+		Menu, Startmode, UnCheck, % v
 	IniWrite({"Window":"Win","Control":"Control","Button":"Hotkey","Last Mode":"LastMode"}[ThisMenuItem], "StartMode")
 	LastModeSave := (ThisMenuItem = "Last Mode")
 	Menu, Startmode, Check, % ThisMenuItem
@@ -2209,7 +2234,7 @@ ObjRegisterActive(Object, CLSID, Flags := 0) {
    if !CLSID  {
       if (( cookie := cookieJar.Delete(Object) ) != "")
          DllCall("oleaut32\RevokeActiveObject", UInt, cookie, Ptr, 0)
-      return
+      Return
    }
    if cookieJar[Object]
       throw Exception("Object is already registered", -1)
@@ -2228,7 +2253,7 @@ CreateGUID()
    if !DllCall("ole32.dll\CoCreateGuid", Ptr, &pguid)  {
       size := VarSetCapacity(sguid, (38 << !!A_IsUnicode) + 1, 0)
       if DllCall("ole32.dll\StringFromGUID2", Ptr, &pguid, Ptr, &sguid, UInt, size)
-         return StrGet(&sguid)
+         Return StrGet(&sguid)
    }
 }
 
@@ -3283,41 +3308,13 @@ Class Events {  ;	http://forum.script-coding.com/viewtopic.php?pid=82283#p82283
 		oevent := oDoc.parentWindow.event.srcElement
 		If (oevent.ClassName = "button" || oevent.tagname = "button")
 			Return ButtonClick(oevent)
-		tagname := oevent.tagname
-		If (ThisMode = "Hotkey" && !Hotkey_Arr("Hook") && !isPaused && tagname ~= "PRE|SPAN")
+		If (ThisMode = "Hotkey" && !Hotkey_Arr("Hook") && !isPaused && oevent.tagname ~= "PRE|SPAN")
 			Hotkey_Hook(1)
 	}
 	ondblclick() {
 		oevent := oDoc.parentWindow.event.srcElement
 		If (oevent.ClassName = "button" || oevent.tagname = "button")
 			Return ButtonClick(oevent)
-		If (oevent.ClassName = "title" && ThisMode != "Hotkey")  ;	anchor
-		{
-			R := oDoc.selection.createRange(), R.collapse(1), R.select()
-
-			If oOther.anchor[ThisMode]
-			{
-				EL := oDoc.getElementById("anchor")
-				EL.style.background := "'none'"
-				EL.Id := ""
-				If oevent.id = oOther.anchor[ThisMode "_text"]
-				{
-					If MemoryAnchor
-						IniWrite("", ThisMode "_Anchor")
-					Return oOther.anchor[ThisMode] := 0, oOther.anchor[ThisMode "_text"] := "", HTML_%ThisMode% := oBody.innerHTML
-				}
-			}
-			oOther.anchor[ThisMode] := 1
-			oOther.anchor[ThisMode "_text"] := oevent.id
-			EL := oevent.parentElement.parentElement.firstChild
-			EL.Id := "anchor"
-			EL.style.backgroundColor := "#" ColorSelAnchor
-			oDocEl.scrollTop := oDocEl.scrollTop + EL.getBoundingClientRect().top - 6
-			HTML_%ThisMode% := oBody.innerHTML
-			If MemoryAnchor
-				IniWrite(oOther.anchor[ThisMode "_text"], ThisMode "_Anchor")
-			Return
-		}
 		If (oevent.tagname != "input" && (rng := oDoc.selection.createRange()).text != "" && oevent.isContentEditable)
 		{
 			While !t
@@ -3327,6 +3324,38 @@ Class Events {  ;	http://forum.script-coding.com/viewtopic.php?pid=82283#p82283
 				rng.moveStart("character", -1), (SubStr(rng.text, 1, 1) = "_" ? rng.moveStart("word", -1)
 					: (rng.moveStart("character", 1), t := 0))
 			sel := rng.text, rng.moveEnd("character", StrLen(RTrim(sel)) - StrLen(sel)), rng.select()
+		}
+		Else If ((oevent.ClassName = "title" || oevent.ClassName = "con" || oevent.ClassName = "hr" || oevent.ClassName = "box") && ThisMode != "Hotkey")  ;	anchor
+		{
+			R := oDoc.selection.createRange(), R.collapse(1), R.select()
+			  ;	EL = [class 'hr'], _text = [class 'title'].id
+			If oevent.ClassName = "con"
+				_text := oevent.firstChild.id, EL := oevent.parentElement.firstChild
+			Else If oevent.ClassName = "hr"
+				_text := oevent.parentElement.childNodes[1].firstChild.id, EL := oevent
+			Else If oevent.ClassName = "box"
+				_text := oevent.firstChild.childNodes[1].firstChild.id, EL := oevent.firstChild.firstChild
+			Else If oevent.ClassName = "title"
+				_text := oevent.id, EL := oevent.parentElement.parentElement.firstChild
+			If oOther.anchor[ThisMode]
+			{
+				pEL := oDoc.getElementById("anchor")
+				pEL.style.background := "'none'"
+				pEL.Id := ""
+				If (_text = oOther.anchor[ThisMode "_text"])
+				{
+					If MemoryAnchor
+						IniWrite("", ThisMode "_Anchor")
+					Return oOther.anchor[ThisMode] := 0, oOther.anchor[ThisMode "_text"] := "", HTML_%ThisMode% := oBody.innerHTML
+				}
+			}
+			oOther.anchor[ThisMode] := 1, oOther.anchor[ThisMode "_text"] := _text
+			EL.Id := "anchor"
+			EL.style.backgroundColor := "#" ColorSelAnchor
+			oDocEl.scrollTop := oDocEl.scrollTop + EL.getBoundingClientRect().top - 6
+			HTML_%ThisMode% := oBody.innerHTML
+			If MemoryAnchor
+				IniWrite(oOther.anchor[ThisMode "_text"], ThisMode "_Anchor")
 		}
 	}
     onmouseover() {
@@ -3506,7 +3535,7 @@ ButtonClick(oevent) {
 		If GetKeyState("Shift", "P") && (X + Y != "")
 			DllCall("SetCursorPos", "Uint", X + W // 2, "Uint", Y + H // 2)
 		Sleep 555
-		HideMarkers(oShowMarkersTmp) 
+		HideMarkers(oShowMarkersTmp)
 	}
 	Else If thisid = set_pos
 	{
