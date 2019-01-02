@@ -26,7 +26,7 @@
     Актуальный исходник - https://raw.githubusercontent.com/serzh82saratov/AhkSpy/master/AhkSpy.ahk
 */
 
-Global AhkSpyVersion := 3.40
+Global AhkSpyVersion := 3.41
 
 	; _________________________________________________ Header _________________________________________________
 
@@ -753,7 +753,7 @@ Spot_Control(NotHTML = 0) {
 		CtrlText := _T1 " id='__Control_Text'> ( Control Text ) </span><a></a>" _BT1 " id='copy_button'> copy " _BT2 _T2 _LPRE ">" TransformHTML(CtrlText) _PRE2
 	AccText := AccInfoUnderMouse(MXS, MYS, WinX, WinY, CtrlX, CtrlY, WinID)
 	If AccText !=
-		AccText := _T1 " id='__AccInfo'> ( Accesible ) </span><a></a>" _ButAccViewer _T2 AccText
+		AccText := _T1 " id='__AccInfo'> ( Accessible ) </span><a></a>" _ButAccViewer _T2 AccText
 
 	If ControlNN !=
 	{
@@ -1245,7 +1245,7 @@ AccInfoUnderMouse(mx, my, wx, wy, cx, cy, WinID) {
 	Var := child ? "Child" _DP "<span class='param' name='MS:N'>Id:  </span><span name='MS:'>" child "</span>"
 		. _DP "<span class='param' name='MS:N'>Parent child count:  </span>" Count
 		: "Parent" _DP "<span class='param' name='MS:N'>ChildCount:  </span>" Count
-	code := _PRE1 "<span class='param'>Type:</span>  " Var _PRE2
+	code := _PRE1 "<span class='param'>Type:</span>  " Var _DP _BP1 " id='acc_path'> Get path: " _BP2 "  <span id='acc_path_value' name='MS:'></span>" _PRE2
 
 	AccGetLocation(Acc, child)
 	x := AccCoord[1], y := AccCoord[2], w := AccCoord[3], h := AccCoord[4]
@@ -1313,17 +1313,12 @@ AccState(Acc, child, byref style, byref str, i := 1) {
 	;	http://forum.script-coding.com/viewtopic.php?pid=130762#p130762
 
 AccAccFocus(hWnd, byref name, byref value) {
-	Acc := AccObjectFromWindow(hWnd)
+	Acc := Acc_ObjectFromWindow(hWnd)
 	While IsObject(Acc.accFocus)
 		Acc := Acc.accFocus
 	Child := Acc.accFocus
 	try name := Acc.accName(child)
 	try value := Acc.accValue(child)
-}
-
-AccObjectFromWindow(hWnd, idObject = -4) {
-	If DllCall("oleacc\AccessibleObjectFromWindow", "Ptr", hWnd, "UInt", idObject&=0xFFFFFFFF, "Ptr", -VarSetCapacity(IID,16)+NumPut(idObject==0xFFFFFFF0?0x46000000000000C0:0x719B3800AA000C81,NumPut(idObject==0xFFFFFFF0?0x0000000000020400:0x11CF3C3D618736E0,IID,"Int64"),"Int64"), "Ptr*", pacc)=0
-		Return ComObjEnwrap(9,pacc,1)
 }
 
 AccRole(Acc, ChildId=0) {
@@ -1347,6 +1342,79 @@ AccGetStateText(nState) {
 AccGetLocation(Acc, Child=0) {
 	Acc.accLocation(ComObj(0x4003,&x:=0), ComObj(0x4003,&y:=0), ComObj(0x4003,&w:=0), ComObj(0x4003,&h:=0), Child)
 	AccCoord[1]:=NumGet(x,0,"int"), AccCoord[2]:=NumGet(y,0,"int"), AccCoord[3]:=NumGet(w,0,"int"), AccCoord[4]:=NumGet(h,0,"int")
+} 
+
+GetAccPath(Acc, child) { 
+	path := Acc_GetPath(Acc) 
+	if path !=
+		path := child ? path "," child : path
+	Else
+		Return "object not found" 
+	Return path
+}
+Acc_GetPath(Acc) {
+	hwnd := Acc_WindowFromObject(Acc)
+	WinObj := Acc_ObjectFromWindow(hwnd)
+	WinObjPos := Acc_Location(WinObj)
+	while Acc_WindowFromObject(Parent:=Acc_Parent(Acc)) = hwnd {
+		t2 := GetEnumIndex(Acc) "," t2
+		if Acc_Location(Parent) = WinObjPos
+			return SubStr(t2,1,-1)
+		Acc := Parent
+	}
+	while Acc_WindowFromObject(Parent:=Acc_Parent(WinObj)) = hwnd
+		t1.="P.", WinObj:=Parent
+	return t1 SubStr(t2,1,-1)
+}
+GetEnumIndex(Acc, ChildId=0) {
+	if Not ChildId {
+		ChildPos := Acc_Location(Acc)
+		For Each, child in Acc_Children(Acc_Parent(Acc))
+			if IsObject(child) and Acc_Location(child) = ChildPos
+				return A_Index
+	} 
+	else {
+		ChildPos := Acc_Location(Acc,ChildId)
+		For Each, child in Acc_Children(Acc)
+			if Not IsObject(child) and Acc_Location(Acc,child) = ChildPos
+				return A_Index
+	}
+}
+Acc_ObjectFromPoint(ByRef _idChild_ = "", x = "", y = "") { 
+	If DllCall("oleacc\AccessibleObjectFromPoint", "Int64", x==""||y==""?0*DllCall("GetCursorPos","Int64*",pt)+pt:x&0xFFFFFFFF|y<<32, "Ptr*", pacc, "Ptr", VarSetCapacity(varChild,8+2*A_PtrSize,0)*0+&varChild)=0
+		Return ComObjEnwrap(9,pacc,1), _idChild_:=NumGet(varChild,8,"UInt")
+}
+
+Acc_ObjectFromWindow(hWnd, idObject = 0) { 
+	If DllCall("oleacc\AccessibleObjectFromWindow", "Ptr", hWnd, "UInt", idObject&=0xFFFFFFFF, "Ptr", -VarSetCapacity(IID,16)+NumPut(idObject==0xFFFFFFF0?0x46000000000000C0:0x719B3800AA000C81,NumPut(idObject==0xFFFFFFF0?0x0000000000020400:0x11CF3C3D618736E0,IID,"Int64"),"Int64"), "Ptr*", pacc)=0
+		Return ComObjEnwrap(9,pacc,1)
+}
+Acc_WindowFromObject(pacc) {
+	If DllCall("oleacc\WindowFromAccessibleObject", "Ptr", IsObject(pacc)?ComObjValue(pacc):pacc, "Ptr*", hWnd)=0
+		Return	hWnd
+} 
+Acc_Location(Acc, ChildId=0) {
+	try Acc.accLocation(ComObj(0x4003,&x:=0), ComObj(0x4003,&y:=0), ComObj(0x4003,&w:=0), ComObj(0x4003,&h:=0), ChildId)
+	return "x" (x:=NumGet(x,0,"int")) " y" (y:=NumGet(y,0,"int")) " w" (w:=NumGet(w,0,"int")) " h" (h:=NumGet(h,0,"int"))
+}
+Acc_Parent(Acc) {
+	try parent:=Acc.accParent
+	return parent?Acc_Query(parent):
+}
+Acc_Children(Acc) {
+	if ComObjType(Acc,"Name")!="IAccessible"
+		return
+	else { 
+		cChildren:=Acc.accChildCount, Children:=[]
+	if DllCall("oleacc\AccessibleChildren", "Ptr", ComObjValue(Acc), "Int", 0, "Int", cChildren, "Ptr", VarSetCapacity(varChildren,cChildren*(8+2*A_PtrSize),0)*0+&varChildren, "Int*", cChildren)=0 {
+		Loop %cChildren%
+			i:=(A_Index-1)*(A_PtrSize*2+8)+8, child:=NumGet(varChildren,i), Children.Insert(NumGet(varChildren,i-8)=3?child:Acc_Query(child)), ObjRelease(child)
+		return Children
+		}
+	} 
+} 
+Acc_Query(Acc) {
+	try return ComObj(9, ComObjQuery(Acc,"{618736e0-3c3d-11cf-810c-00aa00389b71}"), 1)
 }
 
 	; _________________________________________________ Mode_Hotkey _________________________________________________
@@ -3603,6 +3671,16 @@ ButtonClick(oevent) {
 	}
 	Else If thisid = run_zoom
 		AhkSpyZoomShow()
+	Else If thisid = acc_path
+	{
+		oDoc.getElementById("acc_path_value").innerText := ""
+		oDoc.getElementById("acc_path").innerText := "   Wait...  "
+		oDoc.getElementById("acc_path").disabled := 1
+		oDoc.getElementById("acc_path_value").innerText := GetAccPath(myPublicObj.AccObj.AccObj, myPublicObj.AccObj.child)
+		oDoc.getElementById("acc_path").disabled := 0
+		oDoc.getElementById("acc_path").innerText := " Get path: "
+		HTML_Control := oBody.innerHTML
+	}
 }
 
 	; _________________________________________________ SingleInstance _________________________________________________
