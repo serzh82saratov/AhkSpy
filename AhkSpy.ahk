@@ -26,7 +26,7 @@
     Актуальный исходник - https://raw.githubusercontent.com/serzh82saratov/AhkSpy/master/AhkSpy.ahk
 */
 
-Global AhkSpyVersion := 3.41
+Global AhkSpyVersion := 3.42
 
 	; _________________________________________________ Header _________________________________________________
 
@@ -77,7 +77,7 @@ Global ThisMode := IniRead("StartMode", "Control"), LastModeSave := (ThisMode = 
 , HTML_Win, HTML_Control, HTML_Hotkey, rmCtrlX, rmCtrlY, widthTB, FullScreenMode, hColorProgress, hFindAllText, MsgAhkSpyZoom, Sleep, oShowMarkers, oShowAccMarkers, oShowMarkersTmp
 , ClipAdd_Before := 0, ClipAdd_Delimiter := "`r`n", oDocEl, oJScript, oBody, isConfirm, isAhkSpy := 1, WordWrap := IniRead("WordWrap", 0)
 , MoveTitles := IniRead("MoveTitles", 1), DetectHiddenText := IniRead("DetectHiddenText", "on"), MenuIdView := IniRead("MenuIdView", 0), ViewStrPos := IniRead("ViewStrPos", 0)
-, PreMaxHeightStr := IniRead("MaxHeightOverFlow", "1 / 3"), PreMaxHeight := MaxHeightStrToNum(), PreOverflowHide := !!PreMaxHeight, oMenu := {}
+, PreMaxHeightStr := IniRead("MaxHeightOverFlow", "1 / 3"), PreMaxHeight := MaxHeightStrToNum(), PreOverflowHide := !!PreMaxHeight, oMenu := {}, DecimalCode
 
 , _DB := "<span style='position: relative; margin-right: 1em;'></span>"
 , _BT1 := "<span class='button' unselectable='on' oncontextmenu='return false' onmouseleave='OnButtonOut (this)' onmousedown='OnButtonDown (this)' "
@@ -1482,13 +1482,20 @@ Write_HotkeyHTML(K) {
 
 	ControlSend := DUMods = "" ? "{" SendHotkey "}" : DUMods
 
+	VKCode_ := "0x" SubStr(VKCode, 3)
+	SCCode_ := "0x" SubStr(SCCode, 3)
+	
+	If DecimalCode
+		(VKCode_ += 0), SCCode_ += 0
+	s_DecimalCode := DecimalCode ? "dec" : "hex"
+		
 	If (DUMods != "")
 		LRSend := "  " _DP "  <span><span name='MS:'>" SendMode  " " DUMods "</span>" Comment "</span>"
 	If SCCode !=
 		ThisKeySC := "   " _DP "   <span name='MS:'>" VKCode "</span>   " _DP "   <span name='MS:'>" SCCode "</span>   "
-		. _DP "   <span name='MS:'>0x" SubStr(VKCode, 3) "</span>   " _DP "   <span name='MS:'>0x" SubStr(SCCode, 3) "</span>"
+		. _DP "   <span name='MS:' id='v_VKDHCode'>" VKCode_ "</span>   " _DP "   <span name='MS:' id='v_SCDHCode'>" SCCode_ "</span>"
 	Else
-		ThisKeySC := "   " _DP "   <span name='MS:'>0x" SubStr(VKCode, 3) "</span>"
+		ThisKeySC := "   " _DP "   <span name='MS:' id='v_VKDHCode'>" VKCode_ "</span>"
 
 	inp_hotkey := oDoc.getElementById("edithotkey").value, inp_keyname := oDoc.getElementById("editkeyname").value
 
@@ -1508,7 +1515,7 @@ Write_HotkeyHTML(K) {
 	<span name='MS:P'>        </span>
 	<span><span name='MS:'>%HK2% & %HK1%::</span><span class='param' name='MS:S'>%HKComm1% & %HKComm2%</span></span>   %_DP%   <span><span name='MS:'>%HK2%::%HK1%</span><span class='param' name='MS:S'>%HKComm1% &#8250 &#8250 %HKComm2%</span></span>
 	<span name='MS:P'>        </span>%_PRE2%
-	%_T1%> ( Key ) </span>%_BT1% id='numlock'> num %_BT2%%_DB%%_BT1% id='locale_change'> locale %_BT2%%_DB%%_BT1% id='hook_reload'> hook reload %_BT2%%_T2%
+	%_T1%> ( Key ) </span>%_BT1% id='numlock'> num %_BT2%%_DB%%_BT1% id='locale_change'> locale %_BT2%%_DB%%_BT1% id='hook_reload'> hook reload %_BT2%%_DB%%_BT1% id='b_DecimalCode'> %s_DecimalCode% %_BT2%%_T2%
 	%_PRE1%<br><span name='MS:'>%ThisKey%</span>   %_DP%   <span name='MS:'>%VKCode%%SCCode%</span>%ThisKeySC%
 
 	%_PRE2%
@@ -3680,6 +3687,14 @@ ButtonClick(oevent) {
 		oDoc.getElementById("acc_path").disabled := 0
 		oDoc.getElementById("acc_path").innerText := " Get path: "
 		HTML_Control := oBody.innerHTML
+	}
+	Else If thisid = b_DecimalCode 
+	{
+		oDoc.getElementById("b_DecimalCode").innerText := (DecimalCode := !DecimalCode) ? " dec " : " hex "
+		str := oDoc.getElementById("v_SCDHCode").innerText
+		oDoc.getElementById("v_SCDHCode").innerText := (DecimalCode) ? Format("{:d}", str) : Format("0x{:X}", str)
+		str := oDoc.getElementById("v_VKDHCode").innerText
+		oDoc.getElementById("v_VKDHCode").innerText := (DecimalCode) ? Format("{:d}", str) : Format("0x{:X}", str) 
 	}
 }
 
