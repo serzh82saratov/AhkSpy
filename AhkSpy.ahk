@@ -26,7 +26,7 @@
     Актуальный исходник - https://raw.githubusercontent.com/serzh82saratov/AhkSpy/master/AhkSpy.ahk
 */
 
-Global AhkSpyVersion := 3.42
+Global AhkSpyVersion := 3.43
 
 	; _________________________________________________ Header _________________________________________________
 
@@ -47,8 +47,10 @@ CoordMode, Menu
 Gosub, CheckAhkVersion
 Menu, Tray, UseErrorLevel
 Menu, Tray, Icon, Shell32.dll, % A_OSVersion = "WIN_XP" ? 222 : 278
-If !InStr(FileExist(A_AppData "\AhkSpy"), "D")
-	FileCreateDir, %A_AppData%\AhkSpy
+
+Global Path_User := A_AppData "\AhkSpy"
+If !InStr(FileExist(Path_User), "D")
+	FileCreateDir, % Path_User
 
 Global MemoryFontSize := IniRead("MemoryFontSize", 0)
 , FontSize := MemoryFontSize ? IniRead("FontSize", "15") : 15			;  Размер шрифта
@@ -68,16 +70,21 @@ Global MemoryFontSize := IniRead("MemoryFontSize", 0)
   RangeTimer := 100														;  Период опроса данных, увеличьте на слабом ПК
 
 Global ThisMode := IniRead("StartMode", "Control"), LastModeSave := (ThisMode = "LastMode"), ThisMode := ThisMode = "LastMode" ? IniRead("LastMode", "Control") : ThisMode
-, ActiveNoPause := IniRead("ActiveNoPause", 0), MemoryPos := IniRead("MemoryPos", 0), MemorySize := IniRead("MemorySize", 0), myPublicObj := {}, myPublicObjGUID
-, MemoryZoomSize := IniRead("MemoryZoomSize", 0), MemoryStateZoom := IniRead("MemoryStateZoom", 0), StateLight := IniRead("StateLight", 1), MemoryAnchor := IniRead("MemoryAnchor", 1)
+, ActiveNoPause := IniRead("ActiveNoPause", 0), MemoryPos := IniRead("MemoryPos", 0), MemorySize := IniRead("MemorySize", 0)
+, MemoryZoomSize := IniRead("MemoryZoomSize", 0), MemoryStateZoom := IniRead("MemoryStateZoom", 0), StateLight := IniRead("StateLight", 1)
 , StateLightAcc := IniRead("StateLightAcc", 1), SendCode := IniRead("SendCode", "vk"), StateLightMarker := IniRead("StateLightMarker", 1)
-, StateUpdate := IniRead("StateUpdate", 0), SendMode := IniRead("SendMode", "send"), SendModeStr := Format("{:L}", SendMode)
-, StateAllwaysSpot := IniRead("AllwaysSpot", 0), ScrollPos := {}, AccCoord := [], oOther := {}, oFind := {}, Edits := [], oMS := {}
-, hGui, hTBGui, hActiveX, hFindGui, oDoc, ShowMarker, isFindView, isIE, isPaused, w_ShowStyles := IniRead("w_ShowStyles", 0), c_ShowStyles := IniRead("c_ShowStyles", 0)
+, StateUpdate := IniRead("StateUpdate", 0), SendMode := IniRead("SendMode", "send"), SendModeStr := Format("{:L}", SendMode), MemoryAnchor := IniRead("MemoryAnchor", 1)
+, StateAllwaysSpot := IniRead("AllwaysSpot", 0), w_ShowStyles := IniRead("w_ShowStyles", 0), c_ShowStyles := IniRead("c_ShowStyles", 0)
+, WordWrap := IniRead("WordWrap", 0), PreMaxHeightStr := IniRead("MaxHeightOverFlow", "1 / 3"), ViewStrPos := IniRead("ViewStrPos", 0)
+, MoveTitles := IniRead("MoveTitles", 1), DetectHiddenText := IniRead("DetectHiddenText", "on"), MenuIdView := IniRead("MenuIdView", 0)
+, DynamicControlPath := IniRead("DynamicControlPath", 0), DynamicAccPath := IniRead("DynamicAccPath", 0)
+
+, ScrollPos := {}, AccCoord := [], oOther := {}, oFind := {}, Edits := [], oMS := {}, oMenu := {}, myPublicObj := {}
+
 , HTML_Win, HTML_Control, HTML_Hotkey, rmCtrlX, rmCtrlY, widthTB, FullScreenMode, hColorProgress, hFindAllText, MsgAhkSpyZoom, Sleep, oShowMarkers, oShowAccMarkers, oShowMarkersTmp
-, ClipAdd_Before := 0, ClipAdd_Delimiter := "`r`n", oDocEl, oJScript, oBody, isConfirm, isAhkSpy := 1, WordWrap := IniRead("WordWrap", 0)
-, MoveTitles := IniRead("MoveTitles", 1), DetectHiddenText := IniRead("DetectHiddenText", "on"), MenuIdView := IniRead("MenuIdView", 0), ViewStrPos := IniRead("ViewStrPos", 0)
-, PreMaxHeightStr := IniRead("MaxHeightOverFlow", "1 / 3"), PreMaxHeight := MaxHeightStrToNum(), PreOverflowHide := !!PreMaxHeight, oMenu := {}, DecimalCode
+, hGui, hTBGui, hActiveX, hFindGui, oDoc, ShowMarker, isFindView, isIE, isPaused, PreMaxHeight := MaxHeightStrToNum(), PreOverflowHide := !!PreMaxHeight, DecimalCode
+, ClipAdd_Before := 0, ClipAdd_Delimiter := "`r`n", oDocEl, myPublicObjGUID, oJScript, oBody, isConfirm, isAhkSpy := 1
+, TitleText, FreezeTitleText, TitleTextP1, TitleTextP2 := TitleTextP2_Reserved := "     ( Shift+Tab - Freeze | RButton - CopySelected | Pause - Pause )     v" AhkSpyVersion
 
 , _DB := "<span style='position: relative; margin-right: 1em;'></span>"
 , _BT1 := "<span class='button' unselectable='on' oncontextmenu='return false' onmouseleave='OnButtonOut (this)' onmousedown='OnButtonDown (this)' "
@@ -98,10 +105,11 @@ Global ThisMode := IniRead("StartMode", "Control"), LastModeSave := (ThisMode = 
 
 , _ButAccViewer := ExtraFile("AccViewer Source") ? _BT1 " id='run_AccViewer'> run accviewer " _BT2 : ""
 , _ButiWB2Learner := ExtraFile("iWB2 Learner") ? _BT1 " id='run_iWB2Learner'> run iwb2 learner " _BT2 : ""
-, TitleText, FreezeTitleText, TitleTextP1, TitleTextP2 := TitleTextP2_Reserved := "     ( Shift+Tab - Freeze | RButton - CopySelected | Pause - Pause )     v" AhkSpyVersion
+, _ButWindow_Detective := FileExist(Path_User "\Window Detective.lnk") ? _BT1 " id='run_Window_Detective'> run window detective " _BT2 : ""
 
 BLGroup := ["Backlight allways","Backlight disable","Backlight hold shift button"]
 oOther.anchor := {}, oOther.CurrentProcessId := DllCall("GetCurrentProcessId")
+
 If MemoryAnchor
 {
 	If oOther.anchor["Win_text"] := IniRead("Win_Anchor")
@@ -205,6 +213,11 @@ Menu, View, Add, % name := "Remember zoom size", % oMenu.View[name] := "_MemoryZ
 Menu, View, % MemoryZoomSize ? "Check" : "UnCheck", % name
 Menu, View, Add, % name := "Remember anchor", % oMenu.View[name] := "_MemoryAnchor"
 Menu, View, % MemoryAnchor ? "Check" : "UnCheck", % name
+Menu, View, Add
+Menu, View, Add, % name := "Dynamic control path (low speed)", % oMenu.View[name] := "_DynamicControlPath"
+Menu, View, % DynamicControlPath ? "Check" : "UnCheck", % name
+Menu, View, Add, % name := "Dynamic accesible path (low speed)", % oMenu.View[name] := "_DynamicAccPath"
+Menu, View, % DynamicAccPath ? "Check" : "UnCheck", % name 
 Menu, View, Add
 Menu, View, Add, % name := "Moving titles", % oMenu.View[name] := "_MoveTitles"
 Menu, View, % MoveTitles ? "Check" : "UnCheck", % name
@@ -563,8 +576,8 @@ Spot_Win(NotHTML = 0) {
 HTML_Win:
 	If w_ShowStyles
 		WinStyles := GetStyles(WinStyle, WinExStyle)
-	ButtonStyle_ := w_ShowStyles ? "show styles" : "hide styles"
-
+	ButtonStyle_ := _DP _BB1 " id='get_styles_w'> " (w_ShowStyles ? "show styles" : "hide styles") " " _BB2
+	
 	HTML_Win =
 	( Ltrim
 	<body id='body'>
@@ -581,10 +594,10 @@ HTML_Win:
 	%_T1% id='__Position'> ( Position ) </span>%_T2%
 	%_PRE1%%_BP1% id='set_button_pos'>Pos:%_BP2%  <span name='MS:'>x%WinX% y%WinY%</span>%_DP%<span name='MS:'>x&sup2;%WinX2% y&sup2;%WinY2%</span>%_DP%%_BP1% id='set_button_pos'>Size:%_BP2%  <span name='MS:'>w%WinWidth% h%WinHeight%</span>%ViewStrPos1%
 	<span class='param'>Client area size:</span>  <span name='MS:'>w%caW% h%caH%</span>%_DP%<span class='param'>left</span> %caX% <span class='param'>top</span> %caY% <span class='param'>right</span> %caWinRight% <span class='param'>bottom</span> %caWinBottom%%_PRE2%
-	%_T1% id='__Other'> ( Other ) </span>%_T2%
+	%_T1% id='__Other'> ( Other ) </span>%_ButWindow_Detective%%_T2%
 	%_PRE1%<span class='param' name='MS:N'>PID:</span>  <span name='MS:'>%WinPID%</span>%_DP%%ProcessBitSize%%IsAdmin%<span class='param'>Window count:</span> %WinCountProcess%%_DP%%_BB1% id='process_close'> process close %_BB2%
 	<span class='param' name='MS:N'>HWND:</span>  <span name='MS:'>%WinID%</span>%_DP%%_BB1% id='win_close'> win close %_BB2%%_DP%<span class='param'>Control count:</span>  %CountControl%
-	<span class='param'>Style:  </span><span id='w_Style' name='MS:'>%WinStyle%</span>%_DP%<span class='param'>ExStyle:  </span><span id='c_ExStyle' name='MS:'>%WinExStyle%</span>%_DP%%_BB1% id='get_styles'> %ButtonStyle_% %_BB2%%WinTransparent%%WinTransColor%%CLSID%%_PRE2%
+	<span class='param'>Style:  </span><span id='w_Style' name='MS:'>%WinStyle%</span>%_DP%<span class='param'>ExStyle:  </span><span id='c_ExStyle' name='MS:'>%WinExStyle%</span>%ButtonStyle_%%WinTransparent%%WinTransColor%%CLSID%%_PRE2%
 	<span id=WinStyles>%WinStyles%</span>%SBText%%WinText%%MenuText%<a></a>%_T0%
 	</body>
 
@@ -784,12 +797,21 @@ Spot_Control(NotHTML = 0) {
 	WinGetClass, CtrlClass, ahk_id %ControlID%
 	ControlGetFocus, CtrlFocus, ahk_id %WinID%
 	WinGet, ProcessName, ProcessName, ahk_id %WinID%
-	WinGetClass, WinClass, ahk_id %WinID%
+	WinGet, WinPID, PID, ahk_id %WinID%
+	WinGetClass, WinClass, ahk_id %WinID% 
 
+	If (hParent := DllCall("GetParent", "Ptr", ControlID)) && (hParent != WinID)
+	{ 
+		WinGetClass, ParentClass, ahk_id %hParent%
+		_ParentControl := _DP "<span class='param'>Parent control:</span>  <span name='MS:'>" ParentClass "</span>" _DP "<span name='MS:'>" Format("0x{:x}", hParent) "</span>"
+	}
 	If ViewStrPos
 		ViewStrPos1 := _DP "<span name='MS:'>" CtrlX ", " CtrlY ", " CtrlX2 ", " CtrlY2 "</span>" _DP "<span name='MS:'>" CtrlX ", " CtrlY ", " CtrlW ", " CtrlH "</span>"
 		, ViewStrPos2 := _DP "<span name='MS:'>" CtrlCAX ", " CtrlCAY ", " CtrlCAX2 ", " CtrlCAY2 "</span>" _DP "<span name='MS:'>" CtrlCAX ", " CtrlCAY ", " CtrlW ", " CtrlH "</span>"
 
+	If DynamicControlPath && ControlID
+		control_path_value := ChildToPath(ControlID)
+		
 HTML_Control:
 	If ControlID
 	{
@@ -800,12 +822,12 @@ HTML_Control:
 
 		HTML_ControlExist =
 		( Ltrim
-		%_T1% id='__Control'> ( Control ) </span>%_T2%
+		%_T1% id='__Control'> ( Control ) </span>%_ButWindow_Detective%%_T2%
 		%_PRE1%<span class='param'>Class NN:</span>  <span name='MS:'>%ControlNN%</span>%_DP%<span class='param'>Win class:</span>  <span name='MS:'>%CtrlClass%</span>
 		%_BP1% id='set_button_pos'>Pos:%_BP2%  <span name='MS:'>x%CtrlX% y%CtrlY%</span>%_DP%<span name='MS:'>x&sup2;%CtrlX2% y&sup2;%CtrlY2%</span>%_DP%%_BP1% id='set_button_pos'>Size:%_BP2%  <span name='MS:'>w%CtrlW% h%CtrlH%</span>%ViewStrPos1%
 		<span class='param'>Pos relative client area:</span>  <span name='MS:'>x%CtrlCAX% y%CtrlCAY%</span>%_DP%<span name='MS:'>x&sup2;%CtrlCAX2% y&sup2;%CtrlCAY2%</span>%ViewStrPos2%
-		%_BP1% id='set_pos'>Mouse relative control:%_BP2%  <span name='MS:'>x%rmCtrlX% y%rmCtrlY%</span>%WithRespectControl%
-		<span class='param'>HWND:</span>  <span name='MS:'>%ControlID%</span>%_DP%%_BP1% id='set_button_focus_ctrl'>Focus control:%_BP2%  <span name='MS:'>%CtrlFocus%</span>
+		%_BP1% id='set_pos'>Mouse relative control:%_BP2%  <span name='MS:'>x%rmCtrlX% y%rmCtrlY%</span>%WithRespectControl%%_DP%%_BP1% id='control_path'> Get path: %_BP2%  <span id='control_path_value' name='MS:'>%control_path_value%</span>
+		<span class='param'>HWND:</span>  <span name='MS:'>%ControlID%</span>%_ParentControl%
 		<span class='param'>Style:</span>  <span id='c_Style' name='MS:'>%CtrlStyle%</span>%_DP%<span class='param'>ExStyle:</span>  <span id='c_ExStyle' name='MS:'>%CtrlExStyle%</span>%ButtonStyle_%%_PRE2%
 		<span id=ControlStyles>%ControlStyles%</span>
 		)
@@ -819,8 +841,9 @@ HTML_Control:
 	%_T1% id='__PixelColor'> ( PixelColor ) </span>%_T2%
 	%_PRE1%<span class='param'>RGB: </span> <span name='MS:'>%ColorRGB%</span>%_DP%<span name='MS:'>#%sColorRGB%</span>%_DP%<span class='param'>BGR: </span> <span name='MS:'>%ColorBGR%</span>%_DP%<span name='MS:'>#%sColorBGR%</span>%_PRE2%
 	%_T1% id='__Window'> ( Window ) </span>%_T2%
-	%_PRE1%<span><span class='param' name='MS:S'>ahk_class</span> <span name='MS:'>%WinClass%</span></span> <span><span class='param' name='MS:S'>ahk_exe</span> <span name='MS:'>%ProcessName%</span></span> <span><span class='param' name='MS:S'>ahk_id</span> <span name='MS:'>%WinID%</span></span>
-	<span class='param'>Cursor:</span>  <span name='MS:'>%A_Cursor%</span>%_DP%<span class='param'>Caret:</span>  <span name='MS:'>x%A_CaretX% y%A_CaretY%</span>%_DP%<span class='param'>Client area:</span>  <span name='MS:'>x%caX% y%caY% w%caW% h%caH%</span>%_PRE2%
+	%_PRE1%<span><span class='param' name='MS:S'>ahk_class</span> <span name='MS:'>%WinClass%</span></span> <span><span class='param' name='MS:S'>ahk_exe</span> <span name='MS:'>%ProcessName%</span></span> <span><span class='param' name='MS:S'>ahk_id</span> <span name='MS:'>%WinID%</span></span> <span><span class='param' name='MS:S'>ahk_pid</span> <span name='MS:'>%WinPID%</span></span>
+	<span class='param'>Cursor:</span>  <span name='MS:'>%A_Cursor%</span>%_DP%<span class='param'>Caret:</span>  <span name='MS:'>x%A_CaretX% y%A_CaretY%</span>%_DP%<span class='param'>Client area:</span>  <span name='MS:'>x%caX% y%caY% w%caW% h%caH%</span>
+	%_BP1% id='set_button_focus_ctrl'>Focus control:%_BP2%  <span name='MS:'>%CtrlFocus%</span>%_PRE2%
 	%HTML_ControlExist%
 	%CtrlInfo%%CtrlText%%AccText%
 	<a></a>%_T0%
@@ -955,7 +978,7 @@ GetMenuText(hMenu, child = 0)
 AddTab(c) {
 	loop % c
 		Tab .= "<span class='param';'>&#8595;`t</span>"
-	Return  Tab
+	Return Tab
 }
 
 	; _________________________________________________ Get Info Control _________________________________________________
@@ -1245,7 +1268,11 @@ AccInfoUnderMouse(mx, my, wx, wy, cx, cy, WinID) {
 	Var := child ? "Child" _DP "<span class='param' name='MS:N'>Id:  </span><span name='MS:'>" child "</span>"
 		. _DP "<span class='param' name='MS:N'>Parent child count:  </span>" Count
 		: "Parent" _DP "<span class='param' name='MS:N'>ChildCount:  </span>" Count
-	code := _PRE1 "<span class='param'>Type:</span>  " Var _DP _BP1 " id='acc_path'> Get path: " _BP2 "  <span id='acc_path_value' name='MS:'></span>" _PRE2
+		 
+	If DynamicAccPath
+		acc_path_value := GetAccPath(Acc, child)
+		
+	code := _PRE1 "<span class='param'>Type:</span>  " Var _DP _BP1 " id='acc_path'> Get path: " _BP2 "  <span id='acc_path_value' name='MS:'>" acc_path_value "</span>" _PRE2
 
 	AccGetLocation(Acc, child)
 	x := AccCoord[1], y := AccCoord[2], w := AccCoord[3], h := AccCoord[4]
@@ -1898,7 +1925,19 @@ _MemoryAnchor:
 		, IniWrite(oOther.anchor["Control_text"], "Control_Anchor")
 	Menu, View, % MemoryAnchor ? "Check" : "UnCheck", Remember anchor
 	Return
+	
+_DynamicControlPath:
+	ThisMenuItem := oOther.MenuItemExist ? oOther.ThisMenuItem : A_ThisMenuItem
+	IniWrite(DynamicControlPath := !DynamicControlPath, "DynamicControlPath")
+	Menu, View, % DynamicControlPath ? "Check" : "UnCheck", % ThisMenuItem
+	Return
 
+_DynamicAccPath:
+	ThisMenuItem := oOther.MenuItemExist ? oOther.ThisMenuItem : A_ThisMenuItem
+	IniWrite(DynamicAccPath := !DynamicAccPath, "DynamicAccPath")
+	Menu, View, % DynamicAccPath ? "Check" : "UnCheck", % ThisMenuItem
+	Return
+	
 _SelStartMode:
 	ThisMenuItem := oOther.MenuItemExist ? oOther.ThisMenuItem : A_ThisMenuItem
 	for k, v in ["Window","Control","Button","Last Mode"]
@@ -2038,7 +2077,7 @@ Reload:
 	Return
 
 Help_OpenUserDir:
-	RunPath(A_AppData "\AhkSpy")
+	RunPath(Path_User)
 	Return
 
 Help_OpenScriptDir:
@@ -2120,6 +2159,10 @@ Minimize() {
 
 }
 
+TimerFunc(hFunc, Time) { 
+	Try SetTimer, % hFunc, % Time 
+}
+
 Exit:
 GuiClose:
 	oDoc := ""
@@ -2171,6 +2214,19 @@ WM_LBUTTONDOWN(wp, lp, msg, hwnd) {
 		}
 	}
 }
+
+ChildToPath(hwnd, str = "", WinID = 0, i = "")
+{    
+	Static GA_ROOT := 2, GW_HWNDPREV := 3
+	If !WinID && hwnd
+		WinID := DllCall("GetAncestor", "Ptr", hwnd, Uint, GA_ROOT), i := 1
+	While prhwnd := DllCall("GetWindow", "Ptr", hwnd, UInt, GW_HWNDPREV, "Ptr")
+		++i, hwnd := prhwnd   
+	thwnd := DllCall("GetParent", "Ptr", hwnd)
+	if !thwnd || (thwnd = WinID)
+		return Rtrim(i "," str, ",")
+	return ChildToPath(thwnd, i "," str, WinID, 1) 
+} 
 
 ActivateUnderMouse() {
 	MouseGetPos, , , WinID
@@ -2352,12 +2408,16 @@ RunAhkPath(Path, Param = "") {
 		RunPath("""" A_AHKPath """ """ Path """ """ Param """")
 }
 
+RunShell(Path) {
+	ComObjCreate("WScript.Shell").Exec(Path)
+}	
+
+
 ExtraFile(Name, GetNoCompile = 0) {
-	Static Dir := A_AppData "\AhkSpy"
-	If FileExist(Dir "\" Name ".exe")
-		Return Dir "\" Name ".exe"
-	If !A_IsCompiled && FileExist(Dir "\" Name ".ahk")
-		Return Dir "\" Name ".ahk"
+	If FileExist(Path_User "\" Name ".exe")
+		Return Path_User "\" Name ".exe"
+	If !A_IsCompiled && FileExist(Path_User "\" Name ".ahk")
+		Return Path_User "\" Name ".ahk"
 }
 
 ShowMarker(x, y, w, h, b := 4) {
@@ -2898,8 +2958,12 @@ ViewStylesWin(elem) {  ;
 
 	;  http://msdn.microsoft.com/en-us/library/windows/desktop/ms632600(v=vs.85).aspx
 	;  http://msdn.microsoft.com/en-us/library/windows/desktop/ff700543(v=vs.85).aspx
-
-GetStyles(Style, ExStyle) {
+	;  https://github.com/AHK-just-me/AHK_Gui_Constants/tree/master/Sources
+	;  https://www.autohotkey.com/boards/viewtopic.php?f=6&t=4557
+	;  https://github.com/strobejb/winspy/blob/master/src/DisplayStyleInfo.c
+	;  http://forum.script-coding.com/viewtopic.php?pid=130846#p130846
+	
+GetStyles(Style, ExStyle) { 
 	Static Styles, ExStyles
 	If !Styles
 		Styles := {"WS_BORDER":"0x00800000", "WS_CAPTION":"0x00C00000", "WS_CHILD":"0x40000000", "WS_CHILDWINDOW":"0x40000000"
@@ -2926,7 +2990,7 @@ GetStyles(Style, ExStyle) {
 	If Ret !=
 		Res .= _T1 " id='__Styles_Win'> ( Styles ) </span>" _T2 _PRE1 Ret _PRE2
 	If RetEx !=
-		Res .= _T1 " id='__ExStyles_Win'> ( ExStyles )</span>" _T2 _PRE1 RetEx _PRE2
+		Res .= _T1 " id='__ExStyles_Win'> ( ExStyles ) </span>" _T2 _PRE1 RetEx _PRE2
 	Return Res
 }
 
@@ -2941,7 +3005,7 @@ ViewStylesControl(elem) {
 	HTML_Control := oBody.innerHTML
 }
 
-GetControlStyles(Class, Style, ExStyle = "")  {  ;	https://autohotkey.com/board/topic/70454-gui-constants/
+GetControlStyles(Class, Style, ExStyle = "")  {
 	Static Styles, ExStyles
 	If !Styles
 	{
@@ -2957,7 +3021,7 @@ GetControlStyles(Class, Style, ExStyle = "")  {  ;	https://autohotkey.com/board/
 			,"BS_AUTO3STATE":"0x00000006","BS_GROUPBOX":"0x00000007","BS_USERBUTTON":"0x00000008","BS_AUTORADIOBUTTON":"0x00000009","BS_PUSHBOX":"0x0000000A","BS_OWNERDRAW":"0x0000000B"
 			,"BS_TYPEMASK":"0x0000000F","BS_LEFTTEXT":"0x00000020","BS_TEXT":"0x00000000","BS_ICON":"0x00000040","BS_BITMAP":"0x00000080","BS_LEFT":"0x00000100","BS_RIGHT":"0x00000200","BS_CENTER":"0x00000300"
 			,"BS_TOP":"0x00000400","BS_BOTTOM":"0x00000800","BS_VCENTER":"0x00000C00","BS_PUSHLIKE":"0x00001000","BS_MULTILINE":"0x00002000","BS_NOTIFY":"0x00004000","BS_FLAT":"0x00008000"
-			,"BS_RIGHTBUTTON":BS_LEFTTEXT,"BS_SPLITBUTTON":"0x0000000C","BS_DEFSPLITBUTTON":"0x0000000D","BS_COMMANDLINK":"0x0000000E","BS_DEFCOMMANDLINK":"0x0000000F"}
+			,"BS_RIGHTBUTTON":"0x00000020","BS_SPLITBUTTON":"0x0000000C","BS_DEFSPLITBUTTON":"0x0000000D","BS_COMMANDLINK":"0x0000000E","BS_DEFCOMMANDLINK":"0x0000000F"}
 		Styles.ComboBox := {"CBS_SIMPLE":"0x00000001","CBS_DROPDOWN":"0x00000002","CBS_DROPDOWNLIST":"0x00000003","CBS_OWNERDRAWFIXED":"0x00000010","CBS_OWNERDRAWVARIABLE":"0x00000020"
 			,"CBS_AUTOHSCROLL":"0x00000040","CBS_OEMCONVERT":"0x00000080","CBS_SORT":"0x00000100","CBS_HASSTRINGS":"0x00000200","CBS_NOINTEGRALHEIGHT":"0x00000400","CBS_DISABLENOSCROLL":"0x00000800"
 			,"CBS_UPPERCASE":"0x00002000","CBS_LOWERCASE":"0x00004000"}
@@ -3007,7 +3071,7 @@ GetControlStyles(Class, Style, ExStyle = "")  {  ;	https://autohotkey.com/board/
 	If Ret !=
 		Res .= _T1 " id='__Styles_Control'> ( Styles ) </span>" _T2 _PRE1 Ret _PRE2
 	If RetEx !=
-		Res .= _T1 " id='__ExStyles_Control'> ( ExStyles )</span>" _T2 _PRE1 RetEx _PRE2
+		Res .= _T1 " id='__ExStyles_Control'> ( ExStyles ) </span>" _T2 _PRE1 RetEx _PRE2
 	Return StrReplace(Res, "#")
 }
 
@@ -3578,7 +3642,7 @@ ButtonClick(oevent) {
 	Else If thisid = paste_keyname
 		edithotkey := oDoc.getElementById("edithotkey"), edithotkey.value := "", edithotkey.focus()
 		, oDoc.execCommand("Paste"), oDoc.getElementById("keyname").click()
-	Else If thisid = get_styles
+	Else If thisid = get_styles_w
 		ViewStylesWin(oevent)
 	Else If thisid = get_styles_c
 		ViewStylesControl(oevent)
@@ -3586,6 +3650,15 @@ ButtonClick(oevent) {
 		RunAhkPath(ExtraFile("AccViewer Source"), myPublicObjGUID)
 	Else If thisid = run_iWB2Learner
 		RunAhkPath(ExtraFile("iWB2 Learner"))
+	Else If thisid = run_Window_Detective
+	{ 
+		Minimize()
+		If WinExist("Window Detective ahk_class Qt5QWindowIcon ahk_exe Window Detective.exe")
+			WinActivate
+		Else
+			Run % Path_User "\Window Detective.lnk"
+		TimerFunc(Func("MyWindowDetectiveStart").Bind(ThisMode = "Win" ? oOther.WinID : oOther.MouseControlID, WinExist() ? 1 : 0), -300)
+	}
 	Else If thisid = set_button_pos
 	{
 		HayStack := oevent.OuterText = "Pos:"
@@ -3686,6 +3759,16 @@ ButtonClick(oevent) {
 		oDoc.getElementById("acc_path_value").innerText := GetAccPath(myPublicObj.AccObj.AccObj, myPublicObj.AccObj.child)
 		oDoc.getElementById("acc_path").disabled := 0
 		oDoc.getElementById("acc_path").innerText := " Get path: "
+		HTML_Control := oBody.innerHTML
+	}
+	Else If thisid = control_path
+	{
+		oDoc.getElementById("control_path").innerText := ""
+		oDoc.getElementById("control_path").innerText := "   Wait...  "
+		oDoc.getElementById("control_path").disabled := 1
+		oDoc.getElementById("control_path_value").innerText := ChildToPath(oOther.MouseControlID)
+		oDoc.getElementById("control_path").disabled := 0
+		oDoc.getElementById("control_path").innerText := " Get path: "
 		HTML_Control := oBody.innerHTML
 	}
 	Else If thisid = b_DecimalCode 
@@ -4228,9 +4311,9 @@ UpdateWindow(Src, X, Y) {
 	For k, v In oZoom.oMarkers[oZoom.Mark]
 		StretchBlt(oZoom.hDCBuf, v.x, v.y, v.w, v.h, oZoom.hDCBuf, v.x, v.y, v.w, v.h, 0x5A0049)	; PATINVERT
 	DllCall("gdiplus\GdipCreateBitmapFromHBITMAP", "UPtr", hbm, "UPtr", 0, "UPtr*", pBitmap)
-	DllCall("SelectObject", "UPtr", oZoom.hDCBuf, "UPtr", hbm)
+	; DllCall("SelectObject", "UPtr", oZoom.hDCBuf, "UPtr", hbm)
 	DllCall("gdiplus\GdipCreateFromHDC", "UPtr", oZoom.hDCBuf, "UPtr*", G)
-	DllCall("gdiplus\GdipSetInterpolationMode", "UPtr", G, "int", 5)
+	; DllCall("gdiplus\GdipSetInterpolationMode", "UPtr", G, "int", 5)
 	DrawImage(G, pBitmap, 0, 0, oZoom.LWWidth, oZoom.LWHeight)
 	If oZoom.Show
 		UpdateLayeredWindow(oZoom.hLW, oZoom.hDCBuf, oZoom.LWWidth, oZoom.LWHeight)
