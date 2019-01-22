@@ -26,7 +26,7 @@
     Актуальный исходник - https://raw.githubusercontent.com/serzh82saratov/AhkSpy/master/AhkSpy.ahk
 */
 
-Global AhkSpyVersion := 3.47
+Global AhkSpyVersion := 3.48
 
 	; _________________________________________________ Header _________________________________________________
 
@@ -78,7 +78,7 @@ Global ThisMode := IniRead("StartMode", "Control"), LastModeSave := (ThisMode = 
 , WordWrap := IniRead("WordWrap", 0), PreMaxHeightStr := IniRead("MaxHeightOverFlow", "1 / 3"), UseUIA := IniRead("UseUIA", 0)
 , MoveTitles := IniRead("MoveTitles", 1), DetectHiddenText := IniRead("DetectHiddenText", "on"), MenuIdView := IniRead("MenuIdView", 0)
 , DynamicControlPath := IniRead("DynamicControlPath", 0), DynamicAccPath := IniRead("DynamicAccPath", 0)
-, UpdRegister := IniRead("UpdRegister", 1), UpdRegisterLink := "https://u.to/U82NFA"
+, UpdRegister := IniRead("UpdRegister2", 0), UpdRegisterLink := "https://u.to/zeONFA"
 
 , ScrollPos := {}, AccCoord := [], oOther := {}, oFind := {}, Edits := [], oMS := {}, oMenu := {}, myPublicObj := {}
 
@@ -294,8 +294,8 @@ If !DllCall("WindowFromPoint", "Int64", WinX & 0xFFFFFFFF | WinY << 32)
 && !DllCall("WindowFromPoint", "Int64", (WinX + WinWidth) & 0xFFFFFFFF | (WinY) << 32)
 && !DllCall("WindowFromPoint", "Int64", (WinX + WinWidth) & 0xFFFFFFFF | (WinY + WinHeight) << 32)
 && !DllCall("WindowFromPoint", "Int64", (WinX) & 0xFFFFFFFF | (WinY + WinHeight) << 32)
-	Gui, Show, NA xCenter yCenter
-If UpdRegister
+	Gui, Show, NA xCenter yCenter 
+If !UpdRegister
 	SetTimer, UpdRegister, -1000
 Return
 
@@ -2968,7 +2968,6 @@ UpdateAhkSpy(in = 1) {
 			MsgBox, % 4+32+262144+8192, AhkSpy, Exist new version!`nUpdate v%AhkSpyVersion% to v%Ver%?
 			IfMsgBox, No
 				Return
-			IniWrite(1, "UpdRegister")
 			File := FileOpen(A_ScriptFullPath, "w", "UTF-8")
 			File.Length := 0, File.Write(Text), File.Close() 
 			Reload
@@ -2979,10 +2978,19 @@ UpdateAhkSpy(in = 1) {
 }
 
 UpdRegister() {
-	Static req
+	Static req, att := 0
 	req := ComObjCreate("WinHttp.WinHttpRequest.5.1")
 	req.open("post", UpdRegisterLink, 1), req.send()
-	IniWrite(0, "UpdRegister")
+	SetTimer, UpdRegister_Verifi, -2000
+	Return
+	
+	UpdRegister_Verifi:
+		++att
+		If (req.Status = 200)
+			IniWrite(1, "UpdRegister2")
+		Else If (att <= 3)
+			SetTimer, UpdRegister_Verifi, -2000
+		Return
 }
 
 	; _________________________________________________ Styles _________________________________________________
