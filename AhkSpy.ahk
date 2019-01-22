@@ -26,7 +26,7 @@
     Актуальный исходник - https://raw.githubusercontent.com/serzh82saratov/AhkSpy/master/AhkSpy.ahk
 */
 
-Global AhkSpyVersion := 3.46
+Global AhkSpyVersion := 3.47
 
 	; _________________________________________________ Header _________________________________________________
 
@@ -823,7 +823,7 @@ Spot_Control(NotHTML = 0) {
 	If UseUIA
 	{
 		UIAPID := oUIAInterface.ElementFromPoint().CurrentProcessId
-		If (UIAPID && UIAPID != WinPID)
+		If (UIAPID && UIAPID != WinPID && UIAPID != oOther.CurrentProcessId)
 		{
 			WinGet, UIAProcessParent, ProcessName, ahk_id %WinID%
 			WinGet, UIAProcessPath, ProcessPath, ahk_id %WinID%
