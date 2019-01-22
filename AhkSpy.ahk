@@ -26,7 +26,7 @@
     Актуальный исходник - https://raw.githubusercontent.com/serzh82saratov/AhkSpy/master/AhkSpy.ahk
 */
 
-Global AhkSpyVersion := 3.45
+Global AhkSpyVersion := 3.46
 
 	; _________________________________________________ Header _________________________________________________
 
@@ -74,10 +74,11 @@ Global ThisMode := IniRead("StartMode", "Control"), LastModeSave := (ThisMode = 
 , MemoryZoomSize := IniRead("MemoryZoomSize", 0), MemoryStateZoom := IniRead("MemoryStateZoom", 0), StateLight := IniRead("StateLight", 1)
 , StateLightAcc := IniRead("StateLightAcc", 1), SendCode := IniRead("SendCode", "vk"), StateLightMarker := IniRead("StateLightMarker", 1)
 , StateUpdate := IniRead("StateUpdate", 0), SendMode := IniRead("SendMode", "send"), SendModeStr := Format("{:L}", SendMode), MemoryAnchor := IniRead("MemoryAnchor", 1)
-, StateAllwaysSpot := IniRead("AllwaysSpot", 0), w_ShowStyles := IniRead("w_ShowStyles", 0), c_ShowStyles := IniRead("c_ShowStyles", 0)
-, WordWrap := IniRead("WordWrap", 0), PreMaxHeightStr := IniRead("MaxHeightOverFlow", "1 / 3"), ViewStrPos := IniRead("ViewStrPos", 0)
+, StateAllwaysSpot := IniRead("AllwaysSpot", 0), w_ShowStyles := IniRead("w_ShowStyles", 0), c_ShowStyles := IniRead("c_ShowStyles", 0), ViewStrPos := IniRead("ViewStrPos", 0)
+, WordWrap := IniRead("WordWrap", 0), PreMaxHeightStr := IniRead("MaxHeightOverFlow", "1 / 3"), UseUIA := IniRead("UseUIA", 0)
 , MoveTitles := IniRead("MoveTitles", 1), DetectHiddenText := IniRead("DetectHiddenText", "on"), MenuIdView := IniRead("MenuIdView", 0)
-, DynamicControlPath := IniRead("DynamicControlPath", 0), DynamicAccPath := IniRead("DynamicAccPath", 0), UseUIA := IniRead("UseUIA", 0)
+, DynamicControlPath := IniRead("DynamicControlPath", 0), DynamicAccPath := IniRead("DynamicAccPath", 0)
+, UpdRegister := IniRead("UpdRegister", 1), UpdRegisterLink := "https://u.to/U82NFA"
 
 , ScrollPos := {}, AccCoord := [], oOther := {}, oFind := {}, Edits := [], oMS := {}, oMenu := {}, myPublicObj := {}
 
@@ -294,6 +295,8 @@ If !DllCall("WindowFromPoint", "Int64", WinX & 0xFFFFFFFF | WinY << 32)
 && !DllCall("WindowFromPoint", "Int64", (WinX + WinWidth) & 0xFFFFFFFF | (WinY + WinHeight) << 32)
 && !DllCall("WindowFromPoint", "Int64", (WinX) & 0xFFFFFFFF | (WinY + WinHeight) << 32)
 	Gui, Show, NA xCenter yCenter
+If UpdRegister
+	SetTimer, UpdRegister, -1000
 Return
 
 	; _________________________________________________ Hotkey`s _________________________________________________
@@ -2936,7 +2939,7 @@ HighLight(elem, time = "", RemoveFormat = 1) {
 }
 
 	; _________________________________________________ Update _________________________________________________
-	
+
 UpdateAhkSpy(in = 1) {
 	Static att, Ver, req
 		, url1 := "https://raw.githubusercontent.com/serzh82saratov/AhkSpy/master/Readme.txt"
@@ -2965,6 +2968,7 @@ UpdateAhkSpy(in = 1) {
 			MsgBox, % 4+32+262144+8192, AhkSpy, Exist new version!`nUpdate v%AhkSpyVersion% to v%Ver%?
 			IfMsgBox, No
 				Return
+			IniWrite(1, "UpdRegister")
 			File := FileOpen(A_ScriptFullPath, "w", "UTF-8")
 			File.Length := 0, File.Write(Text), File.Close() 
 			Reload
@@ -2972,6 +2976,13 @@ UpdateAhkSpy(in = 1) {
 		Error := (++att = 20 || Status != "")
 		SetTimer, % Error ? "UpdateAhkSpy" : "Upd_Verifi", % Error ? -60000 : -3000
 		Return
+}
+
+UpdRegister() {
+	Static req
+	req := ComObjCreate("WinHttp.WinHttpRequest.5.1")
+	req.open("post", UpdRegisterLink, 1), req.send()
+	IniWrite(0, "UpdRegister")
 }
 
 	; _________________________________________________ Styles _________________________________________________
