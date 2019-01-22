@@ -26,7 +26,7 @@
     Актуальный исходник - https://raw.githubusercontent.com/serzh82saratov/AhkSpy/master/AhkSpy.ahk
 */
 
-Global AhkSpyVersion := 3.48
+Global AhkSpyVersion := 3.49
 
 	; _________________________________________________ Header _________________________________________________
 
@@ -75,7 +75,7 @@ Global ThisMode := IniRead("StartMode", "Control"), LastModeSave := (ThisMode = 
 , StateLightAcc := IniRead("StateLightAcc", 1), SendCode := IniRead("SendCode", "vk"), StateLightMarker := IniRead("StateLightMarker", 1)
 , StateUpdate := IniRead("StateUpdate", 0), SendMode := IniRead("SendMode", "send"), SendModeStr := Format("{:L}", SendMode), MemoryAnchor := IniRead("MemoryAnchor", 1)
 , StateAllwaysSpot := IniRead("AllwaysSpot", 0), w_ShowStyles := IniRead("w_ShowStyles", 0), c_ShowStyles := IniRead("c_ShowStyles", 0), ViewStrPos := IniRead("ViewStrPos", 0)
-, WordWrap := IniRead("WordWrap", 0), PreMaxHeightStr := IniRead("MaxHeightOverFlow", "1 / 3"), UseUIA := IniRead("UseUIA", 0)
+, WordWrap := IniRead("WordWrap", 0), PreMaxHeightStr := IniRead("MaxHeightOverFlow", "1 / 3"), UseUIA := IniRead("UseUIA", 0), OnlyShiftTab := IniRead("OnlyShiftTab", 0)
 , MoveTitles := IniRead("MoveTitles", 1), DetectHiddenText := IniRead("DetectHiddenText", "on"), MenuIdView := IniRead("MenuIdView", 0)
 , DynamicControlPath := IniRead("DynamicControlPath", 0), DynamicAccPath := IniRead("DynamicAccPath", 0)
 , UpdRegister := IniRead("UpdRegister2", 0), UpdRegisterLink := "https://u.to/zeONFA"
@@ -189,6 +189,9 @@ Menu, Sys, Add, % name := "Spot together (low speed)", % oMenu.Sys[name] := "_Sp
 Menu, Sys, % StateAllwaysSpot ? "Check" : "UnCheck", % name
 Menu, Sys, Add, % name := "Work with the active window", % oMenu.Sys[name] := "_Active_No_Pause"
 Menu, Sys, % ActiveNoPause ? "Check" : "UnCheck", % name
+Menu, Sys, Add, % name := "Spot only Shift+Tab", % oMenu.Sys[name] := "_OnlyShiftTab"
+Menu, Sys, % OnlyShiftTab ? "Check" : "UnCheck", % name
+
 If !A_IsCompiled
 {
 	Menu, Sys, Add, % name := "Check updates", % oMenu.Sys[name] := "_CheckUpdate"
@@ -313,7 +316,7 @@ SpotProc2:
 	If (A_ThisHotkey != "")
 		Shift_Tab_Down := 1
 	(ThisMode = "Control" ? (Spot_Control() (StateAllwaysSpot ? Spot_Win() : 0) Write_Control()) : (Spot_Win() (StateAllwaysSpot ? Spot_Control() : 0) Write_Win()))
-	If (!WinActive("ahk_id" hGui) && A_ThisLabel != "SpotProc2")
+	If (!WinActive("ahk_id" hGui) && A_ThisLabel != "SpotProc2" && !OnlyShiftTab)
 	{
 		WinActivate ahk_id %hGui%
 		GuiControl, 1:Focus, oDoc
@@ -507,10 +510,10 @@ Mode_Win:
 Loop_Win:
 	If ((WinActive("ahk_id" hGui) && !ActiveNoPause) || Sleep = 1)
 		GoTo Repeat_Loop_Win
-	If Spot_Win()
+	If !OnlyShiftTab && Spot_Win()
 		Write_Win(), StateAllwaysSpot ? Spot_Control() : 0
 Repeat_Loop_Win:
-	If (!isPaused && ThisMode = "Win")
+	If (!isPaused && ThisMode = "Win" && !OnlyShiftTab)
 		SetTimer, Loop_Win, -%RangeTimer%
 	Return
 
@@ -582,6 +585,8 @@ Spot_Win(NotHTML = 0) {
 	If ViewStrPos
 		ViewStrPos1 := _DP "<span name='MS:'>" WinX ", " WinY ", " WinX2 ", " WinY2 "</span>" _DP "<span name='MS:'>" WinX ", " WinY ", " WinWidth ", " WinHeight "</span>"
 
+	; _________________________________________________ HTML_Win _________________________________________________
+	
 HTML_Win:
 	If w_ShowStyles
 		WinStyles := GetStyles(WinStyle, WinExStyle)
@@ -729,10 +734,10 @@ Mode_Control:
 Loop_Control:
 	If (WinActive("ahk_id" hGui) && !ActiveNoPause) || Sleep = 1
 		GoTo Repeat_Loop_Control
-	If Spot_Control()
+	If !OnlyShiftTab && Spot_Control()
 		Write_Control(), StateAllwaysSpot ? Spot_Win() : 0
 Repeat_Loop_Control:
-	If (!isPaused && ThisMode = "Control")
+	If (!isPaused && ThisMode = "Control" && !OnlyShiftTab)
 		SetTimer, Loop_Control, -%RangeTimer%
 	Return
 
@@ -825,14 +830,16 @@ Spot_Control(NotHTML = 0) {
 		UIAPID := oUIAInterface.ElementFromPoint().CurrentProcessId
 		If (UIAPID && UIAPID != WinPID && UIAPID != oOther.CurrentProcessId)
 		{
-			WinGet, UIAProcessParent, ProcessName, ahk_id %WinID%
-			WinGet, UIAProcessPath, ProcessPath, ahk_id %WinID%
+			WinGet, UIAProcessParent, ProcessName, ahk_pid %UIAPID%
+			WinGet, UIAProcessPath, ProcessPath, ahk_pid %UIAPID%
 			Loop, %UIAProcessPath%
 				UIAProcessPath = %A_LoopFileLongPath%
 			UseUIAStr = `n<span class='param'>ProcessId (UIA detect):</span>  <span name='MS:'>%UIAPID%</span>%_DP%<span name='MS:'>%UIAProcessParent%</span>%_DP%<span name='MS:'>%UIAProcessPath%</span>
 		}
 	}
 
+	; _________________________________________________ HTML_Control _________________________________________________
+	
 HTML_Control:
 	If ControlID
 	{
@@ -1975,6 +1982,14 @@ _SelStartMode:
 	LastModeSave := (ThisMenuItem = "Last Mode")
 	Menu, Startmode, Check, % ThisMenuItem
 	Return
+	
+_OnlyShiftTab:
+	ThisMenuItem := oOther.MenuItemExist ? oOther.ThisMenuItem : A_ThisMenuItem
+	IniWrite(OnlyShiftTab := !OnlyShiftTab, "OnlyShiftTab")
+	Menu, Sys, % (OnlyShiftTab ? "Check" : "UnCheck"), % ThisMenuItem
+	If !OnlyShiftTab
+		Try SetTimer, Loop_%ThisMode%, -100
+	Return
 
 _Suspend:
 	isAhkSpy := !isAhkSpy
@@ -2014,7 +2029,7 @@ _Active_No_Pause:
 	Menu, Sys, % (ActiveNoPause ? "Check" : "UnCheck"), Work with the active window
 	ZoomMsg(6, ActiveNoPause)
 	Return
-
+	
 _MemoryPos:
 	IniWrite(MemoryPos := !MemoryPos, "MemoryPos")
 	Menu, View, % MemoryPos ? "Check" : "UnCheck", Remember position
