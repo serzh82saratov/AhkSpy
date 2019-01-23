@@ -26,7 +26,7 @@
     Актуальный исходник - https://raw.githubusercontent.com/serzh82saratov/AhkSpy/master/AhkSpy.ahk
 */
 
-Global AhkSpyVersion := 3.51
+Global AhkSpyVersion := 3.52
 
 	; _________________________________________________ Header _________________________________________________
 
@@ -3961,6 +3961,8 @@ Return
 
 #If isZoom && oZoom.Show  ;	&& !oZoom.Work
 
++#PgUp::
++#PgDn::
 +#WheelUp::
 +#WheelDown:: ChangeZoom(InStr(A_ThisHotKey, "Up") ? oZoom.Zoom + 1 : oZoom.Zoom - 1)
 
