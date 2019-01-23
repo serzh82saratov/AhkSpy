@@ -26,7 +26,7 @@
     Актуальный исходник - https://raw.githubusercontent.com/serzh82saratov/AhkSpy/master/AhkSpy.ahk
 */
 
-Global AhkSpyVersion := 3.49
+Global AhkSpyVersion := 3.50
 
 	; _________________________________________________ Header _________________________________________________
 
@@ -521,9 +521,11 @@ Spot_Win(NotHTML = 0) {
 	Static PrWinPID, ComLine, ProcessBitSize, IsAdmin, WinProcessPath, WinProcessName
 	If NotHTML
 		GoTo HTML_Win
-	MouseGetPos,,,WinID
+	MouseGetPos, , ,WinID
+	
 	If (WinID = hGui || WinID = oOther.hZoom || WinID = oOther.hZoomLW)
 		Return HideAllMarkers()
+
 	WinGetTitle, WinTitle, ahk_id %WinID%
 	WinTitle := TransformHTML(WinTitle)
 	WinGetPos, WinX, WinY, WinWidth, WinHeight, ahk_id %WinID%
@@ -575,16 +577,20 @@ Spot_Win(NotHTML = 0) {
 		WinText := _T1 " id='__WindowText'> ( Window Text ) </span><a></a>" _BT1 " id='copy_wintext'> copy " _BT2 _DB _BT1 " id='wintext_hidden'> hidden - " DetectHiddenText " " _BT2 _T2
 		. _LPRE  "><pre id='wintextcon'>" TransformHTML(WinText) "</pre>" _PRE2
 	MenuText := GetMenu(WinID)
+
+	If ViewStrPos
+		ViewStrPos1 := _DP "<span name='MS:'>" WinX ", " WinY ", " WinX2 ", " WinY2 "</span>" _DP "<span name='MS:'>" WinX ", " WinY ", " WinWidth ", " WinHeight "</span>"
+	
 	CoordMode, Mouse
-	MouseGetPos, WinXS, WinYS
+	MouseGetPos, WinXS, WinYS, h 
+	If (h = hGui || h = oOther.hZoom || h = oOther.hZoomLW)
+		Return HideAllMarkers()
+		
 	PixelGetColor, ColorRGB, %WinXS%, %WinYS%, RGB
 	GuiControl, TB: -Redraw, ColorProgress
 	GuiControl, % "TB: +c" SubStr(ColorRGB, 3), ColorProgress
 	GuiControl, TB: +Redraw, ColorProgress
-
-	If ViewStrPos
-		ViewStrPos1 := _DP "<span name='MS:'>" WinX ", " WinY ", " WinX2 ", " WinY2 "</span>" _DP "<span name='MS:'>" WinX ", " WinY ", " WinWidth ", " WinHeight "</span>"
-
+		
 	; _________________________________________________ HTML_Win _________________________________________________
 	
 HTML_Win:
@@ -754,19 +760,14 @@ Spot_Control(NotHTML = 0) {
 
 	If (WinID = hGui || WinID = oOther.hZoom || WinID = oOther.hZoomLW)
 		Return HideAllMarkers()
+		
 	CtrlInfo := "", isIE := 0
 	ControlNN := tControlNN, ControlID := tControlID
 	WinGetPos, WinX, WinY, WinW, WinH, ahk_id %WinID%
 	RWinX := MXS - WinX, RWinY := MYS - WinY
 	GetClientPos(WinID, caX, caY, caW, caH)
 	MXC := RWinX - caX, MYC := RWinY - caY
-	PixelGetColor, ColorBGR, %MXS%, %MYS%
-	ColorRGB := Format("0x{:06X}", (ColorBGR & 0xFF) << 16 | (ColorBGR & 0xFF00) | (ColorBGR >> 16))
-	sColorBGR := SubStr(ColorBGR, 3)
-	sColorRGB := SubStr(ColorRGB, 3)
-	GuiControl, TB: -Redraw, ColorProgress
-	GuiControl, % "TB: +c" sColorRGB, ColorProgress
-	GuiControl, TB: +Redraw, ColorProgress
+
 	WithRespectWin := "`n" _BP1 " id='set_pos'>Relative window:" _BP2 "  <span name='MS:'>"
 	. Round(RWinX / WinW, 4) ", " Round(RWinY / WinH, 4) "</span>  <span class='param'>for</span> <span name='MS:'>w" WinW " h" WinH "</span>" _DP
 	ControlGetPos, CtrlX, CtrlY, CtrlW, CtrlH,, ahk_id %ControlID%
@@ -837,7 +838,19 @@ Spot_Control(NotHTML = 0) {
 			UseUIAStr = `n<span class='param'>ProcessId (UIA detect):</span>  <span name='MS:'>%UIAPID%</span>%_DP%<span name='MS:'>%UIAProcessParent%</span>%_DP%<span name='MS:'>%UIAProcessPath%</span>
 		}
 	}
-
+	
+	MouseGetPos, , , h
+	If (h = hGui || h = oOther.hZoom || h = oOther.hZoomLW)
+		Return HideAllMarkers()
+		
+	PixelGetColor, ColorBGR, %MXS%, %MYS%
+	ColorRGB := Format("0x{:06X}", (ColorBGR & 0xFF) << 16 | (ColorBGR & 0xFF00) | (ColorBGR >> 16))
+	sColorBGR := SubStr(ColorBGR, 3)
+	sColorRGB := SubStr(ColorRGB, 3)
+	GuiControl, TB: -Redraw, ColorProgress
+	GuiControl, % "TB: +c" sColorRGB, ColorProgress
+	GuiControl, TB: +Redraw, ColorProgress
+	
 	; _________________________________________________ HTML_Control _________________________________________________
 	
 HTML_Control:
