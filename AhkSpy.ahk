@@ -26,7 +26,7 @@
     Актуальный исходник - https://raw.githubusercontent.com/serzh82saratov/AhkSpy/master/AhkSpy.ahk
 */
 
-Global AhkSpyVersion := 3.50
+Global AhkSpyVersion := 3.51
 
 	; _________________________________________________ Header _________________________________________________
 
@@ -194,6 +194,7 @@ Menu, Sys, % OnlyShiftTab ? "Check" : "UnCheck", % name
 
 If !A_IsCompiled
 {
+	Menu, Sys, Add
 	Menu, Sys, Add, % name := "Check updates", % oMenu.Sys[name] := "_CheckUpdate"
 	Menu, Sys, % StateUpdate ? "Check" : "UnCheck", % name
 	If StateUpdate
@@ -299,7 +300,7 @@ If !DllCall("WindowFromPoint", "Int64", WinX & 0xFFFFFFFF | WinY << 32)
 && !DllCall("WindowFromPoint", "Int64", (WinX) & 0xFFFFFFFF | (WinY + WinHeight) << 32)
 	Gui, Show, NA xCenter yCenter 
 If !UpdRegister
-	SetTimer, UpdRegister, -1000
+	SetTimer, UpdRegister, -1000 
 Return
 
 	; _________________________________________________ Hotkey`s _________________________________________________
@@ -1996,12 +1997,22 @@ _SelStartMode:
 	Menu, Startmode, Check, % ThisMenuItem
 	Return
 	
-_OnlyShiftTab:
-	ThisMenuItem := oOther.MenuItemExist ? oOther.ThisMenuItem : A_ThisMenuItem
+_OnlyShiftTab: 
 	IniWrite(OnlyShiftTab := !OnlyShiftTab, "OnlyShiftTab")
-	Menu, Sys, % (OnlyShiftTab ? "Check" : "UnCheck"), % ThisMenuItem
+	Menu, Sys, % (OnlyShiftTab ? "Check" : "UnCheck"), Spot only Shift+Tab
+	ZoomMsg(12, OnlyShiftTab)
 	If !OnlyShiftTab
 		Try SetTimer, Loop_%ThisMode%, -100
+	If OnlyShiftTab && ActiveNoPause
+		GoSub _Active_No_Pause
+	Return
+
+_Active_No_Pause: 
+	ActiveNoPause := IniWrite(!ActiveNoPause, "ActiveNoPause")
+	Menu, Sys, % (ActiveNoPause ? "Check" : "UnCheck"), Work with the active window
+	ZoomMsg(6, ActiveNoPause)
+	If OnlyShiftTab && ActiveNoPause
+		GoSub _OnlyShiftTab
 	Return
 
 _Suspend:
@@ -2035,12 +2046,6 @@ _Sys_WClight:
 _Spot_Together:
 	StateAllwaysSpot := IniWrite(!StateAllwaysSpot, "AllwaysSpot")
 	Menu, Sys, % (StateAllwaysSpot ? "Check" : "UnCheck"), Spot together (low speed)
-	Return
-
-_Active_No_Pause:
-	ActiveNoPause := IniWrite(!ActiveNoPause, "ActiveNoPause")
-	Menu, Sys, % (ActiveNoPause ? "Check" : "UnCheck"), Work with the active window
-	ZoomMsg(6, ActiveNoPause)
 	Return
 	
 _MemoryPos:
@@ -2368,9 +2373,9 @@ AhkSpyZoomShow() {
 		Hotkey := ThisMode = "Hotkey"
 		Suspend := !isAhkSpy
 		If A_IsCompiled
-			Run "%A_ScriptFullPath%" "Zoom" "%hGui%" "%ActiveNoPause%" "%isPaused%" "%Suspend%" "%Hotkey%", , , PID
+			Run "%A_ScriptFullPath%" "Zoom" "%hGui%" "%ActiveNoPause%" "%isPaused%" "%Suspend%" "%Hotkey%" "%OnlyShiftTab%", , , PID
 		Else
-			Run "%A_AHKPath%" "%A_ScriptFullPath%" "Zoom" "%hGui%" "%ActiveNoPause%" "%isPaused%" "%Suspend%" "%Hotkey%", , , PID
+			Run "%A_AHKPath%" "%A_ScriptFullPath%" "Zoom" "%hGui%" "%ActiveNoPause%" "%isPaused%" "%Suspend%" "%Hotkey%" "%OnlyShiftTab%", , , PID
 		WinWait, % "ahk_pid" PID, , 1
 	}
 	Else If DllCall("IsWindowVisible", "Ptr", oOther.hZoom)
@@ -2891,7 +2896,7 @@ MsgConfirm(Info, Title, hWnd) {
 
 MouseStep(x, y) {
 	MouseMove, x, y, 0, R
-	If WinActive("ahk_id" hGui) && !ActiveNoPause
+	If (WinActive("ahk_id" hGui) && !ActiveNoPause) || OnlyShiftTab
 	{
 		(ThisMode = "Control" ? (Spot_Control() (StateAllwaysSpot ? Spot_Win() : 0) Write_Control()) : (Spot_Win() (StateAllwaysSpot ? Spot_Control() : 0) Write_Win()))
 		If DllCall("IsWindowVisible", "Ptr", oOther.hZoom)
@@ -3915,6 +3920,7 @@ ActiveNoPause = %3%
 AhkSpyPause = %4%
 Suspend = %5%
 Hotkey = %6%
+OnlyShiftTab = %7%
 
 ListLines Off
 SetBatchLines,-1
@@ -3931,7 +3937,8 @@ Z_MsgZoom(8, Suspend)
 Z_MsgZoom(2, AhkSpyPause)
 Z_MsgZoom(6, ActiveNoPause)
 Z_MsgZoom(7, !!WinActive("ahk_id" hAhkSpy))
-Z_MsgZoom(10, Hotkey)
+Z_MsgZoom(10, Hotkey) 
+Z_MsgZoom(12, OnlyShiftTab)
 
 OnMessage(MsgAhkSpyZoom := DllCall("RegisterWindowMessage", "Str", "MsgAhkSpyZoom"), "Z_MsgZoom")
 OnMessage(0x0020, "WM_SETCURSOR")
@@ -4184,7 +4191,7 @@ ZoomOnClose() {
 	ExitApp
 }
 
-	; wParam: 0 hide, 1 show, 2 пауза AhkSpy, 3 однократный зум, 4 MemoryZoomSize, 5 MinSize, 6 ActiveNoPause, 7 WinActive AhkSpy, 8 Suspend, 9 Menu, 10 Hotkey, 11 MIN
+	; wParam: 0 hide, 1 show, 2 пауза AhkSpy, 3 однократный зум, 4 MemoryZoomSize, 5 MinSize, 6 ActiveNoPause, 7 WinActive AhkSpy, 8 Suspend, 9 Menu, 10 Hotkey, 11 MIN, 12 ShiftTab
 
 Zoom_Msg(wParam, lParam) {
 	If wParam = 0  ;	hide
@@ -4214,6 +4221,8 @@ Zoom_Msg(wParam, lParam) {
 		ZoomRules("Hotkey", lParam)
 	Else If wParam = 11  ;	MIN
 		ZoomRules("MIN", 1)
+	Else If wParam = 12  ;	ShiftTab
+		ZoomRules("ShiftTab", lParam)
 }
 
 Z_MsgZoom(wParam, lParam) {
@@ -4226,7 +4235,7 @@ ZoomRules(Rule, value) {
 	Static IsStart, Rules, Arr, Len
 	If !IsStart
 	{
-		Arr := {"ZoomHide":1, "Pause":2, "Win":3, "Sleep":4, "Menu":5, "MIN":6, "MOVE":7, "SIZE":8, "Hotkey":9}, Len := 9
+		Arr := {"ZoomHide":1, "Pause":2, "Win":3, "Sleep":4, "Menu":5, "MIN":6, "MOVE":7, "SIZE":8, "Hotkey":9, "ShiftTab":10}, Len := Arr.Count()
 		Loop % VarSetCapacity(Rules, Len - 1)
 			StrPut(0, &Rules + A_Index - 1, 1, "CP0")
 		IsStart := 1
