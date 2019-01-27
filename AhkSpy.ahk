@@ -26,7 +26,7 @@
     Актуальный исходник - https://raw.githubusercontent.com/serzh82saratov/AhkSpy/master/AhkSpy.ahk
 */
 
-Global AhkSpyVersion := 3.52
+Global AhkSpyVersion := 3.53
 
 	; _________________________________________________ Header _________________________________________________
 
@@ -85,7 +85,7 @@ Global ThisMode := IniRead("StartMode", "Control"), LastModeSave := (ThisMode = 
 , ClipAdd_Before := 0, ClipAdd_Delimiter := "`r`n"
 , HTML_Win, HTML_Control, HTML_Hotkey, rmCtrlX, rmCtrlY, widthTB, FullScreenMode, hColorProgress, hFindAllText, MsgAhkSpyZoom, Sleep, oShowMarkers, oShowAccMarkers, oShowMarkersTmp
 , hGui, hTBGui, hActiveX, hFindGui, oDoc, ShowMarker, isFindView, isIE, isPaused, PreMaxHeight := MaxHeightStrToNum(), PreOverflowHide := !!PreMaxHeight, DecimalCode
-, oDocEl, myPublicObjGUID, oJScript, oBody, isConfirm, isAhkSpy := 1, TitleText, FreezeTitleText, TitleTextP1, oUIAInterface
+, oDocEl, myPublicObjGUID, oJScript, oBody, isConfirm, isAhkSpy := 1, TitleText, FreezeTitleText, TitleTextP1, oUIAInterface, Shift_Tab_Down
 , TitleTextP2 := TitleTextP2_Reserved := "     ( Shift+Tab - Freeze | RButton - CopySelected | Pause - Pause )     v" AhkSpyVersion
 
 , _DB := "<span style='position: relative; margin-right: 1em;'></span>"
@@ -105,9 +105,9 @@ Global ThisMode := IniRead("StartMode", "Control"), LastModeSave := (ThisMode = 
 , _PreOverflowHideCSS := ".lpre {max-width: 99`%; max-height: " PreMaxHeight "px; overflow: auto; border: 1px solid #E2E2E2;}"
 , _BodyWrapCSS := "body {word-wrap: break-word; overflow-x: hidden;} .lpre {overflow-x: hidden;}"
 
-, _ButAccViewer := ExtraFile("AccViewer Source") ? _BT1 " id='run_AccViewer'> run accviewer " _BT2 : ""
-, _ButiWB2Learner := ExtraFile("iWB2 Learner") ? _BT1 " id='run_iWB2Learner'> run iwb2 learner " _BT2 : ""
-, _ButWindow_Detective := FileExist(Path_User "\Window Detective.lnk") ? _BT1 " id='run_Window_Detective'> run window detective " _BT2 : ""
+, _ButAccViewer := ExtraFile("AccViewer Source") ? _DB _BT1 " id='run_AccViewer'> run accviewer " _BT2 : ""
+, _ButiWB2Learner := ExtraFile("iWB2 Learner") ? _DB _BT1 " id='run_iWB2Learner'> run iwb2 learner " _BT2 : ""
+, _ButWindow_Detective := FileExist(Path_User "\Window Detective.lnk") ? _DB _BT1 " id='run_Window_Detective'> run window detective " _BT2 : ""
 
 If UseUIA
 	oUIAInterface := UIA_Interface()
@@ -282,6 +282,7 @@ Menu, Overflow, Color, % ColorBgOriginal
 
 #Include *i %A_AppData%\AhkSpy\Include.ahk  ;	Для продолжения выполнения кода используйте GoTo IncludeLabel
 IncludeLabel:
+
 Gui, Show, % "NA " (MemoryPos ? " x" IniRead("MemoryPosX", "Center") " y" IniRead("MemoryPosY", "Center") : "")
 . (MemorySize ? " h" IniRead("MemorySizeH", HeightStart) " w" IniRead("MemorySizeW", widthTB) : " h" HeightStart " w" widthTB)
 Gui, % "+MinSize" widthTB "x" 313
@@ -581,6 +582,8 @@ Spot_Win(NotHTML = 0) {
 
 	If ViewStrPos
 		ViewStrPos1 := _DP "<span name='MS:'>" WinX ", " WinY ", " WinX2 ", " WinY2 "</span>" _DP "<span name='MS:'>" WinX ", " WinY ", " WinWidth ", " WinHeight "</span>"
+
+	IsWindowUnicodeStr := _DP "<span class='param'>Is unicode:</span>  <span>" (DllCall("user32\IsWindowUnicode", "Ptr", WinID) ? "True" : "False") "</span>"
 	
 	CoordMode, Mouse
 	MouseGetPos, WinXS, WinYS, h 
@@ -615,9 +618,9 @@ HTML_Win:
 	%_T1% id='__Position'> ( Position ) </span>%_T2%
 	%_PRE1%%_BP1% id='set_button_pos'>Pos:%_BP2%  <span name='MS:'>x%WinX% y%WinY%</span>%_DP%<span name='MS:'>x&sup2;%WinX2% y&sup2;%WinY2%</span>%_DP%%_BP1% id='set_button_pos'>Size:%_BP2%  <span name='MS:'>w%WinWidth% h%WinHeight%</span>%ViewStrPos1%
 	<span class='param'>Client area size:</span>  <span name='MS:'>w%caW% h%caH%</span>%_DP%<span class='param'>left</span> %caX% <span class='param'>top</span> %caY% <span class='param'>right</span> %caWinRight% <span class='param'>bottom</span> %caWinBottom%%_PRE2%
-	%_T1% id='__Other'> ( Other ) </span>%_ButWindow_Detective%%_T2%
+	%_T1% id='__Other'> ( Other ) </span>%_BT1% id='flash_window'> flash %_BT2%%_ButWindow_Detective%%_T2%
 	%_PRE1%<span class='param' name='MS:N'>PID:</span>  <span name='MS:'>%WinPID%</span>%_DP%%ProcessBitSize%%IsAdmin%<span class='param'>Window count:</span> %WinCountProcess%%_DP%%_BB1% id='process_close'> process close %_BB2%
-	<span class='param' name='MS:N'>HWND:</span>  <span name='MS:'>%WinID%</span>%_DP%%_BB1% id='win_close'> win close %_BB2%%_DP%<span class='param'>Control count:</span>  %CountControl%
+	<span class='param' name='MS:N'>HWND:</span>  <span name='MS:'>%WinID%</span>%_DP%%_BB1% id='win_close'> win close %_BB2%%_DP%<span class='param'>Control count:</span>  %CountControl%%IsWindowUnicodeStr%
 	<span class='param'>Style:  </span><span id='w_Style' name='MS:'>%WinStyle%</span>%_DP%<span class='param'>ExStyle:  </span><span id='c_ExStyle' name='MS:'>%WinExStyle%</span>%ButtonStyle_%%WinTransparent%%WinTransColor%%CLSID%%_PRE2%
 	<span id=WinStyles>%WinStyles%</span>%SBText%%WinText%%MenuText%<a></a>%_T0%
 	</body>
@@ -743,7 +746,7 @@ Loop_Control:
 		GoTo Repeat_Loop_Control
 	If !OnlyShiftTab && Spot_Control()
 		Write_Control(), StateAllwaysSpot ? Spot_Win() : 0
-Repeat_Loop_Control:
+Repeat_Loop_Control: 
 	If (!isPaused && ThisMode = "Control" && !OnlyShiftTab)
 		SetTimer, Loop_Control, -%RangeTimer%
 	Return
@@ -770,19 +773,23 @@ Spot_Control(NotHTML = 0) {
 	MXC := RWinX - caX, MYC := RWinY - caY
 
 	WithRespectWin := "`n" _BP1 " id='set_pos'>Relative window:" _BP2 "  <span name='MS:'>"
-	. Round(RWinX / WinW, 4) ", " Round(RWinY / WinH, 4) "</span>  <span class='param'>for</span> <span name='MS:'>w" WinW " h" WinH "</span>" _DP
+		. Round(RWinX / WinW, 4) ", " Round(RWinY / WinH, 4) "</span>  <span class='param'>for</span> <span name='MS:'>w" WinW " h" WinH "</span>" _DP
+		
 	ControlGetPos, CtrlX, CtrlY, CtrlW, CtrlH,, ahk_id %ControlID%
 	CtrlCAX := CtrlX - caX, CtrlCAY := CtrlY - caY
 	CtrlX2 := CtrlX + CtrlW - 1, CtrlY2 := CtrlY + CtrlH - 1
 	CtrlCAX2 := CtrlX2 - caX, CtrlCAY2 := CtrlY2 - caY
+	
 	WithRespectClient := _BP1 " id='set_pos'>Relative client:" _BP2 "  <span name='MS:'>" Round(MXC / caW, 4) ", " Round(MYC / caH, 4)
 		. "</span>  <span class='param'>for</span> <span name='MS:'>w" caW " h" caH "</span>"
+		
 	ControlGetText, CtrlText, , ahk_id %ControlID%
 	If CtrlText !=
 		CtrlText := _T1 " id='__Control_Text'> ( Control Text ) </span><a></a>" _BT1 " id='copy_button'> copy " _BT2 _T2 _LPRE ">" TransformHTML(CtrlText) _PRE2
-	AccText := AccInfoUnderMouse(MXS, MYS, WinX, WinY, CtrlX, CtrlY, WinID)
+		
+	AccText := AccInfoUnderMouse(MXS, MYS, WinX, WinY, CtrlX, CtrlY, WinID, ControlID)
 	If AccText !=
-		AccText := _T1 " id='__AccInfo'> ( Accessible ) </span><a></a>" _ButAccViewer _T2 AccText
+		AccText := _T1 " id='__AccInfo'> ( Accessible ) </span><a></a>" _BT1 " id='flash_acc'> flash " _BT2 _ButAccViewer _T2 AccText
 
 	If ControlNN !=
 	{
@@ -794,7 +801,7 @@ Spot_Control(NotHTML = 0) {
 			If CtrlInfo !=
 			{
 				If isIE
-					CtrlInfo = %_T1% id='__Info_Class'> ( Info - %ClassName% ) </span><a></a>%_ButiWB2Learner%%_T2%%CtrlInfo%
+					CtrlInfo = %_T1% id='__Info_Class'> ( Info - %ClassName% ) </span><a></a>%_BT1% id='flash_IE'> flash %_BT2%%_ButiWB2Learner%%_T2%%CtrlInfo%
 				Else
 					CtrlInfo = %_T1% id='__Info_Class'> ( Info - %ClassName% ) </span><a></a>%_T2%%_PRE1%%CtrlInfo%%_PRE2%
 			}
@@ -803,9 +810,12 @@ Spot_Control(NotHTML = 0) {
 	}
 	Else
 		rmCtrlX := rmCtrlY := ""
+		
 	If (!isIE && ThisMode = "Control" && (StateLight = 1 || (StateLight = 3 && GetKeyState("Shift", "P"))))
-	{
-		StateLightMarker ? ShowMarker(WinX+CtrlX, WinY+CtrlY, CtrlW, CtrlH) : 0
+	{ 
+		WinGetPos, X, Y, W, H, ahk_id %ControlID%
+		StateLightMarker ? ShowMarker(X, Y, W, H) : 0
+		; StateLightMarker ? ShowMarker(WinX+CtrlX, WinY+CtrlY, CtrlW, CtrlH) : 0
 		StateLightAcc ? ShowAccMarker(AccCoord[1], AccCoord[2], AccCoord[3], AccCoord[4]) : 0
 	}
 	ControlGet, CtrlStyle, Style,,, ahk_id %ControlID%
@@ -827,7 +837,8 @@ Spot_Control(NotHTML = 0) {
 
 	If DynamicControlPath && ControlID
 		control_path_value := ChildToPath(ControlID)
-	If UseUIA
+		
+	If UseUIA && ControlID
 	{
 		UIAPID := oUIAInterface.ElementFromPoint().CurrentProcessId
 		If (UIAPID && UIAPID != WinPID && UIAPID != oOther.CurrentProcessId)
@@ -836,10 +847,9 @@ Spot_Control(NotHTML = 0) {
 			WinGet, UIAProcessPath, ProcessPath, ahk_pid %UIAPID%
 			Loop, %UIAProcessPath%
 				UIAProcessPath = %A_LoopFileLongPath%
-			UseUIAStr = `n<span class='param'>ProcessId (UIA detect):</span>  <span name='MS:'>%UIAPID%</span>%_DP%<span name='MS:'>%UIAProcessParent%</span>%_DP%<span name='MS:'>%UIAProcessPath%</span>
+			UseUIAStr = `n<span style='color: #%ColorDelimiter%'>ProcessId (UIA detect):</span>  <span name='MS:'>%UIAPID%</span>%_DP%<span name='MS:'>%UIAProcessParent%</span>%_DP%<span name='MS:'>%UIAProcessPath%</span>
 		}
 	}
-	
 	MouseGetPos, , , h
 	If (h = hGui || h = oOther.hZoom || h = oOther.hZoomLW)
 		Return HideAllMarkers()
@@ -864,7 +874,7 @@ HTML_Control:
 
 		HTML_ControlExist =
 		( Ltrim
-		%_T1% id='__Control'> ( Control ) </span>%_ButWindow_Detective%%_T2%
+		%_T1% id='__Control'> ( Control ) </span>%_BT1% id='flash_control'> flash %_BT2%%_ButWindow_Detective%%_T2%
 		%_PRE1%<span class='param'>Class NN:</span>  <span name='MS:'>%ControlNN%</span>%_DP%<span class='param'>Win class:</span>  <span name='MS:'>%CtrlClass%</span>
 		%_BP1% id='set_button_pos'>Pos:%_BP2%  <span name='MS:'>x%CtrlX% y%CtrlY%</span>%_DP%<span name='MS:'>x&sup2;%CtrlX2% y&sup2;%CtrlY2%</span>%_DP%%_BP1% id='set_button_pos'>Size:%_BP2%  <span name='MS:'>w%CtrlW% h%CtrlH%</span>%ViewStrPos1%
 		<span class='param'>Pos relative client area:</span>  <span name='MS:'>x%CtrlCAX% y%CtrlCAY%</span>%_DP%<span name='MS:'>x&sup2;%CtrlCAX2% y&sup2;%CtrlCAY2%</span>%ViewStrPos2%
@@ -952,7 +962,7 @@ HTML_Control:
 	}
 	.param {
 		color: #%ColorParam%;
-	}
+	} 
 	#anchor {
 		background-color: #%ColorSelAnchor%;
 	}
@@ -1280,7 +1290,8 @@ GetInfo_InternetExplorer_Server(hwnd, ByRef ClassNN) {
 		. _PRE1  "<span class='param'>Pos: </span><span name='MS:'>x" Round(x1) " y" Round(y1) "</span>"
 		. _DP "<span name='MS:'>x&sup2;" Round(x2) - 1 " y&sup2;" Round(y2) - 1 "</span>"
 		. _DP "<span class='param'>Size: </span><span name='MS:'>w" Round(x2 - x1) " h" Round(y2 - y1) "</span>" Info _PRE2
-
+		
+	myPublicObj.IEElement := {Pos:[sX + x1, sY + y1, x2 - x1, y2 - y1], hwnd:hwnd}
 	Return Topic Info HTML Text Frame
 }
 
@@ -1296,10 +1307,10 @@ WBGet(hwnd) {
 
 	;  http://www.autohotkey.com/board/topic/77888-accessible-info-viewer-alpha-release-2012-09-20/
 
-AccInfoUnderMouse(mx, my, wx, wy, cx, cy, WinID) {
+AccInfoUnderMouse(mx, my, wx, wy, cx, cy, WinID, ControlID) {
 	Static h
 	If Not h
-		h := DllCall("LoadLibrary","Str","oleacc","Ptr")
+		h := DllCall("LoadLibrary", "Str", "oleacc", "Ptr")
 	If DllCall("oleacc\AccessibleObjectFromPoint"
 		, "Int64", mx&0xFFFFFFFF|my<<32, "Ptr*", pacc
 		, "Ptr", VarSetCapacity(varChild,8+2*A_PtrSize,0)*0+&varChild) = 0
@@ -1330,6 +1341,17 @@ AccInfoUnderMouse(mx, my, wx, wy, cx, cy, WinID) {
 
 		. (cx != "" ? _DP "<span class='param'>Control: </span><span name='MS:'>x" (x - wx - cx) " y" (y - wy - cy) "</span>"
 		. _DP "<span name='MS:'>x&sup2;" (x - wx - cx) + w - 1 " y&sup2;" (y - wy - cy) + h - 1 "</span>" : "")  _PRE2
+		
+	If ((Hwnd := AccWindowFromObject(pacc)) != ControlID && Hwnd != WinID) {   ;	можно Acc вместо pacc, then ComObjValue
+		WinGetClass, CtrlClass, ahk_id %Hwnd%
+		WinGet, WinProcess, ProcessName, ahk_id %Hwnd%
+		WinGet, WinPID, PID, ahk_id %Hwnd%
+		code .= _T1 " id='P__WindowFromObject'" _T1P "> ( WindowFromObject ) </span><a></a>" _T2 _PRE1 
+		. "<span class='param' name='MS:N'>HWND:</span>  <span name='MS:'>" Format("0x{:x}", Hwnd) "</span>"
+		. _DP "<span class='param' name='MS:N'>Win class:</span>  <span name='MS:'>" TransformHTML(CtrlClass) "</span>" 
+		. _DP "<span class='param' name='MS:N'>EXE:</span>  <span name='MS:'>" TransformHTML(WinProcess) "</span>"
+		. _DP "<span class='param' name='MS:N'>PID:</span>  <span name='MS:'>" WinPID "</span>" _PRE2
+	}
 	If ((Var := Acc.accName(child)) != "")
 		code .= _T1 " id='P__Name_Acc'" _T1P "> ( Name ) </span><a></a>" _BT1 " id='copy_button'> copy " _BT2 _T2 _LPRE ">" TransformHTML(Var) _PRE2
 	If ((Var := Acc.accValue(child)) != "")
@@ -1361,7 +1383,7 @@ AccInfoUnderMouse(mx, my, wx, wy, cx, cy, WinID) {
 	If ((Var := Acc.AccHelpTopic(child)))
 		code .= _T1 " id='P__HelpTopic_Acc'" _T1P "> ( HelpTopic ) </span>" _T2 _PRE1 "<span name='MS:'>" TransformHTML(Var) "</span>" _PRE2
 
-	myPublicObj.AccObj := {AccObj:Acc,child:child,WinID:WinID}
+	myPublicObj.AccObj := {AccObj:Acc, child:child, WinID:WinID, ControlID:ControlID}
 	Return code
 }
 
@@ -1379,6 +1401,10 @@ AccState(Acc, child, byref style, byref str, i := 1) {
 	}
 }
 
+AccWindowFromObject(pacc) {
+	If DllCall("oleacc\WindowFromAccessibleObject", "Ptr", IsObject(pacc) ? ComObjValue(pacc) : pacc, "Ptr*", hWnd) = 0
+		Return hWnd
+}
 	;	http://forum.script-coding.com/viewtopic.php?pid=130762#p130762
 
 AccAccFocus(hWnd, byref name, byref value) {
@@ -1889,22 +1915,24 @@ Hotkey_SetHook(On = 1) {
 ShowSys(x, y) {
 ShowSys:
 	ZoomMsg(9, 1)
-	DllCall("SetTimer", Ptr, A_ScriptHwnd, Ptr, 1, UInt, 116, Ptr, RegisterCallback("MenuCheck", "Fast"))
+	DllCall("SetTimer", "Ptr", A_ScriptHwnd, "Ptr", 1, "UInt", 116, "Ptr", RegisterCallback("MenuCheck", "Fast"))
 	Menu, Sys, Show, % x, % y
 	ZoomMsg(9, 0)
 	Return
 }
 
 MenuCheck()  {
-	DllCall("KillTimer", Ptr, A_ScriptHwnd, Ptr, 1)
+	DllCall("KillTimer", "Ptr", A_ScriptHwnd, "Ptr", 1)
 	If !WinExist("ahk_class #32768 ahk_pid " oOther.CurrentProcessId)
 		Return
 	If GetKeyState("RButton", "P")
 	{
 		MouseGetPos, , , WinID
-		Menu := MenuGetName(GetMenu2(WinID))
-		If Menu && (F := oMenu[Menu][oOther.ThisMenuItem := AccUnderMouse(WinID, Id).accName(Id)]) && F ~= "^_"
+		Menu := MenuGetName(GetMenuForMenu(WinID))
+		If Menu && (F := oMenu[Menu][oOther.ThisMenuItem := AccUnderMouse(WinID, Id).accName(Id)]) 
 		{
+			If !(F ~= "^_")
+				Return DllCall("mouse_event", "UInt", 0x0002|0x0004)
 			oOther.MenuItemExist := 1
 			If IsLabel(F)
 				GoSub, % F
@@ -1914,10 +1942,10 @@ MenuCheck()  {
 		}
 		KeyWait, RButton
 	}
-	DllCall("SetTimer", Ptr, A_ScriptHwnd, Ptr, 1, UInt, 16, Ptr, RegisterCallback("MenuCheck", "Fast"))
+	DllCall("SetTimer", "Ptr", A_ScriptHwnd, "Ptr", 1, "UInt", 16, "Ptr", RegisterCallback("MenuCheck", "Fast"))
 }
 
-GetMenu2(hWnd) {
+GetMenuForMenu(hWnd) {
 	SendMessage, 0x1E1, 0, 0, , ahk_id %hWnd%	;  MN_GETHMENU
 	hMenu := ErrorLevel
 	If (hMenu + 0)
@@ -1927,13 +1955,13 @@ GetMenu2(hWnd) {
 AccUnderMouse(WinID, ByRef child) {
 	Static h
 	If Not h
-		h := DllCall("LoadLibrary","Str","oleacc","Ptr")
+		h := DllCall("LoadLibrary", "Str", "oleacc", "Ptr")
 	If DllCall("oleacc\AccessibleObjectFromPoint"
-		, "Int64", 0*DllCall("GetCursorPos","Int64*",pt)+pt, "Ptr*", pacc
-		, "Ptr", VarSetCapacity(varChild,8+2*A_PtrSize,0)*0+&varChild) = 0
-	Acc := ComObjEnwrap(9,pacc,1)
+		, "Int64", 0 * DllCall("GetCursorPos", "Int64*", pt) + pt, "Ptr*", pacc
+		, "Ptr", VarSetCapacity(varChild, 8 + 2 * A_PtrSize, 0) * 0 + &varChild) = 0
+	Acc := ComObjEnwrap(9, pacc, 1)
 	If IsObject(Acc)
-		Return Acc, child := NumGet(varChild,8,"UInt")
+		Return Acc, child := NumGet(varChild, 8, "UInt")
 }
 
 MaxHeightStrToNum()  {
@@ -2901,7 +2929,8 @@ MouseStep(x, y) {
 		(ThisMode = "Control" ? (Spot_Control() (StateAllwaysSpot ? Spot_Win() : 0) Write_Control()) : (Spot_Win() (StateAllwaysSpot ? Spot_Control() : 0) Write_Win()))
 		If DllCall("IsWindowVisible", "Ptr", oOther.hZoom)
 			ZoomMsg(3)
-	}
+	}  
+	Shift_Tab_Down := 1
 }
 
 IsIEFocus() {
@@ -3700,6 +3729,31 @@ ButtonClick(oevent) {
 		Else
 			ToolTip("Not file exist", 500)
 	}
+	Else If (thisid = "flash_window" || thisid = "flash_control")
+	{ 
+		hwnd := thisid = "flash_window" ? oOther.WinID : oOther.MouseControlID
+		If !WinExist("ahk_id" hwnd)
+			Return ToolTip("Window not exist", 500)
+		WinGetPos, WinX, WinY, WinWidth, WinHeight, % "ahk_id" hwnd
+		Loop 3
+			ShowMarker(WinX, WinY, WinWidth, WinHeight, 5), Sleep(100), HideMarker(), Sleep(100)
+	}
+	Else If (thisid = "flash_acc")
+	{   
+		If !WinExist("ahk_id" myPublicObj.AccObj.ControlID) 
+			Return ToolTip("Parent window not exist", 500)
+		AccGetLocation(myPublicObj.AccObj.AccObj, myPublicObj.AccObj.child)  
+		Loop 3
+			ShowMarker(AccCoord[1], AccCoord[2], AccCoord[3], AccCoord[4], 5), Sleep(100), HideMarker(), Sleep(100)
+	}
+	Else If (thisid = "flash_IE")
+	{
+		If !WinExist("ahk_id" myPublicObj.IEElement.hwnd) 
+			Return ToolTip("Parent window not exist", 500)
+		Loop 3
+			ShowMarker(myPublicObj.IEElement.Pos[1], myPublicObj.IEElement.Pos[2], myPublicObj.IEElement.Pos[3], myPublicObj.IEElement.Pos[4], 5)
+			, Sleep(100), HideMarker(), Sleep(100)
+	} 
 	Else If thisid = paste_process_path
 		oDoc.getElementById("copy_processpath").innerHTML := TransformHTML(Trim(Trim(Clipboard), """"))
 	Else If thisid = w_command_line
@@ -3945,6 +3999,7 @@ OnMessage(0x0020, "WM_SETCURSOR")
 OnExit("ZoomOnClose")
 OnMessage(0x201, "LBUTTONDOWN") ; WM_LBUTTONDOWN
 OnMessage(0xA1, "LBUTTONDOWN") ; WM_NCLBUTTONDOWN
+
 SetWinEventHook("EVENT_OBJECT_DESTROY", 0x8001)
 SetWinEventHook("EVENT_SYSTEM_MINIMIZESTART", 0x0016)
 SetWinEventHook("EVENT_SYSTEM_MINIMIZEEND", 0x0017)
