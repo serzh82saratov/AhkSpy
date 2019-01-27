@@ -26,7 +26,7 @@
     Актуальный исходник - https://raw.githubusercontent.com/serzh82saratov/AhkSpy/master/AhkSpy.ahk
 */
 
-Global AhkSpyVersion := 3.53
+Global AhkSpyVersion := 3.54
 
 	; _________________________________________________ Header _________________________________________________
 
@@ -80,12 +80,12 @@ Global ThisMode := IniRead("StartMode", "Control"), LastModeSave := (ThisMode = 
 , DynamicControlPath := IniRead("DynamicControlPath", 0), DynamicAccPath := IniRead("DynamicAccPath", 0)
 , UpdRegister := IniRead("UpdRegister2", 0), UpdRegisterLink := "https://u.to/zeONFA"
 
-, ScrollPos := {}, AccCoord := [], oOther := {}, oFind := {}, Edits := [], oMS := {}, oMenu := {}, myPublicObj := {}
+, ScrollPos := {}, AccCoord := [], oOther := {}, oFind := {}, Edits := [], oMS := {}, oMenu := {}, oPubObj := {}
 
 , ClipAdd_Before := 0, ClipAdd_Delimiter := "`r`n"
 , HTML_Win, HTML_Control, HTML_Hotkey, rmCtrlX, rmCtrlY, widthTB, FullScreenMode, hColorProgress, hFindAllText, MsgAhkSpyZoom, Sleep, oShowMarkers, oShowAccMarkers, oShowMarkersTmp
 , hGui, hTBGui, hActiveX, hFindGui, oDoc, ShowMarker, isFindView, isIE, isPaused, PreMaxHeight := MaxHeightStrToNum(), PreOverflowHide := !!PreMaxHeight, DecimalCode
-, oDocEl, myPublicObjGUID, oJScript, oBody, isConfirm, isAhkSpy := 1, TitleText, FreezeTitleText, TitleTextP1, oUIAInterface, Shift_Tab_Down
+, oDocEl, oPubObjGUID, oJScript, oBody, isConfirm, isAhkSpy := 1, TitleText, FreezeTitleText, TitleTextP1, oUIAInterface, Shift_Tab_Down
 , TitleTextP2 := TitleTextP2_Reserved := "     ( Shift+Tab - Freeze | RButton - CopySelected | Pause - Pause )     v" AhkSpyVersion
 
 , _DB := "<span style='position: relative; margin-right: 1em;'></span>"
@@ -99,7 +99,7 @@ Global ThisMode := IniRead("StartMode", "Control"), LastModeSave := (ThisMode = 
 , _PRE1 := "<pre contenteditable='true'>", _PRE2 := "</pre>"
 , _LPRE := "<pre contenteditable='true' class='lpre'"
 , _DP := "  <span id='delimiter' style='color: #" ColorDelimiter "'>&#9642</span>  "
-, _BR := "<p class='br'></p>"
+, _BR := "<p class='br'></p>", _DN := "`n" 
 , _INPHK := "<input onfocus='funchkinputevent (this, ""focus"")' onblur='funchkinputevent(this, ""blur"")' "
 
 , _PreOverflowHideCSS := ".lpre {max-width: 99`%; max-height: " PreMaxHeight "px; overflow: auto; border: 1px solid #E2E2E2;}"
@@ -122,7 +122,7 @@ If MemoryAnchor
 	If oOther.anchor["Control_text"] := IniRead("Control_Anchor")
 		oOther.anchor["Control"] := 1
 }
-ObjRegisterActive(myPublicObj, myPublicObjGUID := CreateGUID())
+ObjRegisterActive(oPubObj, oPubObjGUID := CreateGUID())
 
 FixIE()
 SeDebugPrivilege()
@@ -840,14 +840,25 @@ Spot_Control(NotHTML = 0) {
 		
 	If UseUIA && ControlID
 	{
-		UIAPID := oUIAInterface.ElementFromPoint().CurrentProcessId
+		UIAElement := oUIAInterface.ElementFromPoint()
+		UIAPID := UIAElement.CurrentProcessId  
+
 		If (UIAPID && UIAPID != WinPID && UIAPID != oOther.CurrentProcessId)
-		{
-			WinGet, UIAProcessParent, ProcessName, ahk_pid %UIAPID%
-			WinGet, UIAProcessPath, ProcessPath, ahk_pid %UIAPID%
+		; If 1
+		{ 
+			WinGet, UIAProcessName, ProcessName, ahk_pid %UIAPID% 
+			WinGet, UIAProcessPath, ProcessPath, ahk_pid %UIAPID% 
 			Loop, %UIAProcessPath%
-				UIAProcessPath = %A_LoopFileLongPath%
-			UseUIAStr = `n<span style='color: #%ColorDelimiter%'>ProcessId (UIA detect):</span>  <span name='MS:'>%UIAPID%</span>%_DP%<span name='MS:'>%UIAProcessParent%</span>%_DP%<span name='MS:'>%UIAProcessPath%</span>
+				UIAProcessPath = %A_LoopFileLongPath% 
+			WinGetClass, UIAWinClass, % "ahk_id" DllCall("GetAncestor", "Ptr", UIAElement.CurrentNativeWindowHandle, Uint, 1)
+			
+			UseUIAStr := "`n" _T1 " id='P__UIA_Object'> ( UIA Interface ) </span><a></a>" _T2
+			. _PRE1 "<span class='param' name='MS:N'>PID:</span>  <span name='MS:'>" UIAPID "</span>"
+			. _DP "<span class='param' name='MS:N'>HWND:</span>  <span name='MS:'>" Format("0x{:x}", UIAElement.CurrentNativeWindowHandle) "</span>"
+			. _DP "<span class='param' name='MS:N'>ControlClass:</span>  <span name='MS:'>" TransformHTML(UIAElement.CurrentClassName) "</span>" 
+			; . "<span class='param' name='MS:N'>WindowClass:</span>  <span name='MS:'>" TransformHTML(UIAWinClass) "</span>" 
+			. _DN "<span class='param' name='MS:N'>ProcessName:</span>  <span name='MS:'>" TransformHTML(UIAProcessName) "</span>" 
+			. _DP "<span class='param' name='MS:N'>ProcessPath:</span>  <span name='MS:'>" TransformHTML(UIAProcessPath) "</span>" _PRE2 
 		}
 	}
 	MouseGetPos, , , h
@@ -879,9 +890,9 @@ HTML_Control:
 		%_BP1% id='set_button_pos'>Pos:%_BP2%  <span name='MS:'>x%CtrlX% y%CtrlY%</span>%_DP%<span name='MS:'>x&sup2;%CtrlX2% y&sup2;%CtrlY2%</span>%_DP%%_BP1% id='set_button_pos'>Size:%_BP2%  <span name='MS:'>w%CtrlW% h%CtrlH%</span>%ViewStrPos1%
 		<span class='param'>Pos relative client area:</span>  <span name='MS:'>x%CtrlCAX% y%CtrlCAY%</span>%_DP%<span name='MS:'>x&sup2;%CtrlCAX2% y&sup2;%CtrlCAY2%</span>%ViewStrPos2%
 		%_BP1% id='set_pos'>Mouse relative control:%_BP2%  <span name='MS:'>x%rmCtrlX% y%rmCtrlY%</span>%WithRespectControl%%_DP%%_BP1% id='control_path'> Get path: %_BP2%  <span id='control_path_value' name='MS:'>%control_path_value%</span>
-		<span class='param'>HWND:</span>  <span name='MS:'>%ControlID%</span>%_ParentControl%%UseUIAStr%
+		<span class='param'>HWND:</span>  <span name='MS:'>%ControlID%</span>%_ParentControl%
 		<span class='param'>Style:</span>  <span id='c_Style' name='MS:'>%CtrlStyle%</span>%_DP%<span class='param'>ExStyle:</span>  <span id='c_ExStyle' name='MS:'>%CtrlExStyle%</span>%ButtonStyle_%%_PRE2%
-		<span id=ControlStyles>%ControlStyles%</span>
+		%UseUIAStr%<span id=ControlStyles>%ControlStyles%</span>
 		)
 	}
 	HTML_Control =
@@ -892,7 +903,7 @@ HTML_Control:
 	<span class='param'>Relative active window:</span>  <span name='MS:'>x%MXWA% y%MYWA%</span>%_DP%<span class='param'>exe</span> <span name='MS:'>%ProcessName_A%</span> <span class='param'>class</span> <span name='MS:'>%WinClass_A%</span> <span class='param'>hwnd</span> <span name='MS:'>%HWND_A%</span>%_PRE2%
 	%_T1% id='__PixelColor'> ( PixelColor ) </span>%_T2%
 	%_PRE1%<span class='param'>RGB: </span> <span name='MS:'>%ColorRGB%</span>%_DP%<span name='MS:'>#%sColorRGB%</span>%_DP%<span class='param'>BGR: </span> <span name='MS:'>%ColorBGR%</span>%_DP%<span name='MS:'>#%sColorBGR%</span>%_PRE2%
-	%_T1% id='__Window'> ( Window ) </span>%_T2%
+	%_T1% id='__Window'> ( Window ) </span>%_BT1% id='flash_ctrl_window'> flash %_BT2%%_T2%
 	%_PRE1%<span><span class='param' name='MS:S'>ahk_class</span> <span name='MS:'>%WinClass%</span></span> <span><span class='param' name='MS:S'>ahk_exe</span> <span name='MS:'>%ProcessName%</span></span> <span><span class='param' name='MS:S'>ahk_id</span> <span name='MS:'>%WinID%</span></span> <span><span class='param' name='MS:S'>ahk_pid</span> <span name='MS:'>%WinPID%</span></span>
 	<span class='param'>Cursor:</span>  <span name='MS:'>%A_Cursor%</span>%_DP%<span class='param'>Caret:</span>  <span name='MS:'>x%A_CaretX% y%A_CaretY%</span>%_DP%<span class='param'>Client area:</span>  <span name='MS:'>x%caX% y%caY% w%caW% h%caH%</span>
 	%_BP1% id='set_button_focus_ctrl'>Focus control:%_BP2%  <span name='MS:'>%CtrlFocus%</span>%_PRE2%
@@ -1291,7 +1302,7 @@ GetInfo_InternetExplorer_Server(hwnd, ByRef ClassNN) {
 		. _DP "<span name='MS:'>x&sup2;" Round(x2) - 1 " y&sup2;" Round(y2) - 1 "</span>"
 		. _DP "<span class='param'>Size: </span><span name='MS:'>w" Round(x2 - x1) " h" Round(y2 - y1) "</span>" Info _PRE2
 		
-	myPublicObj.IEElement := {Pos:[sX + x1, sY + y1, x2 - x1, y2 - y1], hwnd:hwnd}
+	oPubObj.IEElement := {Pos:[sX + x1, sY + y1, x2 - x1, y2 - y1], hwnd:hwnd}
 	Return Topic Info HTML Text Frame
 }
 
@@ -1383,7 +1394,7 @@ AccInfoUnderMouse(mx, my, wx, wy, cx, cy, WinID, ControlID) {
 	If ((Var := Acc.AccHelpTopic(child)))
 		code .= _T1 " id='P__HelpTopic_Acc'" _T1P "> ( HelpTopic ) </span>" _T2 _PRE1 "<span name='MS:'>" TransformHTML(Var) "</span>" _PRE2
 
-	myPublicObj.AccObj := {AccObj:Acc, child:child, WinID:WinID, ControlID:ControlID}
+	oPubObj.AccObj := {AccObj:Acc, child:child, WinID:WinID, ControlID:ControlID}
 	Return code
 }
 
@@ -3000,6 +3011,15 @@ HighLight(elem, time = "", RemoveFormat = 1) {
 		Return
 }
 
+SetTimer(func, time) {
+	SetTimer, % func, % time
+}
+
+FlashArea(x, y, w, h) {
+		Loop 3
+			ShowMarker(x, y, w, h, 5), Sleep(100), HideMarker(), Sleep(100)
+}
+
 	; _________________________________________________ Update _________________________________________________
 
 UpdateAhkSpy(in = 1) {
@@ -3729,30 +3749,25 @@ ButtonClick(oevent) {
 		Else
 			ToolTip("Not file exist", 500)
 	}
-	Else If (thisid = "flash_window" || thisid = "flash_control")
+	Else If (thisid = "flash_window" || thisid = "flash_control" || thisid = "flash_ctrl_window")
 	{ 
-		hwnd := thisid = "flash_window" ? oOther.WinID : oOther.MouseControlID
+		hwnd := thisid = "flash_window" ? oOther.WinID : thisid = "flash_ctrl_window" ? oOther.MouseWinID : oOther.MouseControlID
+
 		If !WinExist("ahk_id" hwnd)
 			Return ToolTip("Window not exist", 500)
 		WinGetPos, WinX, WinY, WinWidth, WinHeight, % "ahk_id" hwnd
-		Loop 3
-			ShowMarker(WinX, WinY, WinWidth, WinHeight, 5), Sleep(100), HideMarker(), Sleep(100)
+		SetTimer(Func("FlashArea").Bind(WinX, WinY, WinWidth, WinHeight), -10) 
 	}
 	Else If (thisid = "flash_acc")
-	{   
-		If !WinExist("ahk_id" myPublicObj.AccObj.ControlID) 
-			Return ToolTip("Parent window not exist", 500)
-		AccGetLocation(myPublicObj.AccObj.AccObj, myPublicObj.AccObj.child)  
-		Loop 3
-			ShowMarker(AccCoord[1], AccCoord[2], AccCoord[3], AccCoord[4], 5), Sleep(100), HideMarker(), Sleep(100)
+	{    
+		AccGetLocation(oPubObj.AccObj.AccObj, oPubObj.AccObj.child)   
+		SetTimer(Func("FlashArea").Bind(AccCoord[1], AccCoord[2], AccCoord[3], AccCoord[4]), -10)
 	}
 	Else If (thisid = "flash_IE")
 	{
-		If !WinExist("ahk_id" myPublicObj.IEElement.hwnd) 
-			Return ToolTip("Parent window not exist", 500)
-		Loop 3
-			ShowMarker(myPublicObj.IEElement.Pos[1], myPublicObj.IEElement.Pos[2], myPublicObj.IEElement.Pos[3], myPublicObj.IEElement.Pos[4], 5)
-			, Sleep(100), HideMarker(), Sleep(100)
+		If !WinExist("ahk_id" oPubObj.IEElement.hwnd) 
+			Return ToolTip("Parent window not exist", 500) 
+		SetTimer(Func("FlashArea").Bind(oPubObj.IEElement.Pos[1], oPubObj.IEElement.Pos[2], oPubObj.IEElement.Pos[3], oPubObj.IEElement.Pos[4]), -10)
 	} 
 	Else If thisid = paste_process_path
 		oDoc.getElementById("copy_processpath").innerHTML := TransformHTML(Trim(Trim(Clipboard), """"))
@@ -3782,7 +3797,7 @@ ButtonClick(oevent) {
 	Else If thisid = get_styles_c
 		ViewStylesControl(oevent)
 	Else If thisid = run_AccViewer
-		RunAhkPath(ExtraFile("AccViewer Source"), myPublicObjGUID)
+		RunAhkPath(ExtraFile("AccViewer Source"), oPubObjGUID)
 	Else If thisid = run_iWB2Learner
 		RunAhkPath(ExtraFile("iWB2 Learner"))
 	Else If thisid = run_Window_Detective
@@ -3891,7 +3906,7 @@ ButtonClick(oevent) {
 		oDoc.getElementById("acc_path_value").innerText := ""
 		oDoc.getElementById("acc_path").innerText := "   Wait...  "
 		oDoc.getElementById("acc_path").disabled := 1
-		oDoc.getElementById("acc_path_value").innerText := GetAccPath(myPublicObj.AccObj.AccObj, myPublicObj.AccObj.child)
+		oDoc.getElementById("acc_path_value").innerText := GetAccPath(oPubObj.AccObj.AccObj, oPubObj.AccObj.child)
 		oDoc.getElementById("acc_path").disabled := 0
 		oDoc.getElementById("acc_path").innerText := " Get path: "
 		HTML_Control := oBody.innerHTML
