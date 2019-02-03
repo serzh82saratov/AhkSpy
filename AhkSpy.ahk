@@ -26,7 +26,7 @@
     Актуальный исходник - https://raw.githubusercontent.com/serzh82saratov/AhkSpy/master/AhkSpy.ahk
 */
 
-Global AhkSpyVersion := 3.54
+Global AhkSpyVersion := 3.55
 
 	; _________________________________________________ Header _________________________________________________
 
@@ -85,7 +85,7 @@ Global ThisMode := IniRead("StartMode", "Control"), LastModeSave := (ThisMode = 
 , ClipAdd_Before := 0, ClipAdd_Delimiter := "`r`n"
 , HTML_Win, HTML_Control, HTML_Hotkey, rmCtrlX, rmCtrlY, widthTB, FullScreenMode, hColorProgress, hFindAllText, MsgAhkSpyZoom, Sleep, oShowMarkers, oShowAccMarkers, oShowMarkersTmp
 , hGui, hTBGui, hActiveX, hFindGui, oDoc, ShowMarker, isFindView, isIE, isPaused, PreMaxHeight := MaxHeightStrToNum(), PreOverflowHide := !!PreMaxHeight, DecimalCode
-, oDocEl, oPubObjGUID, oJScript, oBody, isConfirm, isAhkSpy := 1, TitleText, FreezeTitleText, TitleTextP1, oUIAInterface, Shift_Tab_Down
+, oDocEl, oPubObjGUID, oJScript, oBody, isConfirm, isAhkSpy := 1, TitleText, FreezeTitleText, TitleTextP1, oUIAInterface, Shift_Tab_Down, hButtonButton, hButtonControl, hButtonWindow
 , TitleTextP2 := TitleTextP2_Reserved := "     ( Shift+Tab - Freeze | RButton - CopySelected | Pause - Pause )     v" AhkSpyVersion
 
 , _DB := "<span style='position: relative; margin-right: 1em;'></span>"
@@ -154,10 +154,10 @@ DllCall("PostMessage", "Ptr", A_ScriptHWND, "UInt", 0x50, "UInt", 0, "UInt", 0x4
 
 Gui, TB: +HWNDhTBGui -Caption -DPIScale +Parent%hGui% +E0x08000000 +0x40000000 -0x80000000
 Gui, TB: Font, % " s" (A_ScreenDPI = 120 ? 8 : 10), Verdana
-Gui, TB: Add, Button, x0 y0 h%HeigtButton% w%wKey% vBut1 gMode_Win, Window
-Gui, TB: Add, Button, x+0 yp hp wp vBut2 gMode_Control, Control
+Gui, TB: Add, Button, x0 y0 h%HeigtButton% w%wKey% vBut1 gMode_Win hwndhButtonWindow, Window
+Gui, TB: Add, Button, x+0 yp hp wp vBut2 gMode_Control hwndhButtonControl, Control
 Gui, TB: Add, Progress, x+0 yp hp w%wColor% vColorProgress HWNDhColorProgress cWhite, 100
-Gui, TB: Add, Button, x+0 yp hp w%wKey% vBut3 gMode_Hotkey, Button
+Gui, TB: Add, Button, x+0 yp hp w%wKey% vBut3 gMode_Hotkey hwndhButtonButton, Button
 Gui, TB: Show, % "x0 y0 NA h" HeigtButton " w" widthTB := wKey*3+wColor
 
 Gui, F: +HWNDhFindGui -Caption -DPIScale +Parent%hGui% +0x40000000 -0x80000000
@@ -479,9 +479,24 @@ RButton::
 	obj := Func("ButtonClick").Bind(oJScript.ButtonOver)
 	SetTimer, % obj, -10
 	Return
+	
+#If !WinActive("ahk_id" hGui) && IsAhkSpyUnderMouse(hc)
+
++LButton::
+	If (hc = hButtonButton) 
+		SetTimer, Mode_Hotkey, -1 
+	Else If (hc = hButtonControl) 
+		SetTimer, Mode_Control, -1 
+	Else If (hc = hButtonWindow) 
+		SetTimer, Mode_Win, -1 
+	Return
 
 #If
 
+IsAhkSpyUnderMouse(Byref hc) {
+	MouseGetPos, , , hw, hc, 2 
+	Return (hw = hGui)
+}
 	; _________________________________________________ Mode_Win _________________________________________________
 
 Mode_Win:
@@ -523,7 +538,7 @@ Spot_Win(NotHTML = 0) {
 	Static PrWinPID, ComLine, ProcessBitSize, IsAdmin, WinProcessPath, WinProcessName
 	If NotHTML
 		GoTo HTML_Win
-	MouseGetPos, , ,WinID
+	MouseGetPos, , , WinID, hChild, 3
 	
 	If (WinID = hGui || WinID = oOther.hZoom || WinID = oOther.hZoomLW)
 		Return HideAllMarkers()
@@ -547,12 +562,16 @@ Spot_Win(NotHTML = 0) {
 	WinGet, WinCountProcess, Count, ahk_pid %WinPID%
 	WinGet, WinStyle, Style, ahk_id %WinID%
 	WinGet, WinExStyle, ExStyle, ahk_id %WinID%
+	
 	WinGet, WinTransparent, Transparent, ahk_id %WinID%
 	If WinTransparent !=
-		WinTransparent := "`n<span class='param'>Transparent:  </span><span name='MS:'>"  WinTransparent "</span>"
+		WinTransparent := "`n" _BP1 "id='set_button_Transparent'>Transparent:</span>" _BP2 "  <span id='get_win_Transparent' name='MS:'>"  WinTransparent "</span>"
+		
 	WinGet, WinTransColor, TransColor, ahk_id %WinID%
 	If WinTransColor !=
-		WinTransColor := (WinTransparent = "" ? "`n" : DP) "<span class='param'>TransColor:  </span><span name='MS:'>" WinTransColor "</span>"
+		WinTransColor := (WinTransparent = "" ? "`n" : DP)
+			. _BP1 "id='set_button_TransColor'>TransColor:</span>" _BP2 "  <span id='get_win_TransColor' name='MS:'>"  WinTransColor "</span>"
+
 	WinGet, CountControl, ControlListHwnd, ahk_id %WinID%
 	RegExReplace(CountControl, "m`a)$", "", CountControl)
 	GetClientPos(WinID, caX, caY, caW, caH)
@@ -594,12 +613,12 @@ Spot_Win(NotHTML = 0) {
 	GuiControl, TB: -Redraw, ColorProgress
 	GuiControl, % "TB: +c" SubStr(ColorRGB, 3), ColorProgress
 	GuiControl, TB: +Redraw, ColorProgress
-		
+
 	; _________________________________________________ HTML_Win _________________________________________________
 	
 HTML_Win:
 	If w_ShowStyles
-		WinStyles := GetStyles(WinStyle, WinExStyle)
+		WinStyles := GetStyles(WinStyle, WinExStyle, WinID)
 	ButtonStyle_ := _DP _BB1 " id='get_styles_w'> " (w_ShowStyles ? "show styles" : "hide styles") " " _BB2
 
 	HTML_Win =
@@ -696,6 +715,7 @@ HTML_Win:
 	)
 	oOther.WinPID := WinPID
 	oOther.WinID := WinID
+	oOther.ChildID := hChild
 	If StateLightMarker && (ThisMode = "Win") && (StateLight = 1 || (StateLight = 3 && GetKeyState("Shift", "P")))
 		ShowMarker(WinX, WinY, WinWidth, WinHeight, 5)
 	Return 1
@@ -840,27 +860,27 @@ Spot_Control(NotHTML = 0) {
 		
 	If UseUIA && ControlID
 	{
-		UIAElement := oUIAInterface.ElementFromPoint()
+		UIAElement := oUIAInterface.ElementFromPoint(MXS, MYS)
 		UIAPID := UIAElement.CurrentProcessId  
-
-		If (UIAPID && UIAPID != WinPID && UIAPID != oOther.CurrentProcessId)
-		; If 1
-		{ 
+		UIAHWND := UIAElement.CurrentNativeWindowHandle 
+		
+		; If (UIAPID && UIAPID != WinPID && UIAPID != oOther.CurrentProcessId)
+		If 1
+		{
 			WinGet, UIAProcessName, ProcessName, ahk_pid %UIAPID% 
 			WinGet, UIAProcessPath, ProcessPath, ahk_pid %UIAPID% 
 			Loop, %UIAProcessPath%
-				UIAProcessPath = %A_LoopFileLongPath% 
-			WinGetClass, UIAWinClass, % "ahk_id" DllCall("GetAncestor", "Ptr", UIAElement.CurrentNativeWindowHandle, Uint, 1)
-			
+				UIAProcessPath = %A_LoopFileLongPath%
+				
 			UseUIAStr := "`n" _T1 " id='P__UIA_Object'> ( UIA Interface ) </span><a></a>" _T2
-			. _PRE1 "<span class='param' name='MS:N'>PID:</span>  <span name='MS:'>" UIAPID "</span>"
-			. _DP "<span class='param' name='MS:N'>HWND:</span>  <span name='MS:'>" Format("0x{:x}", UIAElement.CurrentNativeWindowHandle) "</span>"
-			. _DP "<span class='param' name='MS:N'>ControlClass:</span>  <span name='MS:'>" TransformHTML(UIAElement.CurrentClassName) "</span>" 
-			; . "<span class='param' name='MS:N'>WindowClass:</span>  <span name='MS:'>" TransformHTML(UIAWinClass) "</span>" 
+			. _PRE1 "<span class='param' name='MS:N'>PID:</span>  <span name='MS:'>" UIAPID "</span>" _DP
+			. (UIAHWND ? ""
+			. "<span class='param' name='MS:N'>HWND:</span>  <span name='MS:'>" Format("0x{:x}", UIAHWND) "</span>"
+			. _DP "<span class='param' name='MS:N'>ControlClass:</span>  <span name='MS:'>" TransformHTML(UIAElement.CurrentClassName) "</span>" : "HWND undefined") 
 			. _DN "<span class='param' name='MS:N'>ProcessName:</span>  <span name='MS:'>" TransformHTML(UIAProcessName) "</span>" 
 			. _DP "<span class='param' name='MS:N'>ProcessPath:</span>  <span name='MS:'>" TransformHTML(UIAProcessPath) "</span>" _PRE2 
 		}
-	}
+	} 
 	MouseGetPos, , , h
 	If (h = hGui || h = oOther.hZoom || h = oOther.hZoomLW)
 		Return HideAllMarkers()
@@ -878,10 +898,13 @@ Spot_Control(NotHTML = 0) {
 HTML_Control:
 	If ControlID
 	{
-		ControlStyleExist := GetControlStyles(ControlNN_Sub, "E")
+		; ControlStyleExist := GetControlStyles(ControlNN_Sub, "E")
 		If c_ShowStyles
 			ControlStyles := GetControlStyles(ControlNN_Sub, CtrlStyle, CtrlExStyle)
-		ButtonStyle_ := _DP _BB1 " id='get_styles_c'" (ControlStyleExist ? "" : " style='color: #C0C0C0'") "> " (c_ShowStyles ? "show styles" : "hide styles") " " _BB2
+			, ControlStyles .= GetStyles(CtrlStyle, CtrlExStyle, ControlID)
+			
+		; ButtonStyle_ := _DP _BB1 " id='get_styles_c'" (ControlStyleExist ? "" : " style='color: #C0C0C0'") "> " (c_ShowStyles ? "show styles" : "hide styles") " " _BB2
+		ButtonStyle_ := _DP _BB1 " id='get_styles_c'> " (c_ShowStyles ? "show styles" : "hide styles") " " _BB2
 
 		HTML_ControlExist =
 		( Ltrim
@@ -1453,24 +1476,24 @@ AccGetLocation(Acc, Child=0) {
 GetAccPath(Acc, child) {
 	path := Acc_GetPath(Acc)
 	if path !=
-		path := child ? path "," child : path
+		Return child ? path "," child : path
 	Else
 		Return "object not found"
-	Return path
 }
+
 Acc_GetPath(Acc) {
 	hwnd := Acc_WindowFromObject(Acc)
 	WinObj := Acc_ObjectFromWindow(hwnd)
 	WinObjPos := Acc_Location(WinObj)
-	while Acc_WindowFromObject(Parent:=Acc_Parent(Acc)) = hwnd {
+	While Acc_WindowFromObject(Parent := Acc_Parent(Acc)) = hwnd {
 		t2 := GetEnumIndex(Acc) "," t2
 		if Acc_Location(Parent) = WinObjPos
-			return SubStr(t2,1,-1)
+			return SubStr(t2, 1, -1)
 		Acc := Parent
 	}
-	while Acc_WindowFromObject(Parent:=Acc_Parent(WinObj)) = hwnd
-		t1.="P.", WinObj:=Parent
-	return t1 SubStr(t2,1,-1)
+	While Acc_WindowFromObject(Parent := Acc_Parent(WinObj)) = hwnd
+		t1 .= "P.", WinObj := Parent
+	return t1 SubStr(t2, 1, -1)
 }
 GetEnumIndex(Acc, ChildId=0) {
 	if Not ChildId {
@@ -1534,14 +1557,16 @@ Mode_Hotkey:
 	ScrollPos[ThisMode,1] := oDocEl.scrollLeft, ScrollPos[ThisMode,2] := oDocEl.scrollTop
 	If ThisMode != Hotkey
 		HTML_%ThisMode% := oBody.innerHTML
-	ThisMode := "Hotkey", Hotkey_Hook(!isPaused)
+	ThisMode := "Hotkey"
+	If A_GuiControl  ;	WinActive("ahk_id" hGui)
+		Hotkey_Hook(!isPaused) 
 	TitleText := (TitleTextP1 := "AhkSpy - Button") . TitleTextP2
 	ShowMarker ? (HideAllMarkers()) : 0
 	(HTML_Hotkey != "") ? Write_Hotkey() : Write_HotkeyHTML({Mods:"Waiting pushed buttons..."})
 	oDocEl.scrollLeft := ScrollPos[ThisMode,1], oDocEl.scrollTop := ScrollPos[ThisMode,2]
 	SendMessage, 0xC, 0, &TitleText, , ahk_id %hGui%
 	GuiControl, TB: -0x0001, But3
-	WinActivate ahk_id %hGui%
+	; WinActivate ahk_id %hGui%
 	GuiControl, 1:Focus, oDoc
 	If isFindView
 		FindNewText()
@@ -2885,6 +2910,8 @@ ToolTip(text, time = 500) {
 }
 
 ConfirmAction(Action) {
+	If !WinActive("ahk_id" hGui) || GetKeyState("Shift", "P")
+		Return
 	If (!isPaused && bool := 1)
 		Gosub, PausedScript
 	isConfirm := 1
@@ -3080,8 +3107,12 @@ UpdRegister() {
 ViewStylesWin(elem) {  ;
 	elem.innerText := (w_ShowStyles := !w_ShowStyles) ? " show styles " : " hide styles "
 	IniWrite(w_ShowStyles, "w_ShowStyles")
+
 	If w_ShowStyles
-		Styles := "<a></a>" GetStyles(oDoc.getElementById("w_Style").innerText, oDoc.getElementById("c_ExStyle").innerText)
+		Styles := "<a></a>" GetStyles(oDoc.getElementById("w_Style").innerText
+			, oDoc.getElementById("c_ExStyle").innerText
+			, oOther.WinID)
+			
 	oDoc.getElementById("WinStyles").innerHTML := Styles
 	HTML_Win := oBody.innerHTML
 }
@@ -3093,34 +3124,108 @@ ViewStylesWin(elem) {  ;
 	;  https://github.com/strobejb/winspy/blob/master/src/DisplayStyleInfo.c
 	;  http://forum.script-coding.com/viewtopic.php?pid=130846#p130846
 
-GetStyles(Style, ExStyle) {
-	Static Styles, ExStyles
+GetStyles(Style, ExStyle, hWnd) {
+	Static Styles, ExStyles, ClassStyles, GCL_STYLE := -26
+	If !hWnd
+		Return
 	If !Styles
-		Styles := {"WS_BORDER":"0x00800000", "WS_CAPTION":"0x00C00000", "WS_CHILD":"0x40000000", "WS_CHILDWINDOW":"0x40000000"
-		, "WS_CLIPCHILDREN":"0x02000000", "WS_CLIPSIBLINGS":"0x04000000", "WS_DISABLED":"0x08000000", "WS_DLGFRAME":"0x00400000"
-		, "WS_GROUP":"0x00020000", "WS_HSCROLL":"0x00100000", "WS_ICONIC":"0x20000000", "WS_MAXIMIZE":"0x01000000"
-		, "WS_MAXIMIZEBOX":"0x00010000", "WS_MINIMIZE":"0x20000000", "WS_MINIMIZEBOX":"0x00020000", "WS_POPUP":"0x80000000"
-		, "WS_OVERLAPPED":"0x00000000", "WS_SIZEBOX":"0x00040000", "WS_SYSMENU":"0x00080000", "WS_TABSTOP":"0x00010000"
-		, "WS_THICKFRAME":"0x00040000", "WS_TILED":"0x00000000", "WS_VISIBLE":"0x10000000", "WS_VSCROLL":"0x00200000"}
+		Styles := {"WS_BORDER":"0x00800000", "WS_TABSTOP":"0x00010000"
+		, "WS_CLIPCHILDREN":"0x02000000", "WS_CLIPSIBLINGS":"0x04000000", "WS_DISABLED":"0x08000000"
+		, "WS_GROUP":"0x00020000", "WS_HSCROLL":"0x00100000", "WS_MAXIMIZE":"0x01000000"
+		, "WS_VISIBLE":"0x10000000", "WS_VSCROLL":"0x00200000", "WS_DLGFRAME":"0x00400000"}
 
 		, ExStyles := {"WS_EX_ACCEPTFILES":"0x00000010", "WS_EX_APPWINDOW":"0x00040000", "WS_EX_CLIENTEDGE":"0x00000200"
-		, "WS_EX_COMPOSITED":"0x02000000", "WS_EX_CONTEXTHELP":"0x00000400", "WS_EX_CONTROLPARENT":"0x00010000"
-		, "WS_EX_DLGMODALFRAME":"0x00000001", "WS_EX_LAYERED":"0x00080000", "WS_EX_LAYOUTRTL":"0x00400000"
-		, "WS_EX_LEFT":"0x00000000", "WS_EX_LEFTSCROLLBAR":"0x00004000", "WS_EX_LTRREADING":"0x00000000"
+		, "WS_EX_CONTROLPARENT":"0x00010000", "WS_EX_DLGMODALFRAME":"0x00000001", "WS_EX_LAYOUTRTL":"0x00400000"
+		, "WS_EX_LEFTSCROLLBAR":"0x00004000", "WS_EX_WINDOWEDGE":"0x00000100"
 		, "WS_EX_MDICHILD":"0x00000040", "WS_EX_NOACTIVATE":"0x08000000", "WS_EX_NOINHERITLAYOUT":"0x00100000"
 		, "WS_EX_NOPARENTNOTIFY":"0x00000004", "WS_EX_NOREDIRECTIONBITMAP":"0x00200000", "WS_EX_RIGHT":"0x00001000"
-		, "WS_EX_RIGHTSCROLLBAR":"0x00000000", "WS_EX_RTLREADING":"0x00002000", "WS_EX_STATICEDGE":"0x00020000"
-		, "WS_EX_TOOLWINDOW":"0x00000080", "WS_EX_TOPMOST":"0x00000008", "WS_EX_TRANSPARENT":"0x00000020"
-		, "WS_EX_WINDOWEDGE":"0x00000100"}
-
+		, "WS_EX_RTLREADING":"0x00002000", "WS_EX_STATICEDGE":"0x00020000"
+		, "WS_EX_TOOLWINDOW":"0x00000080", "WS_EX_TOPMOST":"0x00000008", "WS_EX_TRANSPARENT":"0x00000020"}
+		
+		, ClassStyles := {"CS_BYTEALIGNCLIENT":"0x1000", "CS_BYTEALIGNWINDOW":"0x2000", "CS_CLASSDC":"0x0040"
+		, "CS_DBLCLKS":"0x0008", "CS_DROPSHADOW":"0x00020000", "CS_GLOBALCLASS":"0x4000", "CS_HREDRAW":"0x0002"
+		, "CS_NOCLOSE":"0x0200", "CS_OWNDC":"0x0020", "CS_PARENTDC":"0x0080", "CS_SAVEBITS":"0x0800", "CS_VREDRAW":"0x0001"}
+		
 	For K, V In Styles
-		Ret .= Style & V ? "<span name='MS:'>" K " := <span class='param' name='MS:'>" V "</span></span>`n" : ""
+		If (Style & V) && (%K% := 1) 
+			Ret .= "<span name='MS:'>" K " := <span class='param' name='MS:'>" V "</span></span>`n" 
+			
+	IF WS_BORDER && WS_DLGFRAME && (WS_CAPTION := 1)  ;	0x00C00000
+		Ret .= "<span name='MS:'>WS_CAPTION := <span class='param' name='MS:'>0x00C00000 = (WS_BORDER | WS_DLGFRAME)</span></span>`n" 
+		
+	IF (Style & 0x00040000) && (WS_THICKFRAME := 1)
+		Ret .= "<span name='MS:'>WS_SIZEBOX := WS_THICKFRAME := <span class='param' name='MS:'>0x00040000</span></span>`n" 
+
+	IF (Style & 0x40000000) && (WS_CHILD := 1)
+		Ret .= "<span name='MS:'>WS_CHILD := WS_CHILDWINDOW := <span class='param' name='MS:'>0x40000000</span></span>`n" 
+
+	IF (Style & 0x20000000) && (WS_MINIMIZE := 1)
+		Ret .= "<span name='MS:'>WS_MINIMIZE := WS_ICONIC := <span class='param' name='MS:'>0x20000000</span></span>`n" 
+
+	IF (Style & 0x80000000) && !WS_CHILD && (WS_POPUP := 1)
+		Ret .= "<span name='MS:'>WS_POPUP := <span class='param' name='MS:'>0x80000000 & !WS_CHILD</span></span>`n" 
+		
+	IF WS_CAPTION && (Style & 0x00080000) && (WS_SYSMENU := 1)
+		Ret .= "<span name='MS:'>WS_SYSMENU := <span class='param' name='MS:'>0x00080000 & WS_CAPTION</span></span>`n" 
+			
+	IF (WS_POPUP && WS_BORDER && WS_SYSMENU) && (WS_POPUPWINDOW := 1)
+		Ret .= "<span name='MS:'>WS_POPUPWINDOW := <span class='param' name='MS:'>(WS_POPUP | WS_BORDER | WS_SYSMENU)</span></span>`n" 
+		 
+	IF WS_BORDER && WS_CAPTION && (WS_OVERLAPPED := 1)
+		Ret .= "<span name='MS:'>WS_OVERLAPPED := WS_TILED := <span class='param' name='MS:'>!WS_CHILD</span></span>`n" 
+		
+	IF WS_SYSMENU && (Style & 0x00020000) && (WS_MINIMIZEBOX := 1)
+		Ret .= "<span name='MS:'>WS_MINIMIZEBOX := <span class='param' name='MS:'>0x00020000 & WS_SYSMENU</span></span>`n" 
+		
+	IF WS_SYSMENU && (Style & 0x00010000) && (WS_MAXIMIZEBOX := 1)
+		Ret .= "<span name='MS:'>WS_MAXIMIZEBOX := <span class='param' name='MS:'>0x00010000 & WS_SYSMENU</span></span>`n" 
+	
+	If (WS_OVERLAPPED && WS_CAPTION && WS_SYSMENU && WS_THICKFRAME && WS_MINIMIZEBOX && WS_MAXIMIZEBOX)
+		Ret .= "<span name='MS:'>WS_OVERLAPPEDWINDOW := WS_TILEDWINDOW := "
+			. "<span class='param' name='MS:'>(WS_OVERLAPPED | WS_CAPTION | WS_SYSMENU | WS_THICKFRAME | WS_MINIMIZEBOX | WS_MAXIMIZEBOX)</span></span>`n"
+ 
+ 
+	StyleBits := DllCall("GetClassLong", "Ptr", hWnd, "int", GCL_STYLE)	;  https://docs.microsoft.com/en-us/windows/desktop/api/winuser/nf-winuser-setclasslongw
+	For K, V In ClassStyles 
+		If (StyleBits & V) && (%K% := 1) 
+			RetClass .= "<span name='MS:'>" K " := <span class='param' name='MS:'>" V "</span></span>`n" 
+
+			
 	For K, V In ExStyles
 		RetEx .= ExStyle & V ? "<span name='MS:'>" K " := <span class='param' name='MS:'>" V "</span></span>`n" : ""
+
+	IF !CS_OWNDC && !CS_CLASSDC && (ExStyle & 0x02000000)
+		RetEx .= "<span name='MS:'>WS_EX_COMPOSITED := <span class='param' name='MS:'>0x02000000 & !(CS_OWNDC | CS_CLASSDC)</span></span>`n" 
+
+	IF !WS_MAXIMIZEBOX && !WS_MINIMIZEBOX && (ExStyle & 0x00000400)
+		RetEx .= "<span name='MS:'>WS_EX_CONTEXTHELP := <span class='param' name='MS:'>0x00000400 & !(WS_MAXIMIZEBOX | WS_MINIMIZEBOX)</span></span>`n" 
+
+	IF !CS_OWNDC && !CS_CLASSDC && (ExStyle & 0x00080000)
+		RetEx .= "<span name='MS:'>WS_EX_LAYERED := <span class='param' name='MS:'>0x00080000 & !(CS_OWNDC | CS_CLASSDC)</span></span>`n" 
+
+	IF !WS_EX_RIGHT
+		RetEx .= "<span name='MS:'>WS_EX_LEFT := <span class='param' name='MS:'>!WS_EX_RIGHT</span></span>`n"  
+
+	IF !WS_EX_LEFTSCROLLBAR
+		RetEx .= "<span name='MS:'>WS_EX_RIGHTSCROLLBAR := <span class='param' name='MS:'>!WS_EX_LEFTSCROLLBAR</span></span>`n" 
+
+	IF !WS_EX_RTLREADING
+		RetEx .= "<span name='MS:'>WS_EX_LTRREADING := <span class='param' name='MS:'>!WS_EX_RTLREADING</span></span>`n" 
+		
+	IF WS_EX_WINDOWEDGE && WS_EX_CLIENTEDGE
+		RetEx .= "<span name='MS:'>WS_EX_OVERLAPPEDWINDOW := <span class='param' name='MS:'>(WS_EX_WINDOWEDGE | WS_EX_CLIENTEDGE)</span></span>`n" 
+		
+	IF WS_EX_WINDOWEDGE && WS_EX_TOOLWINDOW && WS_EX_TOPMOST
+		RetEx .= "<span name='MS:'>WS_EX_PALETTEWINDOW := <span class='param' name='MS:'>(WS_EX_WINDOWEDGE | WS_EX_TOOLWINDOW | WS_EX_TOPMOST)</span></span>`n" 
+
+		
 	If Ret !=
 		Res .= _T1 " id='__Styles_Win'> ( Styles ) </span>" _T2 _PRE1 Ret _PRE2
 	If RetEx !=
 		Res .= _T1 " id='__ExStyles_Win'> ( ExStyles ) </span>" _T2 _PRE1 RetEx _PRE2
+	If RetClass !=
+		Res .= _T1 " id='__ClassStyles_Win'> ( Class Styles: <span name='MS:' style='color: #" ColorFont ";'>" Format("0x{1:08X}", StyleBits) "</span> ) </span>" _T2 _PRE1 RetClass _PRE2
+
 	Return Res
 }
 
@@ -3129,9 +3234,10 @@ ViewStylesControl(elem) {
 	IniWrite(c_ShowStyles, "c_ShowStyles")
 	If c_ShowStyles
 		Styles := "<a></a>" GetControlStyles(oOther.ControlNN_Sub, oDoc.getElementById("c_Style").innerText, oDoc.getElementById("c_ExStyle").innerText)
+		. GetStyles(oDoc.getElementById("c_Style").innerText, oDoc.getElementById("c_ExStyle").innerText, oOther.MouseControlID)
 	oDoc.getElementById("ControlStyles").innerHTML := Styles
-	If !GetControlStyles(oOther.ControlNN_Sub, "E")
-		oDoc.getElementById("get_styles_c").style.color := "#C0C0C0"
+	; If !GetControlStyles(oOther.ControlNN_Sub, "E")
+		; oDoc.getElementById("get_styles_c").style.color := "#C0C0C0"
 	HTML_Control := oBody.innerHTML
 }
 
@@ -3775,9 +3881,9 @@ ButtonClick(oevent) {
 		RunRealPath(oDoc.getElementById("c_command_line").OuterText)
 	Else If thisid = paste_command_line
 		oDoc.getElementById("c_command_line").innerHTML := TransformHTML(Clipboard)
-	Else If (thisid = "process_close" && (oOther.WinPID || !ToolTip("Invalid parametrs", 500)) && (GetKeyState("Shift", "P") || ConfirmAction("Process close?")))
+	Else If (thisid = "process_close" && (oOther.WinPID || !ToolTip("Invalid parametrs", 500)) && ConfirmAction("Process close?"))
 		Process, Close, % oOther.WinPID
-	Else If (thisid = "win_close" && (oOther.WinPID || !ToolTip("Invalid parametrs", 500)) && (GetKeyState("Shift", "P") || ConfirmAction("Window close?")))
+	Else If (thisid = "win_close" && (oOther.WinPID || !ToolTip("Invalid parametrs", 500)) && ConfirmAction("Window close?"))
 		WinClose, % "ahk_id" oOther.WinID
 	Else If (thisid = "SendCode")
 		Events.SendCode()
@@ -3809,6 +3915,10 @@ ButtonClick(oevent) {
 			Run % Path_User "\Window Detective.lnk"
 		TimerFunc(Func("MyWindowDetectiveStart").Bind(ThisMode = "Win" ? oOther.WinID : oOther.MouseControlID, WinExist() ? 1 : 0), -300)
 	}
+	Else If thisid = set_button_Transparent 
+		WinSet, Transparent, % oDoc.getElementById("get_win_Transparent").innerText + 0, % "ahk_id" oOther.WinID  
+	Else If thisid = set_button_TransColor 
+		WinSet, TransColor, % oDoc.getElementById("get_win_TransColor").innerText, % "ahk_id" oOther.WinID  
 	Else If thisid = set_button_pos
 	{
 		HayStack := oevent.OuterText = "Pos:"
