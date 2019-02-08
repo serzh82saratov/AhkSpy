@@ -26,7 +26,7 @@
     Актуальный исходник - https://raw.githubusercontent.com/serzh82saratov/AhkSpy/master/AhkSpy.ahk
 */
 
-Global AhkSpyVersion := 3.58
+Global AhkSpyVersion := 3.59
 
 	; _________________________________________________ Header _________________________________________________
 
@@ -3276,12 +3276,12 @@ GetControlStyles(Class, Style, ExStyle, hWnd) {
 		Return GetStyle_%Class%(Style, ExStyle, hWnd)
 /*
 	Added:
-	Button, Edit, Static, SysTabControl32, ComboBox, ListBox, msctls_updown32, SysDateTimePick32
-	, SysMonthCal32, msctls_trackbar32, msctls_statusbar32, msctls_progress32
+	Button, Edit, Static, SysTabControl32, SysDateTimePick32, SysMonthCal32, ComboBox, ListBox
+	, msctls_trackbar32, msctls_statusbar32, msctls_progress32, msctls_updown32
 */ 
 }
 
-GetStyle_xxxxxxx(Style, ExStyle, hWnd)  {
+GetStyle_xxxxxxx(Style, ExStyle, hWnd) {
 	;	xxxx
 	;	xxxx
 	Static oStyles, oExStyles
@@ -3348,7 +3348,7 @@ GetStyle_Button(Style, ExStyle, hWnd)  {
 		,"BS_RADIOBUTTON":"0x0004","BS_3STATE":"0x0005","BS_AUTO3STATE":"0x0006","BS_GROUPBOX":"0x0007","BS_USERBUTTON":"0x0008"
 		,"BS_AUTORADIOBUTTON":"0x0009","BS_PUSHBOX":"0x000A","BS_OWNERDRAW":"0x000B","BS_COMMANDLINK":"0x000E"
 		,"BS_DEFCOMMANDLINK":"0x000F","BS_SPLITBUTTON":"0x000C","BS_DEFSPLITBUTTON":"0x000D"}
-		  ;	outdate "BS_TYPEMASK":"0x000F"
+		  ; "BS_TYPEMASK":"0x000F"
 
 	Style := sStyle := Style & 0xffff
 	For K, V In oEx
@@ -3636,7 +3636,109 @@ GetStyle_msctls_progress(Style, ExStyle, hWnd)  {
 	Return Res
 } 
 
+GetStyle_SysListView(Style, ExStyle, hWnd)  {
+	;	https://www.autohotkey.com/boards/viewtopic.php?p=25871#p25871
+	;	https://docs.microsoft.com/en-us/windows/desktop/controls/tab-control-styles
+	;	https://docs.microsoft.com/en-us/windows/desktop/controls/tab-control-extended-styles
+	Static oStyles, oExStyles, oEx, LVM_GETEXTENDEDLISTVIEWSTYLE := 0x1037
+	If !oStyles
+		oStyles := {"LVS_AUTOARRANGE":"0x0100","LVS_EDITLABELS":"0x0200"
+		,"LVS_NOLABELWRAP":"0x0080","LVS_NOSCROLL":"0x2000"
+		,"LVS_OWNERDRAWFIXED":"0x0400","LVS_SHAREIMAGELISTS":"0x0040","LVS_SHOWSELALWAYS":"0x0008","LVS_SINGLESEL":"0x0004","LVS_OWNERDATA":"0x1000"
+		,"LVS_SORTASCENDING":"0x0010","LVS_SORTDESCENDING":"0x0020"}
+		
+		, oExStyles :={"LVS_EX_AUTOAUTOARRANGE":"0x01000000","LVS_EX_AUTOCHECKSELECT":"0x08000000","LVS_EX_AUTOSIZECOLUMNS":"0x10000000","LVS_EX_BORDERSELECT":"0x00008000"
+		,"LVS_EX_CHECKBOXES":"0x00000004","LVS_EX_COLUMNOVERFLOW":"0x80000000","LVS_EX_COLUMNSNAPPOINTS":"0x40000000","LVS_EX_DOUBLEBUFFER":"0x00010000","LVS_EX_FLATSB":"0x00000100"
+		,"LVS_EX_FULLROWSELECT":"0x00000020","LVS_EX_GRIDLINES":"0x00000001","LVS_EX_HEADERDRAGDROP":"0x00000010","LVS_EX_HEADERINALLVIEWS":"0x02000000","LVS_EX_HIDELABELS":"0x00020000"
+		,"LVS_EX_INFOTIP":"0x00000400","LVS_EX_JUSTIFYCOLUMNS":"0x00200000","LVS_EX_LABELTIP":"0x00004000","LVS_EX_MULTIWORKAREAS":"0x00002000","LVS_EX_ONECLICKACTIVATE":"0x00000040"
+		,"LVS_EX_REGIONAL":"0x00000200","LVS_EX_SIMPLESELECT":"0x00100000","LVS_EX_SINGLEROW":"0x00040000","LVS_EX_SNAPTOGRID":"0x00080000","LVS_EX_SUBITEMIMAGES":"0x00000002"
+		,"LVS_EX_TRACKSELECT":"0x00000008","LVS_EX_TRANSPARENTBKGND":"0x00400000","LVS_EX_TRANSPARENTSHADOWTEXT":"0x00800000","LVS_EX_TWOCLICKACTIVATE":"0x00000080"
+		,"LVS_EX_UNDERLINECOLD":"0x00001000","LVS_EX_UNDERLINEHOT":"0x00000800"}
+		
+		,oEx := {"LVS_TYPEMASK":"0x0003","LVS_ICON":"0x0000","LVS_REPORT":"0x0001","LVS_SMALLICON":"0x0002","LVS_LIST":"0x0003"
+		,"LVS_ALIGNMASK":"0x0C00","LVS_ALIGNTOP":"0x0000","LVS_ALIGNLEFT":"0x0800"
+		,"LVS_TYPESTYLEMASK":"0xFC00","LVS_NOSORTHEADER":"0x8000","LVS_NOCOLUMNHEADER":"0x4000"}
+	
+	Style := sStyle := Style & 0xffff
+	For K, V In oStyles
+		If ((sStyle & V) = V) && (%K% := 1, Style -= V)
+			Ret .= "<span name='MS:'>" K " := <span class='param' name='MS:'>" V "</span></span>`n"
+	
+	IF ((sStyle & oEx.LVS_TYPEMASK) = oEx.LVS_REPORT) && (LVS_REPORT := 1, Style -= oEx.LVS_REPORT)      ;	LVS_REPORT
+		Ret .= "<span name='MS:'>LVS_REPORT := <span class='param' name='MS:'>LVS_TYPEMASK = LVS_REPORT</span></span>`n"
+	IF ((sStyle & oEx.LVS_TYPEMASK) = oEx.LVS_SMALLICON) && (LVS_SMALLICON := 1, Style -= oEx.LVS_SMALLICON)      ;	LVS_SMALLICON
+		Ret .= "<span name='MS:'>LVS_SMALLICON := <span class='param' name='MS:'>LVS_TYPEMASK = LVS_SMALLICON</span></span>`n" 
+	IF ((sStyle & oEx.LVS_TYPEMASK) = oEx.LVS_LIST) && (LVS_LIST := 1, Style -= oEx.LVS_LIST)      ;	LVS_LIST
+		Ret .= "<span name='MS:'>LVS_LIST := <span class='param' name='MS:'>LVS_TYPEMASK = LVS_LIST</span></span>`n" 
+	IF ((sStyle & oEx.LVS_TYPEMASK) = oEx.LVS_ICON) && !LVS_REPORT && !LVS_SMALLICON && !LVS_LIST && (LVS_ICON := 1)      ;	LVS_ICON
+		Ret .= "<span name='MS:'>LVS_ICON := <span class='param' name='MS:'>LVS_TYPEMASK = LVS_ICON & !(LVS_REPORT | LVS_SMALLICON | LVS_LIST)</span></span>`n" 
+	IF ((sStyle & oEx.LVS_ALIGNMASK) = oEx.LVS_ALIGNLEFT) && (LVS_SMALLICON || LVS_ICON) && (LVS_ALIGNLEFT := 1, Style -= oEx.LVS_ALIGNLEFT)      ;	LVS_ALIGNLEFT
+		Ret .= "<span name='MS:'>LVS_ALIGNLEFT := <span class='param' name='MS:'>LVS_ALIGNMASK = LVS_ALIGNLEFT & (LVS_SMALLICON || LVS_ICON)</span></span>`n"
+	IF ((sStyle & oEx.LVS_ALIGNMASK) = oEx.LVS_ALIGNTOP) && (LVS_SMALLICON || LVS_ICON) && (LVS_ALIGNTOP := 1, Style -= oEx.LVS_ALIGNTOP)      ;	LVS_ALIGNTOP
+		Ret .= "<span name='MS:'>LVS_ALIGNTOP := <span class='param' name='MS:'>LVS_ALIGNMASK = LVS_ALIGNTOP & (LVS_SMALLICON || LVS_ICON)</span></span>`n"
+	IF ((sStyle & oEx.LVS_NOSORTHEADER) = oEx.LVS_NOSORTHEADER) && (LVS_NOSORTHEADER := 1, Style -= oEx.LVS_NOSORTHEADER)      ;	LVS_NOSORTHEADER
+		Ret .= "<span name='MS:'>LVS_NOSORTHEADER := <span class='param' name='MS:'>0x8000</span></span>`n"
+	IF ((sStyle & oEx.LVS_NOCOLUMNHEADER) = oEx.LVS_NOCOLUMNHEADER) && (LVS_NOCOLUMNHEADER := 1, Style -= oEx.LVS_NOCOLUMNHEADER)      ;	LVS_NOCOLUMNHEADER
+		Ret .= "<span name='MS:'>LVS_NOCOLUMNHEADER := <span class='param' name='MS:'>0x4000</span></span>`n"
+		
+	IF Style
+		Ret .= "<span style='color: #" ColorDelimiter ";' name='MS:'>" Format("0x{1:04X}", Style)  "</span>`n"
+	If Ret !=
+		Res .= _T1 " id='__Styles_Control'> ( Styles - SysListView32: <span name='MS:' style='color: #" ColorFont ";'>" Format("0x{:04X}", sStyle) "</span> ) </span>" _T2 _PRE1 Ret _PRE2
+
+	SendMessage, LVM_GETEXTENDEDLISTVIEWSTYLE, 0, 0,, ahk_id %hWnd%
+	ExStyle := sExStyle := ErrorLevel
+	For K, V In oExStyles
+		If ((ExStyle & V) = V) && (%K% := 1, ExStyle -= V)
+			RetEx .= "<span name='MS:'>" K " := <span class='param' name='MS:'>" V "</span></span>`n"
+
+	IF ExStyle
+		RetEx .= "<span style='color: #" ColorDelimiter ";' name='MS:'>" Format("0x{1:08X}", ExStyle)  "</span>`n"
+	If RetEx !=
+		Res .= _T1 " id='__ExStyles_Control'> ( ExStyles - SysListView32: <span name='MS:' style='color: #" ColorFont ";'>" Format("0x{:08X}", sExStyle) "</span> ) </span>" _T2 _PRE1 RetEx _PRE2
+	Return Res
+}
 /*
+
+
+
+
+StyleLookupEx ListViewStyles[] = 
+{
+	STYLE_(LVS_ICON),		LVS_TYPEMASK, -1, LVS_REPORT|LVS_SMALLICON|LVS_LIST, //0x0000
+	STYLE_(LVS_REPORT),		LVS_TYPEMASK, -1, 0,		//0x0001
+	STYLE_(LVS_SMALLICON),	LVS_TYPEMASK, -1, 0,		//0x0002
+	STYLE_(LVS_LIST),		LVS_TYPEMASK, -1, 0,		//0x0003
+
+	STYLE_(LVS_SINGLESEL),			0,   -1, 0,		//0x0004
+	STYLE_(LVS_SHOWSELALWAYS),		0,   -1, 0,		//0x0008
+	STYLE_(LVS_SORTASCENDING),		0,   -1, 0,		//0x0010
+	STYLE_(LVS_SORTDESCENDING),		0,   -1, 0,		//0x0020
+	STYLE_(LVS_SHAREIMAGELISTS),	0,   -1, 0,		//0x0040
+	STYLE_(LVS_NOLABELWRAP),		0,   -1, 0,		//0x0080
+	STYLE_(LVS_AUTOARRANGE),		0,   -1, 0,		//0x0100
+	STYLE_(LVS_EDITLABELS),			0,   -1, 0,		//0x0200
+
+#if (_WIN32_IE >= 0x0300)
+	STYLE_(LVS_OWNERDATA),			0, -1, 0,		//0x1000
+#endif
+
+	STYLE_(LVS_NOSCROLL),			0, -1, 0,		//0x2000
+
+	STYLE_(LVS_ALIGNTOP),			0, -1, 0,		//0x0000
+	STYLE_(LVS_ALIGNLEFT),	LVS_ALIGNMASK, -1, 0,	//0x0800
+
+	//STYLE_(LVS_ALIGNMASK),			0, -1, 0,		//0x0c00
+	//STYLE_(LVS_TYPESTYLEMASK),		0, -1, 0,		//0xfc00
+
+	STYLE_(LVS_OWNERDRAWFIXED),		0, -1, 0,		//0x0400
+	STYLE_(LVS_NOCOLUMNHEADER),		0, -1, 0,		//0x4000
+	STYLE_(LVS_NOSORTHEADER),		0, -1, 0,		//0x8000
+
+	-1, _T(""), -1, -1, -1
+};
+
+
 
 https://www.autohotkey.com/boards/viewtopic.php?p=25857#p25857
 https://docs.microsoft.com/en-us/windows/desktop/controls/list-view-window-styles
