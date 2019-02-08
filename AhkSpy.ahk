@@ -26,7 +26,7 @@
     Актуальный исходник - https://raw.githubusercontent.com/serzh82saratov/AhkSpy/master/AhkSpy.ahk
 */
 
-Global AhkSpyVersion := 3.56
+Global AhkSpyVersion := 3.57
 
 	; _________________________________________________ Header _________________________________________________
 
@@ -902,7 +902,7 @@ HTML_Control:
 	{
 		; ControlStyleExist := GetControlStyles(ControlNN_Sub, "E")
 		If c_ShowStyles
-			ControlStyles := GetControlStyles(ControlNN_Sub, CtrlStyle, CtrlExStyle)
+			ControlStyles := GetControlStyles(ControlNN_Sub, CtrlStyle, CtrlExStyle, ControlID)
 			, ControlStyles .= GetStyles(CtrlStyle, CtrlExStyle, ControlID, 1)
 			
 		; ButtonStyle_ := _DP _BB1 " id='get_styles_c'" (ControlStyleExist ? "" : " style='color: #C0C0C0'") "> " (c_ShowStyles ? "show styles" : "hide styles") " " _BB2
@@ -3154,7 +3154,7 @@ GetStyles(Style, ExStyle, hWnd, IsChild = 0) {
 	If !hWnd
 		Return
 	If !Styles
-		Styles := {"WS_BORDER":"0x00800000", "WS_TABSTOP":"0x00010000"
+		Styles := {"WS_BORDER":"0x00800000", "WS_TABSTOP":"0x00010000", "WS_SYSMENU":"0x00080000"
 		, "WS_CLIPCHILDREN":"0x02000000", "WS_CLIPSIBLINGS":"0x04000000", "WS_DISABLED":"0x08000000"
 		, "WS_GROUP":"0x00020000", "WS_HSCROLL":"0x00100000", "WS_MAXIMIZE":"0x01000000"
 		, "WS_VISIBLE":"0x10000000", "WS_VSCROLL":"0x00200000", "WS_DLGFRAME":"0x00400000"}
@@ -3191,10 +3191,7 @@ GetStyles(Style, ExStyle, hWnd, IsChild = 0) {
 		Ret .= "<span name='MS:'>WS_MINIMIZE := WS_ICONIC := <span class='param' name='MS:'>0x20000000</span></span>`n" 
 
 	IF (Style & 0x80000000) && !WS_CHILD && (WS_POPUP := 1, Style -= 0x80000000)  ;	WS_POPUP
-		Ret .= "<span name='MS:'>WS_POPUP := <span class='param' name='MS:'>0x80000000 & !WS_CHILD</span></span>`n" 
-		
-	IF WS_CAPTION && (Style & 0x00080000) && (WS_SYSMENU := 1, Style -= 0x00080000)  ;	WS_SYSMENU
-		Ret .= "<span name='MS:'>WS_SYSMENU := <span class='param' name='MS:'>0x00080000 & WS_CAPTION</span></span>`n" 
+		Ret .= "<span name='MS:'>WS_POPUP := <span class='param' name='MS:'>0x80000000 & !WS_CHILD</span></span>`n"  
 			
 	IF (WS_POPUP && WS_BORDER && WS_SYSMENU) && (WS_POPUPWINDOW := 1)  ;	WS_POPUPWINDOW
 		Ret .= "<span name='MS:'>WS_POPUPWINDOW := <span class='param' name='MS:'>(WS_POPUP | WS_BORDER | WS_SYSMENU)</span></span>`n" 
@@ -3221,7 +3218,6 @@ GetStyles(Style, ExStyle, hWnd, IsChild = 0) {
 		If (ExStyle & V) && (%K% := 1, ExStyle -= V) 
 			RetEx .= "<span name='MS:'>" K " := <span class='param' name='MS:'>" V "</span></span>`n"
 			
-
 	IF !CS_OWNDC && !CS_CLASSDC && (ExStyle & 0x02000000) && (1, ExStyle -= 0x02000000)  ;	WS_EX_COMPOSITED
 		RetEx .= "<span name='MS:'>WS_EX_COMPOSITED := <span class='param' name='MS:'>0x02000000 & !(CS_OWNDC | CS_CLASSDC)</span></span>`n" 
 
@@ -3245,7 +3241,6 @@ GetStyles(Style, ExStyle, hWnd, IsChild = 0) {
 	IF WS_EX_WINDOWEDGE && WS_EX_TOOLWINDOW && WS_EX_TOPMOST  ;	WS_EX_PALETTEWINDOW
 		RetEx .= "<span name='MS:'>WS_EX_PALETTEWINDOW := <span class='param' name='MS:'>(WS_EX_WINDOWEDGE | WS_EX_TOOLWINDOW | WS_EX_TOPMOST)</span></span>`n" 
 
-
 	IF Style
 		Ret .= "<span style='color: #" ColorDelimiter ";' name='MS:'>" Format("0x{1:08X}", Style) "</span>`n"
 	If Ret !=
@@ -3266,7 +3261,7 @@ ViewStylesControl(elem) {
 	elem.innerText := (c_ShowStyles := !c_ShowStyles) ? " show styles " : " hide styles "
 	IniWrite(c_ShowStyles, "c_ShowStyles")
 	If c_ShowStyles
-		Styles := "<a></a>" GetControlStyles(oOther.ControlNN_Sub, oDoc.getElementById("c_Style").innerText, oDoc.getElementById("c_ExStyle").innerText)
+		Styles := "<a></a>" GetControlStyles(oOther.ControlNN_Sub, oDoc.getElementById("c_Style").innerText, oDoc.getElementById("c_ExStyle").innerText, oOther.MouseControlID)
 		. GetStyles(oDoc.getElementById("c_Style").innerText, oDoc.getElementById("c_ExStyle").innerText, oOther.MouseControlID, 1)
 	oDoc.getElementById("ControlStyles").innerHTML := Styles 
 	HTML_Control := oBody.innerHTML
@@ -3274,12 +3269,12 @@ ViewStylesControl(elem) {
 
 	; _________________________________________________ ControlStyles _________________________________________________
 
-GetControlStyles(Class, Style, ExStyle)  {
+GetControlStyles(Class, Style, ExStyle, hWnd)  {
 	;	https://github.com/strobejb/winspy/blob/master/src/DisplayStyleInfo.c
 	
 	; ToolTip % Class "`n"  Format("0x{:04x}", Style & 0xffff)
 	If IsFunc("GetStyle_" Class)
-		Return GetStyle_%Class%(Style, ExStyle)
+		Return GetStyle_%Class%(Style, ExStyle, hWnd)
 	Return
 	
 	Static Styles, ExStyles
@@ -3343,7 +3338,7 @@ GetControlStyles(Class, Style, ExStyle)  {
 
 
 
-GetStyle_xxxxxxx(Style, ExStyle)  {
+GetStyle_xxxxxxx(Style, ExStyle, hWnd)  {
 	;	xxxx
 	;	xxxx
 	Static oStyles, oExStyles
@@ -3363,7 +3358,7 @@ GetStyle_xxxxxxx(Style, ExStyle)  {
 	Return Res
 }
 
-GetStyle_Static(Style, ExStyle)  {
+GetStyle_Static(Style, ExStyle, hWnd)  {
 	;	https://www.autohotkey.com/boards/viewtopic.php?p=25869#p25869
 	;	https://docs.microsoft.com/en-us/windows/desktop/controls/static-control-styles
 	Static oStyles, oEx, oExStyles 
@@ -3397,7 +3392,7 @@ GetStyle_Static(Style, ExStyle)  {
 	Return Res
 } 
 
-GetStyle_Button(Style, ExStyle)  {
+GetStyle_Button(Style, ExStyle, hWnd)  {
 	;	https://www.autohotkey.com/boards/viewtopic.php?p=25841#p25841
 	;	https://docs.microsoft.com/en-us/windows/desktop/controls/button-styles
 	Static oStyles, oEx, oExStyles
@@ -3435,7 +3430,7 @@ GetStyle_Button(Style, ExStyle)  {
 	Return Res
 }
 
-GetStyle_Edit(Style, ExStyle)  {
+GetStyle_Edit(Style, ExStyle, hWnd)  {
 	;	https://www.autohotkey.com/boards/viewtopic.php?p=25848#p25848
 	;	https://docs.microsoft.com/en-us/windows/desktop/controls/edit-control-styles
 	Static oStyles, oExStyles
@@ -3458,17 +3453,17 @@ GetStyle_Edit(Style, ExStyle)  {
 	Return Res
 }
 
-GetStyle_SysTabControl(Style, ExStyle)  {
+GetStyle_SysTabControl(Style, ExStyle, hWnd)  {
 	;	https://www.autohotkey.com/boards/viewtopic.php?p=25871#p25871
 	;	https://docs.microsoft.com/en-us/windows/desktop/controls/tab-control-styles
 	;	https://docs.microsoft.com/en-us/windows/desktop/controls/tab-control-extended-styles
-	Static oStyles
+	Static oStyles, TCM_GETEXTENDEDSTYLE := 0x1335
 	If !oStyles
 		oStyles := {"TCS_SCROLLOPPOSITE":"0x0001","TCS_MULTISELECT":"0x0004","TCS_FLATBUTTONS":"0x0008"
 		,"TCS_FORCELABELLEFT":"0x0020","TCS_HOTTRACK":"0x0040","TCS_BUTTONS":"0x0100","TCS_MULTILINE":"0x0200"
 		,"TCS_FORCEICONLEFT":"0x0010","TCS_FIXEDWIDTH":"0x0400","TCS_RAGGEDRIGHT":"0x0800","TCS_FOCUSONBUTTONDOWN":"0x1000"
 		,"TCS_OWNERDRAWFIXED":"0x2000","TCS_TOOLTIPS":"0x4000","TCS_FOCUSNEVER":"0x8000"} 
-
+	
 	Style := Style & 0xffff
 	For K, V In oStyles
 		If ((Style & V) = V) && (%K% := 1)
@@ -3491,9 +3486,12 @@ GetStyle_SysTabControl(Style, ExStyle)  {
 	}
 	If Ret !=
 		Res .= _T1 " id='__Styles_Control'> ( Styles - SysTabControl32: <span name='MS:' style='color: #" ColorFont ";'>" Format("0x{:04X}", Style) "</span> ) </span>" _T2 _PRE1 Ret _PRE2
+
+	SendMessage, TCM_GETEXTENDEDSTYLE, 0, 0,, ahk_id %hWnd%
+	ExStyle := ErrorLevel
 		
-	If TCS_FLATBUTTONS && TCS_BUTTONS && ((ExStyle & 0x00000001) = 0x00000001)  ;	TCS_EX_FLATSEPARATORS
-		RetEx .= "<span name='MS:'>TCS_EX_FLATSEPARATORS := <span class='param' name='MS:'>0x00000001 & (TCS_FLATBUTTONS | TCS_BUTTONS)</span></span>`n"
+	If ((ExStyle & 0x00000001) = 0x00000001)  ;	TCS_EX_FLATSEPARATORS
+		RetEx .= "<span name='MS:'>TCS_EX_FLATSEPARATORS := <span class='param' name='MS:'>0x00000001</span></span>`n"
 	If ((ExStyle & 0x00000002) = 0x00000002)  ;	TCS_EX_REGISTERDROP
 		RetEx .= "<span name='MS:'>TCS_EX_REGISTERDROP := <span class='param' name='MS:'>0x00000002</span></span>`n"
 
