@@ -26,7 +26,7 @@
     Актуальный исходник - https://raw.githubusercontent.com/serzh82saratov/AhkSpy/master/AhkSpy.ahk
 */
 
-Global AhkSpyVersion := 3.55
+Global AhkSpyVersion := 3.56
 
 	; _________________________________________________ Header _________________________________________________
 
@@ -83,12 +83,14 @@ Global ThisMode := IniRead("StartMode", "Control"), LastModeSave := (ThisMode = 
 , ScrollPos := {}, AccCoord := [], oOther := {}, oFind := {}, Edits := [], oMS := {}, oMenu := {}, oPubObj := {}
 
 , ClipAdd_Before := 0, ClipAdd_Delimiter := "`r`n"
-, HTML_Win, HTML_Control, HTML_Hotkey, rmCtrlX, rmCtrlY, widthTB, FullScreenMode, hColorProgress, hFindAllText, MsgAhkSpyZoom, Sleep, oShowMarkers, oShowAccMarkers, oShowMarkersTmp
+, HTML_Win, HTML_Control, HTML_Hotkey, rmCtrlX, rmCtrlY, widthTB, FullScreenMode, hColorProgress, hFindAllText, MsgAhkSpyZoom, Sleep, oShowMarkers, oShowAccMarkers, oShowMarkersEx
 , hGui, hTBGui, hActiveX, hFindGui, oDoc, ShowMarker, isFindView, isIE, isPaused, PreMaxHeight := MaxHeightStrToNum(), PreOverflowHide := !!PreMaxHeight, DecimalCode
 , oDocEl, oPubObjGUID, oJScript, oBody, isConfirm, isAhkSpy := 1, TitleText, FreezeTitleText, TitleTextP1, oUIAInterface, Shift_Tab_Down, hButtonButton, hButtonControl, hButtonWindow
 , TitleTextP2 := TitleTextP2_Reserved := "     ( Shift+Tab - Freeze | RButton - CopySelected | Pause - Pause )     v" AhkSpyVersion
 
-, _DB := "<span style='position: relative; margin-right: 1em;'></span>"
+#Include *i %A_AppData%\AhkSpy\IncludeSettings.ahk 
+
+Global _DB := "<span style='position: relative; margin-right: 1em;'></span>"
 , _BT1 := "<span class='button' unselectable='on' oncontextmenu='return false' onmouseleave='OnButtonOut (this)' onmousedown='OnButtonDown (this)' "
 	. "onmouseup='OnButtonUp (this)' onmouseover='OnButtonOver (this)' contenteditable='false' ", _BT2 := "</span>"
 , _BP1 := "<span contenteditable='false' oncontextmenu='return false' class='BB'>" _BT1 "style='color: #" ColorParam ";' name='pre' ", _BP2 := "</span></span>"
@@ -864,8 +866,8 @@ Spot_Control(NotHTML = 0) {
 		UIAPID := UIAElement.CurrentProcessId  
 		UIAHWND := UIAElement.CurrentNativeWindowHandle 
 		
-		; If (UIAPID && UIAPID != WinPID && UIAPID != oOther.CurrentProcessId)
-		If 1
+		If (UIAPID && UIAPID != WinPID && UIAPID != oOther.CurrentProcessId)
+		; If 1
 		{
 			WinGet, UIAProcessName, ProcessName, ahk_pid %UIAPID% 
 			WinGet, UIAProcessPath, ProcessPath, ahk_pid %UIAPID% 
@@ -901,7 +903,7 @@ HTML_Control:
 		; ControlStyleExist := GetControlStyles(ControlNN_Sub, "E")
 		If c_ShowStyles
 			ControlStyles := GetControlStyles(ControlNN_Sub, CtrlStyle, CtrlExStyle)
-			, ControlStyles .= GetStyles(CtrlStyle, CtrlExStyle, ControlID)
+			, ControlStyles .= GetStyles(CtrlStyle, CtrlExStyle, ControlID, 1)
 			
 		; ButtonStyle_ := _DP _BB1 " id='get_styles_c'" (ControlStyleExist ? "" : " style='color: #C0C0C0'") "> " (c_ShowStyles ? "show styles" : "hide styles") " " _BB2
 		ButtonStyle_ := _DP _BB1 " id='get_styles_c'> " (c_ShowStyles ? "show styles" : "hide styles") " " _BB2
@@ -1968,7 +1970,7 @@ MenuCheck()  {
 		If Menu && (F := oMenu[Menu][oOther.ThisMenuItem := AccUnderMouse(WinID, Id).accName(Id)]) 
 		{
 			If !(F ~= "^_")
-				Return DllCall("mouse_event", "UInt", 0x0002|0x0004)
+				Return DllCall("mouse_event", "UInt", 0x0002|0x0004)  ;	WinClose("ahk_class #32768 ahk_pid " oOther.CurrentProcessId), SetTimer(F, -1)
 			oOther.MenuItemExist := 1
 			If IsLabel(F)
 				GoSub, % F
@@ -2559,12 +2561,23 @@ ShowAccMarker(x, y, w, h, b := 2) {
 	ShowMarkers(oShowAccMarkers, x, y, w, h, b)
 }
 
+ShowMarkerEx(x, y, w, h, b := 4) {
+	If !oShowMarkersEx
+		ShowMarkersCreate("oShowMarkersEx", "5DCC3B")
+	(w < 8 || h < 8) && (b := 2)
+	ShowMarkers(oShowMarkersEx, x, y, w, h, b)
+}
+
 HideMarker() {
 	HideMarkers(oShowMarkers)
 }
 
 HideAccMarker() {
 	HideMarkers(oShowAccMarkers)
+}
+
+HideMarkerEx() {
+	HideMarkers(oShowMarkersEx)
 }
 
 HideAllMarkers() {
@@ -2640,22 +2653,6 @@ WM_CTLCOLOREDIT(wParam, lParam) {
 	DllCall("SetBkColor", Ptr, wParam, UInt, Edits[lParam].BG)
 	DllCall("SetBkMode", Ptr, wParam, UInt, 2)
 	Return hBrush
-}
-
-IniRead(Key, Error := " ") {
-	IniRead, Value, %A_AppData%\AhkSpy\Settings.ini, AhkSpy, %Key%, %Error%
-	If (Value = "" && Error != " ")
-		Value := Error
-	Return Value
-}
-
-IniWrite(Value, Key) {
-	IniWrite, %Value%, %A_AppData%\AhkSpy\Settings.ini, AhkSpy, %Key%
-	Return Value
-}
-
-Sleep(time) {
-	Sleep time
 }
 
 InArr(Val, Arr) {
@@ -2896,19 +2893,6 @@ GetLangName(hWnd) {
 	Return lpLCData
 }
 
-ToolTip(text, time = 500) {
-	CoordMode, Mouse
-	CoordMode, ToolTip
-	MouseGetPos, X, Y
-	ToolTip, %text%, X-10, Y-45
-	SetTimer, HideToolTip, -%time%
-	Return 1
-
-	HideToolTip:
-		ToolTip
-		Return
-}
-
 ConfirmAction(Action) {
 	If !WinActive("ahk_id" hGui) || GetKeyState("Shift", "P")
 		Return
@@ -3038,13 +3022,54 @@ HighLight(elem, time = "", RemoveFormat = 1) {
 		Return
 }
 
-SetTimer(func, time) {
-	SetTimer, % func, % time
+FlashArea(x, y, w, h, att = 1) {
+	Static hFunc, max := 6
+	If (att = 1)
+		Try SetTimer, % hFunc, Off
+	Mod(att, 2) ? ShowMarkerEx(x, y, w, h, 5) : HideMarkerEx()
+	If (att = max)
+		Return
+	hFunc := Func("FlashArea").Bind(x, y, w, h, ++att) 
+	SetTimer, % hFunc, -100
 }
 
-FlashArea(x, y, w, h) {
-		Loop 3
-			ShowMarker(x, y, w, h, 5), Sleep(100), HideMarker(), Sleep(100)
+	; _________________________________________________ Command as function _________________________________________________
+
+IniRead(Key, Error := " ") {
+	IniRead, Value, %A_AppData%\AhkSpy\Settings.ini, AhkSpy, %Key%, %Error%
+	If (Value = "" && Error != " ")
+		Value := Error
+	Return Value
+}
+
+IniWrite(Value, Key) {
+	IniWrite, %Value%, %A_AppData%\AhkSpy\Settings.ini, AhkSpy, %Key%
+	Return Value
+}
+
+WinClose(title) {
+	WinClose % title
+}
+
+Sleep(time) {
+	Sleep time
+}
+
+SetTimer(funcorlabel, time) {
+	SetTimer, % funcorlabel, % time
+} 
+
+ToolTip(text, time = 500) {
+	CoordMode, Mouse
+	CoordMode, ToolTip
+	MouseGetPos, X, Y
+	ToolTip, %text%, X-10, Y-45
+	SetTimer, HideToolTip, -%time%
+	Return 1
+
+	HideToolTip:
+		ToolTip
+		Return
 }
 
 	; _________________________________________________ Update _________________________________________________
@@ -3102,7 +3127,7 @@ UpdRegister() {
 		Return
 }
 
-	; _________________________________________________ Styles _________________________________________________
+	; _________________________________________________ WindowStyles _________________________________________________
 
 ViewStylesWin(elem) {  ;
 	elem.innerText := (w_ShowStyles := !w_ShowStyles) ? " show styles " : " hide styles "
@@ -3124,7 +3149,7 @@ ViewStylesWin(elem) {  ;
 	;  https://github.com/strobejb/winspy/blob/master/src/DisplayStyleInfo.c
 	;  http://forum.script-coding.com/viewtopic.php?pid=130846#p130846
 
-GetStyles(Style, ExStyle, hWnd) {
+GetStyles(Style, ExStyle, hWnd, IsChild = 0) {
 	Static Styles, ExStyles, ClassStyles, GCL_STYLE := -26
 	If !hWnd
 		Return
@@ -3142,87 +3167,95 @@ GetStyles(Style, ExStyle, hWnd) {
 		, "WS_EX_RTLREADING":"0x00002000", "WS_EX_STATICEDGE":"0x00020000"
 		, "WS_EX_TOOLWINDOW":"0x00000080", "WS_EX_TOPMOST":"0x00000008", "WS_EX_TRANSPARENT":"0x00000020"}
 		
-		, ClassStyles := {"CS_BYTEALIGNCLIENT":"0x1000", "CS_BYTEALIGNWINDOW":"0x2000", "CS_CLASSDC":"0x0040"
+		, ClassStyles := {"CS_BYTEALIGNCLIENT":"0x1000", "CS_BYTEALIGNWINDOW":"0x2000", "CS_CLASSDC":"0x0040", "CS_IME":"0x00010000"  
 		, "CS_DBLCLKS":"0x0008", "CS_DROPSHADOW":"0x00020000", "CS_GLOBALCLASS":"0x4000", "CS_HREDRAW":"0x0002"
 		, "CS_NOCLOSE":"0x0200", "CS_OWNDC":"0x0020", "CS_PARENTDC":"0x0080", "CS_SAVEBITS":"0x0800", "CS_VREDRAW":"0x0001"}
 		
+	If IsChild
+		Style := Style & 0xffff0000
+		
 	For K, V In Styles
-		If (Style & V) && (%K% := 1) 
+		If (Style & V)&& (%K% := 1, Style -= V)
 			Ret .= "<span name='MS:'>" K " := <span class='param' name='MS:'>" V "</span></span>`n" 
 			
-	IF WS_BORDER && WS_DLGFRAME && (WS_CAPTION := 1)  ;	0x00C00000
-		Ret .= "<span name='MS:'>WS_CAPTION := <span class='param' name='MS:'>0x00C00000 = (WS_BORDER | WS_DLGFRAME)</span></span>`n" 
+	IF WS_BORDER && WS_DLGFRAME && (WS_CAPTION := 1)  ;	WS_CAPTION 0x00C00000
+		Ret .= "<span name='MS:'>WS_CAPTION := <span class='param' name='MS:'>0x00C00000 = (WS_BORDER | WS_DLGFRAME)</span></span>`n"
 		
-	IF (Style & 0x00040000) && (WS_THICKFRAME := 1)
+	IF (Style & 0x00040000) && (WS_THICKFRAME := 1, Style -= 0x00040000)  ;	WS_SIZEBOX := WS_THICKFRAME
 		Ret .= "<span name='MS:'>WS_SIZEBOX := WS_THICKFRAME := <span class='param' name='MS:'>0x00040000</span></span>`n" 
 
-	IF (Style & 0x40000000) && (WS_CHILD := 1)
+	IF (Style & 0x40000000) && (WS_CHILD := 1, Style -= 0x40000000)  ;	WS_CHILD := WS_CHILDWINDOW
 		Ret .= "<span name='MS:'>WS_CHILD := WS_CHILDWINDOW := <span class='param' name='MS:'>0x40000000</span></span>`n" 
 
-	IF (Style & 0x20000000) && (WS_MINIMIZE := 1)
+	IF (Style & 0x20000000) && (WS_MINIMIZE := 1, Style -= 0x20000000)  ;	WS_MINIMIZE := WS_ICONIC
 		Ret .= "<span name='MS:'>WS_MINIMIZE := WS_ICONIC := <span class='param' name='MS:'>0x20000000</span></span>`n" 
 
-	IF (Style & 0x80000000) && !WS_CHILD && (WS_POPUP := 1)
+	IF (Style & 0x80000000) && !WS_CHILD && (WS_POPUP := 1, Style -= 0x80000000)  ;	WS_POPUP
 		Ret .= "<span name='MS:'>WS_POPUP := <span class='param' name='MS:'>0x80000000 & !WS_CHILD</span></span>`n" 
 		
-	IF WS_CAPTION && (Style & 0x00080000) && (WS_SYSMENU := 1)
+	IF WS_CAPTION && (Style & 0x00080000) && (WS_SYSMENU := 1, Style -= 0x00080000)  ;	WS_SYSMENU
 		Ret .= "<span name='MS:'>WS_SYSMENU := <span class='param' name='MS:'>0x00080000 & WS_CAPTION</span></span>`n" 
 			
-	IF (WS_POPUP && WS_BORDER && WS_SYSMENU) && (WS_POPUPWINDOW := 1)
+	IF (WS_POPUP && WS_BORDER && WS_SYSMENU) && (WS_POPUPWINDOW := 1)  ;	WS_POPUPWINDOW
 		Ret .= "<span name='MS:'>WS_POPUPWINDOW := <span class='param' name='MS:'>(WS_POPUP | WS_BORDER | WS_SYSMENU)</span></span>`n" 
 		 
-	IF WS_BORDER && WS_CAPTION && (WS_OVERLAPPED := 1)
+	IF WS_BORDER && WS_CAPTION && (WS_OVERLAPPED := 1)  ;	WS_OVERLAPPED := WS_TILED
 		Ret .= "<span name='MS:'>WS_OVERLAPPED := WS_TILED := <span class='param' name='MS:'>!WS_CHILD</span></span>`n" 
 		
-	IF WS_SYSMENU && (Style & 0x00020000) && (WS_MINIMIZEBOX := 1)
+	IF WS_SYSMENU && (Style & 0x00020000) && (WS_MINIMIZEBOX := 1, Style -= 0x00020000)  ;	WS_MINIMIZEBOX
 		Ret .= "<span name='MS:'>WS_MINIMIZEBOX := <span class='param' name='MS:'>0x00020000 & WS_SYSMENU</span></span>`n" 
 		
-	IF WS_SYSMENU && (Style & 0x00010000) && (WS_MAXIMIZEBOX := 1)
+	IF WS_SYSMENU && (Style & 0x00010000) && (WS_MAXIMIZEBOX := 1, Style -= 0x00010000)  ;	WS_MAXIMIZEBOX
 		Ret .= "<span name='MS:'>WS_MAXIMIZEBOX := <span class='param' name='MS:'>0x00010000 & WS_SYSMENU</span></span>`n" 
 	
-	If (WS_OVERLAPPED && WS_CAPTION && WS_SYSMENU && WS_THICKFRAME && WS_MINIMIZEBOX && WS_MAXIMIZEBOX)
+	If (WS_OVERLAPPED && WS_CAPTION && WS_SYSMENU && WS_THICKFRAME && WS_MINIMIZEBOX && WS_MAXIMIZEBOX)  ;	WS_OVERLAPPEDWINDOW := WS_TILEDWINDOW
 		Ret .= "<span name='MS:'>WS_OVERLAPPEDWINDOW := WS_TILEDWINDOW := "
 			. "<span class='param' name='MS:'>(WS_OVERLAPPED | WS_CAPTION | WS_SYSMENU | WS_THICKFRAME | WS_MINIMIZEBOX | WS_MAXIMIZEBOX)</span></span>`n"
- 
  
 	StyleBits := DllCall("GetClassLong", "Ptr", hWnd, "int", GCL_STYLE)	;  https://docs.microsoft.com/en-us/windows/desktop/api/winuser/nf-winuser-setclasslongw
 	For K, V In ClassStyles 
 		If (StyleBits & V) && (%K% := 1) 
 			RetClass .= "<span name='MS:'>" K " := <span class='param' name='MS:'>" V "</span></span>`n" 
 
-			
 	For K, V In ExStyles
-		RetEx .= ExStyle & V ? "<span name='MS:'>" K " := <span class='param' name='MS:'>" V "</span></span>`n" : ""
+		If (ExStyle & V) && (%K% := 1, ExStyle -= V) 
+			RetEx .= "<span name='MS:'>" K " := <span class='param' name='MS:'>" V "</span></span>`n"
+			
 
-	IF !CS_OWNDC && !CS_CLASSDC && (ExStyle & 0x02000000)
+	IF !CS_OWNDC && !CS_CLASSDC && (ExStyle & 0x02000000) && (1, ExStyle -= 0x02000000)  ;	WS_EX_COMPOSITED
 		RetEx .= "<span name='MS:'>WS_EX_COMPOSITED := <span class='param' name='MS:'>0x02000000 & !(CS_OWNDC | CS_CLASSDC)</span></span>`n" 
 
-	IF !WS_MAXIMIZEBOX && !WS_MINIMIZEBOX && (ExStyle & 0x00000400)
+	IF !WS_MAXIMIZEBOX && !WS_MINIMIZEBOX && (ExStyle & 0x00000400) && (1, ExStyle -= 0x00000400)  ;	WS_EX_CONTEXTHELP
 		RetEx .= "<span name='MS:'>WS_EX_CONTEXTHELP := <span class='param' name='MS:'>0x00000400 & !(WS_MAXIMIZEBOX | WS_MINIMIZEBOX)</span></span>`n" 
-
-	IF !CS_OWNDC && !CS_CLASSDC && (ExStyle & 0x00080000)
+	IF !CS_OWNDC && !CS_CLASSDC && (ExStyle & 0x00080000) && (1, ExStyle -= 0x00080000)  ;	WS_EX_LAYERED
 		RetEx .= "<span name='MS:'>WS_EX_LAYERED := <span class='param' name='MS:'>0x00080000 & !(CS_OWNDC | CS_CLASSDC)</span></span>`n" 
 
-	IF !WS_EX_RIGHT
+	IF !WS_EX_RIGHT  ;	WS_EX_LEFT
 		RetEx .= "<span name='MS:'>WS_EX_LEFT := <span class='param' name='MS:'>!WS_EX_RIGHT</span></span>`n"  
 
-	IF !WS_EX_LEFTSCROLLBAR
+	IF !WS_EX_LEFTSCROLLBAR  ;	WS_EX_RIGHTSCROLLBAR
 		RetEx .= "<span name='MS:'>WS_EX_RIGHTSCROLLBAR := <span class='param' name='MS:'>!WS_EX_LEFTSCROLLBAR</span></span>`n" 
 
-	IF !WS_EX_RTLREADING
+	IF !WS_EX_RTLREADING  ;	WS_EX_LTRREADING
 		RetEx .= "<span name='MS:'>WS_EX_LTRREADING := <span class='param' name='MS:'>!WS_EX_RTLREADING</span></span>`n" 
 		
-	IF WS_EX_WINDOWEDGE && WS_EX_CLIENTEDGE
+	IF WS_EX_WINDOWEDGE && WS_EX_CLIENTEDGE  ;	WS_EX_OVERLAPPEDWINDOW
 		RetEx .= "<span name='MS:'>WS_EX_OVERLAPPEDWINDOW := <span class='param' name='MS:'>(WS_EX_WINDOWEDGE | WS_EX_CLIENTEDGE)</span></span>`n" 
 		
-	IF WS_EX_WINDOWEDGE && WS_EX_TOOLWINDOW && WS_EX_TOPMOST
+	IF WS_EX_WINDOWEDGE && WS_EX_TOOLWINDOW && WS_EX_TOPMOST  ;	WS_EX_PALETTEWINDOW
 		RetEx .= "<span name='MS:'>WS_EX_PALETTEWINDOW := <span class='param' name='MS:'>(WS_EX_WINDOWEDGE | WS_EX_TOOLWINDOW | WS_EX_TOPMOST)</span></span>`n" 
 
-		
+
+	IF Style
+		Ret .= "<span style='color: #" ColorDelimiter ";' name='MS:'>" Format("0x{1:08X}", Style) "</span>`n"
 	If Ret !=
 		Res .= _T1 " id='__Styles_Win'> ( Styles ) </span>" _T2 _PRE1 Ret _PRE2
+		
+	IF ExStyle
+		RetEx .= "<span style='color: #" ColorDelimiter ";' name='MS:'>" Format("0x{1:08X}", ExStyle) "</span>`n"
 	If RetEx !=
 		Res .= _T1 " id='__ExStyles_Win'> ( ExStyles ) </span>" _T2 _PRE1 RetEx _PRE2
+		
 	If RetClass !=
 		Res .= _T1 " id='__ClassStyles_Win'> ( Class Styles: <span name='MS:' style='color: #" ColorFont ";'>" Format("0x{1:08X}", StyleBits) "</span> ) </span>" _T2 _PRE1 RetClass _PRE2
 
@@ -3234,30 +3267,27 @@ ViewStylesControl(elem) {
 	IniWrite(c_ShowStyles, "c_ShowStyles")
 	If c_ShowStyles
 		Styles := "<a></a>" GetControlStyles(oOther.ControlNN_Sub, oDoc.getElementById("c_Style").innerText, oDoc.getElementById("c_ExStyle").innerText)
-		. GetStyles(oDoc.getElementById("c_Style").innerText, oDoc.getElementById("c_ExStyle").innerText, oOther.MouseControlID)
-	oDoc.getElementById("ControlStyles").innerHTML := Styles
-	; If !GetControlStyles(oOther.ControlNN_Sub, "E")
-		; oDoc.getElementById("get_styles_c").style.color := "#C0C0C0"
+		. GetStyles(oDoc.getElementById("c_Style").innerText, oDoc.getElementById("c_ExStyle").innerText, oOther.MouseControlID, 1)
+	oDoc.getElementById("ControlStyles").innerHTML := Styles 
 	HTML_Control := oBody.innerHTML
 }
 
-GetControlStyles(Class, Style, ExStyle = "")  {
+	; _________________________________________________ ControlStyles _________________________________________________
+
+GetControlStyles(Class, Style, ExStyle)  {
+	;	https://github.com/strobejb/winspy/blob/master/src/DisplayStyleInfo.c
+	
+	; ToolTip % Class "`n"  Format("0x{:04x}", Style & 0xffff)
+	If IsFunc("GetStyle_" Class)
+		Return GetStyle_%Class%(Style, ExStyle)
+	Return
+	
 	Static Styles, ExStyles
+	
 	If !Styles
 	{
 		Styles := {}
-		Styles.Static := {"SS_LEFT":"0x00000000","SS_CENTER":"0x00000001","SS_RIGHT":"0x00000002","SS_ICON":"0x00000003","SS_BLACKRECT":"0x00000004","SS_GRAYRECT":"0x00000005","SS_WHITERECT":"0x00000006"
-			,"SS_BLACKFRAME":"0x00000007","SS_GRAYFRAME":"0x00000008","SS_WHITEFRAME":"0x00000009","SS_USERITEM":"0x0000000A","SS_SIMPLE":"0x0000000B","SS_LEFTNOWORDWRAP":"0x0000000C","SS_OWNERDRAW":"0x0000000D"
-			,"SS_BITMAP":"0x0000000E","SS_ENHMETAFILE":"0x0000000F","SS_ETCHEDHORZ":"0x00000010","SS_ETCHEDVERT":"0x00000011","SS_ETCHEDFRAME":"0x00000012","SS_TYPEMASK":"0x0000001F","SS_REALSIZECONTROL":"0x00000040"
-			,"SS_NOPREFIX":"0x00000080","SS_NOTIFY":"0x00000100","SS_CENTERIMAGE":"0x00000200","SS_RIGHTJUST":"0x00000400","SS_REALSIZEIMAGE":"0x00000800","SS_SUNKEN":"0x00001000","SS_EDITCONTROL":"0x00002000"
-			,"SS_ENDELLIPSIS":"0x00004000","SS_PATHELLIPSIS":"0x00008000","SS_WORDELLIPSIS":"0x0000C000","SS_ELLIPSISMASK":"0x0000C000"}
-		Styles.Edit := {"ES_LEFT":"0x00000000","ES_CENTER":"0x00000001","ES_RIGHT":"0x00000002","ES_MULTILINE":"0x00000004","ES_UPPERCASE":"0x00000008","ES_LOWERCASE":"0x00000010","ES_PASSWORD":"0x00000020"
-			,"ES_AUTOVSCROLL":"0x00000040","ES_AUTOHSCROLL":"0x00000080","ES_NOHIDESEL":"0x00000100","ES_OEMCONVERT":"0x00000400","ES_READONLY":"0x00000800","ES_WANTRETURN":"0x00001000","ES_NUMBER":"0x00002000"}
-		Styles.Button := {"BS_PUSHBUTTON":"0x00000000","BS_DEFPUSHBUTTON":"0x00000001","BS_CHECKBOX":"0x00000002","BS_AUTOCHECKBOX":"0x00000003","BS_RADIOBUTTON":"0x00000004","BS_3STATE":"0x00000005"
-			,"BS_AUTO3STATE":"0x00000006","BS_GROUPBOX":"0x00000007","BS_USERBUTTON":"0x00000008","BS_AUTORADIOBUTTON":"0x00000009","BS_PUSHBOX":"0x0000000A","BS_OWNERDRAW":"0x0000000B"
-			,"BS_TYPEMASK":"0x0000000F","BS_LEFTTEXT":"0x00000020","BS_TEXT":"0x00000000","BS_ICON":"0x00000040","BS_BITMAP":"0x00000080","BS_LEFT":"0x00000100","BS_RIGHT":"0x00000200","BS_CENTER":"0x00000300"
-			,"BS_TOP":"0x00000400","BS_BOTTOM":"0x00000800","BS_VCENTER":"0x00000C00","BS_PUSHLIKE":"0x00001000","BS_MULTILINE":"0x00002000","BS_NOTIFY":"0x00004000","BS_FLAT":"0x00008000"
-			,"BS_RIGHTBUTTON":"0x00000020","BS_SPLITBUTTON":"0x0000000C","BS_DEFSPLITBUTTON":"0x0000000D","BS_COMMANDLINK":"0x0000000E","BS_DEFCOMMANDLINK":"0x0000000F"}
+		
 		Styles.ComboBox := {"CBS_SIMPLE":"0x00000001","CBS_DROPDOWN":"0x00000002","CBS_DROPDOWNLIST":"0x00000003","CBS_OWNERDRAWFIXED":"0x00000010","CBS_OWNERDRAWVARIABLE":"0x00000020"
 			,"CBS_AUTOHSCROLL":"0x00000040","CBS_OEMCONVERT":"0x00000080","CBS_SORT":"0x00000100","CBS_HASSTRINGS":"0x00000200","CBS_NOINTEGRALHEIGHT":"0x00000400","CBS_DISABLENOSCROLL":"0x00000800"
 			,"CBS_UPPERCASE":"0x00002000","CBS_LOWERCASE":"0x00004000"}
@@ -3270,9 +3300,6 @@ GetControlStyles(Class, Style, ExStyle = "")  {
 			,"DTS_SHORTDATECENTURYFORMAT":"0x0000000C","DTS_APPCANPARSE":"0x00000010","DTS_RIGHTALIGN":"0x00000020"}
 		Styles.SysMonthCal := {"MCS_DAYSTATE":"0x00000001","MCS_MULTISELECT":"0x00000002","MCS_WEEKNUMBERS":"0x00000004","MCS_NOTODAYCIRCLE":"0x00000008","MCS_NOTODAY":"0x00000010","MCS_NOTRAILINGDATES":"0x00000040"
 			,"MCS_SHORTDAYSOFWEEK":"0x00000080","MCS_NOSELCHANGEONNAV":"0x00000100"}
-		Styles.SysTabControl := {"TCS_SCROLLOPPOSITE":"0x00000001","TCS_BOTTOM":"0x00000002","TCS_RIGHT":"0x00000002","TCS_MULTISELECT":"0x00000004","TCS_FLATBUTTONS":"0x00000008","TCS_FORCEICONLEFT":"0x00000010"
-			,"TCS_FORCELABELLEFT":"0x00000020","TCS_HOTTRACK":"0x00000040","TCS_VERTICAL":"0x00000080","TCS_TABS":"0x00000000","TCS_BUTTONS":"0x00000100","TCS_SINGLELINE":"0x00000000","TCS_MULTILINE":"0x00000200"
-			,"TCS_RIGHTJUSTIFY":"0x00000000","TCS_FIXEDWIDTH":"0x00000400","TCS_RAGGEDRIGHT":"0x00000800","TCS_FOCUSONBUTTONDOWN":"0x00001000","TCS_OWNERDRAWFIXED":"0x00002000","TCS_TOOLTIPS":"0x00004000","TCS_FOCUSNEVER":"0x00008000"}
 		Styles.msctls_trackbar := {"TBS_AUTOTICKS":"0x00000001","TBS_VERT":"0x00000002","TBS_HORZ":"0x00000000","TBS_TOP":"0x00000004","TBS_BOTTOM":"0x00000000","TBS_LEFT":"0x00000004","TBS_RIGHT":"0x00000000"
 			,"TBS_BOTH":"0x00000008","TBS_NOTICKS":"0x00000010","TBS_ENABLESELRANGE":"0x00000020","TBS_FIXEDLENGTH":"0x00000040","TBS_NOTHUMB":"0x00000080","TBS_TOOLTIPS":"0x00000100"
 			,"TBS_REVERSED":"0x00000200","TBS_DOWNISLEFT":"0x00000400","TBS_NOTIFYBEFOREMOVE":"0x00000800","TBS_TRANSPARENTBKGND":"0x00001000"}
@@ -3287,7 +3314,7 @@ GetControlStyles(Class, Style, ExStyle = "")  {
 			,"TVS_NOTOOLTIPS":"0x00000080","TVS_RTLREADING":"0x00000040","TVS_SHOWSELALWAYS":"0x00000020","TVS_SINGLEEXPAND":"0x00000400","TVS_TRACKSELECT":"0x00000200"}
 
 		ExStyles := {}
-		ExStyles.SysTabControl := {"TCS_EX_FLATSEPARATORS":"0x00000001","TCS_EX_REGISTERDROP":"0x00000002"}
+		
 		ExStyles.SysListView := {"LVS_EX_AUTOAUTOARRANGE":"0x01000000","LVS_EX_AUTOCHECKSELECT":"0x08000000","LVS_EX_AUTOSIZECOLUMNS":"0x10000000","LVS_EX_BORDERSELECT":"0x00008000"
 			,"LVS_EX_CHECKBOXES":"0x00000004","LVS_EX_COLUMNOVERFLOW":"0x80000000","LVS_EX_COLUMNSNAPPOINTS":"0x40000000","LVS_EX_DOUBLEBUFFER":"0x00010000","LVS_EX_FLATSB":"0x00000100"
 			,"LVS_EX_FULLROWSELECT":"0x00000020","LVS_EX_GRIDLINES":"0x00000001","LVS_EX_HEADERDRAGDROP":"0x00000010","LVS_EX_HEADERINALLVIEWS":"0x02000000","LVS_EX_HIDELABELS":"0x00020000"
@@ -3295,8 +3322,9 @@ GetControlStyles(Class, Style, ExStyle = "")  {
 			,"LVS_EX_REGIONAL":"0x00000200","LVS_EX_SIMPLESELECT":"0x00100000","LVS_EX_SINGLEROW":"0x00040000","LVS_EX_SNAPTOGRID":"0x00080000","LVS_EX_SUBITEMIMAGES":"0x00000002"
 			,"LVS_EX_TRACKSELECT":"0x00000008","LVS_EX_TRANSPARENTBKGND":"0x00400000","LVS_EX_TRANSPARENTSHADOWTEXT":"0x00800000","LVS_EX_TWOCLICKACTIVATE":"0x00000080"
 			,"LVS_EX_UNDERLINECOLD":"0x00001000","LVS_EX_UNDERLINEHOT":"0x00000800"}
-		ExStyles.SysTreeView := {"TVS_EX_AUTOHSCROLL":"0x00000020","TVS_EX_DIMMEDCHECKBOXES":"0x00000200","TVS_EX_DOUBLEBUFFER":"0x00000004","TVS_EX_DRAWIMAGEASYNC":"0x00000400","TVS_EX_EXCLUSIONCHECKBOXES":"0x00000100"
-			,"TVS_EX_FADEINOUTEXPANDOS":"0x00000040","TVS_EX_MULTISELECT":"0x00000002","TVS_EX_NOINDENTSTATE":"0x00000008","TVS_EX_NOSINGLECOLLAPSE":"0x00000001","TVS_EX_PARTIALCHECKBOXES":"0x00000080","TVS_EX_RICHTOOLTIP":"0x00000010"}
+		ExStyles.SysTreeView := {"TVS_EX_AUTOHSCROLL":"0x00000020","TVS_EX_DIMMEDCHECKBOXES":"0x00000200","TVS_EX_DOUBLEBUFFER":"0x00000004","TVS_EX_DRAWIMAGEASYNC":"0x00000400"
+			,"TVS_EX_EXCLUSIONCHECKBOXES":"0x00000100","TVS_EX_FADEINOUTEXPANDOS":"0x00000040","TVS_EX_MULTISELECT":"0x00000002","TVS_EX_NOINDENTSTATE":"0x00000008"
+			,"TVS_EX_NOSINGLECOLLAPSE":"0x00000001","TVS_EX_PARTIALCHECKBOXES":"0x00000080","TVS_EX_RICHTOOLTIP":"0x00000010"}
 	}
 	If (Style = "E")
 		Return Styles.HasKey(Class)
@@ -3311,6 +3339,169 @@ GetControlStyles(Class, Style, ExStyle = "")  {
 	Return StrReplace(Res, "#")
 }
 
+
+
+
+
+GetStyle_xxxxxxx(Style, ExStyle)  {
+	;	xxxx
+	;	xxxx
+	Static oStyles, oExStyles
+	If !oStyles
+		oStyles := xxxxx
+	Style := Style & 0xffff
+	For K, V In oStyles
+		If ((Style & V) = V) && (%K% := 1, Style -= V)
+			Ret .= "<span name='MS:'>" K " := <span class='param' name='MS:'>" V "</span></span>`n"
+		
+	IF !SS_CENTER && !SS_RIGHT
+		Ret .= "<span name='MS:'>SS_LEFT := <span class='param' name='MS:'>!(SS_CENTER | SS_RIGHT)</span></span>`n"
+	IF Style
+		Ret .= "<span style='color: #" ColorDelimiter ";' name='MS:'>" Format("0x{1:04X}", Style)  "</span>`n"
+	If Ret !=
+		Res .= _T1 " id='__Styles_Control'> ( Styles - xxxxx: <span name='MS:' style='color: #" ColorFont ";'>" Format("0x{:04X}", Style) "</span> ) </span>" _T2 _PRE1 Ret _PRE2
+	Return Res
+}
+
+GetStyle_Static(Style, ExStyle)  {
+	;	https://www.autohotkey.com/boards/viewtopic.php?p=25869#p25869
+	;	https://docs.microsoft.com/en-us/windows/desktop/controls/static-control-styles
+	Static oStyles, oEx, oExStyles 
+	If !oStyles
+		oStyles := {"SS_ELLIPSISMASK":"0xC000"
+		,"SS_REALSIZECONTROL":"0x0040","SS_NOPREFIX":"0x0080","SS_NOTIFY":"0x0100","SS_CENTERIMAGE":"0x0200","SS_RIGHTJUST":"0x0400"
+		,"SS_REALSIZEIMAGE":"0x0800","SS_SUNKEN":"0x1000","SS_EDITCONTROL":"0x2000","SS_ENDELLIPSIS":"0x4000","SS_PATHELLIPSIS":"0x8000"
+		,"SS_WORDELLIPSIS":"0xC000"}
+		
+		, oEx := {"SS_CENTER":"0x0001","SS_RIGHT":"0x0002","SS_ICON":"0x0003","SS_BLACKRECT":"0x0004"
+		,"SS_GRAYRECT":"0x0005","SS_WHITERECT":"0x0006","SS_BLACKFRAME":"0x0007","SS_GRAYFRAME":"0x0008","SS_WHITEFRAME":"0x0009"
+		,"SS_USERITEM":"0x000A","SS_SIMPLE":"0x000B","SS_LEFTNOWORDWRAP":"0x000C","SS_OWNERDRAW":"0x000D","SS_BITMAP":"0x000E"
+		,"SS_ENHMETAFILE":"0x000F","SS_ETCHEDHORZ":"0x0010","SS_ETCHEDVERT":"0x0011","SS_ETCHEDFRAME":"0x0012","SS_TYPEMASK":"0x001F"}
+
+	Style := Style & 0xffff
+	For K, V In oEx
+		If ((Style & 0x1F) = V) && (%K% := 1, Style -= V)  
+		{
+			Ret .= "<span name='MS:'>" K " := <span class='param' name='MS:'>" V "</span></span>`n"
+			Break
+		} 
+	For K, V In oStyles
+		If Style && ((Style & V) = V) && (%K% := 1, Style -= V)  
+			Ret .= "<span name='MS:'>" K " := <span class='param' name='MS:'>" V "</span></span>`n"  
+	IF !SS_CENTER && !SS_RIGHT  ;	SS_LEFT
+		Ret .= "<span name='MS:'>SS_LEFT := <span class='param' name='MS:'>!(SS_CENTER | SS_RIGHT)</span></span>`n"
+	IF Style
+		Ret .= "<span style='color: #" ColorDelimiter ";' name='MS:'>" Format("0x{1:04X}", Style)  "</span>`n"
+	If Ret != 
+		Res .= _T1 " id='__Styles_Control'> ( Styles - Static: <span name='MS:' style='color: #" ColorFont ";'>" Format("0x{:04X}", Style) "</span> ) </span>" _T2 _PRE1 Ret _PRE2
+	Return Res
+} 
+
+GetStyle_Button(Style, ExStyle)  {
+	;	https://www.autohotkey.com/boards/viewtopic.php?p=25841#p25841
+	;	https://docs.microsoft.com/en-us/windows/desktop/controls/button-styles
+	Static oStyles, oEx, oExStyles
+	If !oStyles
+		oStyles := {"BS_ICON":"0x0040","BS_BITMAP":"0x0080","BS_LEFT":"0x0100","BS_RIGHT":"0x0200","BS_CENTER":"0x0300"
+		,"BS_TOP":"0x0400","BS_BOTTOM":"0x0800","BS_VCENTER":"0x0C00","BS_PUSHLIKE":"0x1000","BS_MULTILINE":"0x2000"
+		,"BS_NOTIFY":"0x4000","BS_FLAT":"0x8000"}
+		
+		, oEx := {"BS_DEFPUSHBUTTON":"0x0001","BS_CHECKBOX":"0x0002","BS_AUTOCHECKBOX":"0x0003"
+		,"BS_RADIOBUTTON":"0x0004","BS_3STATE":"0x0005","BS_AUTO3STATE":"0x0006","BS_GROUPBOX":"0x0007","BS_USERBUTTON":"0x0008"
+		,"BS_AUTORADIOBUTTON":"0x0009","BS_PUSHBOX":"0x000A","BS_OWNERDRAW":"0x000B","BS_COMMANDLINK":"0x000E"
+		,"BS_DEFCOMMANDLINK":"0x000F","BS_SPLITBUTTON":"0x000C","BS_DEFSPLITBUTTON":"0x000D"}
+		  ;	outdate "BS_TYPEMASK":"0x000F"
+
+	Style := Style & 0xffff
+	For K, V In oEx
+		If ((Style & 0xF) = V) && (%K% := 1)
+			Ret .= "<span name='MS:'>" K " := <span class='param' name='MS:'>" V "</span></span>`n"
+
+	If ((Style & 0x0020) = 0x0020)  ;	BS_LEFTTEXT  ;	BS_RIGHTBUTTON
+		Ret .= "<span name='MS:'>BS_LEFTTEXT := BS_RIGHTBUTTON := <span class='param' name='MS:'>0x0020</span></span>`n" 
+		
+	For K, V In oStyles
+		If ((Style & V) = V) && (%K% := 1)
+			Ret .= "<span name='MS:'>" K " := <span class='param' name='MS:'>" V "</span></span>`n" 
+			
+	IF !BS_ICON && !BS_BITMAP && !BS_AUTOCHECKBOX && !BS_AUTORADIOBUTTON && !BS_CHECKBOX && !BS_RADIOBUTTON  ;	BS_TEXT
+		Ret .= "<span name='MS:'>BS_TEXT := <span class='param' name='MS:'>!(BS_ICON | BS_BITMAP | BS_AUTOCHECKBOX | BS_AUTORADIOBUTTON | BS_CHECKBOX | BS_RADIOBUTTON)</span></span>`n"
+
+	IF !BS_DEFPUSHBUTTON && !BS_CHECKBOX && !BS_AUTOCHECKBOX && !BS_RADIOBUTTON && !BS_GROUPBOX && !BS_AUTORADIOBUTTON  ;	BS_PUSHBUTTON
+		Ret .= "<span name='MS:'>BS_PUSHBUTTON := <span class='param' name='MS:'>!(BS_DEFPUSHBUTTON | BS_CHECKBOX | BS_AUTOCHECKBOX | BS_RADIOBUTTON | BS_GROUPBOX | BS_AUTORADIOBUTTON)</span></span>`n"
+		
+	If Ret !=
+		Res .= _T1 " id='__Styles_Control'> ( Styles - Button: <span name='MS:' style='color: #" ColorFont ";'>" Format("0x{:04X}", Style) "</span> ) </span>" _T2 _PRE1 Ret _PRE2
+	Return Res
+}
+
+GetStyle_Edit(Style, ExStyle)  {
+	;	https://www.autohotkey.com/boards/viewtopic.php?p=25848#p25848
+	;	https://docs.microsoft.com/en-us/windows/desktop/controls/edit-control-styles
+	Static oStyles, oExStyles
+	If !oStyles
+		oStyles := {"ES_CENTER":"0x0001","ES_RIGHT":"0x0002","ES_MULTILINE":"0x0004"
+		,"ES_UPPERCASE":"0x0008","ES_LOWERCASE":"0x0010","ES_PASSWORD":"0x0020","ES_AUTOVSCROLL":"0x0040"
+		,"ES_AUTOHSCROLL":"0x0080","ES_NOHIDESEL":"0x0100","ES_OEMCONVERT":"0x0400","ES_READONLY":"0x0800"
+		,"ES_WANTRETURN":"0x1000","ES_NUMBER":"0x2000"}
+
+	Style := Style & 0xffff
+	For K, V In oStyles
+		If ((Style & V) = V) && (%K% := 1)
+			Ret .= "<span name='MS:'>" K " := <span class='param' name='MS:'>" V "</span></span>`n"
+		
+	IF !ES_CENTER && !ES_RIGHT  ;	ES_LEFT
+		Ret .= "<span name='MS:'>ES_LEFT := <span class='param' name='MS:'>!(ES_CENTER | ES_RIGHT)</span></span>`n"
+		
+	If Ret !=
+		Res .= _T1 " id='__Styles_Control'> ( Styles - Edit: <span name='MS:' style='color: #" ColorFont ";'>" Format("0x{:04X}", Style) "</span> ) </span>" _T2 _PRE1 Ret _PRE2
+	Return Res
+}
+
+GetStyle_SysTabControl(Style, ExStyle)  {
+	;	https://www.autohotkey.com/boards/viewtopic.php?p=25871#p25871
+	;	https://docs.microsoft.com/en-us/windows/desktop/controls/tab-control-styles
+	;	https://docs.microsoft.com/en-us/windows/desktop/controls/tab-control-extended-styles
+	Static oStyles
+	If !oStyles
+		oStyles := {"TCS_SCROLLOPPOSITE":"0x0001","TCS_MULTISELECT":"0x0004","TCS_FLATBUTTONS":"0x0008"
+		,"TCS_FORCELABELLEFT":"0x0020","TCS_HOTTRACK":"0x0040","TCS_BUTTONS":"0x0100","TCS_MULTILINE":"0x0200"
+		,"TCS_FORCEICONLEFT":"0x0010","TCS_FIXEDWIDTH":"0x0400","TCS_RAGGEDRIGHT":"0x0800","TCS_FOCUSONBUTTONDOWN":"0x1000"
+		,"TCS_OWNERDRAWFIXED":"0x2000","TCS_TOOLTIPS":"0x4000","TCS_FOCUSNEVER":"0x8000"} 
+
+	Style := Style & 0xffff
+	For K, V In oStyles
+		If ((Style & V) = V) && (%K% := 1)
+			Ret .= "<span name='MS:'>" K " := <span class='param' name='MS:'>" V "</span></span>`n"
+
+	IF !TCS_BUTTONS   ;	TCS_TABS
+		Ret .= "<span name='MS:'>TCS_TABS := <span class='param' name='MS:'>!(TCS_BUTTONS)</span></span>`n"
+	IF !TCS_MULTILINE   ;	TCS_SINGLELINE
+		Ret .= "<span name='MS:'>TCS_SINGLELINE := <span class='param' name='MS:'>!TCS_MULTILINE</span></span>`n"
+	IF TCS_MULTILINE   ;	TCS_RIGHTJUSTIFY
+		Ret .= "<span name='MS:'>TCS_RIGHTJUSTIFY := <span class='param' name='MS:'>TCS_MULTILINE</span></span>`n"
+	IF TCS_MULTILINE && ((Style & 0x0080) = 0x0080) && (TCS_VERTICAL := 1)  ;	"TCS_VERTICAL":"0x0080"
+		Ret .= "<span name='MS:'>TCS_VERTICAL := <span class='param' name='MS:'>0x0080 & TCS_MULTILINE</span></span>`n"
+	IF ((Style & 0x0002) = 0x0002)   ;	"TCS_BOTTOM":"0x0002","TCS_RIGHT":"0x0002"
+	{
+		IF TCS_VERTICAL
+			Ret .= "<span name='MS:'>TCS_RIGHT := <span class='param' name='MS:'>0x0002 & TCS_VERTICAL</span></span>`n"
+		Else
+			Ret .= "<span name='MS:'>TCS_BOTTOM := <span class='param' name='MS:'>0x0002 & !TCS_VERTICAL</span></span>`n"
+	}
+	If Ret !=
+		Res .= _T1 " id='__Styles_Control'> ( Styles - SysTabControl32: <span name='MS:' style='color: #" ColorFont ";'>" Format("0x{:04X}", Style) "</span> ) </span>" _T2 _PRE1 Ret _PRE2
+		
+	If TCS_FLATBUTTONS && TCS_BUTTONS && ((ExStyle & 0x00000001) = 0x00000001)  ;	TCS_EX_FLATSEPARATORS
+		RetEx .= "<span name='MS:'>TCS_EX_FLATSEPARATORS := <span class='param' name='MS:'>0x00000001 & (TCS_FLATBUTTONS | TCS_BUTTONS)</span></span>`n"
+	If ((ExStyle & 0x00000002) = 0x00000002)  ;	TCS_EX_REGISTERDROP
+		RetEx .= "<span name='MS:'>TCS_EX_REGISTERDROP := <span class='param' name='MS:'>0x00000002</span></span>`n"
+
+	If RetEx !=
+		Res .= _T1 " id='__ExStyles_Control'> ( ExStyles - SysTabControl32: <span name='MS:' style='color: #" ColorFont ";'>" Format("0x{:08X}", ExStyle) "</span> ) </span>" _T2 _PRE1 RetEx _PRE2
+	Return Res
+}
+  ;	0x0000 TCS_TOOLTIPS           
 	; _________________________________________________ FullScreen _________________________________________________
 
 FullScreenMode() {
@@ -3452,7 +3643,7 @@ FindSearch(New, Back = 0) {
 	sR := R.duplicate()
 	R.collapse(New || Back ? 1 : 0)
 	If (oFind.Text = "" && !R.select())
-		SetEditColor(hFindEdit, 0xFFFFFF, 0x000000)
+		SetEditColor(hFindEdit, 0xFFFFFF, 0x00)
 	Else {
 		Option := (Back ? 1 : 0) ^ (oFind.Whole ? 2 : 0) ^ (oFind.Registr ? 4 : 0)
 		Loop {
@@ -3862,18 +4053,18 @@ ButtonClick(oevent) {
 		If !WinExist("ahk_id" hwnd)
 			Return ToolTip("Window not exist", 500)
 		WinGetPos, WinX, WinY, WinWidth, WinHeight, % "ahk_id" hwnd
-		SetTimer(Func("FlashArea").Bind(WinX, WinY, WinWidth, WinHeight), -10) 
+		FlashArea(WinX, WinY, WinWidth, WinHeight)
 	}
 	Else If (thisid = "flash_acc")
 	{    
 		AccGetLocation(oPubObj.AccObj.AccObj, oPubObj.AccObj.child)   
-		SetTimer(Func("FlashArea").Bind(AccCoord[1], AccCoord[2], AccCoord[3], AccCoord[4]), -10)
+		FlashArea(AccCoord[1], AccCoord[2], AccCoord[3], AccCoord[4])
 	}
 	Else If (thisid = "flash_IE")
 	{
 		If !WinExist("ahk_id" oPubObj.IEElement.hwnd) 
 			Return ToolTip("Parent window not exist", 500) 
-		SetTimer(Func("FlashArea").Bind(oPubObj.IEElement.Pos[1], oPubObj.IEElement.Pos[2], oPubObj.IEElement.Pos[3], oPubObj.IEElement.Pos[4]), -10)
+		FlashArea(oPubObj.IEElement.Pos[1], oPubObj.IEElement.Pos[2], oPubObj.IEElement.Pos[3], oPubObj.IEElement.Pos[4])
 	} 
 	Else If thisid = paste_process_path
 		oDoc.getElementById("copy_processpath").innerHTML := TransformHTML(Trim(Trim(Clipboard), """"))
@@ -3936,13 +4127,10 @@ ButtonClick(oevent) {
 	{
 		hWnd := oOther.MouseControlID
 		ControlFocus, , ahk_id %hWnd%
-		WinGetPos, X, Y, W, H, ahk_id %hWnd%
-		ShowMarkersCreate("oShowMarkersTmp", "E14B30")
-		ShowMarkers(oShowMarkersTmp, x, y, w, h, 6)
+		WinGetPos, X, Y, W, H, ahk_id %hWnd% 
+		FlashArea(x, y, w, h)
 		If GetKeyState("Shift", "P") && (X + Y != "")
-			DllCall("SetCursorPos", "Uint", X + W // 2, "Uint", Y + H // 2)
-		Sleep 555
-		HideMarkers(oShowMarkersTmp)
+			DllCall("SetCursorPos", "Uint", X + W // 2, "Uint", Y + H // 2) 
 	}
 	Else If thisid = set_pos
 	{
