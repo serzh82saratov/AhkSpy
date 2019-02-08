@@ -26,7 +26,7 @@
     Актуальный исходник - https://raw.githubusercontent.com/serzh82saratov/AhkSpy/master/AhkSpy.ahk
 */
 
-Global AhkSpyVersion := 3.57
+Global AhkSpyVersion := 3.58
 
 	; _________________________________________________ Header _________________________________________________
 
