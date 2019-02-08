@@ -88,6 +88,8 @@ Global ThisMode := IniRead("StartMode", "Control"), LastModeSave := (ThisMode = 
 , oDocEl, oPubObjGUID, oJScript, oBody, isConfirm, isAhkSpy := 1, TitleText, FreezeTitleText, TitleTextP1, oUIAInterface, Shift_Tab_Down, hButtonButton, hButtonControl, hButtonWindow
 , TitleTextP2 := TitleTextP2_Reserved := "     ( Shift+Tab - Freeze | RButton - CopySelected | Pause - Pause )     v" AhkSpyVersion
 
+, WM_USER := 0x0400
+
 #Include *i %A_AppData%\AhkSpy\IncludeSettings.ahk 
 
 Global _DB := "<span style='position: relative; margin-right: 1em;'></span>"
@@ -336,7 +338,7 @@ F8 Up:: ChangeMode()
 #If isAhkSpy && (StateLight = 3 || Shift_Tab_Down)
 
 ~*RShift Up::
-~*LShift Up:: HideAllMarkers(), Shift_Tab_Down := 0
+~*LShift Up:: HideAllMarkers(), Shift_Tab_Down := 0, CheckHideMarker()
 
 #If isAhkSpy && Sleep != 1
 
@@ -3257,6 +3259,8 @@ GetStyles(Style, ExStyle, hWnd, IsChild = 0) {
 	Return Res
 }
 
+	; _________________________________________________ ControlStyles _________________________________________________
+
 ViewStylesControl(elem) {
 	elem.innerText := (c_ShowStyles := !c_ShowStyles) ? " show styles " : " hide styles "
 	IniWrite(c_ShowStyles, "c_ShowStyles")
@@ -3267,76 +3271,15 @@ ViewStylesControl(elem) {
 	HTML_Control := oBody.innerHTML
 }
 
-	; _________________________________________________ ControlStyles _________________________________________________
-
-GetControlStyles(Class, Style, ExStyle, hWnd)  {
-	;	https://github.com/strobejb/winspy/blob/master/src/DisplayStyleInfo.c
-	
-	; ToolTip % Class "`n"  Format("0x{:04x}", Style & 0xffff)
+GetControlStyles(Class, Style, ExStyle, hWnd) {
 	If IsFunc("GetStyle_" Class)
 		Return GetStyle_%Class%(Style, ExStyle, hWnd)
-	Return
-	
-	Static Styles, ExStyles
-	
-	If !Styles
-	{
-		Styles := {}
-		
-		Styles.ComboBox := {"CBS_SIMPLE":"0x00000001","CBS_DROPDOWN":"0x00000002","CBS_DROPDOWNLIST":"0x00000003","CBS_OWNERDRAWFIXED":"0x00000010","CBS_OWNERDRAWVARIABLE":"0x00000020"
-			,"CBS_AUTOHSCROLL":"0x00000040","CBS_OEMCONVERT":"0x00000080","CBS_SORT":"0x00000100","CBS_HASSTRINGS":"0x00000200","CBS_NOINTEGRALHEIGHT":"0x00000400","CBS_DISABLENOSCROLL":"0x00000800"
-			,"CBS_UPPERCASE":"0x00002000","CBS_LOWERCASE":"0x00004000"}
-		Styles.ListBox := {"LBS_NOTIFY":"0x00000001","LBS_SORT":"0x00000002","LBS_NOREDRAW":"0x00000004","LBS_MULTIPLESEL":"0x00000008","LBS_OWNERDRAWFIXED":"0x00000010","LBS_OWNERDRAWVARIABLE":"0x00000020"
-			,"LBS_HASSTRINGS":"0x00000040","LBS_USETABSTOPS":"0x00000080","LBS_NOINTEGRALHEIGHT":"0x00000100","LBS_MULTICOLUMN":"0x00000200","LBS_WANTKEYBOARDINPUT":"0x00000400","LBS_EXTENDEDSEL":"0x00000800"
-			,"LBS_DISABLENOSCROLL":"0x00001000","LBS_NODATA":"0x00002000","LBS_NOSEL":"0x00004000","LBS_COMBOBOX":"0x00008000","LBS_STANDARD":"0x00000003","#LBS_STANDARD":"0x00A00000"}
-		Styles.msctls_updown := {"UDS_WRAP":"0x00000001","UDS_SETBUDDYINT":"0x00000002","UDS_ALIGNRIGHT":"0x00000004","UDS_ALIGNLEFT":"0x00000008","UDS_AUTOBUDDY":"0x00000010","UDS_ARROWKEYS":"0x00000020"
-			,"UDS_HORZ":"0x00000040","UDS_NOTHOUSANDS":"0x00000080","UDS_HOTTRACK":"0x00000100"}
-		Styles.SysDateTimePick := {"DTS_SHORTDATEFORMAT":"0x00000000","DTS_UPDOWN":"0x00000001","DTS_SHOWNONE":"0x00000002","DTS_LONGDATEFORMAT":"0x00000004","DTS_TIMEFORMAT":"0x00000009"
-			,"DTS_SHORTDATECENTURYFORMAT":"0x0000000C","DTS_APPCANPARSE":"0x00000010","DTS_RIGHTALIGN":"0x00000020"}
-		Styles.SysMonthCal := {"MCS_DAYSTATE":"0x00000001","MCS_MULTISELECT":"0x00000002","MCS_WEEKNUMBERS":"0x00000004","MCS_NOTODAYCIRCLE":"0x00000008","MCS_NOTODAY":"0x00000010","MCS_NOTRAILINGDATES":"0x00000040"
-			,"MCS_SHORTDAYSOFWEEK":"0x00000080","MCS_NOSELCHANGEONNAV":"0x00000100"}
-		Styles.msctls_trackbar := {"TBS_AUTOTICKS":"0x00000001","TBS_VERT":"0x00000002","TBS_HORZ":"0x00000000","TBS_TOP":"0x00000004","TBS_BOTTOM":"0x00000000","TBS_LEFT":"0x00000004","TBS_RIGHT":"0x00000000"
-			,"TBS_BOTH":"0x00000008","TBS_NOTICKS":"0x00000010","TBS_ENABLESELRANGE":"0x00000020","TBS_FIXEDLENGTH":"0x00000040","TBS_NOTHUMB":"0x00000080","TBS_TOOLTIPS":"0x00000100"
-			,"TBS_REVERSED":"0x00000200","TBS_DOWNISLEFT":"0x00000400","TBS_NOTIFYBEFOREMOVE":"0x00000800","TBS_TRANSPARENTBKGND":"0x00001000"}
-		Styles.msctls_statusbar := {"SBARS_SIZEGRIP":"0x00000100","SBARS_TOOLTIPS":"0x00000800","SBT_TOOLTIPS":"0x00000800"}
-		Styles.msctls_progress := {"PBS_SMOOTH":"0x00000001","PBS_VERTICAL":"0x00000004","PBS_MARQUEE":"0x00000008","PBS_SMOOTHREVERSE":"0x00000010"}
-		Styles.SysListView := {"LVS_ALIGNLEFT":"0x00000800","LVS_ALIGNMASK":"0x00000C00","LVS_ALIGNTOP":"0x00000000","LVS_AUTOARRANGE":"0x00000100","LVS_EDITLABELS":"0x00000200","LVS_ICON":"0x00000000"
-			,"LVS_LIST":"0x00000003","LVS_NOCOLUMNHEADER":"0x00004000","LVS_NOLABELWRAP":"0x00000080","LVS_NOSCROLL":"0x00002000","LVS_NOSORTHEADER":"0x00008000","LVS_OWNERDATA":"0x00001000"
-			,"LVS_OWNERDRAWFIXED":"0x00000400","LVS_REPORT":"0x00000001","LVS_SHAREIMAGELISTS":"0x00000040","LVS_SHOWSELALWAYS":"0x00000008","LVS_SINGLESEL":"0x00000004","LVS_SMALLICON":"0x00000002"
-			,"LVS_SORTASCENDING":"0x00000010","LVS_SORTDESCENDING":"0x00000020","LVS_TYPEMASK":"0x00000003","LVS_TYPESTYLEMASK":"0x0000FC00"}
-		Styles.SysTreeView := {"TVS_CHECKBOXES":"0x00000100","TVS_DISABLEDRAGDROP":"0x00000010","TVS_EDITLABELS":"0x00000008","TVS_FULLROWSELECT":"0x00001000","TVS_HASBUTTONS":"0x00000001"
-			,"TVS_HASLINES":"0x00000002","TVS_INFOTIP":"0x00000800","TVS_LINESATROOT":"0x00000004","TVS_NOHSCROLL":"0x00008000","TVS_NONEVENHEIGHT":"0x00004000","TVS_NOSCROLL":"0x00002000"
-			,"TVS_NOTOOLTIPS":"0x00000080","TVS_RTLREADING":"0x00000040","TVS_SHOWSELALWAYS":"0x00000020","TVS_SINGLEEXPAND":"0x00000400","TVS_TRACKSELECT":"0x00000200"}
-
-		ExStyles := {}
-		
-		ExStyles.SysListView := {"LVS_EX_AUTOAUTOARRANGE":"0x01000000","LVS_EX_AUTOCHECKSELECT":"0x08000000","LVS_EX_AUTOSIZECOLUMNS":"0x10000000","LVS_EX_BORDERSELECT":"0x00008000"
-			,"LVS_EX_CHECKBOXES":"0x00000004","LVS_EX_COLUMNOVERFLOW":"0x80000000","LVS_EX_COLUMNSNAPPOINTS":"0x40000000","LVS_EX_DOUBLEBUFFER":"0x00010000","LVS_EX_FLATSB":"0x00000100"
-			,"LVS_EX_FULLROWSELECT":"0x00000020","LVS_EX_GRIDLINES":"0x00000001","LVS_EX_HEADERDRAGDROP":"0x00000010","LVS_EX_HEADERINALLVIEWS":"0x02000000","LVS_EX_HIDELABELS":"0x00020000"
-			,"LVS_EX_INFOTIP":"0x00000400","LVS_EX_JUSTIFYCOLUMNS":"0x00200000","LVS_EX_LABELTIP":"0x00004000","LVS_EX_MULTIWORKAREAS":"0x00002000","LVS_EX_ONECLICKACTIVATE":"0x00000040"
-			,"LVS_EX_REGIONAL":"0x00000200","LVS_EX_SIMPLESELECT":"0x00100000","LVS_EX_SINGLEROW":"0x00040000","LVS_EX_SNAPTOGRID":"0x00080000","LVS_EX_SUBITEMIMAGES":"0x00000002"
-			,"LVS_EX_TRACKSELECT":"0x00000008","LVS_EX_TRANSPARENTBKGND":"0x00400000","LVS_EX_TRANSPARENTSHADOWTEXT":"0x00800000","LVS_EX_TWOCLICKACTIVATE":"0x00000080"
-			,"LVS_EX_UNDERLINECOLD":"0x00001000","LVS_EX_UNDERLINEHOT":"0x00000800"}
-		ExStyles.SysTreeView := {"TVS_EX_AUTOHSCROLL":"0x00000020","TVS_EX_DIMMEDCHECKBOXES":"0x00000200","TVS_EX_DOUBLEBUFFER":"0x00000004","TVS_EX_DRAWIMAGEASYNC":"0x00000400"
-			,"TVS_EX_EXCLUSIONCHECKBOXES":"0x00000100","TVS_EX_FADEINOUTEXPANDOS":"0x00000040","TVS_EX_MULTISELECT":"0x00000002","TVS_EX_NOINDENTSTATE":"0x00000008"
-			,"TVS_EX_NOSINGLECOLLAPSE":"0x00000001","TVS_EX_PARTIALCHECKBOXES":"0x00000080","TVS_EX_RICHTOOLTIP":"0x00000010"}
-	}
-	If (Style = "E")
-		Return Styles.HasKey(Class)
-	For K, V In Styles[Class]
-		Ret .= Style & V ? "<span name='MS:'>" K " := <span class='param' name='MS:'>" V "</span></span>`n" : ""
-	For K, V In ExStyles[Class]
-		RetEx .= ExStyle & V ? "<span name='MS:'>" K " := <span class='param' name='MS:'>" V "</span></span>`n" : ""
-	If Ret !=
-		Res .= _T1 " id='__Styles_Control'> ( Styles ) </span>" _T2 _PRE1 Ret _PRE2
-	If RetEx !=
-		Res .= _T1 " id='__ExStyles_Control'> ( ExStyles ) </span>" _T2 _PRE1 RetEx _PRE2
-	Return StrReplace(Res, "#")
+/*
+	Added:
+	Button, Edit, Static, SysTabControl32, ComboBox, ListBox, msctls_updown32, SysDateTimePick32
+	, SysMonthCal32, msctls_trackbar32, msctls_statusbar32, msctls_progress32
+*/ 
 }
-
-
-
-
 
 GetStyle_xxxxxxx(Style, ExStyle, hWnd)  {
 	;	xxxx
@@ -3344,7 +3287,7 @@ GetStyle_xxxxxxx(Style, ExStyle, hWnd)  {
 	Static oStyles, oExStyles
 	If !oStyles
 		oStyles := xxxxx
-	Style := Style & 0xffff
+	Style := sStyle := Style & 0xffff
 	For K, V In oStyles
 		If ((Style & V) = V) && (%K% := 1, Style -= V)
 			Ret .= "<span name='MS:'>" K " := <span class='param' name='MS:'>" V "</span></span>`n"
@@ -3352,9 +3295,9 @@ GetStyle_xxxxxxx(Style, ExStyle, hWnd)  {
 	IF !SS_CENTER && !SS_RIGHT
 		Ret .= "<span name='MS:'>SS_LEFT := <span class='param' name='MS:'>!(SS_CENTER | SS_RIGHT)</span></span>`n"
 	IF Style
-		Ret .= "<span style='color: #" ColorDelimiter ";' name='MS:'>" Format("0x{1:04X}", Style)  "</span>`n"
+		Ret .= "<span style='color: #" ColorDelimiter ";' name='MS:'>" Format("0x{1:04X}", Style)  "</span>`n" 
 	If Ret !=
-		Res .= _T1 " id='__Styles_Control'> ( Styles - xxxxx: <span name='MS:' style='color: #" ColorFont ";'>" Format("0x{:04X}", Style) "</span> ) </span>" _T2 _PRE1 Ret _PRE2
+		Res .= _T1 " id='__Styles_Control'> ( Styles - xxxxx: <span name='MS:' style='color: #" ColorFont ";'>" Format("0x{:04X}", sStyle) "</span> ) </span>" _T2 _PRE1 Ret _PRE2
 	Return Res
 }
 
@@ -3373,7 +3316,7 @@ GetStyle_Static(Style, ExStyle, hWnd)  {
 		,"SS_USERITEM":"0x000A","SS_SIMPLE":"0x000B","SS_LEFTNOWORDWRAP":"0x000C","SS_OWNERDRAW":"0x000D","SS_BITMAP":"0x000E"
 		,"SS_ENHMETAFILE":"0x000F","SS_ETCHEDHORZ":"0x0010","SS_ETCHEDVERT":"0x0011","SS_ETCHEDFRAME":"0x0012","SS_TYPEMASK":"0x001F"}
 
-	Style := Style & 0xffff
+	Style := sStyle := Style & 0xffff
 	For K, V In oEx
 		If ((Style & 0x1F) = V) && (%K% := 1, Style -= V)  
 		{
@@ -3388,7 +3331,7 @@ GetStyle_Static(Style, ExStyle, hWnd)  {
 	IF Style
 		Ret .= "<span style='color: #" ColorDelimiter ";' name='MS:'>" Format("0x{1:04X}", Style)  "</span>`n"
 	If Ret != 
-		Res .= _T1 " id='__Styles_Control'> ( Styles - Static: <span name='MS:' style='color: #" ColorFont ";'>" Format("0x{:04X}", Style) "</span> ) </span>" _T2 _PRE1 Ret _PRE2
+		Res .= _T1 " id='__Styles_Control'> ( Styles - Static: <span name='MS:' style='color: #" ColorFont ";'>" Format("0x{:04X}", sStyle) "</span> ) </span>" _T2 _PRE1 Ret _PRE2
 	Return Res
 } 
 
@@ -3407,16 +3350,18 @@ GetStyle_Button(Style, ExStyle, hWnd)  {
 		,"BS_DEFCOMMANDLINK":"0x000F","BS_SPLITBUTTON":"0x000C","BS_DEFSPLITBUTTON":"0x000D"}
 		  ;	outdate "BS_TYPEMASK":"0x000F"
 
-	Style := Style & 0xffff
+	Style := sStyle := Style & 0xffff
 	For K, V In oEx
-		If ((Style & 0xF) = V) && (%K% := 1)
+		If ((Style & 0xF) = V) && (%K% := 1, Style -= V)
+		{
 			Ret .= "<span name='MS:'>" K " := <span class='param' name='MS:'>" V "</span></span>`n"
-
+			Break
+		}
 	If ((Style & 0x0020) = 0x0020)  ;	BS_LEFTTEXT  ;	BS_RIGHTBUTTON
 		Ret .= "<span name='MS:'>BS_LEFTTEXT := BS_RIGHTBUTTON := <span class='param' name='MS:'>0x0020</span></span>`n" 
 		
 	For K, V In oStyles
-		If ((Style & V) = V) && (%K% := 1)
+		If ((Style & V) = V) && (%K% := 1, Style -= V)
 			Ret .= "<span name='MS:'>" K " := <span class='param' name='MS:'>" V "</span></span>`n" 
 			
 	IF !BS_ICON && !BS_BITMAP && !BS_AUTOCHECKBOX && !BS_AUTORADIOBUTTON && !BS_CHECKBOX && !BS_RADIOBUTTON  ;	BS_TEXT
@@ -3424,9 +3369,11 @@ GetStyle_Button(Style, ExStyle, hWnd)  {
 
 	IF !BS_DEFPUSHBUTTON && !BS_CHECKBOX && !BS_AUTOCHECKBOX && !BS_RADIOBUTTON && !BS_GROUPBOX && !BS_AUTORADIOBUTTON  ;	BS_PUSHBUTTON
 		Ret .= "<span name='MS:'>BS_PUSHBUTTON := <span class='param' name='MS:'>!(BS_DEFPUSHBUTTON | BS_CHECKBOX | BS_AUTOCHECKBOX | BS_RADIOBUTTON | BS_GROUPBOX | BS_AUTORADIOBUTTON)</span></span>`n"
-		
+
+	IF Style
+		Ret .= "<span style='color: #" ColorDelimiter ";' name='MS:'>" Format("0x{1:04X}", Style)  "</span>`n"
 	If Ret !=
-		Res .= _T1 " id='__Styles_Control'> ( Styles - Button: <span name='MS:' style='color: #" ColorFont ";'>" Format("0x{:04X}", Style) "</span> ) </span>" _T2 _PRE1 Ret _PRE2
+		Res .= _T1 " id='__Styles_Control'> ( Styles - Button: <span name='MS:' style='color: #" ColorFont ";'>" Format("0x{:04X}", sStyle) "</span> ) </span>" _T2 _PRE1 Ret _PRE2
 	Return Res
 }
 
@@ -3440,16 +3387,18 @@ GetStyle_Edit(Style, ExStyle, hWnd)  {
 		,"ES_AUTOHSCROLL":"0x0080","ES_NOHIDESEL":"0x0100","ES_OEMCONVERT":"0x0400","ES_READONLY":"0x0800"
 		,"ES_WANTRETURN":"0x1000","ES_NUMBER":"0x2000"}
 
-	Style := Style & 0xffff
+	Style := sStyle := Style & 0xffff
 	For K, V In oStyles
-		If ((Style & V) = V) && (%K% := 1)
+		If ((Style & V) = V) && (%K% := 1, Style -= V)
 			Ret .= "<span name='MS:'>" K " := <span class='param' name='MS:'>" V "</span></span>`n"
 		
 	IF !ES_CENTER && !ES_RIGHT  ;	ES_LEFT
 		Ret .= "<span name='MS:'>ES_LEFT := <span class='param' name='MS:'>!(ES_CENTER | ES_RIGHT)</span></span>`n"
-		
+
+	IF Style
+		Ret .= "<span style='color: #" ColorDelimiter ";' name='MS:'>" Format("0x{1:04X}", Style)  "</span>`n"
 	If Ret !=
-		Res .= _T1 " id='__Styles_Control'> ( Styles - Edit: <span name='MS:' style='color: #" ColorFont ";'>" Format("0x{:04X}", Style) "</span> ) </span>" _T2 _PRE1 Ret _PRE2
+		Res .= _T1 " id='__Styles_Control'> ( Styles - Edit: <span name='MS:' style='color: #" ColorFont ";'>" Format("0x{:04X}", sStyle) "</span> ) </span>" _T2 _PRE1 Ret _PRE2
 	Return Res
 }
 
@@ -3464,9 +3413,9 @@ GetStyle_SysTabControl(Style, ExStyle, hWnd)  {
 		,"TCS_FORCEICONLEFT":"0x0010","TCS_FIXEDWIDTH":"0x0400","TCS_RAGGEDRIGHT":"0x0800","TCS_FOCUSONBUTTONDOWN":"0x1000"
 		,"TCS_OWNERDRAWFIXED":"0x2000","TCS_TOOLTIPS":"0x4000","TCS_FOCUSNEVER":"0x8000"} 
 	
-	Style := Style & 0xffff
+	Style := sStyle := Style & 0xffff
 	For K, V In oStyles
-		If ((Style & V) = V) && (%K% := 1)
+		If ((Style & V) = V) && (%K% := 1, Style -= V)
 			Ret .= "<span name='MS:'>" K " := <span class='param' name='MS:'>" V "</span></span>`n"
 
 	IF !TCS_BUTTONS   ;	TCS_TABS
@@ -3475,30 +3424,255 @@ GetStyle_SysTabControl(Style, ExStyle, hWnd)  {
 		Ret .= "<span name='MS:'>TCS_SINGLELINE := <span class='param' name='MS:'>!TCS_MULTILINE</span></span>`n"
 	IF TCS_MULTILINE   ;	TCS_RIGHTJUSTIFY
 		Ret .= "<span name='MS:'>TCS_RIGHTJUSTIFY := <span class='param' name='MS:'>TCS_MULTILINE</span></span>`n"
-	IF TCS_MULTILINE && ((Style & 0x0080) = 0x0080) && (TCS_VERTICAL := 1)  ;	"TCS_VERTICAL":"0x0080"
+	IF TCS_MULTILINE && ((Style & 0x0080) = 0x0080) && (TCS_VERTICAL := 1, Style -= 0x0080)  ;	"TCS_VERTICAL":"0x0080"
 		Ret .= "<span name='MS:'>TCS_VERTICAL := <span class='param' name='MS:'>0x0080 & TCS_MULTILINE</span></span>`n"
-	IF ((Style & 0x0002) = 0x0002)   ;	"TCS_BOTTOM":"0x0002","TCS_RIGHT":"0x0002"
+	IF ((Style & 0x0002) = 0x0002) && (1, Style -= 0x0002)   ;	"TCS_BOTTOM":"0x0002","TCS_RIGHT":"0x0002"
 	{
 		IF TCS_VERTICAL
 			Ret .= "<span name='MS:'>TCS_RIGHT := <span class='param' name='MS:'>0x0002 & TCS_VERTICAL</span></span>`n"
 		Else
 			Ret .= "<span name='MS:'>TCS_BOTTOM := <span class='param' name='MS:'>0x0002 & !TCS_VERTICAL</span></span>`n"
 	}
+	IF Style
+		Ret .= "<span style='color: #" ColorDelimiter ";' name='MS:'>" Format("0x{1:04X}", Style)  "</span>`n"
 	If Ret !=
-		Res .= _T1 " id='__Styles_Control'> ( Styles - SysTabControl32: <span name='MS:' style='color: #" ColorFont ";'>" Format("0x{:04X}", Style) "</span> ) </span>" _T2 _PRE1 Ret _PRE2
+		Res .= _T1 " id='__Styles_Control'> ( Styles - SysTabControl32: <span name='MS:' style='color: #" ColorFont ";'>" Format("0x{:04X}", sStyle) "</span> ) </span>" _T2 _PRE1 Ret _PRE2
 
 	SendMessage, TCM_GETEXTENDEDSTYLE, 0, 0,, ahk_id %hWnd%
 	ExStyle := ErrorLevel
 		
-	If ((ExStyle & 0x00000001) = 0x00000001)  ;	TCS_EX_FLATSEPARATORS
+	If ((ExStyle & 0x00000001) = 0x00000001) && (1, ExStyle -= 0x00000001)  ;	TCS_EX_FLATSEPARATORS
 		RetEx .= "<span name='MS:'>TCS_EX_FLATSEPARATORS := <span class='param' name='MS:'>0x00000001</span></span>`n"
-	If ((ExStyle & 0x00000002) = 0x00000002)  ;	TCS_EX_REGISTERDROP
+	If ((ExStyle & 0x00000002) = 0x00000002) && (1, ExStyle -= 0x00000002)  ;	TCS_EX_REGISTERDROP
 		RetEx .= "<span name='MS:'>TCS_EX_REGISTERDROP := <span class='param' name='MS:'>0x00000002</span></span>`n"
 
+	IF ExStyle
+		Ret .= "<span style='color: #" ColorDelimiter ";' name='MS:'>" Format("0x{1:08X}", ExStyle)  "</span>`n"
 	If RetEx !=
 		Res .= _T1 " id='__ExStyles_Control'> ( ExStyles - SysTabControl32: <span name='MS:' style='color: #" ColorFont ";'>" Format("0x{:08X}", ExStyle) "</span> ) </span>" _T2 _PRE1 RetEx _PRE2
 	Return Res
 }
+
+GetStyle_ComboBox(Style, ExStyle, hWnd)  {
+	;	https://www.autohotkey.com/boards/viewtopic.php?p=25842#p25842
+	;	https://docs.microsoft.com/en-us/windows/desktop/controls/edit-control-styles
+	Static oStyles
+	If !oStyles
+		oStyles := {"CBS_SIMPLE":"0x0001","CBS_DROPDOWN":"0x0002","CBS_DROPDOWNLIST":"0x0003","CBS_OWNERDRAWFIXED":"0x0010"
+		,"CBS_OWNERDRAWVARIABLE":"0x0020","CBS_AUTOHSCROLL":"0x0040","CBS_OEMCONVERT":"0x0080","CBS_SORT":"0x0100"
+		,"CBS_HASSTRINGS":"0x0200","CBS_NOINTEGRALHEIGHT":"0x0400","CBS_DISABLENOSCROLL":"0x0800"
+		,"CBS_UPPERCASE":"0x2000","CBS_LOWERCASE":"0x4000"}
+	
+	Style := sStyle := Style & 0xffff
+	For K, V In oStyles
+		If ((Style & V) = V) && (1, Style -= V)
+			Ret .= "<span name='MS:'>" K " := <span class='param' name='MS:'>" V "</span></span>`n"
+	IF Style
+		Ret .= "<span style='color: #" ColorDelimiter ";' name='MS:'>" Format("0x{1:04X}", Style)  "</span>`n"
+	If Ret !=
+		Res .= _T1 " id='__Styles_Control'> ( Styles - ComboBox: <span name='MS:' style='color: #" ColorFont ";'>" Format("0x{:04X}", sStyle) "</span> ) </span>" _T2 _PRE1 Ret _PRE2
+	Return Res
+}
+
+GetStyle_ListBox(Style, ExStyle, hWnd)  {
+	;	https://www.autohotkey.com/boards/viewtopic.php?p=25855#p25855
+	;	https://docs.microsoft.com/en-us/windows/desktop/controls/list-box-styles
+	Static oStyles
+	If !oStyles
+		oStyles := {"LBS_NOTIFY":"0x0001","LBS_SORT":"0x0002","LBS_NOREDRAW":"0x0004","LBS_MULTIPLESEL":"0x0008"
+		,"LBS_OWNERDRAWFIXED":"0x0010","LBS_OWNERDRAWVARIABLE":"0x0020","LBS_HASSTRINGS":"0x0040"
+		,"LBS_USETABSTOPS":"0x0080","LBS_NOINTEGRALHEIGHT":"0x0100","LBS_MULTICOLUMN":"0x0200"
+		,"LBS_WANTKEYBOARDINPUT":"0x0400","LBS_EXTENDEDSEL":"0x0800","LBS_DISABLENOSCROLL":"0x1000","LBS_NODATA":"0x2000"
+		,"LBS_NOSEL":"0x4000","LBS_COMBOBOX":"0x8000"}
+		, WS_VSCROLL := 0x200000, WS_BORDER := 0x800000
+		
+	wStyle := Style, Style := sStyle := Style & 0xffff
+	
+	For K, V In oStyles
+		If ((Style & V) = V) && (%K% := 1, Style -= V)
+			Ret .= "<span name='MS:'>" K " := <span class='param' name='MS:'>" V "</span></span>`n"
+		
+	IF LBS_NOTIFY && LBS_SORT && (wStyle & WS_VSCROLL) && (wStyle & WS_BORDER) && (1, Style -= 0x0003)  ;	LBS_STANDARD
+		Ret .= "<span name='MS:'>LBS_STANDARD := <span class='param' name='MS:'>0xA00003 & (LBS_NOTIFY | LBS_SORT | WS_VSCROLL | WS_BORDER)</span></span>`n"
+		
+	IF Style
+		Ret .= "<span style='color: #" ColorDelimiter ";' name='MS:'>" Format("0x{1:04X}", Style)  "</span>`n"
+	If Ret !=
+		Res .= _T1 " id='__Styles_Control'> ( Styles - ListBox: <span name='MS:' style='color: #" ColorFont ";'>" Format("0x{:04X}", sStyle) "</span> ) </span>" _T2 _PRE1 Ret _PRE2
+	Return Res
+} 
+
+GetStyle_msctls_updown(Style, ExStyle, hWnd)  {
+	;	https://www.autohotkey.com/boards/viewtopic.php?p=25878#p25878
+	;	https://docs.microsoft.com/en-us/windows/desktop/controls/up-down-control-styles
+	Static oStyles
+	If !oStyles
+		oStyles := {"UDS_WRAP":"0x0001","UDS_SETBUDDYINT":"0x0002","UDS_ALIGNRIGHT":"0x0004","UDS_ALIGNLEFT":"0x0008"
+		,"UDS_AUTOBUDDY":"0x0010","UDS_ARROWKEYS":"0x0020","UDS_HORZ":"0x0040","UDS_NOTHOUSANDS":"0x0080","UDS_HOTTRACK":"0x0100"}
+
+	Style := sStyle := Style & 0xffff
+	For K, V In oStyles
+		If ((Style & V) = V) && (1, Style -= V)
+			Ret .= "<span name='MS:'>" K " := <span class='param' name='MS:'>" V "</span></span>`n"
+	IF Style
+		Ret .= "<span style='color: #" ColorDelimiter ";' name='MS:'>" Format("0x{1:04X}", Style)  "</span>`n"
+	If Ret !=
+		Res .= _T1 " id='__Styles_Control'> ( Styles - msctls_updown32: <span name='MS:' style='color: #" ColorFont ";'>" Format("0x{:04X}", sStyle) "</span> ) </span>" _T2 _PRE1 Ret _PRE2
+	Return Res
+}
+
+GetStyle_SysDateTimePick(Style, ExStyle, hWnd)  {
+	;	https://www.autohotkey.com/boards/viewtopic.php?p=25878#p25878
+	;	https://docs.microsoft.com/en-us/windows/desktop/controls/date-and-time-picker-control-styles
+	Static oStyles
+	If !oStyles
+		oStyles := {"DTS_UPDOWN":"0x0001","DTS_SHOWNONE":"0x0002","DTS_LONGDATEFORMAT":"0x0004","DTS_TIMEFORMAT":"0x0009"
+			,"DTS_SHORTDATECENTURYFORMAT":"0x000C","DTS_APPCANPARSE":"0x0010","DTS_RIGHTALIGN":"0x0020"}
+
+	Style := sStyle := Style & 0xffff
+	For K, V In oStyles
+		If ((Style & V) = V) && (%K% := 1, Style -= V)
+			Ret .= "<span name='MS:'>" K " := <span class='param' name='MS:'>" V "</span></span>`n" 
+	IF !DTS_LONGDATEFORMAT  ;	DTS_SHORTDATEFORMAT
+		Ret .= "<span name='MS:'>DTS_SHORTDATEFORMAT := <span class='param' name='MS:'>!(DTS_LONGDATEFORMAT)</span></span>`n"
+			
+	IF Style
+		Ret .= "<span style='color: #" ColorDelimiter ";' name='MS:'>" Format("0x{1:04X}", Style)  "</span>`n"
+	If Ret !=
+		Res .= _T1 " id='__Styles_Control'> ( Styles - SysDateTimePick32: <span name='MS:' style='color: #" ColorFont ";'>" Format("0x{:04X}", sStyle) "</span> ) </span>" _T2 _PRE1 Ret _PRE2
+	Return Res
+} 
+
+GetStyle_SysMonthCal(Style, ExStyle, hWnd)  {
+	;	https://www.autohotkey.com/boards/viewtopic.php?p=25861#p25861
+	;	https://docs.microsoft.com/en-us/windows/desktop/controls/month-calendar-control-styles
+	Static oStyles
+	If !oStyles
+		oStyles := {"MCS_DAYSTATE":"0x0001","MCS_MULTISELECT":"0x0002","MCS_WEEKNUMBERS":"0x0004","MCS_NOTODAYCIRCLE":"0x0008"
+		,"MCS_NOTODAY":"0x0010","MCS_NOTRAILINGDATES":"0x0040","MCS_SHORTDAYSOFWEEK":"0x0080","MCS_NOSELCHANGEONNAV":"0x0100"}
+
+	Style := sStyle := Style & 0xffff
+	For K, V In oStyles
+		If ((Style & V) = V) && (1, Style -= V)
+			Ret .= "<span name='MS:'>" K " := <span class='param' name='MS:'>" V "</span></span>`n" 
+	IF Style
+		Ret .= "<span style='color: #" ColorDelimiter ";' name='MS:'>" Format("0x{1:04X}", Style)  "</span>`n"
+	If Ret !=
+		Res .= _T1 " id='__Styles_Control'> ( Styles - SysMonthCal32: <span name='MS:' style='color: #" ColorFont ";'>" Format("0x{:04X}", sStyle) "</span> ) </span>" _T2 _PRE1 Ret _PRE2
+	Return Res
+} 
+
+GetStyle_msctls_trackbar(Style, ExStyle, hWnd)  {
+	;	https://www.autohotkey.com/boards/viewtopic.php?p=25875#p25875
+	;	https://docs.microsoft.com/en-us/windows/desktop/controls/trackbar-control-styles
+	Static oStyles
+	If !oStyles
+		oStyles := {"TBS_AUTOTICKS":"0x0001","TBS_VERT":"0x0002"
+		,"TBS_BOTH":"0x0008","TBS_NOTICKS":"0x0010","TBS_ENABLESELRANGE":"0x0020"
+		,"TBS_FIXEDLENGTH":"0x0040","TBS_NOTHUMB":"0x0080","TBS_TOOLTIPS":"0x0100","TBS_REVERSED":"0x0200"
+		,"TBS_DOWNISLEFT":"0x0400","TBS_NOTIFYBEFOREMOVE":"0x0800","TBS_TRANSPARENTBKGND":"0x1000"}
+
+	Style := sStyle := Style & 0xffff
+	For K, V In oStyles
+		If ((Style & V) = V) && (%K% := 1, Style -= V)
+			Ret .= "<span name='MS:'>" K " := <span class='param' name='MS:'>" V "</span></span>`n" 
+			
+	IF !TBS_VERT 
+	{ 
+		Ret .= "<span name='MS:'>TBS_HORZ := <span class='param' name='MS:'>!(TBS_VERT)</span></span>`n"  ;	TBS_HORZ
+		IF ((Style & 0x0004) = 0x0004) && (1, Style -= 0x0004)  ;	TBS_TOP
+			Ret .= "<span name='MS:'>TBS_TOP := <span class='param' name='MS:'>0x0004 & TBS_HORZ</span></span>`n"
+		IF !TBS_TOP  ;	TBS_BOTTOM
+			Ret .= "<span name='MS:'>TBS_BOTTOM := <span class='param' name='MS:'>!(TBS_TOP) & TBS_HORZ</span></span>`n"
+	}
+	Else
+	{
+		IF ((Style & 0x0004) = 0x0004) && (TBS_LEFT := 1, Style -= 0x0004)  ;	TBS_LEFT
+			Ret .= "<span name='MS:'>TBS_LEFT := <span class='param' name='MS:'>0x0004 & TBS_VERT</span></span>`n"
+				
+		IF !TBS_LEFT  ;	TBS_RIGHT
+			Ret .= "<span name='MS:'>TBS_RIGHT := <span class='param' name='MS:'>!(TBS_LEFT) & TBS_VERT</span></span>`n"
+	}
+	IF Style
+		Ret .= "<span style='color: #" ColorDelimiter ";' name='MS:'>" Format("0x{1:04X}", Style)  "</span>`n"
+	If Ret !=
+		Res .= _T1 " id='__Styles_Control'> ( Styles - msctls_trackbar32: <span name='MS:' style='color: #" ColorFont ";'>" Format("0x{:04X}", sStyle) "</span> ) </span>" _T2 _PRE1 Ret _PRE2
+	Return Res
+} 
+
+GetStyle_msctls_statusbar(Style, ExStyle, hWnd)  {
+	;	https://www.autohotkey.com/boards/viewtopic.php?p=25870#p25870
+	;	https://docs.microsoft.com/en-us/windows/desktop/controls/status-bar-styles
+	Static oStyles
+	If !oStyles
+		oStyles := {"SBARS_SIZEGRIP":"0x0100","SBARS_TOOLTIPS":"0x0800"}
+
+	Style := sStyle := Style & 0xffff
+	For K, V In oStyles
+		If ((Style & V) = V) && (1, Style -= V)
+			Ret .= "<span name='MS:'>" K " := <span class='param' name='MS:'>" V "</span></span>`n" 
+	IF Style
+		Ret .= "<span style='color: #" ColorDelimiter ";' name='MS:'>" Format("0x{1:04X}", Style)  "</span>`n"
+	If Ret !=
+		Res .= _T1 " id='__Styles_Control'> ( Styles - msctls_statusbar32: <span name='MS:' style='color: #" ColorFont ";'>" Format("0x{:04X}", sStyle) "</span> ) </span>" _T2 _PRE1 Ret _PRE2
+	Return Res
+} 
+
+GetStyle_msctls_progress(Style, ExStyle, hWnd)  {
+	;	https://www.autohotkey.com/boards/viewtopic.php?p=25864#p25864
+	;	https://docs.microsoft.com/en-us/windows/desktop/controls/progress-bar-control-styles
+	Static oStyles
+	If !oStyles
+		oStyles := {"PBS_SMOOTH":"0x0001","PBS_VERTICAL":"0x0004","PBS_MARQUEE":"0x0008","PBS_SMOOTHREVERSE":"0x0010"}
+
+	Style := sStyle := Style & 0xffff
+	For K, V In oStyles
+		If ((Style & V) = V) && (1, Style -= V)
+			Ret .= "<span name='MS:'>" K " := <span class='param' name='MS:'>" V "</span></span>`n" 
+	IF Style
+		Ret .= "<span style='color: #" ColorDelimiter ";' name='MS:'>" Format("0x{1:04X}", Style)  "</span>`n"
+	If Ret !=
+		Res .= _T1 " id='__Styles_Control'> ( Styles - msctls_progress32: <span name='MS:' style='color: #" ColorFont ";'>" Format("0x{:04X}", sStyle) "</span> ) </span>" _T2 _PRE1 Ret _PRE2
+	Return Res
+} 
+
+/*
+
+https://www.autohotkey.com/boards/viewtopic.php?p=25857#p25857
+https://docs.microsoft.com/en-us/windows/desktop/controls/list-view-window-styles
+https://docs.microsoft.com/en-us/windows/desktop/controls/extended-list-view-styles
+
+		Styles.SysListView := {"LVS_ALIGNLEFT":"0x0800","LVS_ALIGNMASK":"0x0C00","LVS_ALIGNTOP":"0x0000","LVS_AUTOARRANGE":"0x0100","LVS_EDITLABELS":"0x0200","LVS_ICON":"0x0000"
+			,"LVS_LIST":"0x0003","LVS_NOCOLUMNHEADER":"0x4000","LVS_NOLABELWRAP":"0x0080","LVS_NOSCROLL":"0x2000","LVS_NOSORTHEADER":"0x8000","LVS_OWNERDATA":"0x1000"
+			,"LVS_OWNERDRAWFIXED":"0x0400","LVS_REPORT":"0x0001","LVS_SHAREIMAGELISTS":"0x0040","LVS_SHOWSELALWAYS":"0x0008","LVS_SINGLESEL":"0x0004","LVS_SMALLICON":"0x0002"
+			,"LVS_SORTASCENDING":"0x0010","LVS_SORTDESCENDING":"0x0020","LVS_TYPEMASK":"0x0003","LVS_TYPESTYLEMASK":"0xFC00"}
+		
+		ExStyles.SysListView := {"LVS_EX_AUTOAUTOARRANGE":"0x01000000","LVS_EX_AUTOCHECKSELECT":"0x08000000","LVS_EX_AUTOSIZECOLUMNS":"0x10000000","LVS_EX_BORDERSELECT":"0x00008000"
+			,"LVS_EX_CHECKBOXES":"0x00000004","LVS_EX_COLUMNOVERFLOW":"0x80000000","LVS_EX_COLUMNSNAPPOINTS":"0x40000000","LVS_EX_DOUBLEBUFFER":"0x00010000","LVS_EX_FLATSB":"0x00000100"
+			,"LVS_EX_FULLROWSELECT":"0x00000020","LVS_EX_GRIDLINES":"0x00000001","LVS_EX_HEADERDRAGDROP":"0x00000010","LVS_EX_HEADERINALLVIEWS":"0x02000000","LVS_EX_HIDELABELS":"0x00020000"
+			,"LVS_EX_INFOTIP":"0x00000400","LVS_EX_JUSTIFYCOLUMNS":"0x00200000","LVS_EX_LABELTIP":"0x00004000","LVS_EX_MULTIWORKAREAS":"0x00002000","LVS_EX_ONECLICKACTIVATE":"0x00000040"
+			,"LVS_EX_REGIONAL":"0x00000200","LVS_EX_SIMPLESELECT":"0x00100000","LVS_EX_SINGLEROW":"0x00040000","LVS_EX_SNAPTOGRID":"0x00080000","LVS_EX_SUBITEMIMAGES":"0x00000002"
+			,"LVS_EX_TRACKSELECT":"0x00000008","LVS_EX_TRANSPARENTBKGND":"0x00400000","LVS_EX_TRANSPARENTSHADOWTEXT":"0x00800000","LVS_EX_TWOCLICKACTIVATE":"0x00000080"
+			,"LVS_EX_UNDERLINECOLD":"0x00001000","LVS_EX_UNDERLINEHOT":"0x00000800"}
+			
+			
+			
+			
+https://www.autohotkey.com/boards/viewtopic.php?p=25876#p25876
+https://docs.microsoft.com/en-us/windows/desktop/controls/tree-view-control-window-styles
+https://docs.microsoft.com/en-us/windows/desktop/controls/tree-view-control-window-extended-styles
+
+		Styles.SysTreeView := {"TVS_CHECKBOXES":"0x0100","TVS_DISABLEDRAGDROP":"0x0010","TVS_EDITLABELS":"0x0008","TVS_FULLROWSELECT":"0x1000","TVS_HASBUTTONS":"0x0001"
+			,"TVS_HASLINES":"0x0002","TVS_INFOTIP":"0x0800","TVS_LINESATROOT":"0x0004","TVS_NOHSCROLL":"0x8000","TVS_NONEVENHEIGHT":"0x4000","TVS_NOSCROLL":"0x2000"
+			,"TVS_NOTOOLTIPS":"0x0080","TVS_RTLREADING":"0x0040","TVS_SHOWSELALWAYS":"0x0020","TVS_SINGLEEXPAND":"0x0400","TVS_TRACKSELECT":"0x0200"}
+			
+		ExStyles.SysTreeView := {"TVS_EX_AUTOHSCROLL":"0x0020","TVS_EX_DIMMEDCHECKBOXES":"0x0200","TVS_EX_DOUBLEBUFFER":"0x0004","TVS_EX_DRAWIMAGEASYNC":"0x0400"
+			,"TVS_EX_EXCLUSIONCHECKBOXES":"0x0100","TVS_EX_FADEINOUTEXPANDOS":"0x0040","TVS_EX_MULTISELECT":"0x0002","TVS_EX_NOINDENTSTATE":"0x0008"
+			,"TVS_EX_NOSINGLECOLLAPSE":"0x0001","TVS_EX_PARTIALCHECKBOXES":"0x0080","TVS_EX_RICHTOOLTIP":"0x0010"}
+ 
+			
+*/
+
   ;	0x0000 TCS_TOOLTIPS           
 	; _________________________________________________ FullScreen _________________________________________________
 
