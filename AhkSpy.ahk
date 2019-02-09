@@ -26,7 +26,7 @@
     Актуальный исходник - https://raw.githubusercontent.com/serzh82saratov/AhkSpy/master/AhkSpy.ahk
 */
 
-Global AhkSpyVersion := 3.59
+Global AhkSpyVersion := 3.60
 
 	; _________________________________________________ Header _________________________________________________
 
@@ -3193,19 +3193,19 @@ GetStyles(Style, ExStyle, hWnd, IsChild = 0) {
 		Ret .= "<span name='MS:'>WS_MINIMIZE := WS_ICONIC := <span class='param' name='MS:'>0x20000000</span></span>`n" 
 
 	IF (Style & 0x80000000) && !WS_CHILD && (WS_POPUP := 1, Style -= 0x80000000)  ;	WS_POPUP
-		Ret .= "<span name='MS:'>WS_POPUP := <span class='param' name='MS:'>0x80000000 & !WS_CHILD</span></span>`n"  
+		Ret .= "<span name='MS:'>WS_POPUP := <span class='param' name='MS:'>0x80000000 && !(WS_CHILD)</span></span>`n"  
 			
 	IF (WS_POPUP && WS_BORDER && WS_SYSMENU) && (WS_POPUPWINDOW := 1)  ;	WS_POPUPWINDOW
 		Ret .= "<span name='MS:'>WS_POPUPWINDOW := <span class='param' name='MS:'>(WS_POPUP | WS_BORDER | WS_SYSMENU)</span></span>`n" 
 		 
 	IF WS_BORDER && WS_CAPTION && (WS_OVERLAPPED := 1)  ;	WS_OVERLAPPED := WS_TILED
-		Ret .= "<span name='MS:'>WS_OVERLAPPED := WS_TILED := <span class='param' name='MS:'>!WS_CHILD</span></span>`n" 
+		Ret .= "<span name='MS:'>WS_OVERLAPPED := WS_TILED := <span class='param' name='MS:'>!(WS_CHILD)</span></span>`n" 
 		
 	IF WS_SYSMENU && (Style & 0x00020000) && (WS_MINIMIZEBOX := 1, Style -= 0x00020000)  ;	WS_MINIMIZEBOX
-		Ret .= "<span name='MS:'>WS_MINIMIZEBOX := <span class='param' name='MS:'>0x00020000 & WS_SYSMENU</span></span>`n" 
+		Ret .= "<span name='MS:'>WS_MINIMIZEBOX := <span class='param' name='MS:'>0x00020000 && WS_SYSMENU</span></span>`n" 
 		
 	IF WS_SYSMENU && (Style & 0x00010000) && (WS_MAXIMIZEBOX := 1, Style -= 0x00010000)  ;	WS_MAXIMIZEBOX
-		Ret .= "<span name='MS:'>WS_MAXIMIZEBOX := <span class='param' name='MS:'>0x00010000 & WS_SYSMENU</span></span>`n" 
+		Ret .= "<span name='MS:'>WS_MAXIMIZEBOX := <span class='param' name='MS:'>0x00010000 && WS_SYSMENU</span></span>`n" 
 	
 	If (WS_OVERLAPPED && WS_CAPTION && WS_SYSMENU && WS_THICKFRAME && WS_MINIMIZEBOX && WS_MAXIMIZEBOX)  ;	WS_OVERLAPPEDWINDOW := WS_TILEDWINDOW
 		Ret .= "<span name='MS:'>WS_OVERLAPPEDWINDOW := WS_TILEDWINDOW := "
@@ -3221,21 +3221,21 @@ GetStyles(Style, ExStyle, hWnd, IsChild = 0) {
 			RetEx .= "<span name='MS:'>" K " := <span class='param' name='MS:'>" V "</span></span>`n"
 			
 	IF !CS_OWNDC && !CS_CLASSDC && (ExStyle & 0x02000000) && (1, ExStyle -= 0x02000000)  ;	WS_EX_COMPOSITED
-		RetEx .= "<span name='MS:'>WS_EX_COMPOSITED := <span class='param' name='MS:'>0x02000000 & !(CS_OWNDC | CS_CLASSDC)</span></span>`n" 
+		RetEx .= "<span name='MS:'>WS_EX_COMPOSITED := <span class='param' name='MS:'>0x02000000 && !(CS_OWNDC | CS_CLASSDC)</span></span>`n" 
 
 	IF !WS_MAXIMIZEBOX && !WS_MINIMIZEBOX && (ExStyle & 0x00000400) && (1, ExStyle -= 0x00000400)  ;	WS_EX_CONTEXTHELP
-		RetEx .= "<span name='MS:'>WS_EX_CONTEXTHELP := <span class='param' name='MS:'>0x00000400 & !(WS_MAXIMIZEBOX | WS_MINIMIZEBOX)</span></span>`n" 
+		RetEx .= "<span name='MS:'>WS_EX_CONTEXTHELP := <span class='param' name='MS:'>0x00000400 && !(WS_MAXIMIZEBOX | WS_MINIMIZEBOX)</span></span>`n" 
 	IF !CS_OWNDC && !CS_CLASSDC && (ExStyle & 0x00080000) && (1, ExStyle -= 0x00080000)  ;	WS_EX_LAYERED
-		RetEx .= "<span name='MS:'>WS_EX_LAYERED := <span class='param' name='MS:'>0x00080000 & !(CS_OWNDC | CS_CLASSDC)</span></span>`n" 
+		RetEx .= "<span name='MS:'>WS_EX_LAYERED := <span class='param' name='MS:'>0x00080000 && !(CS_OWNDC | CS_CLASSDC)</span></span>`n" 
 
 	IF !WS_EX_RIGHT  ;	WS_EX_LEFT
-		RetEx .= "<span name='MS:'>WS_EX_LEFT := <span class='param' name='MS:'>!WS_EX_RIGHT</span></span>`n"  
+		RetEx .= "<span name='MS:'>WS_EX_LEFT := <span class='param' name='MS:'>!(WS_EX_RIGHT)</span></span>`n"  
 
 	IF !WS_EX_LEFTSCROLLBAR  ;	WS_EX_RIGHTSCROLLBAR
-		RetEx .= "<span name='MS:'>WS_EX_RIGHTSCROLLBAR := <span class='param' name='MS:'>!WS_EX_LEFTSCROLLBAR</span></span>`n" 
+		RetEx .= "<span name='MS:'>WS_EX_RIGHTSCROLLBAR := <span class='param' name='MS:'>!(WS_EX_LEFTSCROLLBAR)</span></span>`n" 
 
 	IF !WS_EX_RTLREADING  ;	WS_EX_LTRREADING
-		RetEx .= "<span name='MS:'>WS_EX_LTRREADING := <span class='param' name='MS:'>!WS_EX_RTLREADING</span></span>`n" 
+		RetEx .= "<span name='MS:'>WS_EX_LTRREADING := <span class='param' name='MS:'>!(WS_EX_RTLREADING)</span></span>`n" 
 		
 	IF WS_EX_WINDOWEDGE && WS_EX_CLIENTEDGE  ;	WS_EX_OVERLAPPEDWINDOW
 		RetEx .= "<span name='MS:'>WS_EX_OVERLAPPEDWINDOW := <span class='param' name='MS:'>(WS_EX_WINDOWEDGE | WS_EX_CLIENTEDGE)</span></span>`n" 
@@ -3276,7 +3276,7 @@ GetControlStyles(Class, Style, ExStyle, hWnd) {
 		Return GetStyle_%Class%(Style, ExStyle, hWnd)
 /*
 	Added:
-	Button, Edit, Static, SysTabControl32, SysDateTimePick32, SysMonthCal32, ComboBox, ListBox
+	Button, Edit, Static, SysListView32, SysTabControl32, SysDateTimePick32, SysMonthCal32, ComboBox, ListBox
 	, msctls_trackbar32, msctls_statusbar32, msctls_progress32, msctls_updown32
 */ 
 }
@@ -3421,17 +3421,17 @@ GetStyle_SysTabControl(Style, ExStyle, hWnd)  {
 	IF !TCS_BUTTONS   ;	TCS_TABS
 		Ret .= "<span name='MS:'>TCS_TABS := <span class='param' name='MS:'>!(TCS_BUTTONS)</span></span>`n"
 	IF !TCS_MULTILINE   ;	TCS_SINGLELINE
-		Ret .= "<span name='MS:'>TCS_SINGLELINE := <span class='param' name='MS:'>!TCS_MULTILINE</span></span>`n"
+		Ret .= "<span name='MS:'>TCS_SINGLELINE := <span class='param' name='MS:'>!(TCS_MULTILINE)</span></span>`n"
 	IF TCS_MULTILINE   ;	TCS_RIGHTJUSTIFY
 		Ret .= "<span name='MS:'>TCS_RIGHTJUSTIFY := <span class='param' name='MS:'>TCS_MULTILINE</span></span>`n"
 	IF TCS_MULTILINE && ((Style & 0x0080) = 0x0080) && (TCS_VERTICAL := 1, Style -= 0x0080)  ;	"TCS_VERTICAL":"0x0080"
-		Ret .= "<span name='MS:'>TCS_VERTICAL := <span class='param' name='MS:'>0x0080 & TCS_MULTILINE</span></span>`n"
+		Ret .= "<span name='MS:'>TCS_VERTICAL := <span class='param' name='MS:'>0x0080 && TCS_MULTILINE</span></span>`n"
 	IF ((Style & 0x0002) = 0x0002) && (1, Style -= 0x0002)   ;	"TCS_BOTTOM":"0x0002","TCS_RIGHT":"0x0002"
 	{
 		IF TCS_VERTICAL
-			Ret .= "<span name='MS:'>TCS_RIGHT := <span class='param' name='MS:'>0x0002 & TCS_VERTICAL</span></span>`n"
+			Ret .= "<span name='MS:'>TCS_RIGHT := <span class='param' name='MS:'>0x0002 && TCS_VERTICAL</span></span>`n"
 		Else
-			Ret .= "<span name='MS:'>TCS_BOTTOM := <span class='param' name='MS:'>0x0002 & !TCS_VERTICAL</span></span>`n"
+			Ret .= "<span name='MS:'>TCS_BOTTOM := <span class='param' name='MS:'>0x0002 && !(TCS_VERTICAL)</span></span>`n"
 	}
 	IF Style
 		Ret .= "<span style='color: #" ColorDelimiter ";' name='MS:'>" Format("0x{1:04X}", Style)  "</span>`n"
@@ -3493,7 +3493,7 @@ GetStyle_ListBox(Style, ExStyle, hWnd)  {
 			Ret .= "<span name='MS:'>" K " := <span class='param' name='MS:'>" V "</span></span>`n"
 		
 	IF LBS_NOTIFY && LBS_SORT && (wStyle & WS_VSCROLL) && (wStyle & WS_BORDER) && (1, Style -= 0x0003)  ;	LBS_STANDARD
-		Ret .= "<span name='MS:'>LBS_STANDARD := <span class='param' name='MS:'>0xA00003 & (LBS_NOTIFY | LBS_SORT | WS_VSCROLL | WS_BORDER)</span></span>`n"
+		Ret .= "<span name='MS:'>LBS_STANDARD := <span class='param' name='MS:'>0xA00003 && (LBS_NOTIFY | LBS_SORT | WS_VSCROLL | WS_BORDER)</span></span>`n"
 		
 	IF Style
 		Ret .= "<span style='color: #" ColorDelimiter ";' name='MS:'>" Format("0x{1:04X}", Style)  "</span>`n"
@@ -3581,17 +3581,17 @@ GetStyle_msctls_trackbar(Style, ExStyle, hWnd)  {
 	{ 
 		Ret .= "<span name='MS:'>TBS_HORZ := <span class='param' name='MS:'>!(TBS_VERT)</span></span>`n"  ;	TBS_HORZ
 		IF ((Style & 0x0004) = 0x0004) && (1, Style -= 0x0004)  ;	TBS_TOP
-			Ret .= "<span name='MS:'>TBS_TOP := <span class='param' name='MS:'>0x0004 & TBS_HORZ</span></span>`n"
+			Ret .= "<span name='MS:'>TBS_TOP := <span class='param' name='MS:'>0x0004 && TBS_HORZ</span></span>`n"
 		IF !TBS_TOP  ;	TBS_BOTTOM
-			Ret .= "<span name='MS:'>TBS_BOTTOM := <span class='param' name='MS:'>!(TBS_TOP) & TBS_HORZ</span></span>`n"
+			Ret .= "<span name='MS:'>TBS_BOTTOM := <span class='param' name='MS:'>!(TBS_TOP) && TBS_HORZ</span></span>`n"
 	}
 	Else
 	{
 		IF ((Style & 0x0004) = 0x0004) && (TBS_LEFT := 1, Style -= 0x0004)  ;	TBS_LEFT
-			Ret .= "<span name='MS:'>TBS_LEFT := <span class='param' name='MS:'>0x0004 & TBS_VERT</span></span>`n"
+			Ret .= "<span name='MS:'>TBS_LEFT := <span class='param' name='MS:'>0x0004 && TBS_VERT</span></span>`n"
 				
 		IF !TBS_LEFT  ;	TBS_RIGHT
-			Ret .= "<span name='MS:'>TBS_RIGHT := <span class='param' name='MS:'>!(TBS_LEFT) & TBS_VERT</span></span>`n"
+			Ret .= "<span name='MS:'>TBS_RIGHT := <span class='param' name='MS:'>!(TBS_LEFT) && TBS_VERT</span></span>`n"
 	}
 	IF Style
 		Ret .= "<span style='color: #" ColorDelimiter ";' name='MS:'>" Format("0x{1:04X}", Style)  "</span>`n"
@@ -3637,9 +3637,9 @@ GetStyle_msctls_progress(Style, ExStyle, hWnd)  {
 } 
 
 GetStyle_SysListView(Style, ExStyle, hWnd)  {
-	;	https://www.autohotkey.com/boards/viewtopic.php?p=25871#p25871
-	;	https://docs.microsoft.com/en-us/windows/desktop/controls/tab-control-styles
-	;	https://docs.microsoft.com/en-us/windows/desktop/controls/tab-control-extended-styles
+	;	https://www.autohotkey.com/boards/viewtopic.php?p=25857#p25857
+	;	https://docs.microsoft.com/en-us/windows/desktop/controls/list-view-window-styles
+	;	https://docs.microsoft.com/en-us/windows/desktop/controls/extended-list-view-styles
 	Static oStyles, oExStyles, oEx, LVM_GETEXTENDEDLISTVIEWSTYLE := 0x1037
 	If !oStyles
 		oStyles := {"LVS_AUTOARRANGE":"0x0100","LVS_EDITLABELS":"0x0200"
@@ -3665,17 +3665,17 @@ GetStyle_SysListView(Style, ExStyle, hWnd)  {
 			Ret .= "<span name='MS:'>" K " := <span class='param' name='MS:'>" V "</span></span>`n"
 	
 	IF ((sStyle & oEx.LVS_TYPEMASK) = oEx.LVS_REPORT) && (LVS_REPORT := 1, Style -= oEx.LVS_REPORT)      ;	LVS_REPORT
-		Ret .= "<span name='MS:'>LVS_REPORT := <span class='param' name='MS:'>LVS_TYPEMASK = LVS_REPORT</span></span>`n"
+		Ret .= "<span name='MS:'>LVS_REPORT := <span class='param' name='MS:'>LVS_TYPEMASK = 0x0001</span></span>`n"
 	IF ((sStyle & oEx.LVS_TYPEMASK) = oEx.LVS_SMALLICON) && (LVS_SMALLICON := 1, Style -= oEx.LVS_SMALLICON)      ;	LVS_SMALLICON
-		Ret .= "<span name='MS:'>LVS_SMALLICON := <span class='param' name='MS:'>LVS_TYPEMASK = LVS_SMALLICON</span></span>`n" 
+		Ret .= "<span name='MS:'>LVS_SMALLICON := <span class='param' name='MS:'>LVS_TYPEMASK = 0x0002</span></span>`n" 
 	IF ((sStyle & oEx.LVS_TYPEMASK) = oEx.LVS_LIST) && (LVS_LIST := 1, Style -= oEx.LVS_LIST)      ;	LVS_LIST
-		Ret .= "<span name='MS:'>LVS_LIST := <span class='param' name='MS:'>LVS_TYPEMASK = LVS_LIST</span></span>`n" 
+		Ret .= "<span name='MS:'>LVS_LIST := <span class='param' name='MS:'>LVS_TYPEMASK = 0x0003</span></span>`n" 
 	IF ((sStyle & oEx.LVS_TYPEMASK) = oEx.LVS_ICON) && !LVS_REPORT && !LVS_SMALLICON && !LVS_LIST && (LVS_ICON := 1)      ;	LVS_ICON
-		Ret .= "<span name='MS:'>LVS_ICON := <span class='param' name='MS:'>LVS_TYPEMASK = LVS_ICON & !(LVS_REPORT | LVS_SMALLICON | LVS_LIST)</span></span>`n" 
+		Ret .= "<span name='MS:'>LVS_ICON := <span class='param' name='MS:'>LVS_TYPEMASK = LVS_ICON && !(LVS_REPORT | LVS_SMALLICON | LVS_LIST)</span></span>`n" 
 	IF ((sStyle & oEx.LVS_ALIGNMASK) = oEx.LVS_ALIGNLEFT) && (LVS_SMALLICON || LVS_ICON) && (LVS_ALIGNLEFT := 1, Style -= oEx.LVS_ALIGNLEFT)      ;	LVS_ALIGNLEFT
-		Ret .= "<span name='MS:'>LVS_ALIGNLEFT := <span class='param' name='MS:'>LVS_ALIGNMASK = LVS_ALIGNLEFT & (LVS_SMALLICON || LVS_ICON)</span></span>`n"
+		Ret .= "<span name='MS:'>LVS_ALIGNLEFT := <span class='param' name='MS:'>LVS_ALIGNMASK = 0x0800 && (LVS_SMALLICON || LVS_ICON)</span></span>`n"
 	IF ((sStyle & oEx.LVS_ALIGNMASK) = oEx.LVS_ALIGNTOP) && (LVS_SMALLICON || LVS_ICON) && (LVS_ALIGNTOP := 1, Style -= oEx.LVS_ALIGNTOP)      ;	LVS_ALIGNTOP
-		Ret .= "<span name='MS:'>LVS_ALIGNTOP := <span class='param' name='MS:'>LVS_ALIGNMASK = LVS_ALIGNTOP & (LVS_SMALLICON || LVS_ICON)</span></span>`n"
+		Ret .= "<span name='MS:'>LVS_ALIGNTOP := <span class='param' name='MS:'>LVS_ALIGNMASK = 0x0000 && (LVS_SMALLICON || LVS_ICON)</span></span>`n"
 	IF ((sStyle & oEx.LVS_NOSORTHEADER) = oEx.LVS_NOSORTHEADER) && (LVS_NOSORTHEADER := 1, Style -= oEx.LVS_NOSORTHEADER)      ;	LVS_NOSORTHEADER
 		Ret .= "<span name='MS:'>LVS_NOSORTHEADER := <span class='param' name='MS:'>0x8000</span></span>`n"
 	IF ((sStyle & oEx.LVS_NOCOLUMNHEADER) = oEx.LVS_NOCOLUMNHEADER) && (LVS_NOCOLUMNHEADER := 1, Style -= oEx.LVS_NOCOLUMNHEADER)      ;	LVS_NOCOLUMNHEADER
@@ -3700,65 +3700,6 @@ GetStyle_SysListView(Style, ExStyle, hWnd)  {
 }
 /*
 
-
-
-
-StyleLookupEx ListViewStyles[] = 
-{
-	STYLE_(LVS_ICON),		LVS_TYPEMASK, -1, LVS_REPORT|LVS_SMALLICON|LVS_LIST, //0x0000
-	STYLE_(LVS_REPORT),		LVS_TYPEMASK, -1, 0,		//0x0001
-	STYLE_(LVS_SMALLICON),	LVS_TYPEMASK, -1, 0,		//0x0002
-	STYLE_(LVS_LIST),		LVS_TYPEMASK, -1, 0,		//0x0003
-
-	STYLE_(LVS_SINGLESEL),			0,   -1, 0,		//0x0004
-	STYLE_(LVS_SHOWSELALWAYS),		0,   -1, 0,		//0x0008
-	STYLE_(LVS_SORTASCENDING),		0,   -1, 0,		//0x0010
-	STYLE_(LVS_SORTDESCENDING),		0,   -1, 0,		//0x0020
-	STYLE_(LVS_SHAREIMAGELISTS),	0,   -1, 0,		//0x0040
-	STYLE_(LVS_NOLABELWRAP),		0,   -1, 0,		//0x0080
-	STYLE_(LVS_AUTOARRANGE),		0,   -1, 0,		//0x0100
-	STYLE_(LVS_EDITLABELS),			0,   -1, 0,		//0x0200
-
-#if (_WIN32_IE >= 0x0300)
-	STYLE_(LVS_OWNERDATA),			0, -1, 0,		//0x1000
-#endif
-
-	STYLE_(LVS_NOSCROLL),			0, -1, 0,		//0x2000
-
-	STYLE_(LVS_ALIGNTOP),			0, -1, 0,		//0x0000
-	STYLE_(LVS_ALIGNLEFT),	LVS_ALIGNMASK, -1, 0,	//0x0800
-
-	//STYLE_(LVS_ALIGNMASK),			0, -1, 0,		//0x0c00
-	//STYLE_(LVS_TYPESTYLEMASK),		0, -1, 0,		//0xfc00
-
-	STYLE_(LVS_OWNERDRAWFIXED),		0, -1, 0,		//0x0400
-	STYLE_(LVS_NOCOLUMNHEADER),		0, -1, 0,		//0x4000
-	STYLE_(LVS_NOSORTHEADER),		0, -1, 0,		//0x8000
-
-	-1, _T(""), -1, -1, -1
-};
-
-
-
-https://www.autohotkey.com/boards/viewtopic.php?p=25857#p25857
-https://docs.microsoft.com/en-us/windows/desktop/controls/list-view-window-styles
-https://docs.microsoft.com/en-us/windows/desktop/controls/extended-list-view-styles
-
-		Styles.SysListView := {"LVS_ALIGNLEFT":"0x0800","LVS_ALIGNMASK":"0x0C00","LVS_ALIGNTOP":"0x0000","LVS_AUTOARRANGE":"0x0100","LVS_EDITLABELS":"0x0200","LVS_ICON":"0x0000"
-			,"LVS_LIST":"0x0003","LVS_NOCOLUMNHEADER":"0x4000","LVS_NOLABELWRAP":"0x0080","LVS_NOSCROLL":"0x2000","LVS_NOSORTHEADER":"0x8000","LVS_OWNERDATA":"0x1000"
-			,"LVS_OWNERDRAWFIXED":"0x0400","LVS_REPORT":"0x0001","LVS_SHAREIMAGELISTS":"0x0040","LVS_SHOWSELALWAYS":"0x0008","LVS_SINGLESEL":"0x0004","LVS_SMALLICON":"0x0002"
-			,"LVS_SORTASCENDING":"0x0010","LVS_SORTDESCENDING":"0x0020","LVS_TYPEMASK":"0x0003","LVS_TYPESTYLEMASK":"0xFC00"}
-		
-		ExStyles.SysListView := {"LVS_EX_AUTOAUTOARRANGE":"0x01000000","LVS_EX_AUTOCHECKSELECT":"0x08000000","LVS_EX_AUTOSIZECOLUMNS":"0x10000000","LVS_EX_BORDERSELECT":"0x00008000"
-			,"LVS_EX_CHECKBOXES":"0x00000004","LVS_EX_COLUMNOVERFLOW":"0x80000000","LVS_EX_COLUMNSNAPPOINTS":"0x40000000","LVS_EX_DOUBLEBUFFER":"0x00010000","LVS_EX_FLATSB":"0x00000100"
-			,"LVS_EX_FULLROWSELECT":"0x00000020","LVS_EX_GRIDLINES":"0x00000001","LVS_EX_HEADERDRAGDROP":"0x00000010","LVS_EX_HEADERINALLVIEWS":"0x02000000","LVS_EX_HIDELABELS":"0x00020000"
-			,"LVS_EX_INFOTIP":"0x00000400","LVS_EX_JUSTIFYCOLUMNS":"0x00200000","LVS_EX_LABELTIP":"0x00004000","LVS_EX_MULTIWORKAREAS":"0x00002000","LVS_EX_ONECLICKACTIVATE":"0x00000040"
-			,"LVS_EX_REGIONAL":"0x00000200","LVS_EX_SIMPLESELECT":"0x00100000","LVS_EX_SINGLEROW":"0x00040000","LVS_EX_SNAPTOGRID":"0x00080000","LVS_EX_SUBITEMIMAGES":"0x00000002"
-			,"LVS_EX_TRACKSELECT":"0x00000008","LVS_EX_TRANSPARENTBKGND":"0x00400000","LVS_EX_TRANSPARENTSHADOWTEXT":"0x00800000","LVS_EX_TWOCLICKACTIVATE":"0x00000080"
-			,"LVS_EX_UNDERLINECOLD":"0x00001000","LVS_EX_UNDERLINEHOT":"0x00000800"}
-			
-			
-			
 			
 https://www.autohotkey.com/boards/viewtopic.php?p=25876#p25876
 https://docs.microsoft.com/en-us/windows/desktop/controls/tree-view-control-window-styles
@@ -3775,7 +3716,7 @@ https://docs.microsoft.com/en-us/windows/desktop/controls/tree-view-control-wind
 			
 */
 
-  ;	0x0000 TCS_TOOLTIPS           
+  ;	0x0000           
 	; _________________________________________________ FullScreen _________________________________________________
 
 FullScreenMode() {
