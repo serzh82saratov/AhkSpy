@@ -26,7 +26,7 @@
     Актуальный исходник - https://raw.githubusercontent.com/serzh82saratov/AhkSpy/master/AhkSpy.ahk
 */
 
-Global AhkSpyVersion := 3.60
+Global AhkSpyVersion := 3.61
 
 	; _________________________________________________ Header _________________________________________________
 
@@ -552,6 +552,7 @@ Spot_Win(NotHTML = 0) {
 	WinGetPos, WinX, WinY, WinWidth, WinHeight, ahk_id %WinID%
 	WinX2 := WinX + WinWidth - 1, WinY2 := WinY + WinHeight - 1
 	WinGetClass, WinClass, ahk_id %WinID%
+	oOther.WinClass := WinClass
 	WinGet, WinPID, PID, ahk_id %WinID%
 	If (WinPID != PrWinPID) {
 		GetCommandLineProc(WinPID, ComLine, ProcessBitSize, IsAdmin)
@@ -3143,13 +3144,13 @@ ViewStylesWin(elem) {  ;
 	oDoc.getElementById("WinStyles").innerHTML := Styles
 	HTML_Win := oBody.innerHTML
 }
-
-	;  http://msdn.microsoft.com/en-us/library/windows/desktop/ms632600(v=vs.85).aspx
-	;  http://msdn.microsoft.com/en-us/library/windows/desktop/ff700543(v=vs.85).aspx
-	;  https://github.com/AHK-just-me/AHK_Gui_Constants/tree/master/Sources
-	;  https://www.autohotkey.com/boards/viewtopic.php?f=6&t=4557
-	;  https://github.com/strobejb/winspy/blob/master/src/DisplayStyleInfo.c
-	;  http://forum.script-coding.com/viewtopic.php?pid=130846#p130846
+	;	http://www.frolov-lib.ru/books/bsp/v11/ch3_2.htm   хороший фак по стилям
+	;	http://msdn.microsoft.com/en-us/library/windows/desktop/ms632600(v=vs.85).aspx
+	;	http://msdn.microsoft.com/en-us/library/windows/desktop/ff700543(v=vs.85).aspx
+	;	https://github.com/AHK-just-me/AHK_Gui_Constants/tree/master/Sources
+	;	https://www.autohotkey.com/boards/viewtopic.php?f=6&t=4557
+	;	https://github.com/strobejb/winspy/blob/master/src/DisplayStyleInfo.c
+	;	http://forum.script-coding.com/viewtopic.php?pid=130846#p130846
 
 GetStyles(Style, ExStyle, hWnd, IsChild = 0) {
 	Static Styles, ExStyles, ClassStyles, GCL_STYLE := -26
@@ -3185,21 +3186,21 @@ GetStyles(Style, ExStyle, hWnd, IsChild = 0) {
 		
 	IF (Style & 0x00040000) && (WS_THICKFRAME := 1, Style -= 0x00040000)  ;	WS_SIZEBOX := WS_THICKFRAME
 		Ret .= "<span name='MS:'>WS_SIZEBOX := WS_THICKFRAME := <span class='param' name='MS:'>0x00040000</span></span>`n" 
-
+		
 	IF (Style & 0x40000000) && (WS_CHILD := 1, Style -= 0x40000000)  ;	WS_CHILD := WS_CHILDWINDOW
 		Ret .= "<span name='MS:'>WS_CHILD := WS_CHILDWINDOW := <span class='param' name='MS:'>0x40000000</span></span>`n" 
-
+		
 	IF (Style & 0x20000000) && (WS_MINIMIZE := 1, Style -= 0x20000000)  ;	WS_MINIMIZE := WS_ICONIC
 		Ret .= "<span name='MS:'>WS_MINIMIZE := WS_ICONIC := <span class='param' name='MS:'>0x20000000</span></span>`n" 
-
+		
 	IF (Style & 0x80000000) && !WS_CHILD && (WS_POPUP := 1, Style -= 0x80000000)  ;	WS_POPUP
 		Ret .= "<span name='MS:'>WS_POPUP := <span class='param' name='MS:'>0x80000000 && !(WS_CHILD)</span></span>`n"  
-			
+		
 	IF (WS_POPUP && WS_BORDER && WS_SYSMENU) && (WS_POPUPWINDOW := 1)  ;	WS_POPUPWINDOW
 		Ret .= "<span name='MS:'>WS_POPUPWINDOW := <span class='param' name='MS:'>(WS_POPUP | WS_BORDER | WS_SYSMENU)</span></span>`n" 
-		 
-	IF WS_BORDER && WS_CAPTION && (WS_OVERLAPPED := 1)  ;	WS_OVERLAPPED := WS_TILED
-		Ret .= "<span name='MS:'>WS_OVERLAPPED := WS_TILED := <span class='param' name='MS:'>!(WS_CHILD)</span></span>`n" 
+		
+	IF !WS_POPUP && !WS_CHILD && WS_BORDER && WS_CAPTION && (WS_OVERLAPPED := 1)  ;	WS_OVERLAPPED := WS_TILED
+		Ret .= "<span name='MS:'>WS_OVERLAPPED := WS_TILED := <span class='param' name='MS:'>WS_BORDER && WS_CAPTION && !(WS_POPUP | WS_CHILD)</span></span>`n" 
 		
 	IF WS_SYSMENU && (Style & 0x00020000) && (WS_MINIMIZEBOX := 1, Style -= 0x00020000)  ;	WS_MINIMIZEBOX
 		Ret .= "<span name='MS:'>WS_MINIMIZEBOX := <span class='param' name='MS:'>0x00020000 && WS_SYSMENU</span></span>`n" 
@@ -3243,6 +3244,9 @@ GetStyles(Style, ExStyle, hWnd, IsChild = 0) {
 	IF WS_EX_WINDOWEDGE && WS_EX_TOOLWINDOW && WS_EX_TOPMOST  ;	WS_EX_PALETTEWINDOW
 		RetEx .= "<span name='MS:'>WS_EX_PALETTEWINDOW := <span class='param' name='MS:'>(WS_EX_WINDOWEDGE | WS_EX_TOOLWINDOW | WS_EX_TOPMOST)</span></span>`n" 
 
+	If (!IsChild && oOther.WinClass = "tooltips_class32")
+		Ret .= GetStyle_tooltips_class32(Style, Style)
+		
 	IF Style
 		Ret .= "<span style='color: #" ColorDelimiter ";' name='MS:'>" Format("0x{1:08X}", Style) "</span>`n"
 	If Ret !=
@@ -3277,28 +3281,8 @@ GetControlStyles(Class, Style, ExStyle, hWnd) {
 /*
 	Added:
 	Button, Edit, Static, SysListView32, SysTabControl32, SysDateTimePick32, SysMonthCal32, ComboBox, ListBox
-	, msctls_trackbar32, msctls_statusbar32, msctls_progress32, msctls_updown32
+	, msctls_trackbar32, msctls_statusbar32, msctls_progress32, msctls_updown32, SysLink, SysHeader32, ToolbarWindow32, SysTreeView32, ReBarWindow32
 */ 
-}
-
-GetStyle_xxxxxxx(Style, ExStyle, hWnd) {
-	;	xxxx
-	;	xxxx
-	Static oStyles, oExStyles
-	If !oStyles
-		oStyles := xxxxx
-	Style := sStyle := Style & 0xffff
-	For K, V In oStyles
-		If ((Style & V) = V) && (%K% := 1, Style -= V)
-			Ret .= "<span name='MS:'>" K " := <span class='param' name='MS:'>" V "</span></span>`n"
-		
-	IF !SS_CENTER && !SS_RIGHT
-		Ret .= "<span name='MS:'>SS_LEFT := <span class='param' name='MS:'>!(SS_CENTER | SS_RIGHT)</span></span>`n"
-	IF Style
-		Ret .= "<span style='color: #" ColorDelimiter ";' name='MS:'>" Format("0x{1:04X}", Style)  "</span>`n" 
-	If Ret !=
-		Res .= _T1 " id='__Styles_Control'> ( Styles - xxxxx: <span name='MS:' style='color: #" ColorFont ";'>" Format("0x{:04X}", sStyle) "</span> ) </span>" _T2 _PRE1 Ret _PRE2
-	Return Res
 }
 
 GetStyle_Static(Style, ExStyle, hWnd)  {
@@ -3328,6 +3312,8 @@ GetStyle_Static(Style, ExStyle, hWnd)  {
 			Ret .= "<span name='MS:'>" K " := <span class='param' name='MS:'>" V "</span></span>`n"  
 	IF !SS_CENTER && !SS_RIGHT  ;	SS_LEFT
 		Ret .= "<span name='MS:'>SS_LEFT := <span class='param' name='MS:'>!(SS_CENTER | SS_RIGHT)</span></span>`n"
+	IF Style
+		Ret .= GetStyle_CommonСontrol(Style, Style) 
 	IF Style
 		Ret .= "<span style='color: #" ColorDelimiter ";' name='MS:'>" Format("0x{1:04X}", Style)  "</span>`n"
 	If Ret != 
@@ -3371,6 +3357,8 @@ GetStyle_Button(Style, ExStyle, hWnd)  {
 		Ret .= "<span name='MS:'>BS_PUSHBUTTON := <span class='param' name='MS:'>!(BS_DEFPUSHBUTTON | BS_CHECKBOX | BS_AUTOCHECKBOX | BS_RADIOBUTTON | BS_GROUPBOX | BS_AUTORADIOBUTTON)</span></span>`n"
 
 	IF Style
+		Ret .= GetStyle_CommonСontrol(Style, Style) 
+	IF Style
 		Ret .= "<span style='color: #" ColorDelimiter ";' name='MS:'>" Format("0x{1:04X}", Style)  "</span>`n"
 	If Ret !=
 		Res .= _T1 " id='__Styles_Control'> ( Styles - Button: <span name='MS:' style='color: #" ColorFont ";'>" Format("0x{:04X}", sStyle) "</span> ) </span>" _T2 _PRE1 Ret _PRE2
@@ -3396,6 +3384,8 @@ GetStyle_Edit(Style, ExStyle, hWnd)  {
 		Ret .= "<span name='MS:'>ES_LEFT := <span class='param' name='MS:'>!(ES_CENTER | ES_RIGHT)</span></span>`n"
 
 	IF Style
+		Ret .= GetStyle_CommonСontrol(Style, Style) 
+	IF Style
 		Ret .= "<span style='color: #" ColorDelimiter ";' name='MS:'>" Format("0x{1:04X}", Style)  "</span>`n"
 	If Ret !=
 		Res .= _T1 " id='__Styles_Control'> ( Styles - Edit: <span name='MS:' style='color: #" ColorFont ";'>" Format("0x{:04X}", sStyle) "</span> ) </span>" _T2 _PRE1 Ret _PRE2
@@ -3413,6 +3403,8 @@ GetStyle_SysTabControl(Style, ExStyle, hWnd)  {
 		,"TCS_FORCEICONLEFT":"0x0010","TCS_FIXEDWIDTH":"0x0400","TCS_RAGGEDRIGHT":"0x0800","TCS_FOCUSONBUTTONDOWN":"0x1000"
 		,"TCS_OWNERDRAWFIXED":"0x2000","TCS_TOOLTIPS":"0x4000","TCS_FOCUSNEVER":"0x8000"} 
 	
+	SendMessage, TCM_GETEXTENDEDSTYLE, 0, 0,, ahk_id %hWnd%
+	ExStyle := ErrorLevel
 	Style := sStyle := Style & 0xffff
 	For K, V In oStyles
 		If ((Style & V) = V) && (%K% := 1, Style -= V)
@@ -3434,12 +3426,11 @@ GetStyle_SysTabControl(Style, ExStyle, hWnd)  {
 			Ret .= "<span name='MS:'>TCS_BOTTOM := <span class='param' name='MS:'>0x0002 && !(TCS_VERTICAL)</span></span>`n"
 	}
 	IF Style
+		Ret .= GetStyle_CommonСontrol(Style, Style) 
+	IF Style
 		Ret .= "<span style='color: #" ColorDelimiter ";' name='MS:'>" Format("0x{1:04X}", Style)  "</span>`n"
 	If Ret !=
 		Res .= _T1 " id='__Styles_Control'> ( Styles - SysTabControl32: <span name='MS:' style='color: #" ColorFont ";'>" Format("0x{:04X}", sStyle) "</span> ) </span>" _T2 _PRE1 Ret _PRE2
-
-	SendMessage, TCM_GETEXTENDEDSTYLE, 0, 0,, ahk_id %hWnd%
-	ExStyle := ErrorLevel
 		
 	If ((ExStyle & 0x00000001) = 0x00000001) && (1, ExStyle -= 0x00000001)  ;	TCS_EX_FLATSEPARATORS
 		RetEx .= "<span name='MS:'>TCS_EX_FLATSEPARATORS := <span class='param' name='MS:'>0x00000001</span></span>`n"
@@ -3468,6 +3459,8 @@ GetStyle_ComboBox(Style, ExStyle, hWnd)  {
 		If ((Style & V) = V) && (1, Style -= V)
 			Ret .= "<span name='MS:'>" K " := <span class='param' name='MS:'>" V "</span></span>`n"
 	IF Style
+		Ret .= GetStyle_CommonСontrol(Style, Style) 
+	IF Style
 		Ret .= "<span style='color: #" ColorDelimiter ";' name='MS:'>" Format("0x{1:04X}", Style)  "</span>`n"
 	If Ret !=
 		Res .= _T1 " id='__Styles_Control'> ( Styles - ComboBox: <span name='MS:' style='color: #" ColorFont ";'>" Format("0x{:04X}", sStyle) "</span> ) </span>" _T2 _PRE1 Ret _PRE2
@@ -3494,7 +3487,9 @@ GetStyle_ListBox(Style, ExStyle, hWnd)  {
 		
 	IF LBS_NOTIFY && LBS_SORT && (wStyle & WS_VSCROLL) && (wStyle & WS_BORDER) && (1, Style -= 0x0003)  ;	LBS_STANDARD
 		Ret .= "<span name='MS:'>LBS_STANDARD := <span class='param' name='MS:'>0xA00003 && (LBS_NOTIFY | LBS_SORT | WS_VSCROLL | WS_BORDER)</span></span>`n"
-		
+
+	IF Style
+		Ret .= GetStyle_CommonСontrol(Style, Style) 
 	IF Style
 		Ret .= "<span style='color: #" ColorDelimiter ";' name='MS:'>" Format("0x{1:04X}", Style)  "</span>`n"
 	If Ret !=
@@ -3514,6 +3509,8 @@ GetStyle_msctls_updown(Style, ExStyle, hWnd)  {
 	For K, V In oStyles
 		If ((Style & V) = V) && (1, Style -= V)
 			Ret .= "<span name='MS:'>" K " := <span class='param' name='MS:'>" V "</span></span>`n"
+	IF Style
+		Ret .= GetStyle_CommonСontrol(Style, Style) 
 	IF Style
 		Ret .= "<span style='color: #" ColorDelimiter ";' name='MS:'>" Format("0x{1:04X}", Style)  "</span>`n"
 	If Ret !=
@@ -3535,7 +3532,9 @@ GetStyle_SysDateTimePick(Style, ExStyle, hWnd)  {
 			Ret .= "<span name='MS:'>" K " := <span class='param' name='MS:'>" V "</span></span>`n" 
 	IF !DTS_LONGDATEFORMAT  ;	DTS_SHORTDATEFORMAT
 		Ret .= "<span name='MS:'>DTS_SHORTDATEFORMAT := <span class='param' name='MS:'>!(DTS_LONGDATEFORMAT)</span></span>`n"
-			
+
+	IF Style
+		Ret .= GetStyle_CommonСontrol(Style, Style) 
 	IF Style
 		Ret .= "<span style='color: #" ColorDelimiter ";' name='MS:'>" Format("0x{1:04X}", Style)  "</span>`n"
 	If Ret !=
@@ -3555,6 +3554,8 @@ GetStyle_SysMonthCal(Style, ExStyle, hWnd)  {
 	For K, V In oStyles
 		If ((Style & V) = V) && (1, Style -= V)
 			Ret .= "<span name='MS:'>" K " := <span class='param' name='MS:'>" V "</span></span>`n" 
+	IF Style
+		Ret .= GetStyle_CommonСontrol(Style, Style) 
 	IF Style
 		Ret .= "<span style='color: #" ColorDelimiter ";' name='MS:'>" Format("0x{1:04X}", Style)  "</span>`n"
 	If Ret !=
@@ -3594,6 +3595,8 @@ GetStyle_msctls_trackbar(Style, ExStyle, hWnd)  {
 			Ret .= "<span name='MS:'>TBS_RIGHT := <span class='param' name='MS:'>!(TBS_LEFT) && TBS_VERT</span></span>`n"
 	}
 	IF Style
+		Ret .= GetStyle_CommonСontrol(Style, Style) 
+	IF Style
 		Ret .= "<span style='color: #" ColorDelimiter ";' name='MS:'>" Format("0x{1:04X}", Style)  "</span>`n"
 	If Ret !=
 		Res .= _T1 " id='__Styles_Control'> ( Styles - msctls_trackbar32: <span name='MS:' style='color: #" ColorFont ";'>" Format("0x{:04X}", sStyle) "</span> ) </span>" _T2 _PRE1 Ret _PRE2
@@ -3612,6 +3615,8 @@ GetStyle_msctls_statusbar(Style, ExStyle, hWnd)  {
 		If ((Style & V) = V) && (1, Style -= V)
 			Ret .= "<span name='MS:'>" K " := <span class='param' name='MS:'>" V "</span></span>`n" 
 	IF Style
+		Ret .= GetStyle_CommonСontrol(Style, Style) 
+	IF Style
 		Ret .= "<span style='color: #" ColorDelimiter ";' name='MS:'>" Format("0x{1:04X}", Style)  "</span>`n"
 	If Ret !=
 		Res .= _T1 " id='__Styles_Control'> ( Styles - msctls_statusbar32: <span name='MS:' style='color: #" ColorFont ";'>" Format("0x{:04X}", sStyle) "</span> ) </span>" _T2 _PRE1 Ret _PRE2
@@ -3629,6 +3634,8 @@ GetStyle_msctls_progress(Style, ExStyle, hWnd)  {
 	For K, V In oStyles
 		If ((Style & V) = V) && (1, Style -= V)
 			Ret .= "<span name='MS:'>" K " := <span class='param' name='MS:'>" V "</span></span>`n" 
+	IF Style
+		Ret .= GetStyle_CommonСontrol(Style, Style) 
 	IF Style
 		Ret .= "<span style='color: #" ColorDelimiter ";' name='MS:'>" Format("0x{1:04X}", Style)  "</span>`n"
 	If Ret !=
@@ -3659,7 +3666,10 @@ GetStyle_SysListView(Style, ExStyle, hWnd)  {
 		,"LVS_ALIGNMASK":"0x0C00","LVS_ALIGNTOP":"0x0000","LVS_ALIGNLEFT":"0x0800"
 		,"LVS_TYPESTYLEMASK":"0xFC00","LVS_NOSORTHEADER":"0x8000","LVS_NOCOLUMNHEADER":"0x4000"}
 	
+	SendMessage, LVM_GETEXTENDEDLISTVIEWSTYLE, 0, 0,, ahk_id %hWnd%
+	ExStyle := sExStyle := ErrorLevel
 	Style := sStyle := Style & 0xffff
+	
 	For K, V In oStyles
 		If ((sStyle & V) = V) && (%K% := 1, Style -= V)
 			Ret .= "<span name='MS:'>" K " := <span class='param' name='MS:'>" V "</span></span>`n"
@@ -3671,52 +3681,233 @@ GetStyle_SysListView(Style, ExStyle, hWnd)  {
 	IF ((sStyle & oEx.LVS_TYPEMASK) = oEx.LVS_LIST) && (LVS_LIST := 1, Style -= oEx.LVS_LIST)      ;	LVS_LIST
 		Ret .= "<span name='MS:'>LVS_LIST := <span class='param' name='MS:'>LVS_TYPEMASK = 0x0003</span></span>`n" 
 	IF ((sStyle & oEx.LVS_TYPEMASK) = oEx.LVS_ICON) && !LVS_REPORT && !LVS_SMALLICON && !LVS_LIST && (LVS_ICON := 1)      ;	LVS_ICON
-		Ret .= "<span name='MS:'>LVS_ICON := <span class='param' name='MS:'>LVS_TYPEMASK = LVS_ICON && !(LVS_REPORT | LVS_SMALLICON | LVS_LIST)</span></span>`n" 
-	IF ((sStyle & oEx.LVS_ALIGNMASK) = oEx.LVS_ALIGNLEFT) && (LVS_SMALLICON || LVS_ICON) && (LVS_ALIGNLEFT := 1, Style -= oEx.LVS_ALIGNLEFT)      ;	LVS_ALIGNLEFT
-		Ret .= "<span name='MS:'>LVS_ALIGNLEFT := <span class='param' name='MS:'>LVS_ALIGNMASK = 0x0800 && (LVS_SMALLICON || LVS_ICON)</span></span>`n"
+		Ret .= "<span name='MS:'>LVS_ICON := <span class='param' name='MS:'>LVS_TYPEMASK = 0x0000 && !(LVS_REPORT | LVS_SMALLICON | LVS_LIST)</span></span>`n" 
+	IF ((sStyle & oEx.LVS_ALIGNMASK) = oEx.LVS_ALIGNLEFT) && (LVS_ALIGNLEFT := 1, Style -= oEx.LVS_ALIGNLEFT)      ;	LVS_ALIGNLEFT
+		Ret .= "<span name='MS:'>LVS_ALIGNLEFT := <span class='param' name='MS:'>LVS_ALIGNMASK = 0x0800</span></span>`n"
 	IF ((sStyle & oEx.LVS_ALIGNMASK) = oEx.LVS_ALIGNTOP) && (LVS_SMALLICON || LVS_ICON) && (LVS_ALIGNTOP := 1, Style -= oEx.LVS_ALIGNTOP)      ;	LVS_ALIGNTOP
 		Ret .= "<span name='MS:'>LVS_ALIGNTOP := <span class='param' name='MS:'>LVS_ALIGNMASK = 0x0000 && (LVS_SMALLICON || LVS_ICON)</span></span>`n"
 	IF ((sStyle & oEx.LVS_NOSORTHEADER) = oEx.LVS_NOSORTHEADER) && (LVS_NOSORTHEADER := 1, Style -= oEx.LVS_NOSORTHEADER)      ;	LVS_NOSORTHEADER
 		Ret .= "<span name='MS:'>LVS_NOSORTHEADER := <span class='param' name='MS:'>0x8000</span></span>`n"
 	IF ((sStyle & oEx.LVS_NOCOLUMNHEADER) = oEx.LVS_NOCOLUMNHEADER) && (LVS_NOCOLUMNHEADER := 1, Style -= oEx.LVS_NOCOLUMNHEADER)      ;	LVS_NOCOLUMNHEADER
 		Ret .= "<span name='MS:'>LVS_NOCOLUMNHEADER := <span class='param' name='MS:'>0x4000</span></span>`n"
-		
+
+	IF Style
+		Ret .= GetStyle_CommonСontrol(Style, Style) 
 	IF Style
 		Ret .= "<span style='color: #" ColorDelimiter ";' name='MS:'>" Format("0x{1:04X}", Style)  "</span>`n"
 	If Ret !=
 		Res .= _T1 " id='__Styles_Control'> ( Styles - SysListView32: <span name='MS:' style='color: #" ColorFont ";'>" Format("0x{:04X}", sStyle) "</span> ) </span>" _T2 _PRE1 Ret _PRE2
 
-	SendMessage, LVM_GETEXTENDEDLISTVIEWSTYLE, 0, 0,, ahk_id %hWnd%
-	ExStyle := sExStyle := ErrorLevel
 	For K, V In oExStyles
 		If ((ExStyle & V) = V) && (%K% := 1, ExStyle -= V)
 			RetEx .= "<span name='MS:'>" K " := <span class='param' name='MS:'>" V "</span></span>`n"
-
+			
 	IF ExStyle
 		RetEx .= "<span style='color: #" ColorDelimiter ";' name='MS:'>" Format("0x{1:08X}", ExStyle)  "</span>`n"
 	If RetEx !=
 		Res .= _T1 " id='__ExStyles_Control'> ( ExStyles - SysListView32: <span name='MS:' style='color: #" ColorFont ";'>" Format("0x{:08X}", sExStyle) "</span> ) </span>" _T2 _PRE1 RetEx _PRE2
 	Return Res
 }
+
+GetStyle_SysTreeView(Style, ExStyle, hWnd)  {
+	;	https://www.autohotkey.com/boards/viewtopic.php?p=25876#p25876
+	;	https://docs.microsoft.com/en-us/windows/desktop/controls/tree-view-control-window-styles
+	;	https://docs.microsoft.com/en-us/windows/desktop/controls/tree-view-control-window-extended-styles
+	Static oStyles, oExStyles, TVM_GETEXTENDEDSTYLE := 0x112D
+	If !oStyles
+		oStyles := {"TVS_CHECKBOXES":"0x0100","TVS_DISABLEDRAGDROP":"0x0010","TVS_EDITLABELS":"0x0008","TVS_FULLROWSELECT":"0x1000","TVS_HASBUTTONS":"0x0001"
+		,"TVS_HASLINES":"0x0002","TVS_INFOTIP":"0x0800","TVS_LINESATROOT":"0x0004","TVS_NOHSCROLL":"0x8000","TVS_NONEVENHEIGHT":"0x4000","TVS_NOSCROLL":"0x2000"
+		,"TVS_NOTOOLTIPS":"0x0080","TVS_RTLREADING":"0x0040","TVS_SHOWSELALWAYS":"0x0020","TVS_SINGLEEXPAND":"0x0400","TVS_TRACKSELECT":"0x0200"}
+		
+		, oExStyles := {"TVS_EX_AUTOHSCROLL":"0x0020","TVS_EX_DIMMEDCHECKBOXES":"0x0200","TVS_EX_DOUBLEBUFFER":"0x0004","TVS_EX_DRAWIMAGEASYNC":"0x0400"
+		,"TVS_EX_EXCLUSIONCHECKBOXES":"0x0100","TVS_EX_FADEINOUTEXPANDOS":"0x0040","TVS_EX_MULTISELECT":"0x0002","TVS_EX_NOINDENTSTATE":"0x0008"
+		,"TVS_EX_NOSINGLECOLLAPSE":"0x0001","TVS_EX_PARTIALCHECKBOXES":"0x0080","TVS_EX_RICHTOOLTIP":"0x0010"}
+	
+	SendMessage, TVM_GETEXTENDEDSTYLE, 0, 0,, ahk_id %hWnd%
+	ExStyle := sExStyle := ErrorLevel
+	Style := sStyle := Style & 0xffff
+	
+	For K, V In oStyles
+		If ((sStyle & V) = V) && (1, Style -= V)
+			Ret .= "<span name='MS:'>" K " := <span class='param' name='MS:'>" V "</span></span>`n"
+
+	IF Style
+		Ret .= GetStyle_CommonСontrol(Style, Style) 
+	IF Style
+		Ret .= "<span style='color: #" ColorDelimiter ";' name='MS:'>" Format("0x{1:04X}", Style)  "</span>`n"
+	If Ret !=
+		Res .= _T1 " id='__Styles_Control'> ( Styles - SysTreeView32: <span name='MS:' style='color: #" ColorFont ";'>" Format("0x{:04X}", sStyle) "</span> ) </span>" _T2 _PRE1 Ret _PRE2
+
+	For K, V In oExStyles
+		If ((ExStyle & V) = V) && (1, ExStyle -= V)
+			RetEx .= "<span name='MS:'>" K " := <span class='param' name='MS:'>" V "</span></span>`n"
+			
+	IF ExStyle
+		RetEx .= "<span style='color: #" ColorDelimiter ";' name='MS:'>" Format("0x{1:08X}", ExStyle)  "</span>`n"
+	If RetEx !=
+		Res .= _T1 " id='__ExStyles_Control'> ( ExStyles - SysTreeView32: <span name='MS:' style='color: #" ColorFont ";'>" Format("0x{:08X}", sExStyle) "</span> ) </span>" _T2 _PRE1 RetEx _PRE2
+	Return Res
+}
+
+GetStyle_tooltips_class32(Style, ByRef NewStyle)  {
+	;	https://www.autohotkey.com/boards/viewtopic.php?p=25874#p25874
+	;	https://docs.microsoft.com/en-us/windows/desktop/controls/tooltip-styles
+	Static oStyles
+	If !oStyles
+		oStyles := {"TTS_ALWAYSTIP":"0x0001","TTS_BALLOON":"0x0040","TTS_CLOSE":"0x0080","TTS_NOANIMATE":"0x0010","TTS_NOFADE":"0x0020","TTS_NOPREFIX":"0x0002","TTS_USEVISUALSTYLE":"0x0100"}
+
+	NewStyle := sStyle := Style
+	For K, V In oStyles
+		If ((sStyle & V) = V) && (1, NewStyle -= V)
+			Ret .= "<span name='MS:'>" K " := <span class='param' name='MS:'>" V "</span></span>`n"
+	Return Ret
+}
+
+GetStyle_ToolbarWindow(Style, ExStyle, hWnd)  {
+	;	https://www.autohotkey.com/boards/viewtopic.php?p=25872#p25872
+	;	https://docs.microsoft.com/en-us/windows/desktop/controls/toolbar-control-and-button-styles
+	;	https://docs.microsoft.com/en-us/windows/desktop/controls/toolbar-extended-styles
+	;	https://docs.microsoft.com/en-us/windows/desktop/api/Commctrl/ns-commctrl-_tbbutton
+	Static oStyles, oExStyles, TB_GETSTYLE := 0x0439, TB_GETEXTENDEDSTYLE := 0x0455
+	If !oStyles
+		oStyles := {"TBSTYLE_ALTDRAG":"0x0400","TBSTYLE_CUSTOMERASE":"0x2000","TBSTYLE_FLAT":"0x0800","TBSTYLE_LIST":"0x1000"
+		,"TBSTYLE_REGISTERDROP":"0x4000","TBSTYLE_TOOLTIPS":"0x0100","TBSTYLE_TRANSPARENT":"0x8000","TBSTYLE_WRAPABLE":"0x0200"}
+		
+		, oExStyles := {"TBSTYLE_EX_DOUBLEBUFFER":"0x80","TBSTYLE_EX_DRAWDDARROWS":"0x01","TBSTYLE_EX_HIDECLIPPEDBUTTONS":"0x10"
+		,"TBSTYLE_EX_MIXEDBUTTONS":"0x08","TBSTYLE_EX_MULTICOLUMN":"0x02","TBSTYLE_EX_VERTICAL":"0x04"}
+	
+	SendMessage, TB_GETSTYLE, 0, 0,, ahk_id %hWnd%
+	Style := sStyle := ErrorLevel & 0xffff
+	
+	SendMessage, TB_GETEXTENDEDSTYLE, 0, 0,, ahk_id %hWnd%
+	ExStyle := sExStyle := ErrorLevel
+	; ToolTip % Format("0x{1:08X}", Style) "`n" Format("0x{1:08X}", ExStyle)
+	
+	For K, V In oStyles
+		If ((sStyle & V) = V) && (1, Style -= V)
+			Ret .= "<span name='MS:'>" K " := <span class='param' name='MS:'>" V "</span></span>`n"
+
+	IF Style
+		Ret .= GetStyle_CommonСontrol(Style, Style) 
+	IF Style
+		Ret .= "<span style='color: #" ColorDelimiter ";' name='MS:'>" Format("0x{1:04X}", Style)  "</span>`n"
+	If Ret !=
+		Res .= _T1 " id='__Styles_Control'> ( Styles - ToolbarWindow32: <span name='MS:' style='color: #" ColorFont ";'>" Format("0x{:04X}", sStyle) "</span> ) </span>" _T2 _PRE1 Ret _PRE2
+
+	For K, V In oExStyles
+		If ((ExStyle & V) = V) && (1, ExStyle -= V)
+			RetEx .= "<span name='MS:'>" K " := <span class='param' name='MS:'>" V "</span></span>`n"
+			
+	IF ExStyle
+		RetEx .= "<span style='color: #" ColorDelimiter ";' name='MS:'>" Format("0x{1:02X}", sExStyle)  "</span>`n"
+	If RetEx !=
+		Res .= _T1 " id='__ExStyles_Control'> ( ExStyles - ToolbarWindow32: <span name='MS:' style='color: #" ColorFont ";'>" Format("0x{:02X}", sExStyle) "</span> ) </span>" _T2 _PRE1 RetEx _PRE2
+	Return Res
 /*
+		oBTNS := {"BTNS_BUTTON":"0x00","BTNS_SEP":"0x01","BTNS_CHECK":"0x02","BTNS_GROUP":"0x04","BTNS_CHECKGROUP":"0x06","BTNS_DROPDOWN":"0x08"
+		,"BTNS_AUTOSIZE":"0x10","BTNS_NOPREFIX":"0x20","BTNS_SHOWTEXT":"0x40","BTNS_WHOLEDROPDOWN":"0x80"}
+		
+		VarSetCapacity(TBBUTTON, A_PtrSize == 8 ? 32 : 20, 0)
 
-			
-https://www.autohotkey.com/boards/viewtopic.php?p=25876#p25876
-https://docs.microsoft.com/en-us/windows/desktop/controls/tree-view-control-window-styles
-https://docs.microsoft.com/en-us/windows/desktop/controls/tree-view-control-window-extended-styles
-
-		Styles.SysTreeView := {"TVS_CHECKBOXES":"0x0100","TVS_DISABLEDRAGDROP":"0x0010","TVS_EDITLABELS":"0x0008","TVS_FULLROWSELECT":"0x1000","TVS_HASBUTTONS":"0x0001"
-			,"TVS_HASLINES":"0x0002","TVS_INFOTIP":"0x0800","TVS_LINESATROOT":"0x0004","TVS_NOHSCROLL":"0x8000","TVS_NONEVENHEIGHT":"0x4000","TVS_NOSCROLL":"0x2000"
-			,"TVS_NOTOOLTIPS":"0x0080","TVS_RTLREADING":"0x0040","TVS_SHOWSELALWAYS":"0x0020","TVS_SINGLEEXPAND":"0x0400","TVS_TRACKSELECT":"0x0200"}
-			
-		ExStyles.SysTreeView := {"TVS_EX_AUTOHSCROLL":"0x0020","TVS_EX_DIMMEDCHECKBOXES":"0x0200","TVS_EX_DOUBLEBUFFER":"0x0004","TVS_EX_DRAWIMAGEASYNC":"0x0400"
-			,"TVS_EX_EXCLUSIONCHECKBOXES":"0x0100","TVS_EX_FADEINOUTEXPANDOS":"0x0040","TVS_EX_MULTISELECT":"0x0002","TVS_EX_NOINDENTSTATE":"0x0008"
-			,"TVS_EX_NOSINGLECOLLAPSE":"0x0001","TVS_EX_PARTIALCHECKBOXES":"0x0080","TVS_EX_RICHTOOLTIP":"0x0010"}
- 
-			
+		iBitmap := NumGet(TBBUTTON, 0, "Int")
+		idCommand := NumGet(TBBUTTON, 4, "Int")
+		fsState := NumGet(TBBUTTON, 8, "UChar")
+		fsStyle := NumGet(TBBUTTON, 9, "UChar")
+		bReserved := NumGet(TBBUTTON, 10, "UChar")
+		;bReserved := NumGet(TBBUTTON, 10, "UChar")
+		dwData := NumGet(TBBUTTON, A_PtrSize == 8 ? 16 : 12, "UPtr")
+		iString := NumGet(TBBUTTON, A_PtrSize == 8 ? 24 : 16, "Ptr")
 */
+}
 
-  ;	0x0000           
+GetStyle_SysHeader(Style, ExStyle, hWnd)  {
+	;	https://www.autohotkey.com/boards/viewtopic.php?p=25850#p25850
+	;	https://docs.microsoft.com/en-us/windows/desktop/controls/header-control-styles
+	Static oStyles
+	If !oStyles
+		oStyles := {"HDS_BUTTONS":"0x0002","HDS_CHECKBOXES":"0x0400","HDS_DRAGDROP":"0x0040","HDS_FILTERBAR":"0x0100","HDS_FLAT":"0x0200"
+		,"HDS_FULLDRAG":"0x0080","HDS_HIDDEN":"0x0008","HDS_HORZ":"0x0000","HDS_HOTTRACK":"0x0004","HDS_NOSIZING":"0x0800","HDS_OVERFLOW":"0x1000"}
+
+	; Style := DllCall("GetWindowLong", "Ptr", hWnd, "int", GWL_STYLE := -16)
+
+	Style := sStyle := Style & 0xffff
+	For K, V In oStyles
+		If ((Style & V) = V) && (1, Style -= V)
+			Ret .= "<span name='MS:'>" K " := <span class='param' name='MS:'>" V "</span></span>`n" 
+	IF Style
+		Ret .= GetStyle_CommonСontrol(Style, Style) 
+	IF Style
+		Ret .= "<span style='color: #" ColorDelimiter ";' name='MS:'>" Format("0x{1:04X}", Style)  "</span>`n"
+	If Ret !=
+		Res .= _T1 " id='__Styles_Control'> ( Styles - SysHeader32: <span name='MS:' style='color: #" ColorFont ";'>" Format("0x{:04X}", sStyle) "</span> ) </span>" _T2 _PRE1 Ret _PRE2
+	Return Res
+} 
+
+GetStyle_SysLink(Style, ExStyle, hWnd)  {
+	;	https://www.autohotkey.com/boards/viewtopic.php?p=25859#p25859
+	;	https://docs.microsoft.com/en-us/windows/desktop/controls/syslink-control-styles
+	Static oStyles
+	If !oStyles
+		oStyles := {"LWS_IGNORERETURN":"0x0002","LWS_NOPREFIX":"0x0004","LWS_RIGHT":"0x0020","LWS_TRANSPARENT":"0x0001","LWS_USECUSTOMTEXT":"0x0010","LWS_USEVISUALSTYLE":"0x0008"}
+
+	Style := sStyle := Style & 0xffff
+	For K, V In oStyles
+		If ((Style & V) = V) && (1, Style -= V)
+			Ret .= "<span name='MS:'>" K " := <span class='param' name='MS:'>" V "</span></span>`n" 
+	IF Style
+		Ret .= GetStyle_CommonСontrol(Style, Style) 
+	IF Style
+		Ret .= "<span style='color: #" ColorDelimiter ";' name='MS:'>" Format("0x{1:04X}", Style)  "</span>`n"
+	If Ret !=
+		Res .= _T1 " id='__Styles_Control'> ( Styles - SysLink: <span name='MS:' style='color: #" ColorFont ";'>" Format("0x{:04X}", sStyle) "</span> ) </span>" _T2 _PRE1 Ret _PRE2
+	Return Res
+} 
+
+GetStyle_ReBarWindow(Style, ExStyle, hWnd)  {
+	;	https://www.autohotkey.com/boards/viewtopic.php?p=25865#p25865
+	;	https://docs.microsoft.com/en-us/windows/desktop/controls/rebar-control-styles
+	Static oStyles
+	If !oStyles
+		oStyles := {"RBS_AUTOSIZE":"0x2000","RBS_BANDBORDERS":"0x0400","RBS_DBLCLKTOGGLE":"0x8000","RBS_FIXEDORDER":"0x0800"
+		,"RBS_REGISTERDROP":"0x1000","RBS_TOOLTIPS":"0x0100","RBS_VARHEIGHT":"0x0200","RBS_VERTICALGRIPPER":"0x4000"}
+
+	Style := sStyle := Style & 0xffff
+	For K, V In oStyles
+		If ((Style & V) = V) && (1, Style -= V)
+			Ret .= "<span name='MS:'>" K " := <span class='param' name='MS:'>" V "</span></span>`n" 
+	IF Style
+		Ret .= GetStyle_CommonСontrol(Style, Style) 
+	IF Style
+		Ret .= "<span style='color: #" ColorDelimiter ";' name='MS:'>" Format("0x{1:04X}", Style)  "</span>`n"
+	If Ret !=
+		Res .= _T1 " id='__Styles_Control'> ( Styles - ReBarWindow32: <span name='MS:' style='color: #" ColorFont ";'>" Format("0x{:04X}", sStyle) "</span> ) </span>" _T2 _PRE1 Ret _PRE2
+	Return Res
+} 
+
+
+GetStyle_CommonСontrol(Style, ByRef NewStyle)  {
+	;	https://www.autohotkey.com/boards/viewtopic.php?p=25846#p25846
+	Static oStyles, oEx
+	If !oStyles
+		oStyles := {"CCS_ADJUSTABLE":"0x0020","CCS_BOTTOM":"0x0003","CCS_NODIVIDER":"0x0040","CCS_NOMOVEY":"0x0002"
+		,"CCS_NOPARENTALIGN":"0x0008","CCS_NORESIZE":"0x0004","CCS_TOP":"0x0001","CCS_VERT":"0x0080"}
+		
+		,oEx := {"CCS_LEFT":"0x0081","CCS_NOMOVEX":"0x0082","CCS_RIGHT":"0x0083"}
+		
+	NewStyle := sStyle := Style & 0xffff
+	For K, V In oStyles
+		If ((NewStyle & V) = V) && (%K% := 1, NewStyle -= V)
+			Ret .= "<span name='MS:'>" K " := <span class='param' name='MS:'>" V "</span></span>`n"  
+	IF !CCS_VERT && !CCS_TOP && (NewStyle & oEx.CCS_LEFT) && (1, NewStyle -= oEx.CCS_LEFT)  ;	CCS_LEFT
+		Ret .= "<span name='MS:'>CCS_LEFT := <span class='param' name='MS:'>0x0081 && !(CCS_VERT | CCS_TOP)</span></span>`n"
+	IF !CCS_VERT && !CCS_NOMOVEY && (NewStyle & oEx.CCS_NOMOVEX) && (1, NewStyle -= oEx.CCS_NOMOVEX)  ;	CCS_NOMOVEX
+		Ret .= "<span name='MS:'>CCS_NOMOVEX := <span class='param' name='MS:'>0x0082 && !(CCS_VERT | CCS_NOMOVEY)</span></span>`n"
+	IF !CCS_VERT && !CCS_BOTTOM && (NewStyle & oEx.CCS_RIGHT) && (1, NewStyle -= oEx.CCS_RIGHT)  ;	CCS_RIGHT
+		Ret .= "<span name='MS:'>CCS_RIGHT := <span class='param' name='MS:'>0x0083 && !(CCS_VERT | CCS_BOTTOM)</span></span>`n"
+	
+	Return Ret
+} 
+
 	; _________________________________________________ FullScreen _________________________________________________
 
 FullScreenMode() {
