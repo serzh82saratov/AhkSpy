@@ -26,7 +26,7 @@
     Актуальный исходник - https://raw.githubusercontent.com/serzh82saratov/AhkSpy/master/AhkSpy.ahk
 */
 
-Global AhkSpyVersion := 3.63
+Global AhkSpyVersion := 3.64
 
 	; _________________________________________________ Header _________________________________________________
 
@@ -3287,7 +3287,7 @@ GetControlStyles(Class, Style, ExStyle, hWnd) {
 GetStyle_Static(Style, ExStyle, hWnd)  {
 	;	https://www.autohotkey.com/boards/viewtopic.php?p=25869#p25869
 	;	https://docs.microsoft.com/en-us/windows/desktop/controls/static-control-styles
-	Static oStyles, oEx, oExStyles
+	Static oStyles, oEx
 	If !oStyles
 		oStyles := {"SS_ELLIPSISMASK":"0xC000"
 		,"SS_REALSIZECONTROL":"0x0040","SS_NOPREFIX":"0x0080","SS_NOTIFY":"0x0100","SS_CENTERIMAGE":"0x0200","SS_RIGHTJUST":"0x0400"
@@ -3323,7 +3323,7 @@ GetStyle_Static(Style, ExStyle, hWnd)  {
 GetStyle_Button(Style, ExStyle, hWnd)  {
 	;	https://www.autohotkey.com/boards/viewtopic.php?p=25841#p25841
 	;	https://docs.microsoft.com/en-us/windows/desktop/controls/button-styles
-	Static oStyles, oEx, oExStyles
+	Static oStyles, oEx
 	If !oStyles
 		oStyles := {"BS_ICON":"0x0040","BS_BITMAP":"0x0080","BS_LEFT":"0x0100","BS_RIGHT":"0x0200","BS_CENTER":"0x0300"
 		,"BS_TOP":"0x0400","BS_BOTTOM":"0x0800","BS_VCENTER":"0x0C00","BS_PUSHLIKE":"0x1000","BS_MULTILINE":"0x2000"
@@ -3367,7 +3367,7 @@ GetStyle_Button(Style, ExStyle, hWnd)  {
 GetStyle_Edit(Style, ExStyle, hWnd)  {
 	;	https://www.autohotkey.com/boards/viewtopic.php?p=25848#p25848
 	;	https://docs.microsoft.com/en-us/windows/desktop/controls/edit-control-styles
-	Static oStyles, oExStyles
+	Static oStyles
 	If !oStyles
 		oStyles := {"ES_CENTER":"0x0001","ES_RIGHT":"0x0002","ES_MULTILINE":"0x0004"
 		,"ES_UPPERCASE":"0x0008","ES_LOWERCASE":"0x0010","ES_PASSWORD":"0x0020","ES_AUTOVSCROLL":"0x0040"
@@ -3445,15 +3445,18 @@ GetStyle_SysTabControl(Style, ExStyle, hWnd)  {
 
 GetStyle_ComboBox(Style, ExStyle, hWnd)  {
 	;	https://www.autohotkey.com/boards/viewtopic.php?p=25842#p25842
-	;	https://docs.microsoft.com/en-us/windows/desktop/controls/edit-control-styles
-	Static oStyles
+	;	https://docs.microsoft.com/en-us/windows/desktop/controls/combo-box-styles
+	Static oStyles, oExStyles, oEx, CBEM_GETEXTENDEDSTYLE := 0x0409
 	If !oStyles
-		oStyles := {"CBS_SIMPLE":"0x0001","CBS_DROPDOWN":"0x0002","CBS_DROPDOWNLIST":"0x0003","CBS_OWNERDRAWFIXED":"0x0010"
+		oStyles := {"CBS_SIMPLE":"0x0001","CBS_DROPDOWN":"0x0002","CBS_OWNERDRAWFIXED":"0x0010"
 		,"CBS_OWNERDRAWVARIABLE":"0x0020","CBS_AUTOHSCROLL":"0x0040","CBS_OEMCONVERT":"0x0080","CBS_SORT":"0x0100"
 		,"CBS_HASSTRINGS":"0x0200","CBS_NOINTEGRALHEIGHT":"0x0400","CBS_DISABLENOSCROLL":"0x0800"
 		,"CBS_UPPERCASE":"0x2000","CBS_LOWERCASE":"0x4000"}
-
+		,oEx := {"CBS_DROPDOWNLIST":"0x0003"}
+	
 	Style := sStyle := Style & 0xffff
+	If ((Style & oEx.CBS_DROPDOWNLIST) = oEx.CBS_DROPDOWNLIST) && (1, Style -= oEx.CBS_DROPDOWNLIST)  ;	CBS_DROPDOWNLIST
+		Ret .= "<span name='MS:'>CBS_DROPDOWNLIST := <span class='param' name='MS:'>" oEx.CBS_DROPDOWNLIST "</span></span>`n"
 	For K, V In oStyles
 		If ((Style & V) = V) && (1, Style -= V)
 			Ret .= "<span name='MS:'>" K " := <span class='param' name='MS:'>" V "</span></span>`n"
@@ -3464,6 +3467,20 @@ GetStyle_ComboBox(Style, ExStyle, hWnd)  {
 	If Ret !=
 		Res .= _T1 " id='__Styles_Control'> ( Styles - ComboBox: <span name='MS:' style='color: #" ColorFont ";'>" Format("0x{:04X}", sStyle) "</span> ) </span>" _T2 _PRE1 Ret _PRE2
 	Return Res
+/*
+		, oExStyles := {"CBES_EX_CASESENSITIVE":"0x0010","CBES_EX_NOEDITIMAGE":"0x0001","CBES_EX_NOEDITIMAGEINDENT":"0x0002"
+		,"CBES_EX_NOSIZELIMIT":"0x0008","CBES_EX_PATHWORDBREAKPROC":"0x0004","CBES_EX_TEXTENDELLIPSIS":"0x0020"}
+	SendMessage, CBEM_GETEXTENDEDSTYLE, 0, 0,, ahk_id %hWnd%
+	ExStyle := sExStyle := ErrorLevel & 0xffff
+	
+	For K, V In oExStyles
+		If ((ExStyle & V) = V) && (1, ExStyle -= V)
+			RetEx .= "<span name='MS:'>" K " := <span class='param' name='MS:'>" V "</span></span>`n"
+	IF ExStyle
+		RetEx .= "<span style='color: #" ColorDelimiter ";' name='MS:'>" Format("0x{1:08X}", ExStyle)  "</span>`n"
+	If RetEx !=
+		Res .= _T1 " id='__ExStyles_Control'> ( ExStyles - ComboBox: <span name='MS:' style='color: #" ColorFont ";'>" Format("0x{:04X}", sExStyle) "</span> ) </span>" _T2 _PRE1 RetEx _PRE2
+*/
 }
 
 GetStyle_ListBox(Style, ExStyle, hWnd)  {
@@ -3653,7 +3670,7 @@ GetStyle_SysListView(Style, ExStyle, hWnd)  {
 		,"LVS_OWNERDRAWFIXED":"0x0400","LVS_SHAREIMAGELISTS":"0x0040","LVS_SHOWSELALWAYS":"0x0008","LVS_SINGLESEL":"0x0004","LVS_OWNERDATA":"0x1000"
 		,"LVS_SORTASCENDING":"0x0010","LVS_SORTDESCENDING":"0x0020"}
 
-		, oExStyles :={"LVS_EX_AUTOAUTOARRANGE":"0x01000000","LVS_EX_AUTOCHECKSELECT":"0x08000000","LVS_EX_AUTOSIZECOLUMNS":"0x10000000","LVS_EX_BORDERSELECT":"0x00008000"
+		, oExStyles := {"LVS_EX_AUTOAUTOARRANGE":"0x01000000","LVS_EX_AUTOCHECKSELECT":"0x08000000","LVS_EX_AUTOSIZECOLUMNS":"0x10000000","LVS_EX_BORDERSELECT":"0x00008000"
 		,"LVS_EX_CHECKBOXES":"0x00000004","LVS_EX_COLUMNOVERFLOW":"0x80000000","LVS_EX_COLUMNSNAPPOINTS":"0x40000000","LVS_EX_DOUBLEBUFFER":"0x00010000","LVS_EX_FLATSB":"0x00000100"
 		,"LVS_EX_FULLROWSELECT":"0x00000020","LVS_EX_GRIDLINES":"0x00000001","LVS_EX_HEADERDRAGDROP":"0x00000010","LVS_EX_HEADERINALLVIEWS":"0x02000000","LVS_EX_HIDELABELS":"0x00020000"
 		,"LVS_EX_INFOTIP":"0x00000400","LVS_EX_JUSTIFYCOLUMNS":"0x00200000","LVS_EX_LABELTIP":"0x00004000","LVS_EX_MULTIWORKAREAS":"0x00002000","LVS_EX_ONECLICKACTIVATE":"0x00000040"
