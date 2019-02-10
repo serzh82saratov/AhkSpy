@@ -26,7 +26,7 @@
     Актуальный исходник - https://raw.githubusercontent.com/serzh82saratov/AhkSpy/master/AhkSpy.ahk
 */
 
-Global AhkSpyVersion := 3.65
+Global AhkSpyVersion := 3.66
 
 	; _________________________________________________ Header _________________________________________________
 
@@ -3274,17 +3274,18 @@ GetControlStyles(Class, Style, ExStyle, hWnd) {
 	If !hWnd
 		Return
 	If IsFunc("GetStyle_" Class) && (b := 1)
-		Ret .= GetStyle_%Class%(Style, ExStyle, hWnd)
+		Ret .= GetStyle_%Class%(Style, hWnd)
 	Ret .= GetStyles(Style, ExStyle, hWnd, 1, b)
 	Return Ret
 /*
 	Added:
 	Button, Edit, Static, SysListView32, SysTabControl32, SysDateTimePick32, SysMonthCal32, ComboBox, ListBox
-	, msctls_trackbar32, msctls_statusbar32, msctls_progress32, msctls_updown32, SysLink, SysHeader32, ToolbarWindow32, SysTreeView32, ReBarWindow32, SysAnimate32, SysPager
+	, msctls_trackbar32, msctls_statusbar32, msctls_progress32, msctls_updown32, SysLink, SysHeader32
+	, ToolbarWindow32, SysTreeView32, ReBarWindow32, SysAnimate32, SysPager
 */
 }
 
-GetStyle_Static(Style, ExStyle, hWnd)  {
+GetStyle_Static(Style, hWnd)  {
 	;	https://www.autohotkey.com/boards/viewtopic.php?p=25869#p25869
 	;	https://docs.microsoft.com/en-us/windows/desktop/controls/static-control-styles
 	Static oStyles, oEx
@@ -3320,7 +3321,7 @@ GetStyle_Static(Style, ExStyle, hWnd)  {
 	Return Res
 }
 
-GetStyle_Button(Style, ExStyle, hWnd)  {
+GetStyle_Button(Style, hWnd)  {
 	;	https://www.autohotkey.com/boards/viewtopic.php?p=25841#p25841
 	;	https://docs.microsoft.com/en-us/windows/desktop/controls/button-styles
 	Static oStyles, oEx
@@ -3364,7 +3365,7 @@ GetStyle_Button(Style, ExStyle, hWnd)  {
 	Return Res
 }
 
-GetStyle_Edit(Style, ExStyle, hWnd)  {
+GetStyle_Edit(Style, hWnd)  {
 	;	https://www.autohotkey.com/boards/viewtopic.php?p=25848#p25848
 	;	https://docs.microsoft.com/en-us/windows/desktop/controls/edit-control-styles
 	Static oStyles
@@ -3391,7 +3392,7 @@ GetStyle_Edit(Style, ExStyle, hWnd)  {
 	Return Res
 }
 
-GetStyle_SysTabControl(Style, ExStyle, hWnd)  {
+GetStyle_SysTabControl(Style, hWnd)  {
 	;	https://www.autohotkey.com/boards/viewtopic.php?p=25871#p25871
 	;	https://docs.microsoft.com/en-us/windows/desktop/controls/tab-control-styles
 	;	https://docs.microsoft.com/en-us/windows/desktop/controls/tab-control-extended-styles
@@ -3443,7 +3444,7 @@ GetStyle_SysTabControl(Style, ExStyle, hWnd)  {
 	Return Res
 }
 
-GetStyle_ComboBox(Style, ExStyle, hWnd)  {
+GetStyle_ComboBox(Style, hWnd)  {
 	;	https://www.autohotkey.com/boards/viewtopic.php?p=25842#p25842
 	;	https://docs.microsoft.com/en-us/windows/desktop/controls/combo-box-styles
 	Static oStyles, oExStyles, oEx, CBEM_GETEXTENDEDSTYLE := 0x0409
@@ -3487,11 +3488,11 @@ GetStyle_ComboBox(Style, ExStyle, hWnd)  {
 	Return Res
 }
 
-GetStyle_ComboLBox(Style, ExStyle, hWnd)  {
-	Return GetStyle_ListBox(Style, ExStyle, hWnd)
+GetStyle_ComboLBox(Style, hWnd)  {
+	Return GetStyle_ListBox(Style, hWnd)
 }
 
-GetStyle_ListBox(Style, ExStyle, hWnd)  {
+GetStyle_ListBox(Style, hWnd)  {
 	;	https://www.autohotkey.com/boards/viewtopic.php?p=25855#p25855
 	;	https://docs.microsoft.com/en-us/windows/desktop/controls/list-box-styles
 	Static oStyles
@@ -3521,7 +3522,7 @@ GetStyle_ListBox(Style, ExStyle, hWnd)  {
 	Return Res
 }
 
-GetStyle_SysAnimate(Style, ExStyle, hWnd)  {
+GetStyle_SysAnimate(Style, hWnd)  {
 	;	https://docs.microsoft.com/en-us/windows/desktop/controls/animation-control-styles
 	Static oStyles
 	If !oStyles
@@ -3540,7 +3541,7 @@ GetStyle_SysAnimate(Style, ExStyle, hWnd)  {
 	Return Res
 }
 
-GetStyle_SysPager(Style, ExStyle, hWnd)  {
+GetStyle_SysPager(Style, hWnd)  {
 	;	https://docs.microsoft.com/en-us/windows/desktop/controls/pager-control-styles
 	Static oStyles, oEx
 	If !oStyles
@@ -3561,7 +3562,7 @@ GetStyle_SysPager(Style, ExStyle, hWnd)  {
 	Return Res
 }
 
-GetStyle_msctls_updown(Style, ExStyle, hWnd)  {
+GetStyle_msctls_updown(Style, hWnd)  {
 	;	https://www.autohotkey.com/boards/viewtopic.php?p=25878#p25878
 	;	https://docs.microsoft.com/en-us/windows/desktop/controls/up-down-control-styles
 	Static oStyles
@@ -3582,7 +3583,7 @@ GetStyle_msctls_updown(Style, ExStyle, hWnd)  {
 	Return Res
 }
 
-GetStyle_SysDateTimePick(Style, ExStyle, hWnd)  {
+GetStyle_SysDateTimePick(Style, hWnd)  {
 	;	https://www.autohotkey.com/boards/viewtopic.php?p=25878#p25878
 	;	https://docs.microsoft.com/en-us/windows/desktop/controls/date-and-time-picker-control-styles
 	Static oStyles
@@ -3606,7 +3607,7 @@ GetStyle_SysDateTimePick(Style, ExStyle, hWnd)  {
 	Return Res
 }
 
-GetStyle_SysMonthCal(Style, ExStyle, hWnd)  {
+GetStyle_SysMonthCal(Style, hWnd)  {
 	;	https://www.autohotkey.com/boards/viewtopic.php?p=25861#p25861
 	;	https://docs.microsoft.com/en-us/windows/desktop/controls/month-calendar-control-styles
 	Static oStyles
@@ -3627,7 +3628,7 @@ GetStyle_SysMonthCal(Style, ExStyle, hWnd)  {
 	Return Res
 }
 
-GetStyle_msctls_trackbar(Style, ExStyle, hWnd)  {
+GetStyle_msctls_trackbar(Style, hWnd)  {
 	;	https://www.autohotkey.com/boards/viewtopic.php?p=25875#p25875
 	;	https://docs.microsoft.com/en-us/windows/desktop/controls/trackbar-control-styles
 	Static oStyles
@@ -3667,7 +3668,7 @@ GetStyle_msctls_trackbar(Style, ExStyle, hWnd)  {
 	Return Res
 }
 
-GetStyle_msctls_statusbar(Style, ExStyle, hWnd)  {
+GetStyle_msctls_statusbar(Style, hWnd)  {
 	;	https://www.autohotkey.com/boards/viewtopic.php?p=25870#p25870
 	;	https://docs.microsoft.com/en-us/windows/desktop/controls/status-bar-styles
 	Static oStyles
@@ -3687,7 +3688,7 @@ GetStyle_msctls_statusbar(Style, ExStyle, hWnd)  {
 	Return Res
 }
 
-GetStyle_msctls_progress(Style, ExStyle, hWnd)  {
+GetStyle_msctls_progress(Style, hWnd)  {
 	;	https://www.autohotkey.com/boards/viewtopic.php?p=25864#p25864
 	;	https://docs.microsoft.com/en-us/windows/desktop/controls/progress-bar-control-styles
 	Static oStyles
@@ -3707,7 +3708,7 @@ GetStyle_msctls_progress(Style, ExStyle, hWnd)  {
 	Return Res
 }
 
-GetStyle_SysListView(Style, ExStyle, hWnd)  {
+GetStyle_SysListView(Style, hWnd)  {
 	;	https://www.autohotkey.com/boards/viewtopic.php?p=25857#p25857
 	;	https://docs.microsoft.com/en-us/windows/desktop/controls/list-view-window-styles
 	;	https://docs.microsoft.com/en-us/windows/desktop/controls/extended-list-view-styles
@@ -3773,7 +3774,7 @@ GetStyle_SysListView(Style, ExStyle, hWnd)  {
 	Return Res
 }
 
-GetStyle_SysTreeView(Style, ExStyle, hWnd)  {
+GetStyle_SysTreeView(Style, hWnd)  {
 	;	https://www.autohotkey.com/boards/viewtopic.php?p=25876#p25876
 	;	https://docs.microsoft.com/en-us/windows/desktop/controls/tree-view-control-window-styles
 	;	https://docs.microsoft.com/en-us/windows/desktop/controls/tree-view-control-window-extended-styles
@@ -3827,7 +3828,7 @@ GetStyle_tooltips_class32(Style, ByRef NewStyle)  {
 	Return Ret
 }
 
-GetStyle_ToolbarWindow(Style, ExStyle, hWnd)  {
+GetStyle_ToolbarWindow(Style, hWnd)  {
 	;	https://www.autohotkey.com/boards/viewtopic.php?p=25872#p25872
 	;	https://docs.microsoft.com/en-us/windows/desktop/controls/toolbar-control-and-button-styles
 	;	https://docs.microsoft.com/en-us/windows/desktop/controls/toolbar-extended-styles
@@ -3840,13 +3841,13 @@ GetStyle_ToolbarWindow(Style, ExStyle, hWnd)  {
 		, oExStyles := {"TBSTYLE_EX_DOUBLEBUFFER":"0x80","TBSTYLE_EX_DRAWDDARROWS":"0x01","TBSTYLE_EX_HIDECLIPPEDBUTTONS":"0x10"
 		,"TBSTYLE_EX_MIXEDBUTTONS":"0x08","TBSTYLE_EX_MULTICOLUMN":"0x02","TBSTYLE_EX_VERTICAL":"0x04"}
 
-	SendMessage, TB_GETSTYLE, 0, 0,, ahk_id %hWnd%
+	SendMessage, TB_GETSTYLE, 0, 0, , ahk_id %hWnd%
 	Style := sStyle := ErrorLevel & 0xffff
 
-	SendMessage, TB_GETEXTENDEDSTYLE, 0, 0,, ahk_id %hWnd%
+	SendMessage, TB_GETEXTENDEDSTYLE, 0, 0, , ahk_id %hWnd%
 	ExStyle := sExStyle := ErrorLevel
 	; ToolTip % Format("0x{1:08X}", Style) "`n" Format("0x{1:08X}", ExStyle)
-
+	
 	For K, V In oStyles
 		If ((sStyle & V) = V) && (1, Style -= V)
 			Ret .= "<span name='MS:'>" K " := <span class='param' name='MS:'>" V "</span></span>`n"
@@ -3863,9 +3864,9 @@ GetStyle_ToolbarWindow(Style, ExStyle, hWnd)  {
 			RetEx .= "<span name='MS:'>" K " := <span class='param' name='MS:'>" V "</span></span>`n"
 
 	IF ExStyle
-		RetEx .= "<span style='color: #" ColorDelimiter ";' name='MS:'>" Format("0x{1:02X}", sExStyle)  "</span>`n"
+		RetEx .= "<span style='color: #" ColorDelimiter ";' name='MS:'>" Format("0x{1:04X}", ExStyle)  "</span>`n"
 	If RetEx !=
-		Res .= _T1 " id='__ExStyles_Control'> ( ExStyles - ToolbarWindow32: <span name='MS:' style='color: #" ColorFont ";'>" Format("0x{:02X}", sExStyle) "</span> ) </span>" _T2 _PRE1 RetEx _PRE2
+		Res .= _T1 " id='__ExStyles_Control'> ( ExStyles - ToolbarWindow32: <span name='MS:' style='color: #" ColorFont ";'>" Format("0x{:04X}", sExStyle) "</span> ) </span>" _T2 _PRE1 RetEx _PRE2
 	Return Res
 /*
 		oBTNS := {"BTNS_BUTTON":"0x00","BTNS_SEP":"0x01","BTNS_CHECK":"0x02","BTNS_GROUP":"0x04","BTNS_CHECKGROUP":"0x06","BTNS_DROPDOWN":"0x08"
@@ -3884,7 +3885,7 @@ GetStyle_ToolbarWindow(Style, ExStyle, hWnd)  {
 */
 }
 
-GetStyle_SysHeader(Style, ExStyle, hWnd)  {
+GetStyle_SysHeader(Style, hWnd)  {
 	;	https://www.autohotkey.com/boards/viewtopic.php?p=25850#p25850
 	;	https://docs.microsoft.com/en-us/windows/desktop/controls/header-control-styles
 	Static oStyles
@@ -3907,7 +3908,7 @@ GetStyle_SysHeader(Style, ExStyle, hWnd)  {
 	Return Res
 }
 
-GetStyle_SysLink(Style, ExStyle, hWnd)  {
+GetStyle_SysLink(Style, hWnd) {
 	;	https://www.autohotkey.com/boards/viewtopic.php?p=25859#p25859
 	;	https://docs.microsoft.com/en-us/windows/desktop/controls/syslink-control-styles
 	Static oStyles
@@ -3927,7 +3928,7 @@ GetStyle_SysLink(Style, ExStyle, hWnd)  {
 	Return Res
 }
 
-GetStyle_ReBarWindow(Style, ExStyle, hWnd)  {
+GetStyle_ReBarWindow(Style, hWnd) {
 	;	https://www.autohotkey.com/boards/viewtopic.php?p=25865#p25865
 	;	https://docs.microsoft.com/en-us/windows/desktop/controls/rebar-control-styles
 	Static oStyles
