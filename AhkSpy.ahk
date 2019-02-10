@@ -26,7 +26,7 @@
     Актуальный исходник - https://raw.githubusercontent.com/serzh82saratov/AhkSpy/master/AhkSpy.ahk
 */
 
-Global AhkSpyVersion := 3.61
+Global AhkSpyVersion := 3.62
 
 	; _________________________________________________ Header _________________________________________________
 
@@ -90,7 +90,7 @@ Global ThisMode := IniRead("StartMode", "Control"), LastModeSave := (ThisMode = 
 
 , WM_USER := 0x0400
 
-#Include *i %A_AppData%\AhkSpy\IncludeSettings.ahk 
+#Include *i %A_AppData%\AhkSpy\IncludeSettings.ahk
 
 Global _DB := "<span style='position: relative; margin-right: 1em;'></span>"
 , _BT1 := "<span class='button' unselectable='on' oncontextmenu='return false' onmouseleave='OnButtonOut (this)' onmousedown='OnButtonDown (this)' "
@@ -103,7 +103,7 @@ Global _DB := "<span style='position: relative; margin-right: 1em;'></span>"
 , _PRE1 := "<pre contenteditable='true'>", _PRE2 := "</pre>"
 , _LPRE := "<pre contenteditable='true' class='lpre'"
 , _DP := "  <span id='delimiter' style='color: #" ColorDelimiter "'>&#9642</span>  "
-, _BR := "<p class='br'></p>", _DN := "`n" 
+, _BR := "<p class='br'></p>", _DN := "`n"
 , _INPHK := "<input onfocus='funchkinputevent (this, ""focus"")' onblur='funchkinputevent(this, ""blur"")' "
 
 , _PreOverflowHideCSS := ".lpre {max-width: 99`%; max-height: " PreMaxHeight "px; overflow: auto; border: 1px solid #E2E2E2;}"
@@ -303,9 +303,9 @@ If !DllCall("WindowFromPoint", "Int64", WinX & 0xFFFFFFFF | WinY << 32)
 && !DllCall("WindowFromPoint", "Int64", (WinX + WinWidth) & 0xFFFFFFFF | (WinY) << 32)
 && !DllCall("WindowFromPoint", "Int64", (WinX + WinWidth) & 0xFFFFFFFF | (WinY + WinHeight) << 32)
 && !DllCall("WindowFromPoint", "Int64", (WinX) & 0xFFFFFFFF | (WinY + WinHeight) << 32)
-	Gui, Show, NA xCenter yCenter 
+	Gui, Show, NA xCenter yCenter
 If !UpdRegister
-	SetTimer, UpdRegister, -1000 
+	SetTimer, UpdRegister, -1000
 Return
 
 	; _________________________________________________ Hotkey`s _________________________________________________
@@ -483,22 +483,22 @@ RButton::
 	obj := Func("ButtonClick").Bind(oJScript.ButtonOver)
 	SetTimer, % obj, -10
 	Return
-	
+
 #If !WinActive("ahk_id" hGui) && IsAhkSpyUnderMouse(hc)
 
 +LButton::
-	If (hc = hButtonButton) 
-		SetTimer, Mode_Hotkey, -1 
-	Else If (hc = hButtonControl) 
-		SetTimer, Mode_Control, -1 
-	Else If (hc = hButtonWindow) 
-		SetTimer, Mode_Win, -1 
+	If (hc = hButtonButton)
+		SetTimer, Mode_Hotkey, -1
+	Else If (hc = hButtonControl)
+		SetTimer, Mode_Control, -1
+	Else If (hc = hButtonWindow)
+		SetTimer, Mode_Win, -1
 	Return
 
 #If
 
 IsAhkSpyUnderMouse(Byref hc) {
-	MouseGetPos, , , hw, hc, 2 
+	MouseGetPos, , , hw, hc, 2
 	Return (hw = hGui)
 }
 	; _________________________________________________ Mode_Win _________________________________________________
@@ -543,7 +543,7 @@ Spot_Win(NotHTML = 0) {
 	If NotHTML
 		GoTo HTML_Win
 	MouseGetPos, , , WinID, hChild, 3
-	
+
 	If (WinID = hGui || WinID = oOther.hZoom || WinID = oOther.hZoomLW)
 		Return HideAllMarkers()
 
@@ -567,11 +567,11 @@ Spot_Win(NotHTML = 0) {
 	WinGet, WinCountProcess, Count, ahk_pid %WinPID%
 	WinGet, WinStyle, Style, ahk_id %WinID%
 	WinGet, WinExStyle, ExStyle, ahk_id %WinID%
-	
+
 	WinGet, WinTransparent, Transparent, ahk_id %WinID%
 	If WinTransparent !=
 		WinTransparent := "`n" _BP1 "id='set_button_Transparent'>Transparent:</span>" _BP2 "  <span id='get_win_Transparent' name='MS:'>"  WinTransparent "</span>"
-		
+
 	WinGet, WinTransColor, TransColor, ahk_id %WinID%
 	If WinTransColor !=
 		WinTransColor := (WinTransparent = "" ? "`n" : DP)
@@ -608,19 +608,19 @@ Spot_Win(NotHTML = 0) {
 		ViewStrPos1 := _DP "<span name='MS:'>" WinX ", " WinY ", " WinX2 ", " WinY2 "</span>" _DP "<span name='MS:'>" WinX ", " WinY ", " WinWidth ", " WinHeight "</span>"
 
 	IsWindowUnicodeStr := _DP "<span class='param'>Is unicode:</span>  <span>" (DllCall("user32\IsWindowUnicode", "Ptr", WinID) ? "True" : "False") "</span>"
-	
+
 	CoordMode, Mouse
-	MouseGetPos, WinXS, WinYS, h 
+	MouseGetPos, WinXS, WinYS, h
 	If (h = hGui || h = oOther.hZoom || h = oOther.hZoomLW)
 		Return HideAllMarkers()
-		
+
 	PixelGetColor, ColorRGB, %WinXS%, %WinYS%, RGB
 	GuiControl, TB: -Redraw, ColorProgress
 	GuiControl, % "TB: +c" SubStr(ColorRGB, 3), ColorProgress
 	GuiControl, TB: +Redraw, ColorProgress
 
 	; _________________________________________________ HTML_Win _________________________________________________
-	
+
 HTML_Win:
 	If w_ShowStyles
 		WinStyles := GetStyles(WinStyle, WinExStyle, WinID)
@@ -771,7 +771,7 @@ Loop_Control:
 		GoTo Repeat_Loop_Control
 	If !OnlyShiftTab && Spot_Control()
 		Write_Control(), StateAllwaysSpot ? Spot_Win() : 0
-Repeat_Loop_Control: 
+Repeat_Loop_Control:
 	If (!isPaused && ThisMode = "Control" && !OnlyShiftTab)
 		SetTimer, Loop_Control, -%RangeTimer%
 	Return
@@ -789,7 +789,7 @@ Spot_Control(NotHTML = 0) {
 
 	If (WinID = hGui || WinID = oOther.hZoom || WinID = oOther.hZoomLW)
 		Return HideAllMarkers()
-		
+
 	CtrlInfo := "", isIE := 0
 	ControlNN := tControlNN, ControlID := tControlID
 	WinGetPos, WinX, WinY, WinW, WinH, ahk_id %WinID%
@@ -799,19 +799,19 @@ Spot_Control(NotHTML = 0) {
 
 	WithRespectWin := "`n" _BP1 " id='set_pos'>Relative window:" _BP2 "  <span name='MS:'>"
 		. Round(RWinX / WinW, 4) ", " Round(RWinY / WinH, 4) "</span>  <span class='param'>for</span> <span name='MS:'>w" WinW " h" WinH "</span>" _DP
-		
+
 	ControlGetPos, CtrlX, CtrlY, CtrlW, CtrlH,, ahk_id %ControlID%
 	CtrlCAX := CtrlX - caX, CtrlCAY := CtrlY - caY
 	CtrlX2 := CtrlX + CtrlW - 1, CtrlY2 := CtrlY + CtrlH - 1
 	CtrlCAX2 := CtrlX2 - caX, CtrlCAY2 := CtrlY2 - caY
-	
+
 	WithRespectClient := _BP1 " id='set_pos'>Relative client:" _BP2 "  <span name='MS:'>" Round(MXC / caW, 4) ", " Round(MYC / caH, 4)
 		. "</span>  <span class='param'>for</span> <span name='MS:'>w" caW " h" caH "</span>"
-		
+
 	ControlGetText, CtrlText, , ahk_id %ControlID%
 	If CtrlText !=
 		CtrlText := _T1 " id='__Control_Text'> ( Control Text ) </span><a></a>" _BT1 " id='copy_button'> copy " _BT2 _T2 _LPRE ">" TransformHTML(CtrlText) _PRE2
-		
+
 	AccText := AccInfoUnderMouse(MXS, MYS, WinX, WinY, CtrlX, CtrlY, WinID, ControlID)
 	If AccText !=
 		AccText := _T1 " id='__AccInfo'> ( Accessible ) </span><a></a>" _BT1 " id='flash_acc'> flash " _BT2 _ButAccViewer _T2 AccText
@@ -835,9 +835,9 @@ Spot_Control(NotHTML = 0) {
 	}
 	Else
 		rmCtrlX := rmCtrlY := ""
-		
+
 	If (!isIE && ThisMode = "Control" && (StateLight = 1 || (StateLight = 3 && GetKeyState("Shift", "P"))))
-	{ 
+	{
 		WinGetPos, X, Y, W, H, ahk_id %ControlID%
 		StateLightMarker ? ShowMarker(X, Y, W, H) : 0
 		; StateLightMarker ? ShowMarker(WinX+CtrlX, WinY+CtrlY, CtrlW, CtrlH) : 0
@@ -862,34 +862,34 @@ Spot_Control(NotHTML = 0) {
 
 	If DynamicControlPath && ControlID
 		control_path_value := ChildToPath(ControlID)
-		
+
 	If UseUIA && ControlID
 	{
 		UIAElement := oUIAInterface.ElementFromPoint(MXS, MYS)
-		UIAPID := UIAElement.CurrentProcessId  
-		UIAHWND := UIAElement.CurrentNativeWindowHandle 
-		
+		UIAPID := UIAElement.CurrentProcessId
+		UIAHWND := UIAElement.CurrentNativeWindowHandle
+
 		If (UIAPID && UIAPID != WinPID && UIAPID != oOther.CurrentProcessId)
 		; If 1
 		{
-			WinGet, UIAProcessName, ProcessName, ahk_pid %UIAPID% 
-			WinGet, UIAProcessPath, ProcessPath, ahk_pid %UIAPID% 
+			WinGet, UIAProcessName, ProcessName, ahk_pid %UIAPID%
+			WinGet, UIAProcessPath, ProcessPath, ahk_pid %UIAPID%
 			Loop, %UIAProcessPath%
 				UIAProcessPath = %A_LoopFileLongPath%
-				
+
 			UseUIAStr := "`n" _T1 " id='P__UIA_Object'> ( UIA Interface ) </span><a></a>" _T2
 			. _PRE1 "<span class='param' name='MS:N'>PID:</span>  <span name='MS:'>" UIAPID "</span>" _DP
 			. (UIAHWND ? ""
 			. "<span class='param' name='MS:N'>HWND:</span>  <span name='MS:'>" Format("0x{:x}", UIAHWND) "</span>"
-			. _DP "<span class='param' name='MS:N'>ControlClass:</span>  <span name='MS:'>" TransformHTML(UIAElement.CurrentClassName) "</span>" : "HWND undefined") 
-			. _DN "<span class='param' name='MS:N'>ProcessName:</span>  <span name='MS:'>" TransformHTML(UIAProcessName) "</span>" 
-			. _DP "<span class='param' name='MS:N'>ProcessPath:</span>  <span name='MS:'>" TransformHTML(UIAProcessPath) "</span>" _PRE2 
+			. _DP "<span class='param' name='MS:N'>ControlClass:</span>  <span name='MS:'>" TransformHTML(UIAElement.CurrentClassName) "</span>" : "HWND undefined")
+			. _DN "<span class='param' name='MS:N'>ProcessName:</span>  <span name='MS:'>" TransformHTML(UIAProcessName) "</span>"
+			. _DP "<span class='param' name='MS:N'>ProcessPath:</span>  <span name='MS:'>" TransformHTML(UIAProcessPath) "</span>" _PRE2
 		}
-	} 
+	}
 	MouseGetPos, , , h
 	If (h = hGui || h = oOther.hZoom || h = oOther.hZoomLW)
 		Return HideAllMarkers()
-		
+
 	PixelGetColor, ColorBGR, %MXS%, %MYS%
 	ColorRGB := Format("0x{:06X}", (ColorBGR & 0xFF) << 16 | (ColorBGR & 0xFF00) | (ColorBGR >> 16))
 	sColorBGR := SubStr(ColorBGR, 3)
@@ -897,18 +897,14 @@ Spot_Control(NotHTML = 0) {
 	GuiControl, TB: -Redraw, ColorProgress
 	GuiControl, % "TB: +c" sColorRGB, ColorProgress
 	GuiControl, TB: +Redraw, ColorProgress
-	
+
 	; _________________________________________________ HTML_Control _________________________________________________
-	
+
 HTML_Control:
 	If ControlID
 	{
-		; ControlStyleExist := GetControlStyles(ControlNN_Sub, "E")
 		If c_ShowStyles
 			ControlStyles := GetControlStyles(ControlNN_Sub, CtrlStyle, CtrlExStyle, ControlID)
-			, ControlStyles .= GetStyles(CtrlStyle, CtrlExStyle, ControlID, 1)
-			
-		; ButtonStyle_ := _DP _BB1 " id='get_styles_c'" (ControlStyleExist ? "" : " style='color: #C0C0C0'") "> " (c_ShowStyles ? "show styles" : "hide styles") " " _BB2
 		ButtonStyle_ := _DP _BB1 " id='get_styles_c'> " (c_ShowStyles ? "show styles" : "hide styles") " " _BB2
 
 		HTML_ControlExist =
@@ -1001,7 +997,7 @@ HTML_Control:
 	}
 	.param {
 		color: #%ColorParam%;
-	} 
+	}
 	#anchor {
 		background-color: #%ColorSelAnchor%;
 	}
@@ -1329,7 +1325,7 @@ GetInfo_InternetExplorer_Server(hwnd, ByRef ClassNN) {
 		. _PRE1  "<span class='param'>Pos: </span><span name='MS:'>x" Round(x1) " y" Round(y1) "</span>"
 		. _DP "<span name='MS:'>x&sup2;" Round(x2) - 1 " y&sup2;" Round(y2) - 1 "</span>"
 		. _DP "<span class='param'>Size: </span><span name='MS:'>w" Round(x2 - x1) " h" Round(y2 - y1) "</span>" Info _PRE2
-		
+
 	oPubObj.IEElement := {Pos:[sX + x1, sY + y1, x2 - x1, y2 - y1], hwnd:hwnd}
 	Return Topic Info HTML Text Frame
 }
@@ -1380,14 +1376,14 @@ AccInfoUnderMouse(mx, my, wx, wy, cx, cy, WinID, ControlID) {
 
 		. (cx != "" ? _DP "<span class='param'>Control: </span><span name='MS:'>x" (x - wx - cx) " y" (y - wy - cy) "</span>"
 		. _DP "<span name='MS:'>x&sup2;" (x - wx - cx) + w - 1 " y&sup2;" (y - wy - cy) + h - 1 "</span>" : "")  _PRE2
-		
+
 	If ((Hwnd := AccWindowFromObject(pacc)) != ControlID && Hwnd != WinID) {   ;	можно Acc вместо pacc, then ComObjValue
 		WinGetClass, CtrlClass, ahk_id %Hwnd%
 		WinGet, WinProcess, ProcessName, ahk_id %Hwnd%
 		WinGet, WinPID, PID, ahk_id %Hwnd%
-		code .= _T1 " id='P__WindowFromObject'" _T1P "> ( WindowFromObject ) </span><a></a>" _T2 _PRE1 
+		code .= _T1 " id='P__WindowFromObject'" _T1P "> ( WindowFromObject ) </span><a></a>" _T2 _PRE1
 		. "<span class='param' name='MS:N'>HWND:</span>  <span name='MS:'>" Format("0x{:x}", Hwnd) "</span>"
-		. _DP "<span class='param' name='MS:N'>Win class:</span>  <span name='MS:'>" TransformHTML(CtrlClass) "</span>" 
+		. _DP "<span class='param' name='MS:N'>Win class:</span>  <span name='MS:'>" TransformHTML(CtrlClass) "</span>"
 		. _DP "<span class='param' name='MS:N'>EXE:</span>  <span name='MS:'>" TransformHTML(WinProcess) "</span>"
 		. _DP "<span class='param' name='MS:N'>PID:</span>  <span name='MS:'>" WinPID "</span>" _PRE2
 	}
@@ -1564,7 +1560,7 @@ Mode_Hotkey:
 		HTML_%ThisMode% := oBody.innerHTML
 	ThisMode := "Hotkey"
 	If A_GuiControl  ;	WinActive("ahk_id" hGui)
-		Hotkey_Hook(!isPaused) 
+		Hotkey_Hook(!isPaused)
 	TitleText := (TitleTextP1 := "AhkSpy - Button") . TitleTextP2
 	ShowMarker ? (HideAllMarkers()) : 0
 	(HTML_Hotkey != "") ? Write_Hotkey() : Write_HotkeyHTML({Mods:"Waiting pushed buttons..."})
@@ -1970,7 +1966,7 @@ MenuCheck()  {
 	{
 		MouseGetPos, , , WinID
 		Menu := MenuGetName(GetMenuForMenu(WinID))
-		If Menu && (F := oMenu[Menu][oOther.ThisMenuItem := AccUnderMouse(WinID, Id).accName(Id)]) 
+		If Menu && (F := oMenu[Menu][oOther.ThisMenuItem := AccUnderMouse(WinID, Id).accName(Id)])
 		{
 			If !(F ~= "^_")
 				Return DllCall("mouse_event", "UInt", 0x0002|0x0004)  ;	WinClose("ahk_class #32768 ahk_pid " oOther.CurrentProcessId), SetTimer(F, -1)
@@ -2065,8 +2061,8 @@ _SelStartMode:
 	LastModeSave := (ThisMenuItem = "Last Mode")
 	Menu, Startmode, Check, % ThisMenuItem
 	Return
-	
-_OnlyShiftTab: 
+
+_OnlyShiftTab:
 	IniWrite(OnlyShiftTab := !OnlyShiftTab, "OnlyShiftTab")
 	Menu, Sys, % (OnlyShiftTab ? "Check" : "UnCheck"), Spot only Shift+Tab
 	ZoomMsg(12, OnlyShiftTab)
@@ -2076,7 +2072,7 @@ _OnlyShiftTab:
 		GoSub _Active_No_Pause
 	Return
 
-_Active_No_Pause: 
+_Active_No_Pause:
 	ActiveNoPause := IniWrite(!ActiveNoPause, "ActiveNoPause")
 	Menu, Sys, % (ActiveNoPause ? "Check" : "UnCheck"), Work with the active window
 	ZoomMsg(6, ActiveNoPause)
@@ -2116,7 +2112,7 @@ _Spot_Together:
 	StateAllwaysSpot := IniWrite(!StateAllwaysSpot, "AllwaysSpot")
 	Menu, Sys, % (StateAllwaysSpot ? "Check" : "UnCheck"), Spot together (low speed)
 	Return
-	
+
 _MemoryPos:
 	IniWrite(MemoryPos := !MemoryPos, "MemoryPos")
 	Menu, View, % MemoryPos ? "Check" : "UnCheck", Remember position
@@ -2954,7 +2950,7 @@ MouseStep(x, y) {
 		(ThisMode = "Control" ? (Spot_Control() (StateAllwaysSpot ? Spot_Win() : 0) Write_Control()) : (Spot_Win() (StateAllwaysSpot ? Spot_Control() : 0) Write_Win()))
 		If DllCall("IsWindowVisible", "Ptr", oOther.hZoom)
 			ZoomMsg(3)
-	}  
+	}
 	Shift_Tab_Down := 1
 }
 
@@ -3032,7 +3028,7 @@ FlashArea(x, y, w, h, att = 1) {
 	Mod(att, 2) ? ShowMarkerEx(x, y, w, h, 5) : HideMarkerEx()
 	If (att = max)
 		Return
-	hFunc := Func("FlashArea").Bind(x, y, w, h, ++att) 
+	hFunc := Func("FlashArea").Bind(x, y, w, h, ++att)
 	SetTimer, % hFunc, -100
 }
 
@@ -3060,7 +3056,7 @@ Sleep(time) {
 
 SetTimer(funcorlabel, time) {
 	SetTimer, % funcorlabel, % time
-} 
+}
 
 ToolTip(text, time = 500) {
 	CoordMode, Mouse
@@ -3080,8 +3076,8 @@ ToolTip(text, time = 500) {
 UpdateAhkSpy(in = 1) {
 	Static att, Ver, req
 		, url1 := "https://raw.githubusercontent.com/serzh82saratov/AhkSpy/master/Readme.txt"
-		, url2 := "https://raw.githubusercontent.com/serzh82saratov/AhkSpy/master/AhkSpy.ahk" 
-		
+		, url2 := "https://raw.githubusercontent.com/serzh82saratov/AhkSpy/master/AhkSpy.ahk"
+
 	If !req
 		req := ComObjCreate("WinHttp.WinHttpRequest.5.1"), req.Option(6) := 0
 	req.open("GET", url%in%, 1), req.send(), att := 0
@@ -3106,7 +3102,7 @@ UpdateAhkSpy(in = 1) {
 			IfMsgBox, No
 				Return
 			File := FileOpen(A_ScriptFullPath, "w", "UTF-8")
-			File.Length := 0, File.Write(Text), File.Close() 
+			File.Length := 0, File.Write(Text), File.Close()
 			Reload
 		}
 		Error := (++att = 20 || Status != "")
@@ -3120,7 +3116,7 @@ UpdRegister() {
 	req.open("post", UpdRegisterLink, 1), req.send()
 	SetTimer, UpdRegister_Verifi, -2000
 	Return
-	
+
 	UpdRegister_Verifi:
 		++att
 		If (req.Status = 200)
@@ -3140,7 +3136,7 @@ ViewStylesWin(elem) {  ;
 		Styles := "<a></a>" GetStyles(oDoc.getElementById("w_Style").innerText
 			, oDoc.getElementById("c_ExStyle").innerText
 			, oOther.WinID)
-			
+
 	oDoc.getElementById("WinStyles").innerHTML := Styles
 	HTML_Win := oBody.innerHTML
 }
@@ -3152,7 +3148,7 @@ ViewStylesWin(elem) {  ;
 	;	https://github.com/strobejb/winspy/blob/master/src/DisplayStyleInfo.c
 	;	http://forum.script-coding.com/viewtopic.php?pid=130846#p130846
 
-GetStyles(Style, ExStyle, hWnd, IsChild = 0) {
+GetStyles(Style, ExStyle, hWnd, IsChild = 0, IsChildInfoExist = 0) {
 	Static Styles, ExStyles, ClassStyles, GCL_STYLE := -26
 	If !hWnd
 		Return
@@ -3169,94 +3165,94 @@ GetStyles(Style, ExStyle, hWnd, IsChild = 0) {
 		, "WS_EX_NOPARENTNOTIFY":"0x00000004", "WS_EX_NOREDIRECTIONBITMAP":"0x00200000", "WS_EX_RIGHT":"0x00001000"
 		, "WS_EX_RTLREADING":"0x00002000", "WS_EX_STATICEDGE":"0x00020000"
 		, "WS_EX_TOOLWINDOW":"0x00000080", "WS_EX_TOPMOST":"0x00000008", "WS_EX_TRANSPARENT":"0x00000020"}
-		
-		, ClassStyles := {"CS_BYTEALIGNCLIENT":"0x1000", "CS_BYTEALIGNWINDOW":"0x2000", "CS_CLASSDC":"0x0040", "CS_IME":"0x00010000"  
+
+		, ClassStyles := {"CS_BYTEALIGNCLIENT":"0x1000", "CS_BYTEALIGNWINDOW":"0x2000", "CS_CLASSDC":"0x0040", "CS_IME":"0x00010000"
 		, "CS_DBLCLKS":"0x0008", "CS_DROPSHADOW":"0x00020000", "CS_GLOBALCLASS":"0x4000", "CS_HREDRAW":"0x0002"
 		, "CS_NOCLOSE":"0x0200", "CS_OWNDC":"0x0020", "CS_PARENTDC":"0x0080", "CS_SAVEBITS":"0x0800", "CS_VREDRAW":"0x0001"}
-		
-	If IsChild
+
+	If IsChildInfoExist
 		Style := Style & 0xffff0000
-		
+
 	For K, V In Styles
 		If (Style & V)&& (%K% := 1, Style -= V)
-			Ret .= "<span name='MS:'>" K " := <span class='param' name='MS:'>" V "</span></span>`n" 
-			
+			Ret .= "<span name='MS:'>" K " := <span class='param' name='MS:'>" V "</span></span>`n"
+
 	IF WS_BORDER && WS_DLGFRAME && (WS_CAPTION := 1)  ;	WS_CAPTION 0x00C00000
 		Ret .= "<span name='MS:'>WS_CAPTION := <span class='param' name='MS:'>0x00C00000 = (WS_BORDER | WS_DLGFRAME)</span></span>`n"
-		
+
 	IF (Style & 0x00040000) && (WS_THICKFRAME := 1, Style -= 0x00040000)  ;	WS_SIZEBOX := WS_THICKFRAME
-		Ret .= "<span name='MS:'>WS_SIZEBOX := WS_THICKFRAME := <span class='param' name='MS:'>0x00040000</span></span>`n" 
-		
+		Ret .= "<span name='MS:'>WS_SIZEBOX := WS_THICKFRAME := <span class='param' name='MS:'>0x00040000</span></span>`n"
+
 	IF (Style & 0x40000000) && (WS_CHILD := 1, Style -= 0x40000000)  ;	WS_CHILD := WS_CHILDWINDOW
-		Ret .= "<span name='MS:'>WS_CHILD := WS_CHILDWINDOW := <span class='param' name='MS:'>0x40000000</span></span>`n" 
-		
+		Ret .= "<span name='MS:'>WS_CHILD := WS_CHILDWINDOW := <span class='param' name='MS:'>0x40000000</span></span>`n"
+
 	IF (Style & 0x20000000) && (WS_MINIMIZE := 1, Style -= 0x20000000)  ;	WS_MINIMIZE := WS_ICONIC
-		Ret .= "<span name='MS:'>WS_MINIMIZE := WS_ICONIC := <span class='param' name='MS:'>0x20000000</span></span>`n" 
-		
+		Ret .= "<span name='MS:'>WS_MINIMIZE := WS_ICONIC := <span class='param' name='MS:'>0x20000000</span></span>`n"
+
 	IF (Style & 0x80000000) && !WS_CHILD && (WS_POPUP := 1, Style -= 0x80000000)  ;	WS_POPUP
-		Ret .= "<span name='MS:'>WS_POPUP := <span class='param' name='MS:'>0x80000000 && !(WS_CHILD)</span></span>`n"  
-		
+		Ret .= "<span name='MS:'>WS_POPUP := <span class='param' name='MS:'>0x80000000 && !(WS_CHILD)</span></span>`n"
+
 	IF (WS_POPUP && WS_BORDER && WS_SYSMENU) && (WS_POPUPWINDOW := 1)  ;	WS_POPUPWINDOW
-		Ret .= "<span name='MS:'>WS_POPUPWINDOW := <span class='param' name='MS:'>(WS_POPUP | WS_BORDER | WS_SYSMENU)</span></span>`n" 
-		
+		Ret .= "<span name='MS:'>WS_POPUPWINDOW := <span class='param' name='MS:'>(WS_POPUP | WS_BORDER | WS_SYSMENU)</span></span>`n"
+
 	IF !WS_POPUP && !WS_CHILD && WS_BORDER && WS_CAPTION && (WS_OVERLAPPED := 1)  ;	WS_OVERLAPPED := WS_TILED
-		Ret .= "<span name='MS:'>WS_OVERLAPPED := WS_TILED := <span class='param' name='MS:'>WS_BORDER && WS_CAPTION && !(WS_POPUP | WS_CHILD)</span></span>`n" 
-		
+		Ret .= "<span name='MS:'>WS_OVERLAPPED := WS_TILED := <span class='param' name='MS:'>WS_BORDER && WS_CAPTION && !(WS_POPUP | WS_CHILD)</span></span>`n"
+
 	IF WS_SYSMENU && (Style & 0x00020000) && (WS_MINIMIZEBOX := 1, Style -= 0x00020000)  ;	WS_MINIMIZEBOX
-		Ret .= "<span name='MS:'>WS_MINIMIZEBOX := <span class='param' name='MS:'>0x00020000 && WS_SYSMENU</span></span>`n" 
-		
+		Ret .= "<span name='MS:'>WS_MINIMIZEBOX := <span class='param' name='MS:'>0x00020000 && WS_SYSMENU</span></span>`n"
+
 	IF WS_SYSMENU && (Style & 0x00010000) && (WS_MAXIMIZEBOX := 1, Style -= 0x00010000)  ;	WS_MAXIMIZEBOX
-		Ret .= "<span name='MS:'>WS_MAXIMIZEBOX := <span class='param' name='MS:'>0x00010000 && WS_SYSMENU</span></span>`n" 
-	
+		Ret .= "<span name='MS:'>WS_MAXIMIZEBOX := <span class='param' name='MS:'>0x00010000 && WS_SYSMENU</span></span>`n"
+
 	If (WS_OVERLAPPED && WS_CAPTION && WS_SYSMENU && WS_THICKFRAME && WS_MINIMIZEBOX && WS_MAXIMIZEBOX)  ;	WS_OVERLAPPEDWINDOW := WS_TILEDWINDOW
 		Ret .= "<span name='MS:'>WS_OVERLAPPEDWINDOW := WS_TILEDWINDOW := "
 			. "<span class='param' name='MS:'>(WS_OVERLAPPED | WS_CAPTION | WS_SYSMENU | WS_THICKFRAME | WS_MINIMIZEBOX | WS_MAXIMIZEBOX)</span></span>`n"
- 
+
 	StyleBits := DllCall("GetClassLong", "Ptr", hWnd, "int", GCL_STYLE)	;  https://docs.microsoft.com/en-us/windows/desktop/api/winuser/nf-winuser-setclasslongw
-	For K, V In ClassStyles 
-		If (StyleBits & V) && (%K% := 1) 
-			RetClass .= "<span name='MS:'>" K " := <span class='param' name='MS:'>" V "</span></span>`n" 
+	For K, V In ClassStyles
+		If (StyleBits & V) && (%K% := 1)
+			RetClass .= "<span name='MS:'>" K " := <span class='param' name='MS:'>" V "</span></span>`n"
 
 	For K, V In ExStyles
-		If (ExStyle & V) && (%K% := 1, ExStyle -= V) 
+		If (ExStyle & V) && (%K% := 1, ExStyle -= V)
 			RetEx .= "<span name='MS:'>" K " := <span class='param' name='MS:'>" V "</span></span>`n"
-			
+
 	IF !CS_OWNDC && !CS_CLASSDC && (ExStyle & 0x02000000) && (1, ExStyle -= 0x02000000)  ;	WS_EX_COMPOSITED
-		RetEx .= "<span name='MS:'>WS_EX_COMPOSITED := <span class='param' name='MS:'>0x02000000 && !(CS_OWNDC | CS_CLASSDC)</span></span>`n" 
+		RetEx .= "<span name='MS:'>WS_EX_COMPOSITED := <span class='param' name='MS:'>0x02000000 && !(CS_OWNDC | CS_CLASSDC)</span></span>`n"
 
 	IF !WS_MAXIMIZEBOX && !WS_MINIMIZEBOX && (ExStyle & 0x00000400) && (1, ExStyle -= 0x00000400)  ;	WS_EX_CONTEXTHELP
-		RetEx .= "<span name='MS:'>WS_EX_CONTEXTHELP := <span class='param' name='MS:'>0x00000400 && !(WS_MAXIMIZEBOX | WS_MINIMIZEBOX)</span></span>`n" 
+		RetEx .= "<span name='MS:'>WS_EX_CONTEXTHELP := <span class='param' name='MS:'>0x00000400 && !(WS_MAXIMIZEBOX | WS_MINIMIZEBOX)</span></span>`n"
 	IF !CS_OWNDC && !CS_CLASSDC && (ExStyle & 0x00080000) && (1, ExStyle -= 0x00080000)  ;	WS_EX_LAYERED
-		RetEx .= "<span name='MS:'>WS_EX_LAYERED := <span class='param' name='MS:'>0x00080000 && !(CS_OWNDC | CS_CLASSDC)</span></span>`n" 
+		RetEx .= "<span name='MS:'>WS_EX_LAYERED := <span class='param' name='MS:'>0x00080000 && !(CS_OWNDC | CS_CLASSDC)</span></span>`n"
 
 	IF !WS_EX_RIGHT  ;	WS_EX_LEFT
-		RetEx .= "<span name='MS:'>WS_EX_LEFT := <span class='param' name='MS:'>!(WS_EX_RIGHT)</span></span>`n"  
+		RetEx .= "<span name='MS:'>WS_EX_LEFT := <span class='param' name='MS:'>!(WS_EX_RIGHT)</span></span>`n"
 
 	IF !WS_EX_LEFTSCROLLBAR  ;	WS_EX_RIGHTSCROLLBAR
-		RetEx .= "<span name='MS:'>WS_EX_RIGHTSCROLLBAR := <span class='param' name='MS:'>!(WS_EX_LEFTSCROLLBAR)</span></span>`n" 
+		RetEx .= "<span name='MS:'>WS_EX_RIGHTSCROLLBAR := <span class='param' name='MS:'>!(WS_EX_LEFTSCROLLBAR)</span></span>`n"
 
 	IF !WS_EX_RTLREADING  ;	WS_EX_LTRREADING
-		RetEx .= "<span name='MS:'>WS_EX_LTRREADING := <span class='param' name='MS:'>!(WS_EX_RTLREADING)</span></span>`n" 
-		
+		RetEx .= "<span name='MS:'>WS_EX_LTRREADING := <span class='param' name='MS:'>!(WS_EX_RTLREADING)</span></span>`n"
+
 	IF WS_EX_WINDOWEDGE && WS_EX_CLIENTEDGE  ;	WS_EX_OVERLAPPEDWINDOW
-		RetEx .= "<span name='MS:'>WS_EX_OVERLAPPEDWINDOW := <span class='param' name='MS:'>(WS_EX_WINDOWEDGE | WS_EX_CLIENTEDGE)</span></span>`n" 
-		
+		RetEx .= "<span name='MS:'>WS_EX_OVERLAPPEDWINDOW := <span class='param' name='MS:'>(WS_EX_WINDOWEDGE | WS_EX_CLIENTEDGE)</span></span>`n"
+
 	IF WS_EX_WINDOWEDGE && WS_EX_TOOLWINDOW && WS_EX_TOPMOST  ;	WS_EX_PALETTEWINDOW
-		RetEx .= "<span name='MS:'>WS_EX_PALETTEWINDOW := <span class='param' name='MS:'>(WS_EX_WINDOWEDGE | WS_EX_TOOLWINDOW | WS_EX_TOPMOST)</span></span>`n" 
+		RetEx .= "<span name='MS:'>WS_EX_PALETTEWINDOW := <span class='param' name='MS:'>(WS_EX_WINDOWEDGE | WS_EX_TOOLWINDOW | WS_EX_TOPMOST)</span></span>`n"
 
 	If (!IsChild && oOther.WinClass = "tooltips_class32")
 		Ret .= GetStyle_tooltips_class32(Style, Style)
-		
+
 	IF Style
 		Ret .= "<span style='color: #" ColorDelimiter ";' name='MS:'>" Format("0x{1:08X}", Style) "</span>`n"
 	If Ret !=
 		Res .= _T1 " id='__Styles_Win'> ( Styles ) </span>" _T2 _PRE1 Ret _PRE2
-		
+
 	IF ExStyle
 		RetEx .= "<span style='color: #" ColorDelimiter ";' name='MS:'>" Format("0x{1:08X}", ExStyle) "</span>`n"
 	If RetEx !=
 		Res .= _T1 " id='__ExStyles_Win'> ( ExStyles ) </span>" _T2 _PRE1 RetEx _PRE2
-		
+
 	If RetClass !=
 		Res .= _T1 " id='__ClassStyles_Win'> ( Class Styles: <span name='MS:' style='color: #" ColorFont ";'>" Format("0x{1:08X}", StyleBits) "</span> ) </span>" _T2 _PRE1 RetClass _PRE2
 
@@ -3270,31 +3266,34 @@ ViewStylesControl(elem) {
 	IniWrite(c_ShowStyles, "c_ShowStyles")
 	If c_ShowStyles
 		Styles := "<a></a>" GetControlStyles(oOther.ControlNN_Sub, oDoc.getElementById("c_Style").innerText, oDoc.getElementById("c_ExStyle").innerText, oOther.MouseControlID)
-		. GetStyles(oDoc.getElementById("c_Style").innerText, oDoc.getElementById("c_ExStyle").innerText, oOther.MouseControlID, 1)
-	oDoc.getElementById("ControlStyles").innerHTML := Styles 
+	oDoc.getElementById("ControlStyles").innerHTML := Styles
 	HTML_Control := oBody.innerHTML
 }
 
 GetControlStyles(Class, Style, ExStyle, hWnd) {
-	If IsFunc("GetStyle_" Class)
-		Return GetStyle_%Class%(Style, ExStyle, hWnd)
+	If !hWnd
+		Return
+	If IsFunc("GetStyle_" Class) && (b := 1)
+		Ret .= GetStyle_%Class%(Style, ExStyle, hWnd)
+	Ret .= GetStyles(Style, ExStyle, hWnd, 1, b)
+	Return Ret
 /*
 	Added:
 	Button, Edit, Static, SysListView32, SysTabControl32, SysDateTimePick32, SysMonthCal32, ComboBox, ListBox
 	, msctls_trackbar32, msctls_statusbar32, msctls_progress32, msctls_updown32, SysLink, SysHeader32, ToolbarWindow32, SysTreeView32, ReBarWindow32
-*/ 
+*/
 }
 
 GetStyle_Static(Style, ExStyle, hWnd)  {
 	;	https://www.autohotkey.com/boards/viewtopic.php?p=25869#p25869
 	;	https://docs.microsoft.com/en-us/windows/desktop/controls/static-control-styles
-	Static oStyles, oEx, oExStyles 
+	Static oStyles, oEx, oExStyles
 	If !oStyles
 		oStyles := {"SS_ELLIPSISMASK":"0xC000"
 		,"SS_REALSIZECONTROL":"0x0040","SS_NOPREFIX":"0x0080","SS_NOTIFY":"0x0100","SS_CENTERIMAGE":"0x0200","SS_RIGHTJUST":"0x0400"
 		,"SS_REALSIZEIMAGE":"0x0800","SS_SUNKEN":"0x1000","SS_EDITCONTROL":"0x2000","SS_ENDELLIPSIS":"0x4000","SS_PATHELLIPSIS":"0x8000"
 		,"SS_WORDELLIPSIS":"0xC000"}
-		
+
 		, oEx := {"SS_CENTER":"0x0001","SS_RIGHT":"0x0002","SS_ICON":"0x0003","SS_BLACKRECT":"0x0004"
 		,"SS_GRAYRECT":"0x0005","SS_WHITERECT":"0x0006","SS_BLACKFRAME":"0x0007","SS_GRAYFRAME":"0x0008","SS_WHITEFRAME":"0x0009"
 		,"SS_USERITEM":"0x000A","SS_SIMPLE":"0x000B","SS_LEFTNOWORDWRAP":"0x000C","SS_OWNERDRAW":"0x000D","SS_BITMAP":"0x000E"
@@ -3302,24 +3301,24 @@ GetStyle_Static(Style, ExStyle, hWnd)  {
 
 	Style := sStyle := Style & 0xffff
 	For K, V In oEx
-		If ((Style & 0x1F) = V) && (%K% := 1, Style -= V)  
+		If ((Style & 0x1F) = V) && (%K% := 1, Style -= V)
 		{
 			Ret .= "<span name='MS:'>" K " := <span class='param' name='MS:'>" V "</span></span>`n"
 			Break
-		} 
+		}
 	For K, V In oStyles
-		If Style && ((Style & V) = V) && (%K% := 1, Style -= V)  
-			Ret .= "<span name='MS:'>" K " := <span class='param' name='MS:'>" V "</span></span>`n"  
+		If Style && ((Style & V) = V) && (%K% := 1, Style -= V)
+			Ret .= "<span name='MS:'>" K " := <span class='param' name='MS:'>" V "</span></span>`n"
 	IF !SS_CENTER && !SS_RIGHT  ;	SS_LEFT
 		Ret .= "<span name='MS:'>SS_LEFT := <span class='param' name='MS:'>!(SS_CENTER | SS_RIGHT)</span></span>`n"
 	IF Style
-		Ret .= GetStyle_CommonСontrol(Style, Style) 
+		Ret .= GetStyle_CommonСontrol(Style, Style)
 	IF Style
 		Ret .= "<span style='color: #" ColorDelimiter ";' name='MS:'>" Format("0x{1:04X}", Style)  "</span>`n"
-	If Ret != 
+	If Ret !=
 		Res .= _T1 " id='__Styles_Control'> ( Styles - Static: <span name='MS:' style='color: #" ColorFont ";'>" Format("0x{:04X}", sStyle) "</span> ) </span>" _T2 _PRE1 Ret _PRE2
 	Return Res
-} 
+}
 
 GetStyle_Button(Style, ExStyle, hWnd)  {
 	;	https://www.autohotkey.com/boards/viewtopic.php?p=25841#p25841
@@ -3329,7 +3328,7 @@ GetStyle_Button(Style, ExStyle, hWnd)  {
 		oStyles := {"BS_ICON":"0x0040","BS_BITMAP":"0x0080","BS_LEFT":"0x0100","BS_RIGHT":"0x0200","BS_CENTER":"0x0300"
 		,"BS_TOP":"0x0400","BS_BOTTOM":"0x0800","BS_VCENTER":"0x0C00","BS_PUSHLIKE":"0x1000","BS_MULTILINE":"0x2000"
 		,"BS_NOTIFY":"0x4000","BS_FLAT":"0x8000"}
-		
+
 		, oEx := {"BS_DEFPUSHBUTTON":"0x0001","BS_CHECKBOX":"0x0002","BS_AUTOCHECKBOX":"0x0003"
 		,"BS_RADIOBUTTON":"0x0004","BS_3STATE":"0x0005","BS_AUTO3STATE":"0x0006","BS_GROUPBOX":"0x0007","BS_USERBUTTON":"0x0008"
 		,"BS_AUTORADIOBUTTON":"0x0009","BS_PUSHBOX":"0x000A","BS_OWNERDRAW":"0x000B","BS_COMMANDLINK":"0x000E"
@@ -3344,12 +3343,12 @@ GetStyle_Button(Style, ExStyle, hWnd)  {
 			Break
 		}
 	If ((Style & 0x0020) = 0x0020)  ;	BS_LEFTTEXT  ;	BS_RIGHTBUTTON
-		Ret .= "<span name='MS:'>BS_LEFTTEXT := BS_RIGHTBUTTON := <span class='param' name='MS:'>0x0020</span></span>`n" 
-		
+		Ret .= "<span name='MS:'>BS_LEFTTEXT := BS_RIGHTBUTTON := <span class='param' name='MS:'>0x0020</span></span>`n"
+
 	For K, V In oStyles
 		If ((Style & V) = V) && (%K% := 1, Style -= V)
-			Ret .= "<span name='MS:'>" K " := <span class='param' name='MS:'>" V "</span></span>`n" 
-			
+			Ret .= "<span name='MS:'>" K " := <span class='param' name='MS:'>" V "</span></span>`n"
+
 	IF !BS_ICON && !BS_BITMAP && !BS_AUTOCHECKBOX && !BS_AUTORADIOBUTTON && !BS_CHECKBOX && !BS_RADIOBUTTON  ;	BS_TEXT
 		Ret .= "<span name='MS:'>BS_TEXT := <span class='param' name='MS:'>!(BS_ICON | BS_BITMAP | BS_AUTOCHECKBOX | BS_AUTORADIOBUTTON | BS_CHECKBOX | BS_RADIOBUTTON)</span></span>`n"
 
@@ -3357,7 +3356,7 @@ GetStyle_Button(Style, ExStyle, hWnd)  {
 		Ret .= "<span name='MS:'>BS_PUSHBUTTON := <span class='param' name='MS:'>!(BS_DEFPUSHBUTTON | BS_CHECKBOX | BS_AUTOCHECKBOX | BS_RADIOBUTTON | BS_GROUPBOX | BS_AUTORADIOBUTTON)</span></span>`n"
 
 	IF Style
-		Ret .= GetStyle_CommonСontrol(Style, Style) 
+		Ret .= GetStyle_CommonСontrol(Style, Style)
 	IF Style
 		Ret .= "<span style='color: #" ColorDelimiter ";' name='MS:'>" Format("0x{1:04X}", Style)  "</span>`n"
 	If Ret !=
@@ -3379,12 +3378,12 @@ GetStyle_Edit(Style, ExStyle, hWnd)  {
 	For K, V In oStyles
 		If ((Style & V) = V) && (%K% := 1, Style -= V)
 			Ret .= "<span name='MS:'>" K " := <span class='param' name='MS:'>" V "</span></span>`n"
-		
+
 	IF !ES_CENTER && !ES_RIGHT  ;	ES_LEFT
 		Ret .= "<span name='MS:'>ES_LEFT := <span class='param' name='MS:'>!(ES_CENTER | ES_RIGHT)</span></span>`n"
 
 	IF Style
-		Ret .= GetStyle_CommonСontrol(Style, Style) 
+		Ret .= GetStyle_CommonСontrol(Style, Style)
 	IF Style
 		Ret .= "<span style='color: #" ColorDelimiter ";' name='MS:'>" Format("0x{1:04X}", Style)  "</span>`n"
 	If Ret !=
@@ -3401,8 +3400,8 @@ GetStyle_SysTabControl(Style, ExStyle, hWnd)  {
 		oStyles := {"TCS_SCROLLOPPOSITE":"0x0001","TCS_MULTISELECT":"0x0004","TCS_FLATBUTTONS":"0x0008"
 		,"TCS_FORCELABELLEFT":"0x0020","TCS_HOTTRACK":"0x0040","TCS_BUTTONS":"0x0100","TCS_MULTILINE":"0x0200"
 		,"TCS_FORCEICONLEFT":"0x0010","TCS_FIXEDWIDTH":"0x0400","TCS_RAGGEDRIGHT":"0x0800","TCS_FOCUSONBUTTONDOWN":"0x1000"
-		,"TCS_OWNERDRAWFIXED":"0x2000","TCS_TOOLTIPS":"0x4000","TCS_FOCUSNEVER":"0x8000"} 
-	
+		,"TCS_OWNERDRAWFIXED":"0x2000","TCS_TOOLTIPS":"0x4000","TCS_FOCUSNEVER":"0x8000"}
+
 	SendMessage, TCM_GETEXTENDEDSTYLE, 0, 0,, ahk_id %hWnd%
 	ExStyle := ErrorLevel
 	Style := sStyle := Style & 0xffff
@@ -3426,12 +3425,12 @@ GetStyle_SysTabControl(Style, ExStyle, hWnd)  {
 			Ret .= "<span name='MS:'>TCS_BOTTOM := <span class='param' name='MS:'>0x0002 && !(TCS_VERTICAL)</span></span>`n"
 	}
 	IF Style
-		Ret .= GetStyle_CommonСontrol(Style, Style) 
+		Ret .= GetStyle_CommonСontrol(Style, Style)
 	IF Style
 		Ret .= "<span style='color: #" ColorDelimiter ";' name='MS:'>" Format("0x{1:04X}", Style)  "</span>`n"
 	If Ret !=
 		Res .= _T1 " id='__Styles_Control'> ( Styles - SysTabControl32: <span name='MS:' style='color: #" ColorFont ";'>" Format("0x{:04X}", sStyle) "</span> ) </span>" _T2 _PRE1 Ret _PRE2
-		
+
 	If ((ExStyle & 0x00000001) = 0x00000001) && (1, ExStyle -= 0x00000001)  ;	TCS_EX_FLATSEPARATORS
 		RetEx .= "<span name='MS:'>TCS_EX_FLATSEPARATORS := <span class='param' name='MS:'>0x00000001</span></span>`n"
 	If ((ExStyle & 0x00000002) = 0x00000002) && (1, ExStyle -= 0x00000002)  ;	TCS_EX_REGISTERDROP
@@ -3453,13 +3452,13 @@ GetStyle_ComboBox(Style, ExStyle, hWnd)  {
 		,"CBS_OWNERDRAWVARIABLE":"0x0020","CBS_AUTOHSCROLL":"0x0040","CBS_OEMCONVERT":"0x0080","CBS_SORT":"0x0100"
 		,"CBS_HASSTRINGS":"0x0200","CBS_NOINTEGRALHEIGHT":"0x0400","CBS_DISABLENOSCROLL":"0x0800"
 		,"CBS_UPPERCASE":"0x2000","CBS_LOWERCASE":"0x4000"}
-	
+
 	Style := sStyle := Style & 0xffff
 	For K, V In oStyles
 		If ((Style & V) = V) && (1, Style -= V)
 			Ret .= "<span name='MS:'>" K " := <span class='param' name='MS:'>" V "</span></span>`n"
 	IF Style
-		Ret .= GetStyle_CommonСontrol(Style, Style) 
+		Ret .= GetStyle_CommonСontrol(Style, Style)
 	IF Style
 		Ret .= "<span style='color: #" ColorDelimiter ";' name='MS:'>" Format("0x{1:04X}", Style)  "</span>`n"
 	If Ret !=
@@ -3478,24 +3477,24 @@ GetStyle_ListBox(Style, ExStyle, hWnd)  {
 		,"LBS_WANTKEYBOARDINPUT":"0x0400","LBS_EXTENDEDSEL":"0x0800","LBS_DISABLENOSCROLL":"0x1000","LBS_NODATA":"0x2000"
 		,"LBS_NOSEL":"0x4000","LBS_COMBOBOX":"0x8000"}
 		, WS_VSCROLL := 0x200000, WS_BORDER := 0x800000
-		
+
 	wStyle := Style, Style := sStyle := Style & 0xffff
-	
+
 	For K, V In oStyles
 		If ((Style & V) = V) && (%K% := 1, Style -= V)
 			Ret .= "<span name='MS:'>" K " := <span class='param' name='MS:'>" V "</span></span>`n"
-		
+
 	IF LBS_NOTIFY && LBS_SORT && (wStyle & WS_VSCROLL) && (wStyle & WS_BORDER) && (1, Style -= 0x0003)  ;	LBS_STANDARD
 		Ret .= "<span name='MS:'>LBS_STANDARD := <span class='param' name='MS:'>0xA00003 && (LBS_NOTIFY | LBS_SORT | WS_VSCROLL | WS_BORDER)</span></span>`n"
 
 	IF Style
-		Ret .= GetStyle_CommonСontrol(Style, Style) 
+		Ret .= GetStyle_CommonСontrol(Style, Style)
 	IF Style
 		Ret .= "<span style='color: #" ColorDelimiter ";' name='MS:'>" Format("0x{1:04X}", Style)  "</span>`n"
 	If Ret !=
 		Res .= _T1 " id='__Styles_Control'> ( Styles - ListBox: <span name='MS:' style='color: #" ColorFont ";'>" Format("0x{:04X}", sStyle) "</span> ) </span>" _T2 _PRE1 Ret _PRE2
 	Return Res
-} 
+}
 
 GetStyle_msctls_updown(Style, ExStyle, hWnd)  {
 	;	https://www.autohotkey.com/boards/viewtopic.php?p=25878#p25878
@@ -3510,7 +3509,7 @@ GetStyle_msctls_updown(Style, ExStyle, hWnd)  {
 		If ((Style & V) = V) && (1, Style -= V)
 			Ret .= "<span name='MS:'>" K " := <span class='param' name='MS:'>" V "</span></span>`n"
 	IF Style
-		Ret .= GetStyle_CommonСontrol(Style, Style) 
+		Ret .= GetStyle_CommonСontrol(Style, Style)
 	IF Style
 		Ret .= "<span style='color: #" ColorDelimiter ";' name='MS:'>" Format("0x{1:04X}", Style)  "</span>`n"
 	If Ret !=
@@ -3529,18 +3528,18 @@ GetStyle_SysDateTimePick(Style, ExStyle, hWnd)  {
 	Style := sStyle := Style & 0xffff
 	For K, V In oStyles
 		If ((Style & V) = V) && (%K% := 1, Style -= V)
-			Ret .= "<span name='MS:'>" K " := <span class='param' name='MS:'>" V "</span></span>`n" 
+			Ret .= "<span name='MS:'>" K " := <span class='param' name='MS:'>" V "</span></span>`n"
 	IF !DTS_LONGDATEFORMAT  ;	DTS_SHORTDATEFORMAT
 		Ret .= "<span name='MS:'>DTS_SHORTDATEFORMAT := <span class='param' name='MS:'>!(DTS_LONGDATEFORMAT)</span></span>`n"
 
 	IF Style
-		Ret .= GetStyle_CommonСontrol(Style, Style) 
+		Ret .= GetStyle_CommonСontrol(Style, Style)
 	IF Style
 		Ret .= "<span style='color: #" ColorDelimiter ";' name='MS:'>" Format("0x{1:04X}", Style)  "</span>`n"
 	If Ret !=
 		Res .= _T1 " id='__Styles_Control'> ( Styles - SysDateTimePick32: <span name='MS:' style='color: #" ColorFont ";'>" Format("0x{:04X}", sStyle) "</span> ) </span>" _T2 _PRE1 Ret _PRE2
 	Return Res
-} 
+}
 
 GetStyle_SysMonthCal(Style, ExStyle, hWnd)  {
 	;	https://www.autohotkey.com/boards/viewtopic.php?p=25861#p25861
@@ -3553,15 +3552,15 @@ GetStyle_SysMonthCal(Style, ExStyle, hWnd)  {
 	Style := sStyle := Style & 0xffff
 	For K, V In oStyles
 		If ((Style & V) = V) && (1, Style -= V)
-			Ret .= "<span name='MS:'>" K " := <span class='param' name='MS:'>" V "</span></span>`n" 
+			Ret .= "<span name='MS:'>" K " := <span class='param' name='MS:'>" V "</span></span>`n"
 	IF Style
-		Ret .= GetStyle_CommonСontrol(Style, Style) 
+		Ret .= GetStyle_CommonСontrol(Style, Style)
 	IF Style
 		Ret .= "<span style='color: #" ColorDelimiter ";' name='MS:'>" Format("0x{1:04X}", Style)  "</span>`n"
 	If Ret !=
 		Res .= _T1 " id='__Styles_Control'> ( Styles - SysMonthCal32: <span name='MS:' style='color: #" ColorFont ";'>" Format("0x{:04X}", sStyle) "</span> ) </span>" _T2 _PRE1 Ret _PRE2
 	Return Res
-} 
+}
 
 GetStyle_msctls_trackbar(Style, ExStyle, hWnd)  {
 	;	https://www.autohotkey.com/boards/viewtopic.php?p=25875#p25875
@@ -3576,10 +3575,10 @@ GetStyle_msctls_trackbar(Style, ExStyle, hWnd)  {
 	Style := sStyle := Style & 0xffff
 	For K, V In oStyles
 		If ((Style & V) = V) && (%K% := 1, Style -= V)
-			Ret .= "<span name='MS:'>" K " := <span class='param' name='MS:'>" V "</span></span>`n" 
-			
-	IF !TBS_VERT 
-	{ 
+			Ret .= "<span name='MS:'>" K " := <span class='param' name='MS:'>" V "</span></span>`n"
+
+	IF !TBS_VERT
+	{
 		Ret .= "<span name='MS:'>TBS_HORZ := <span class='param' name='MS:'>!(TBS_VERT)</span></span>`n"  ;	TBS_HORZ
 		IF ((Style & 0x0004) = 0x0004) && (1, Style -= 0x0004)  ;	TBS_TOP
 			Ret .= "<span name='MS:'>TBS_TOP := <span class='param' name='MS:'>0x0004 && TBS_HORZ</span></span>`n"
@@ -3590,18 +3589,18 @@ GetStyle_msctls_trackbar(Style, ExStyle, hWnd)  {
 	{
 		IF ((Style & 0x0004) = 0x0004) && (TBS_LEFT := 1, Style -= 0x0004)  ;	TBS_LEFT
 			Ret .= "<span name='MS:'>TBS_LEFT := <span class='param' name='MS:'>0x0004 && TBS_VERT</span></span>`n"
-				
+
 		IF !TBS_LEFT  ;	TBS_RIGHT
 			Ret .= "<span name='MS:'>TBS_RIGHT := <span class='param' name='MS:'>!(TBS_LEFT) && TBS_VERT</span></span>`n"
 	}
 	IF Style
-		Ret .= GetStyle_CommonСontrol(Style, Style) 
+		Ret .= GetStyle_CommonСontrol(Style, Style)
 	IF Style
 		Ret .= "<span style='color: #" ColorDelimiter ";' name='MS:'>" Format("0x{1:04X}", Style)  "</span>`n"
 	If Ret !=
 		Res .= _T1 " id='__Styles_Control'> ( Styles - msctls_trackbar32: <span name='MS:' style='color: #" ColorFont ";'>" Format("0x{:04X}", sStyle) "</span> ) </span>" _T2 _PRE1 Ret _PRE2
 	Return Res
-} 
+}
 
 GetStyle_msctls_statusbar(Style, ExStyle, hWnd)  {
 	;	https://www.autohotkey.com/boards/viewtopic.php?p=25870#p25870
@@ -3613,15 +3612,15 @@ GetStyle_msctls_statusbar(Style, ExStyle, hWnd)  {
 	Style := sStyle := Style & 0xffff
 	For K, V In oStyles
 		If ((Style & V) = V) && (1, Style -= V)
-			Ret .= "<span name='MS:'>" K " := <span class='param' name='MS:'>" V "</span></span>`n" 
+			Ret .= "<span name='MS:'>" K " := <span class='param' name='MS:'>" V "</span></span>`n"
 	IF Style
-		Ret .= GetStyle_CommonСontrol(Style, Style) 
+		Ret .= GetStyle_CommonСontrol(Style, Style)
 	IF Style
 		Ret .= "<span style='color: #" ColorDelimiter ";' name='MS:'>" Format("0x{1:04X}", Style)  "</span>`n"
 	If Ret !=
 		Res .= _T1 " id='__Styles_Control'> ( Styles - msctls_statusbar32: <span name='MS:' style='color: #" ColorFont ";'>" Format("0x{:04X}", sStyle) "</span> ) </span>" _T2 _PRE1 Ret _PRE2
 	Return Res
-} 
+}
 
 GetStyle_msctls_progress(Style, ExStyle, hWnd)  {
 	;	https://www.autohotkey.com/boards/viewtopic.php?p=25864#p25864
@@ -3633,15 +3632,15 @@ GetStyle_msctls_progress(Style, ExStyle, hWnd)  {
 	Style := sStyle := Style & 0xffff
 	For K, V In oStyles
 		If ((Style & V) = V) && (1, Style -= V)
-			Ret .= "<span name='MS:'>" K " := <span class='param' name='MS:'>" V "</span></span>`n" 
+			Ret .= "<span name='MS:'>" K " := <span class='param' name='MS:'>" V "</span></span>`n"
 	IF Style
-		Ret .= GetStyle_CommonСontrol(Style, Style) 
+		Ret .= GetStyle_CommonСontrol(Style, Style)
 	IF Style
 		Ret .= "<span style='color: #" ColorDelimiter ";' name='MS:'>" Format("0x{1:04X}", Style)  "</span>`n"
 	If Ret !=
 		Res .= _T1 " id='__Styles_Control'> ( Styles - msctls_progress32: <span name='MS:' style='color: #" ColorFont ";'>" Format("0x{:04X}", sStyle) "</span> ) </span>" _T2 _PRE1 Ret _PRE2
 	Return Res
-} 
+}
 
 GetStyle_SysListView(Style, ExStyle, hWnd)  {
 	;	https://www.autohotkey.com/boards/viewtopic.php?p=25857#p25857
@@ -3653,7 +3652,7 @@ GetStyle_SysListView(Style, ExStyle, hWnd)  {
 		,"LVS_NOLABELWRAP":"0x0080","LVS_NOSCROLL":"0x2000"
 		,"LVS_OWNERDRAWFIXED":"0x0400","LVS_SHAREIMAGELISTS":"0x0040","LVS_SHOWSELALWAYS":"0x0008","LVS_SINGLESEL":"0x0004","LVS_OWNERDATA":"0x1000"
 		,"LVS_SORTASCENDING":"0x0010","LVS_SORTDESCENDING":"0x0020"}
-		
+
 		, oExStyles :={"LVS_EX_AUTOAUTOARRANGE":"0x01000000","LVS_EX_AUTOCHECKSELECT":"0x08000000","LVS_EX_AUTOSIZECOLUMNS":"0x10000000","LVS_EX_BORDERSELECT":"0x00008000"
 		,"LVS_EX_CHECKBOXES":"0x00000004","LVS_EX_COLUMNOVERFLOW":"0x80000000","LVS_EX_COLUMNSNAPPOINTS":"0x40000000","LVS_EX_DOUBLEBUFFER":"0x00010000","LVS_EX_FLATSB":"0x00000100"
 		,"LVS_EX_FULLROWSELECT":"0x00000020","LVS_EX_GRIDLINES":"0x00000001","LVS_EX_HEADERDRAGDROP":"0x00000010","LVS_EX_HEADERINALLVIEWS":"0x02000000","LVS_EX_HIDELABELS":"0x00020000"
@@ -3661,27 +3660,27 @@ GetStyle_SysListView(Style, ExStyle, hWnd)  {
 		,"LVS_EX_REGIONAL":"0x00000200","LVS_EX_SIMPLESELECT":"0x00100000","LVS_EX_SINGLEROW":"0x00040000","LVS_EX_SNAPTOGRID":"0x00080000","LVS_EX_SUBITEMIMAGES":"0x00000002"
 		,"LVS_EX_TRACKSELECT":"0x00000008","LVS_EX_TRANSPARENTBKGND":"0x00400000","LVS_EX_TRANSPARENTSHADOWTEXT":"0x00800000","LVS_EX_TWOCLICKACTIVATE":"0x00000080"
 		,"LVS_EX_UNDERLINECOLD":"0x00001000","LVS_EX_UNDERLINEHOT":"0x00000800"}
-		
+
 		,oEx := {"LVS_TYPEMASK":"0x0003","LVS_ICON":"0x0000","LVS_REPORT":"0x0001","LVS_SMALLICON":"0x0002","LVS_LIST":"0x0003"
 		,"LVS_ALIGNMASK":"0x0C00","LVS_ALIGNTOP":"0x0000","LVS_ALIGNLEFT":"0x0800"
 		,"LVS_TYPESTYLEMASK":"0xFC00","LVS_NOSORTHEADER":"0x8000","LVS_NOCOLUMNHEADER":"0x4000"}
-	
+
 	SendMessage, LVM_GETEXTENDEDLISTVIEWSTYLE, 0, 0,, ahk_id %hWnd%
 	ExStyle := sExStyle := ErrorLevel
 	Style := sStyle := Style & 0xffff
-	
+
 	For K, V In oStyles
 		If ((sStyle & V) = V) && (%K% := 1, Style -= V)
 			Ret .= "<span name='MS:'>" K " := <span class='param' name='MS:'>" V "</span></span>`n"
-	
+
 	IF ((sStyle & oEx.LVS_TYPEMASK) = oEx.LVS_REPORT) && (LVS_REPORT := 1, Style -= oEx.LVS_REPORT)      ;	LVS_REPORT
 		Ret .= "<span name='MS:'>LVS_REPORT := <span class='param' name='MS:'>LVS_TYPEMASK = 0x0001</span></span>`n"
 	IF ((sStyle & oEx.LVS_TYPEMASK) = oEx.LVS_SMALLICON) && (LVS_SMALLICON := 1, Style -= oEx.LVS_SMALLICON)      ;	LVS_SMALLICON
-		Ret .= "<span name='MS:'>LVS_SMALLICON := <span class='param' name='MS:'>LVS_TYPEMASK = 0x0002</span></span>`n" 
+		Ret .= "<span name='MS:'>LVS_SMALLICON := <span class='param' name='MS:'>LVS_TYPEMASK = 0x0002</span></span>`n"
 	IF ((sStyle & oEx.LVS_TYPEMASK) = oEx.LVS_LIST) && (LVS_LIST := 1, Style -= oEx.LVS_LIST)      ;	LVS_LIST
-		Ret .= "<span name='MS:'>LVS_LIST := <span class='param' name='MS:'>LVS_TYPEMASK = 0x0003</span></span>`n" 
+		Ret .= "<span name='MS:'>LVS_LIST := <span class='param' name='MS:'>LVS_TYPEMASK = 0x0003</span></span>`n"
 	IF ((sStyle & oEx.LVS_TYPEMASK) = oEx.LVS_ICON) && !LVS_REPORT && !LVS_SMALLICON && !LVS_LIST && (LVS_ICON := 1)      ;	LVS_ICON
-		Ret .= "<span name='MS:'>LVS_ICON := <span class='param' name='MS:'>LVS_TYPEMASK = 0x0000 && !(LVS_REPORT | LVS_SMALLICON | LVS_LIST)</span></span>`n" 
+		Ret .= "<span name='MS:'>LVS_ICON := <span class='param' name='MS:'>LVS_TYPEMASK = 0x0000 && !(LVS_REPORT | LVS_SMALLICON | LVS_LIST)</span></span>`n"
 	IF ((sStyle & oEx.LVS_ALIGNMASK) = oEx.LVS_ALIGNLEFT) && (LVS_ALIGNLEFT := 1, Style -= oEx.LVS_ALIGNLEFT)      ;	LVS_ALIGNLEFT
 		Ret .= "<span name='MS:'>LVS_ALIGNLEFT := <span class='param' name='MS:'>LVS_ALIGNMASK = 0x0800</span></span>`n"
 	IF ((sStyle & oEx.LVS_ALIGNMASK) = oEx.LVS_ALIGNTOP) && (LVS_SMALLICON || LVS_ICON) && (LVS_ALIGNTOP := 1, Style -= oEx.LVS_ALIGNTOP)      ;	LVS_ALIGNTOP
@@ -3692,7 +3691,7 @@ GetStyle_SysListView(Style, ExStyle, hWnd)  {
 		Ret .= "<span name='MS:'>LVS_NOCOLUMNHEADER := <span class='param' name='MS:'>0x4000</span></span>`n"
 
 	IF Style
-		Ret .= GetStyle_CommonСontrol(Style, Style) 
+		Ret .= GetStyle_CommonСontrol(Style, Style)
 	IF Style
 		Ret .= "<span style='color: #" ColorDelimiter ";' name='MS:'>" Format("0x{1:04X}", Style)  "</span>`n"
 	If Ret !=
@@ -3701,7 +3700,7 @@ GetStyle_SysListView(Style, ExStyle, hWnd)  {
 	For K, V In oExStyles
 		If ((ExStyle & V) = V) && (%K% := 1, ExStyle -= V)
 			RetEx .= "<span name='MS:'>" K " := <span class='param' name='MS:'>" V "</span></span>`n"
-			
+
 	IF ExStyle
 		RetEx .= "<span style='color: #" ColorDelimiter ";' name='MS:'>" Format("0x{1:08X}", ExStyle)  "</span>`n"
 	If RetEx !=
@@ -3718,21 +3717,21 @@ GetStyle_SysTreeView(Style, ExStyle, hWnd)  {
 		oStyles := {"TVS_CHECKBOXES":"0x0100","TVS_DISABLEDRAGDROP":"0x0010","TVS_EDITLABELS":"0x0008","TVS_FULLROWSELECT":"0x1000","TVS_HASBUTTONS":"0x0001"
 		,"TVS_HASLINES":"0x0002","TVS_INFOTIP":"0x0800","TVS_LINESATROOT":"0x0004","TVS_NOHSCROLL":"0x8000","TVS_NONEVENHEIGHT":"0x4000","TVS_NOSCROLL":"0x2000"
 		,"TVS_NOTOOLTIPS":"0x0080","TVS_RTLREADING":"0x0040","TVS_SHOWSELALWAYS":"0x0020","TVS_SINGLEEXPAND":"0x0400","TVS_TRACKSELECT":"0x0200"}
-		
+
 		, oExStyles := {"TVS_EX_AUTOHSCROLL":"0x0020","TVS_EX_DIMMEDCHECKBOXES":"0x0200","TVS_EX_DOUBLEBUFFER":"0x0004","TVS_EX_DRAWIMAGEASYNC":"0x0400"
 		,"TVS_EX_EXCLUSIONCHECKBOXES":"0x0100","TVS_EX_FADEINOUTEXPANDOS":"0x0040","TVS_EX_MULTISELECT":"0x0002","TVS_EX_NOINDENTSTATE":"0x0008"
 		,"TVS_EX_NOSINGLECOLLAPSE":"0x0001","TVS_EX_PARTIALCHECKBOXES":"0x0080","TVS_EX_RICHTOOLTIP":"0x0010"}
-	
+
 	SendMessage, TVM_GETEXTENDEDSTYLE, 0, 0,, ahk_id %hWnd%
 	ExStyle := sExStyle := ErrorLevel
 	Style := sStyle := Style & 0xffff
-	
+
 	For K, V In oStyles
 		If ((sStyle & V) = V) && (1, Style -= V)
 			Ret .= "<span name='MS:'>" K " := <span class='param' name='MS:'>" V "</span></span>`n"
 
 	IF Style
-		Ret .= GetStyle_CommonСontrol(Style, Style) 
+		Ret .= GetStyle_CommonСontrol(Style, Style)
 	IF Style
 		Ret .= "<span style='color: #" ColorDelimiter ";' name='MS:'>" Format("0x{1:04X}", Style)  "</span>`n"
 	If Ret !=
@@ -3741,7 +3740,7 @@ GetStyle_SysTreeView(Style, ExStyle, hWnd)  {
 	For K, V In oExStyles
 		If ((ExStyle & V) = V) && (1, ExStyle -= V)
 			RetEx .= "<span name='MS:'>" K " := <span class='param' name='MS:'>" V "</span></span>`n"
-			
+
 	IF ExStyle
 		RetEx .= "<span style='color: #" ColorDelimiter ";' name='MS:'>" Format("0x{1:08X}", ExStyle)  "</span>`n"
 	If RetEx !=
@@ -3772,23 +3771,23 @@ GetStyle_ToolbarWindow(Style, ExStyle, hWnd)  {
 	If !oStyles
 		oStyles := {"TBSTYLE_ALTDRAG":"0x0400","TBSTYLE_CUSTOMERASE":"0x2000","TBSTYLE_FLAT":"0x0800","TBSTYLE_LIST":"0x1000"
 		,"TBSTYLE_REGISTERDROP":"0x4000","TBSTYLE_TOOLTIPS":"0x0100","TBSTYLE_TRANSPARENT":"0x8000","TBSTYLE_WRAPABLE":"0x0200"}
-		
+
 		, oExStyles := {"TBSTYLE_EX_DOUBLEBUFFER":"0x80","TBSTYLE_EX_DRAWDDARROWS":"0x01","TBSTYLE_EX_HIDECLIPPEDBUTTONS":"0x10"
 		,"TBSTYLE_EX_MIXEDBUTTONS":"0x08","TBSTYLE_EX_MULTICOLUMN":"0x02","TBSTYLE_EX_VERTICAL":"0x04"}
-	
+
 	SendMessage, TB_GETSTYLE, 0, 0,, ahk_id %hWnd%
 	Style := sStyle := ErrorLevel & 0xffff
-	
+
 	SendMessage, TB_GETEXTENDEDSTYLE, 0, 0,, ahk_id %hWnd%
 	ExStyle := sExStyle := ErrorLevel
 	; ToolTip % Format("0x{1:08X}", Style) "`n" Format("0x{1:08X}", ExStyle)
-	
+
 	For K, V In oStyles
 		If ((sStyle & V) = V) && (1, Style -= V)
 			Ret .= "<span name='MS:'>" K " := <span class='param' name='MS:'>" V "</span></span>`n"
 
 	IF Style
-		Ret .= GetStyle_CommonСontrol(Style, Style) 
+		Ret .= GetStyle_CommonСontrol(Style, Style)
 	IF Style
 		Ret .= "<span style='color: #" ColorDelimiter ";' name='MS:'>" Format("0x{1:04X}", Style)  "</span>`n"
 	If Ret !=
@@ -3797,7 +3796,7 @@ GetStyle_ToolbarWindow(Style, ExStyle, hWnd)  {
 	For K, V In oExStyles
 		If ((ExStyle & V) = V) && (1, ExStyle -= V)
 			RetEx .= "<span name='MS:'>" K " := <span class='param' name='MS:'>" V "</span></span>`n"
-			
+
 	IF ExStyle
 		RetEx .= "<span style='color: #" ColorDelimiter ";' name='MS:'>" Format("0x{1:02X}", sExStyle)  "</span>`n"
 	If RetEx !=
@@ -3806,7 +3805,7 @@ GetStyle_ToolbarWindow(Style, ExStyle, hWnd)  {
 /*
 		oBTNS := {"BTNS_BUTTON":"0x00","BTNS_SEP":"0x01","BTNS_CHECK":"0x02","BTNS_GROUP":"0x04","BTNS_CHECKGROUP":"0x06","BTNS_DROPDOWN":"0x08"
 		,"BTNS_AUTOSIZE":"0x10","BTNS_NOPREFIX":"0x20","BTNS_SHOWTEXT":"0x40","BTNS_WHOLEDROPDOWN":"0x80"}
-		
+
 		VarSetCapacity(TBBUTTON, A_PtrSize == 8 ? 32 : 20, 0)
 
 		iBitmap := NumGet(TBBUTTON, 0, "Int")
@@ -3833,15 +3832,15 @@ GetStyle_SysHeader(Style, ExStyle, hWnd)  {
 	Style := sStyle := Style & 0xffff
 	For K, V In oStyles
 		If ((Style & V) = V) && (1, Style -= V)
-			Ret .= "<span name='MS:'>" K " := <span class='param' name='MS:'>" V "</span></span>`n" 
+			Ret .= "<span name='MS:'>" K " := <span class='param' name='MS:'>" V "</span></span>`n"
 	IF Style
-		Ret .= GetStyle_CommonСontrol(Style, Style) 
+		Ret .= GetStyle_CommonСontrol(Style, Style)
 	IF Style
 		Ret .= "<span style='color: #" ColorDelimiter ";' name='MS:'>" Format("0x{1:04X}", Style)  "</span>`n"
 	If Ret !=
 		Res .= _T1 " id='__Styles_Control'> ( Styles - SysHeader32: <span name='MS:' style='color: #" ColorFont ";'>" Format("0x{:04X}", sStyle) "</span> ) </span>" _T2 _PRE1 Ret _PRE2
 	Return Res
-} 
+}
 
 GetStyle_SysLink(Style, ExStyle, hWnd)  {
 	;	https://www.autohotkey.com/boards/viewtopic.php?p=25859#p25859
@@ -3853,15 +3852,15 @@ GetStyle_SysLink(Style, ExStyle, hWnd)  {
 	Style := sStyle := Style & 0xffff
 	For K, V In oStyles
 		If ((Style & V) = V) && (1, Style -= V)
-			Ret .= "<span name='MS:'>" K " := <span class='param' name='MS:'>" V "</span></span>`n" 
+			Ret .= "<span name='MS:'>" K " := <span class='param' name='MS:'>" V "</span></span>`n"
 	IF Style
-		Ret .= GetStyle_CommonСontrol(Style, Style) 
+		Ret .= GetStyle_CommonСontrol(Style, Style)
 	IF Style
 		Ret .= "<span style='color: #" ColorDelimiter ";' name='MS:'>" Format("0x{1:04X}", Style)  "</span>`n"
 	If Ret !=
 		Res .= _T1 " id='__Styles_Control'> ( Styles - SysLink: <span name='MS:' style='color: #" ColorFont ";'>" Format("0x{:04X}", sStyle) "</span> ) </span>" _T2 _PRE1 Ret _PRE2
 	Return Res
-} 
+}
 
 GetStyle_ReBarWindow(Style, ExStyle, hWnd)  {
 	;	https://www.autohotkey.com/boards/viewtopic.php?p=25865#p25865
@@ -3874,16 +3873,15 @@ GetStyle_ReBarWindow(Style, ExStyle, hWnd)  {
 	Style := sStyle := Style & 0xffff
 	For K, V In oStyles
 		If ((Style & V) = V) && (1, Style -= V)
-			Ret .= "<span name='MS:'>" K " := <span class='param' name='MS:'>" V "</span></span>`n" 
+			Ret .= "<span name='MS:'>" K " := <span class='param' name='MS:'>" V "</span></span>`n"
 	IF Style
-		Ret .= GetStyle_CommonСontrol(Style, Style) 
+		Ret .= GetStyle_CommonСontrol(Style, Style)
 	IF Style
 		Ret .= "<span style='color: #" ColorDelimiter ";' name='MS:'>" Format("0x{1:04X}", Style)  "</span>`n"
 	If Ret !=
 		Res .= _T1 " id='__Styles_Control'> ( Styles - ReBarWindow32: <span name='MS:' style='color: #" ColorFont ";'>" Format("0x{:04X}", sStyle) "</span> ) </span>" _T2 _PRE1 Ret _PRE2
 	Return Res
-} 
-
+}
 
 GetStyle_CommonСontrol(Style, ByRef NewStyle)  {
 	;	https://www.autohotkey.com/boards/viewtopic.php?p=25846#p25846
@@ -3891,22 +3889,21 @@ GetStyle_CommonСontrol(Style, ByRef NewStyle)  {
 	If !oStyles
 		oStyles := {"CCS_ADJUSTABLE":"0x0020","CCS_BOTTOM":"0x0003","CCS_NODIVIDER":"0x0040","CCS_NOMOVEY":"0x0002"
 		,"CCS_NOPARENTALIGN":"0x0008","CCS_NORESIZE":"0x0004","CCS_TOP":"0x0001","CCS_VERT":"0x0080"}
-		
+
 		,oEx := {"CCS_LEFT":"0x0081","CCS_NOMOVEX":"0x0082","CCS_RIGHT":"0x0083"}
-		
+
 	NewStyle := sStyle := Style & 0xffff
 	For K, V In oStyles
 		If ((NewStyle & V) = V) && (%K% := 1, NewStyle -= V)
-			Ret .= "<span name='MS:'>" K " := <span class='param' name='MS:'>" V "</span></span>`n"  
+			Ret .= "<span name='MS:'>" K " := <span class='param' name='MS:'>" V "</span></span>`n"
 	IF !CCS_VERT && !CCS_TOP && (NewStyle & oEx.CCS_LEFT) && (1, NewStyle -= oEx.CCS_LEFT)  ;	CCS_LEFT
 		Ret .= "<span name='MS:'>CCS_LEFT := <span class='param' name='MS:'>0x0081 && !(CCS_VERT | CCS_TOP)</span></span>`n"
 	IF !CCS_VERT && !CCS_NOMOVEY && (NewStyle & oEx.CCS_NOMOVEX) && (1, NewStyle -= oEx.CCS_NOMOVEX)  ;	CCS_NOMOVEX
 		Ret .= "<span name='MS:'>CCS_NOMOVEX := <span class='param' name='MS:'>0x0082 && !(CCS_VERT | CCS_NOMOVEY)</span></span>`n"
 	IF !CCS_VERT && !CCS_BOTTOM && (NewStyle & oEx.CCS_RIGHT) && (1, NewStyle -= oEx.CCS_RIGHT)  ;	CCS_RIGHT
 		Ret .= "<span name='MS:'>CCS_RIGHT := <span class='param' name='MS:'>0x0083 && !(CCS_VERT | CCS_BOTTOM)</span></span>`n"
-	
 	Return Ret
-} 
+}
 
 	; _________________________________________________ FullScreen _________________________________________________
 
@@ -4453,7 +4450,7 @@ ButtonClick(oevent) {
 			ToolTip("Not file exist", 500)
 	}
 	Else If (thisid = "flash_window" || thisid = "flash_control" || thisid = "flash_ctrl_window")
-	{ 
+	{
 		hwnd := thisid = "flash_window" ? oOther.WinID : thisid = "flash_ctrl_window" ? oOther.MouseWinID : oOther.MouseControlID
 
 		If !WinExist("ahk_id" hwnd)
@@ -4462,16 +4459,16 @@ ButtonClick(oevent) {
 		FlashArea(WinX, WinY, WinWidth, WinHeight)
 	}
 	Else If (thisid = "flash_acc")
-	{    
-		AccGetLocation(oPubObj.AccObj.AccObj, oPubObj.AccObj.child)   
+	{
+		AccGetLocation(oPubObj.AccObj.AccObj, oPubObj.AccObj.child)
 		FlashArea(AccCoord[1], AccCoord[2], AccCoord[3], AccCoord[4])
 	}
 	Else If (thisid = "flash_IE")
 	{
-		If !WinExist("ahk_id" oPubObj.IEElement.hwnd) 
-			Return ToolTip("Parent window not exist", 500) 
+		If !WinExist("ahk_id" oPubObj.IEElement.hwnd)
+			Return ToolTip("Parent window not exist", 500)
 		FlashArea(oPubObj.IEElement.Pos[1], oPubObj.IEElement.Pos[2], oPubObj.IEElement.Pos[3], oPubObj.IEElement.Pos[4])
-	} 
+	}
 	Else If thisid = paste_process_path
 		oDoc.getElementById("copy_processpath").innerHTML := TransformHTML(Trim(Trim(Clipboard), """"))
 	Else If thisid = w_command_line
@@ -4512,10 +4509,10 @@ ButtonClick(oevent) {
 			Run % Path_User "\Window Detective.lnk"
 		TimerFunc(Func("MyWindowDetectiveStart").Bind(ThisMode = "Win" ? oOther.WinID : oOther.MouseControlID, WinExist() ? 1 : 0), -300)
 	}
-	Else If thisid = set_button_Transparent 
-		WinSet, Transparent, % oDoc.getElementById("get_win_Transparent").innerText + 0, % "ahk_id" oOther.WinID  
-	Else If thisid = set_button_TransColor 
-		WinSet, TransColor, % oDoc.getElementById("get_win_TransColor").innerText, % "ahk_id" oOther.WinID  
+	Else If thisid = set_button_Transparent
+		WinSet, Transparent, % oDoc.getElementById("get_win_Transparent").innerText + 0, % "ahk_id" oOther.WinID
+	Else If thisid = set_button_TransColor
+		WinSet, TransColor, % oDoc.getElementById("get_win_TransColor").innerText, % "ahk_id" oOther.WinID
 	Else If thisid = set_button_pos
 	{
 		HayStack := oevent.OuterText = "Pos:"
@@ -4533,10 +4530,10 @@ ButtonClick(oevent) {
 	{
 		hWnd := oOther.MouseControlID
 		ControlFocus, , ahk_id %hWnd%
-		WinGetPos, X, Y, W, H, ahk_id %hWnd% 
+		WinGetPos, X, Y, W, H, ahk_id %hWnd%
 		FlashArea(x, y, w, h)
 		If GetKeyState("Shift", "P") && (X + Y != "")
-			DllCall("SetCursorPos", "Uint", X + W // 2, "Uint", Y + H // 2) 
+			DllCall("SetCursorPos", "Uint", X + W // 2, "Uint", Y + H // 2)
 	}
 	Else If thisid = set_pos
 	{
@@ -4710,7 +4707,7 @@ Z_MsgZoom(8, Suspend)
 Z_MsgZoom(2, AhkSpyPause)
 Z_MsgZoom(6, ActiveNoPause)
 Z_MsgZoom(7, !!WinActive("ahk_id" hAhkSpy))
-Z_MsgZoom(10, Hotkey) 
+Z_MsgZoom(10, Hotkey)
 Z_MsgZoom(12, OnlyShiftTab)
 
 OnMessage(MsgAhkSpyZoom := DllCall("RegisterWindowMessage", "Str", "MsgAhkSpyZoom"), "Z_MsgZoom")
@@ -5329,13 +5326,13 @@ class UIA_Base {
 	__Vt(n) {
 		return NumGet(NumGet(this.__Value+0,"ptr")+n*A_PtrSize,"ptr")
 	}
-}	
+}
 
 class UIA_Interface extends UIA_Base {
 	;~ http://msdn.microsoft.com/en-us/library/windows/desktop/ee671406(v=vs.85).aspx
 	static __IID := "{30cbe57d-d9d0-452a-ab13-7ac5ac4825ee}"
 		,  __properties := "ControlViewWalker,14,IUIAutomationTreeWalker`r`nContentViewWalker,15,IUIAutomationTreeWalker`r`nRawViewWalker,16,IUIAutomationTreeWalker`r`nRawViewCondition,17,IUIAutomationCondition`r`nControlViewCondition,18,IUIAutomationCondition`r`nContentViewCondition,19,IUIAutomationCondition`r`nProxyFactoryMapping,48,IUIAutomationProxyFactoryMapping`r`nReservedNotSupportedValue,54,IUnknown`r`nReservedMixedAttributeValue,55,IUnknown"
-	
+
 	CompareElements(e1,e2) {
 		return UIA_Hr(DllCall(this.__Vt(3), "ptr",this.__Value, "ptr",e1.__Value, "ptr",e2.__Value, "int*",out))? out:
 	}
@@ -5350,7 +5347,7 @@ class UIA_Interface extends UIA_Base {
 	}
 	ElementFromPoint(x="", y="") {
 		return UIA_Hr(DllCall(this.__Vt(7), "ptr",this.__Value, "int64",x==""||y==""?0*DllCall("GetCursorPos","Int64*",pt)+pt:x&0xFFFFFFFF|y<<32, "ptr*",out))? new UIA_Element(out):
-	}	
+	}
 	GetFocusedElement() {
 		return UIA_Hr(DllCall(this.__Vt(8), "ptr",this.__Value, "ptr*",out))? new UIA_Element(out):
 	}
@@ -5481,7 +5478,7 @@ class UIA_Interface extends UIA_Base {
 	}
 	CheckNotSupported(value) { ; Useless in this Framework???
 	/*	Checks a provided VARIANT to see if it contains the Not Supported identifier.
-		After retrieving a property for a UI Automation element, call this method to determine whether the element supports the 
+		After retrieving a property for a UI Automation element, call this method to determine whether the element supports the
 		retrieved property. CheckNotSupported is typically called after calling a property retrieving method such as GetCurrentPropertyValue.
 	*/
 		return UIA_Hr(DllCall(this.__Vt(53), "ptr",this.__Value, "ptr",value, "int*",out))? out:
@@ -5500,7 +5497,7 @@ class UIA_Element extends UIA_Base {
 	;~ http://msdn.microsoft.com/en-us/library/windows/desktop/ee671425(v=vs.85).aspx
 	static __IID := "{d22108aa-8ac5-49a5-837b-37bbb3d7591e}"
 		,  __properties := "CurrentProcessId,20,int`r`nCurrentControlType,21,CONTROLTYPEID`r`nCurrentLocalizedControlType,22,BSTR`r`nCurrentName,23,BSTR`r`nCurrentAcceleratorKey,24,BSTR`r`nCurrentAccessKey,25,BSTR`r`nCurrentHasKeyboardFocus,26,BOOL`r`nCurrentIsKeyboardFocusable,27,BOOL`r`nCurrentIsEnabled,28,BOOL`r`nCurrentAutomationId,29,BSTR`r`nCurrentClassName,30,BSTR`r`nCurrentHelpText,31,BSTR`r`nCurrentCulture,32,int`r`nCurrentIsControlElement,33,BOOL`r`nCurrentIsContentElement,34,BOOL`r`nCurrentIsPassword,35,BOOL`r`nCurrentNativeWindowHandle,36,UIA_HWND`r`nCurrentItemType,37,BSTR`r`nCurrentIsOffscreen,38,BOOL`r`nCurrentOrientation,39,OrientationType`r`nCurrentFrameworkId,40,BSTR`r`nCurrentIsRequiredForForm,41,BOOL`r`nCurrentItemStatus,42,BSTR`r`nCurrentBoundingRectangle,43,RECT`r`nCurrentLabeledBy,44,IUIAutomationElement`r`nCurrentAriaRole,45,BSTR`r`nCurrentAriaProperties,46,BSTR`r`nCurrentIsDataValidForForm,47,BOOL`r`nCurrentControllerFor,48,IUIAutomationElementArray`r`nCurrentDescribedBy,49,IUIAutomationElementArray`r`nCurrentFlowsTo,50,IUIAutomationElementArray`r`nCurrentProviderDescription,51,BSTR`r`nCachedProcessId,52,int`r`nCachedControlType,53,CONTROLTYPEID`r`nCachedLocalizedControlType,54,BSTR`r`nCachedName,55,BSTR`r`nCachedAcceleratorKey,56,BSTR`r`nCachedAccessKey,57,BSTR`r`nCachedHasKeyboardFocus,58,BOOL`r`nCachedIsKeyboardFocusable,59,BOOL`r`nCachedIsEnabled,60,BOOL`r`nCachedAutomationId,61,BSTR`r`nCachedClassName,62,BSTR`r`nCachedHelpText,63,BSTR`r`nCachedCulture,64,int`r`nCachedIsControlElement,65,BOOL`r`nCachedIsContentElement,66,BOOL`r`nCachedIsPassword,67,BOOL`r`nCachedNativeWindowHandle,68,UIA_HWND`r`nCachedItemType,69,BSTR`r`nCachedIsOffscreen,70,BOOL`r`nCachedOrientation,71,OrientationType`r`nCachedFrameworkId,72,BSTR`r`nCachedIsRequiredForForm,73,BOOL`r`nCachedItemStatus,74,BSTR`r`nCachedBoundingRectangle,75,RECT`r`nCachedLabeledBy,76,IUIAutomationElement`r`nCachedAriaRole,77,BSTR`r`nCachedAriaProperties,78,BSTR`r`nCachedIsDataValidForForm,79,BOOL`r`nCachedControllerFor,80,IUIAutomationElementArray`r`nCachedDescribedBy,81,IUIAutomationElementArray`r`nCachedFlowsTo,82,IUIAutomationElementArray`r`nCachedProviderDescription,83,BSTR"
-	
+
 	SetFocus() {
 		return UIA_Hr(DllCall(this.__Vt(3), "ptr",this.__Value))
 	}
@@ -5551,7 +5548,7 @@ class UIA_ElementArray extends UIA_Base {
 	;~ http://msdn.microsoft.com/en-us/library/windows/desktop/ee671426(v=vs.85).aspx
 	static __IID := "{14314595-b4bc-4055-95f2-58f2e42c9855}"
 		,  __properties := "Length,3,int"
-	
+
 	GetElement(i) {
 		return UIA_Hr(DllCall(this.__Vt(4), "ptr",this.__Value, "int",i, "ptr*",out))? new UIA_Element(out):
 	}
@@ -5561,7 +5558,7 @@ class UIA_TreeWalker extends UIA_Base {
 	;~ http://msdn.microsoft.com/en-us/library/windows/desktop/ee671470(v=vs.85).aspx
 	static __IID := "{4042c624-389c-4afc-a630-9df854a541fc}"
 		,  __properties := "Condition,15,IUIAutomationCondition"
-	
+
 	GetParentElement(e) {
 		return UIA_Hr(DllCall(this.__Vt(3), "ptr",this.__Value, "ptr",e.__Value, "ptr*",out))? new UIA_Element(out):
 	}
@@ -5616,7 +5613,7 @@ class UIA_AndCondition extends UIA_Condition {
 	;~ http://msdn.microsoft.com/en-us/library/windows/desktop/ee671407(v=vs.85).aspx
 	static __IID := "{a7d0af36-b912-45fe-9855-091ddc174aec}"
 		,  __properties := "ChildCount,3,int"
-	
+
 	;~ GetChildrenAsNativeArray	4	IUIAutomationCondition ***childArray
 	GetChildren() {
 		return UIA_Hr(DllCall(this.__Vt(5), "ptr",this.__Value, "ptr*",out))&&out? ComObj(0x2003,out,1):
@@ -5626,7 +5623,7 @@ class UIA_OrCondition extends UIA_Condition {
 	;~ http://msdn.microsoft.com/en-us/library/windows/desktop/ee696108(v=vs.85).aspx
 	static __IID := "{8753f032-3db1-47b5-a1fc-6e34a266c712}"
 		,  __properties := "ChildCount,3,int"
-	
+
 	;~ GetChildrenAsNativeArray	4	IUIAutomationCondition ***childArray
 	;~ GetChildren	5	SAFEARRAY
 }
@@ -5638,7 +5635,7 @@ class UIA_BoolCondition extends UIA_Condition {
 class UIA_NotCondition extends UIA_Condition {
 	;~ http://msdn.microsoft.com/en-us/library/windows/desktop/ee696106(v=vs.85).aspx
 	static __IID := "{f528b657-847b-498c-8896-d52b565407a1}"
-	
+
 	;~ GetChild	3	IUIAutomationCondition
 }
 
@@ -5656,34 +5653,34 @@ class UIA_CacheRequest  extends UIA_Base {
 class _UIA_EventHandler {
 	;~ http://msdn.microsoft.com/en-us/library/windows/desktop/ee696044(v=vs.85).aspx
 	static __IID := "{146c3c17-f12e-4e22-8c27-f894b9b79c69}"
-	
+
 /*	HandleAutomationEvent	3
 		[in]  IUIAutomationElement *sender,
 		[in]  EVENTID eventId
 */
 }
-class _UIA_FocusChangedEventHandler {		
+class _UIA_FocusChangedEventHandler {
 	;~ http://msdn.microsoft.com/en-us/library/windows/desktop/ee696051(v=vs.85).aspx
 	static __IID := "{c270f6b5-5c69-4290-9745-7a7f97169468}"
-	
+
 /*	HandleFocusChangedEvent	3
 		[in]  IUIAutomationElement *sender
 */
 }
-class _UIA_PropertyChangedEventHandler {		
+class _UIA_PropertyChangedEventHandler {
 	;~ http://msdn.microsoft.com/en-us/library/windows/desktop/ee696119(v=vs.85).aspx
 	static __IID := "{40cd37d4-c756-4b0c-8c6f-bddfeeb13b50}"
-	
+
 /*	HandlePropertyChangedEvent	3
 		[in]  IUIAutomationElement *sender,
 		[in]  PROPERTYID propertyId,
 		[in]  VARIANT newValue
 */
 }
-class _UIA_StructureChangedEventHandler {		
+class _UIA_StructureChangedEventHandler {
 	;~ http://msdn.microsoft.com/en-us/library/windows/desktop/ee696197(v=vs.85).aspx
 	static __IID := "{e81d1b4e-11c5-42f8-9754-e7036c79f054}"
-	
+
 /*	HandleStructureChangedEvent	3
 		[in]  IUIAutomationElement *sender,
 		[in]  StructureChangeType changeType,
@@ -5693,7 +5690,7 @@ class _UIA_StructureChangedEventHandler {
 class _UIA_TextEditTextChangedEventHandler { ; Windows 8.1 Preview [desktop apps only]
 	;~ http://msdn.microsoft.com/en-us/library/windows/desktop/dn302202(v=vs.85).aspx
 	static __IID := "{92FAA680-E704-4156-931A-E32D5BB38F3F}"
-	
+
 	;~ HandleTextEditTextChangedEvent	3
 }
 
@@ -5721,13 +5718,13 @@ class UIA_ExpandCollapsePattern extends UIA_Base {
 	static	__IID := "{619be086-1f4e-4ee4-bafa-210128738730}"
 		,	__PatternID := 10005
 		,	__Properties := "CachedExpandCollapseState,6,int`r`nCurrentExpandCollapseState,5,int"
-	
+
 	Expand() {
 		return UIA_Hr(DllCall(this.__Vt(3), "ptr",this.__Value))
 	}
 	Collapse() {
 		return UIA_Hr(DllCall(this.__Vt(4), "ptr",this.__Value))
-	}	
+	}
 /*	ExpandCollapseState_Collapsed	= 0,
 	ExpandCollapseState_Expanded	= 1,
 	ExpandCollapseState_PartiallyExpanded	= 2,
@@ -5754,7 +5751,7 @@ class UIA_InvokePattern extends UIA_Base {
 	;~ http://msdn.microsoft.com/en-us/library/windows/desktop/ee696070
 	static	__IID := "{fb377fbe-8ea6-46d5-9c73-6499642d3059}"
 		,	__PatternID := 10000
-	
+
 	Invoke() {
 		return UIA_Hr(DllCall(this.__Vt(3), "ptr",this.__Value))
 	}
@@ -5793,8 +5790,8 @@ class UIA_LegacyIAccessiblePattern extends UIA_Base {
 	}
 	;~ GetCachedSelection	24	IUIAutomationElementArray
 	GetIAccessible() {
-	/*	This method returns NULL if the underlying implementation of the UI Automation element is not a native 
-	Microsoft Active Accessibility server; that is, if a client attempts to retrieve the IAccessible interface 
+	/*	This method returns NULL if the underlying implementation of the UI Automation element is not a native
+	Microsoft Active Accessibility server; that is, if a client attempts to retrieve the IAccessible interface
 	for an element originally supported by a proxy object from OLEACC.dll, or by the UIA-to-MSAA Bridge.
 	*/
 		return UIA_Hr(DllCall(this.__Vt(26), "ptr",this.__Value, "ptr*",pacc))&&pacc? ComObj(9,pacc,1):
@@ -5843,7 +5840,7 @@ class UIA_ScrollPattern extends UIA_Base {
 	static	__IID := "{88f4d42a-e881-459d-a77c-73bbbb7e02dc}"
 		,	__PatternID := 10004
 		,	__Properties := "CurrentHorizontalScrollPercent,5,double`r`nCurrentVerticalScrollPercent,6,double`r`nCurrentHorizontalViewSize,7,double`r`CurrentHorizontallyScrollable,9,BOOL`r`nCurrentVerticallyScrollable,10,BOOL`r`nCachedHorizontalScrollPercent,11,double`r`nCachedVerticalScrollPercent,12,double`r`nCachedHorizontalViewSize,13,double`r`nCachedVerticalViewSize,14,double`r`nCachedHorizontallyScrollable,15,BOOL`r`nCachedVerticallyScrollable,16,BOOL"
-		
+
 	Scroll(horizontal, vertical) {
 		return UIA_Hr(DllCall(this.__Vt(3), "ptr",this.__Value, "uint",horizontal, "uint",vertical))
 	}
@@ -5883,7 +5880,7 @@ class UIA_ScrollPattern extends UIA_Base {
 	;~ http://msdn.microsoft.com/en-us/library/windows/desktop/hh437262(v=vs.85).aspx
 	static	__IID := "{71c284b3-c14d-4d14-981e-19751b0d756d}"
 		,	__PatternID := 10022
-	
+
 	GetUnderlyingObjectModel() {
 		return UIA_Hr(DllCall(this.__Vt(3), "ptr",this.__Value))
 	}
@@ -5956,7 +5953,7 @@ class UIA_ScrollPattern extends UIA_Base {
 		return DllCall("ole32\CLSIDFromString", "wstr",sGUID, "ptr",&GUID)>=0?&GUID:""
 	}
 	UIA_Variant(ByRef var,type=0,val=0) {
-		; Does a variant need to be cleared? If it uses SysAllocString? 
+		; Does a variant need to be cleared? If it uses SysAllocString?
 		return (VarSetCapacity(var,8+2*A_PtrSize)+NumPut(type,var,0,"short")+NumPut(type=8? DllCall("oleaut32\SysAllocString", "ptr",&val):val,var,8,"ptr"))*0+&var
 	}
 	UIA_IsVariant(ByRef vt, ByRef type="") {
@@ -5984,7 +5981,7 @@ class UIA_ScrollPattern extends UIA_Base {
 		VT_CY        =      6 		; Currency
 		VT_DATE      =      7  		; Date
 		VT_BSTR      =      8 		; COM string (Unicode string with length prefix)
-		VT_DISPATCH  =      9 		; COM object 
+		VT_DISPATCH  =      9 		; COM object
 		VT_ERROR     =    0xA  10	; Error code (32-bit integer)
 		VT_BOOL      =    0xB  11	; Boolean True (-1) or False (0)
 		VT_VARIANT   =    0xC  12	; VARIANT (must be combined with VT_ARRAY or VT_BYREF)
@@ -6038,7 +6035,7 @@ enum TreeScope
 	TreeScope_Descendants	= 0x4,
 	TreeScope_Parent	= 0x8,
 	TreeScope_Ancestors	= 0x10,
-	TreeScope_Subtree	= ( ( TreeScope_Element | TreeScope_Children )  | TreeScope_Descendants ) 
+	TreeScope_Subtree	= ( ( TreeScope_Element | TreeScope_Children )  | TreeScope_Descendants )
     } ;
 DllCall("oleaut32\SafeArrayGetVartype", "ptr*",ComObjValue(SafeArray), "uint*",pvt)
 HRESULT SafeArrayGetVartype(
