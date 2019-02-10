@@ -26,7 +26,7 @@
     Актуальный исходник - https://raw.githubusercontent.com/serzh82saratov/AhkSpy/master/AhkSpy.ahk
 */
 
-Global AhkSpyVersion := 3.64
+Global AhkSpyVersion := 3.65
 
 	; _________________________________________________ Header _________________________________________________
 
@@ -3280,7 +3280,7 @@ GetControlStyles(Class, Style, ExStyle, hWnd) {
 /*
 	Added:
 	Button, Edit, Static, SysListView32, SysTabControl32, SysDateTimePick32, SysMonthCal32, ComboBox, ListBox
-	, msctls_trackbar32, msctls_statusbar32, msctls_progress32, msctls_updown32, SysLink, SysHeader32, ToolbarWindow32, SysTreeView32, ReBarWindow32
+	, msctls_trackbar32, msctls_statusbar32, msctls_progress32, msctls_updown32, SysLink, SysHeader32, ToolbarWindow32, SysTreeView32, ReBarWindow32, SysAnimate32, SysPager
 */
 }
 
@@ -3452,8 +3452,24 @@ GetStyle_ComboBox(Style, ExStyle, hWnd)  {
 		,"CBS_OWNERDRAWVARIABLE":"0x0020","CBS_AUTOHSCROLL":"0x0040","CBS_OEMCONVERT":"0x0080","CBS_SORT":"0x0100"
 		,"CBS_HASSTRINGS":"0x0200","CBS_NOINTEGRALHEIGHT":"0x0400","CBS_DISABLENOSCROLL":"0x0800"
 		,"CBS_UPPERCASE":"0x2000","CBS_LOWERCASE":"0x4000"}
-		,oEx := {"CBS_DROPDOWNLIST":"0x0003"}
+		, oEx := {"CBS_DROPDOWNLIST":"0x0003"}
+		, oExStyles := {"CBES_EX_CASESENSITIVE":"0x0010","CBES_EX_NOEDITIMAGE":"0x0001","CBES_EX_NOEDITIMAGEINDENT":"0x0002"
+		,"CBES_EX_NOSIZELIMIT":"0x0008","CBES_EX_PATHWORDBREAKPROC":"0x0004","CBES_EX_TEXTENDELLIPSIS":"0x0020"}
 	
+	If (hParent := DllCall("GetParent", "Ptr", hWnd))
+	{
+		WinGetClass, ParentClass, ahk_id %hParent%
+		If ParentClass = ComboBoxEx32
+		{
+			SendMessage, CBEM_GETEXTENDEDSTYLE, 0, 0, , ahk_id %hParent%
+			ExStyle := sExStyle := ErrorLevel
+			For K, V In oExStyles
+				If ((ExStyle & V) = V) && (1, ExStyle -= V)
+					RetEx .= "<span name='MS:'>" K " := <span class='param' name='MS:'>" V "</span></span>`n"
+			IF ExStyle
+				RetEx .= "<span style='color: #" ColorDelimiter ";' name='MS:'>" Format("0x{1:04X}", ExStyle)  "</span>`n"
+		} 
+	}
 	Style := sStyle := Style & 0xffff
 	If ((Style & oEx.CBS_DROPDOWNLIST) = oEx.CBS_DROPDOWNLIST) && (1, Style -= oEx.CBS_DROPDOWNLIST)  ;	CBS_DROPDOWNLIST
 		Ret .= "<span name='MS:'>CBS_DROPDOWNLIST := <span class='param' name='MS:'>" oEx.CBS_DROPDOWNLIST "</span></span>`n"
@@ -3466,21 +3482,13 @@ GetStyle_ComboBox(Style, ExStyle, hWnd)  {
 		Ret .= "<span style='color: #" ColorDelimiter ";' name='MS:'>" Format("0x{1:04X}", Style)  "</span>`n"
 	If Ret !=
 		Res .= _T1 " id='__Styles_Control'> ( Styles - ComboBox: <span name='MS:' style='color: #" ColorFont ";'>" Format("0x{:04X}", sStyle) "</span> ) </span>" _T2 _PRE1 Ret _PRE2
-	Return Res
-/*
-		, oExStyles := {"CBES_EX_CASESENSITIVE":"0x0010","CBES_EX_NOEDITIMAGE":"0x0001","CBES_EX_NOEDITIMAGEINDENT":"0x0002"
-		,"CBES_EX_NOSIZELIMIT":"0x0008","CBES_EX_PATHWORDBREAKPROC":"0x0004","CBES_EX_TEXTENDELLIPSIS":"0x0020"}
-	SendMessage, CBEM_GETEXTENDEDSTYLE, 0, 0,, ahk_id %hWnd%
-	ExStyle := sExStyle := ErrorLevel & 0xffff
-	
-	For K, V In oExStyles
-		If ((ExStyle & V) = V) && (1, ExStyle -= V)
-			RetEx .= "<span name='MS:'>" K " := <span class='param' name='MS:'>" V "</span></span>`n"
-	IF ExStyle
-		RetEx .= "<span style='color: #" ColorDelimiter ";' name='MS:'>" Format("0x{1:08X}", ExStyle)  "</span>`n"
 	If RetEx !=
-		Res .= _T1 " id='__ExStyles_Control'> ( ExStyles - ComboBox: <span name='MS:' style='color: #" ColorFont ";'>" Format("0x{:04X}", sExStyle) "</span> ) </span>" _T2 _PRE1 RetEx _PRE2
-*/
+		Res .= _T1 " id='__ExStyles_Control'> ( ExStyles - ComboBoxEx32: <span name='MS:' style='color: #" ColorFont ";'>" Format("0x{:04X}", sExStyle) "</span> ) </span>" _T2 _PRE1 RetEx _PRE2
+	Return Res
+}
+
+GetStyle_ComboLBox(Style, ExStyle, hWnd)  {
+	Return GetStyle_ListBox(Style, ExStyle, hWnd)
 }
 
 GetStyle_ListBox(Style, ExStyle, hWnd)  {
@@ -3510,6 +3518,46 @@ GetStyle_ListBox(Style, ExStyle, hWnd)  {
 		Ret .= "<span style='color: #" ColorDelimiter ";' name='MS:'>" Format("0x{1:04X}", Style)  "</span>`n"
 	If Ret !=
 		Res .= _T1 " id='__Styles_Control'> ( Styles - ListBox: <span name='MS:' style='color: #" ColorFont ";'>" Format("0x{:04X}", sStyle) "</span> ) </span>" _T2 _PRE1 Ret _PRE2
+	Return Res
+}
+
+GetStyle_SysAnimate(Style, ExStyle, hWnd)  {
+	;	https://docs.microsoft.com/en-us/windows/desktop/controls/animation-control-styles
+	Static oStyles
+	If !oStyles
+		oStyles := {"ACS_CENTER":"0x0001","ACS_TRANSPARENT":"0x0002","ACS_AUTOPLAY":"0x0004","ACS_TIMER":"0x0008"}
+
+	Style := sStyle := Style & 0xffff
+	For K, V In oStyles
+		If ((Style & V) = V) && (1, Style -= V)
+			Ret .= "<span name='MS:'>" K " := <span class='param' name='MS:'>" V "</span></span>`n"
+	IF Style
+		Ret .= GetStyle_CommonСontrol(Style, Style)
+	IF Style
+		Ret .= "<span style='color: #" ColorDelimiter ";' name='MS:'>" Format("0x{1:04X}", Style)  "</span>`n"
+	If Ret !=
+		Res .= _T1 " id='__Styles_Control'> ( Styles - SysAnimate32: <span name='MS:' style='color: #" ColorFont ";'>" Format("0x{:04X}", sStyle) "</span> ) </span>" _T2 _PRE1 Ret _PRE2
+	Return Res
+}
+
+GetStyle_SysPager(Style, ExStyle, hWnd)  {
+	;	https://docs.microsoft.com/en-us/windows/desktop/controls/pager-control-styles
+	Static oStyles, oEx
+	If !oStyles
+		oStyles := {"PGS_HORZ":"0x0001","PGS_AUTOSCROLL":"0x0002","PGS_DRAGNDROP":"0x0004"}
+		, oEx := {"PGS_VERT":"0x0000"}
+	Style := sStyle := Style & 0xffff
+	If !(Style & oStyles.PGS_HORZ)
+		Ret .= "<span name='MS:'>PGS_VERT := <span class='param' name='MS:'>0x0000   !(PGS_HORZ)</span></span>`n"
+	For K, V In oStyles
+		If ((Style & V) = V) && (1, Style -= V)
+			Ret .= "<span name='MS:'>" K " := <span class='param' name='MS:'>" V "</span></span>`n"
+	IF Style
+		Ret .= GetStyle_CommonСontrol(Style, Style)
+	IF Style
+		Ret .= "<span style='color: #" ColorDelimiter ";' name='MS:'>" Format("0x{1:04X}", Style)  "</span>`n"
+	If Ret !=
+		Res .= _T1 " id='__Styles_Control'> ( Styles - SysPager: <span name='MS:' style='color: #" ColorFont ";'>" Format("0x{:04X}", sStyle) "</span> ) </span>" _T2 _PRE1 Ret _PRE2
 	Return Res
 }
 
