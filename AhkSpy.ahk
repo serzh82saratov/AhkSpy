@@ -26,7 +26,7 @@
     Актуальный исходник - https://raw.githubusercontent.com/serzh82saratov/AhkSpy/master/AhkSpy.ahk
 */
 
-Global AhkSpyVersion := 3.62
+Global AhkSpyVersion := 3.63
 
 	; _________________________________________________ Header _________________________________________________
 
@@ -3674,17 +3674,17 @@ GetStyle_SysListView(Style, ExStyle, hWnd)  {
 			Ret .= "<span name='MS:'>" K " := <span class='param' name='MS:'>" V "</span></span>`n"
 
 	IF ((sStyle & oEx.LVS_TYPEMASK) = oEx.LVS_REPORT) && (LVS_REPORT := 1, Style -= oEx.LVS_REPORT)      ;	LVS_REPORT
-		Ret .= "<span name='MS:'>LVS_REPORT := <span class='param' name='MS:'>LVS_TYPEMASK = 0x0001</span></span>`n"
+		Ret .= "<span name='MS:'>LVS_REPORT := <span class='param' name='MS:'>(LVS_TYPEMASK = 0x0001)</span></span>`n"
 	IF ((sStyle & oEx.LVS_TYPEMASK) = oEx.LVS_SMALLICON) && (LVS_SMALLICON := 1, Style -= oEx.LVS_SMALLICON)      ;	LVS_SMALLICON
-		Ret .= "<span name='MS:'>LVS_SMALLICON := <span class='param' name='MS:'>LVS_TYPEMASK = 0x0002</span></span>`n"
+		Ret .= "<span name='MS:'>LVS_SMALLICON := <span class='param' name='MS:'>(LVS_TYPEMASK = 0x0002)</span></span>`n"
 	IF ((sStyle & oEx.LVS_TYPEMASK) = oEx.LVS_LIST) && (LVS_LIST := 1, Style -= oEx.LVS_LIST)      ;	LVS_LIST
-		Ret .= "<span name='MS:'>LVS_LIST := <span class='param' name='MS:'>LVS_TYPEMASK = 0x0003</span></span>`n"
+		Ret .= "<span name='MS:'>LVS_LIST := <span class='param' name='MS:'>(LVS_TYPEMASK = 0x0003)</span></span>`n"
 	IF ((sStyle & oEx.LVS_TYPEMASK) = oEx.LVS_ICON) && !LVS_REPORT && !LVS_SMALLICON && !LVS_LIST && (LVS_ICON := 1)      ;	LVS_ICON
-		Ret .= "<span name='MS:'>LVS_ICON := <span class='param' name='MS:'>LVS_TYPEMASK = 0x0000 && !(LVS_REPORT | LVS_SMALLICON | LVS_LIST)</span></span>`n"
+		Ret .= "<span name='MS:'>LVS_ICON := <span class='param' name='MS:'>(LVS_TYPEMASK = 0x0000) && !(LVS_REPORT | LVS_SMALLICON | LVS_LIST)</span></span>`n"
 	IF ((sStyle & oEx.LVS_ALIGNMASK) = oEx.LVS_ALIGNLEFT) && (LVS_ALIGNLEFT := 1, Style -= oEx.LVS_ALIGNLEFT)      ;	LVS_ALIGNLEFT
-		Ret .= "<span name='MS:'>LVS_ALIGNLEFT := <span class='param' name='MS:'>LVS_ALIGNMASK = 0x0800</span></span>`n"
+		Ret .= "<span name='MS:'>LVS_ALIGNLEFT := <span class='param' name='MS:'>(LVS_ALIGNMASK = 0x0800)</span></span>`n"
 	IF ((sStyle & oEx.LVS_ALIGNMASK) = oEx.LVS_ALIGNTOP) && (LVS_SMALLICON || LVS_ICON) && (LVS_ALIGNTOP := 1, Style -= oEx.LVS_ALIGNTOP)      ;	LVS_ALIGNTOP
-		Ret .= "<span name='MS:'>LVS_ALIGNTOP := <span class='param' name='MS:'>LVS_ALIGNMASK = 0x0000 && (LVS_SMALLICON || LVS_ICON)</span></span>`n"
+		Ret .= "<span name='MS:'>LVS_ALIGNTOP := <span class='param' name='MS:'>(LVS_ALIGNMASK = 0x0000) && (LVS_SMALLICON || LVS_ICON)</span></span>`n"
 	IF ((sStyle & oEx.LVS_NOSORTHEADER) = oEx.LVS_NOSORTHEADER) && (LVS_NOSORTHEADER := 1, Style -= oEx.LVS_NOSORTHEADER)      ;	LVS_NOSORTHEADER
 		Ret .= "<span name='MS:'>LVS_NOSORTHEADER := <span class='param' name='MS:'>0x8000</span></span>`n"
 	IF ((sStyle & oEx.LVS_NOCOLUMNHEADER) = oEx.LVS_NOCOLUMNHEADER) && (LVS_NOCOLUMNHEADER := 1, Style -= oEx.LVS_NOCOLUMNHEADER)      ;	LVS_NOCOLUMNHEADER
@@ -3883,7 +3883,7 @@ GetStyle_ReBarWindow(Style, ExStyle, hWnd)  {
 	Return Res
 }
 
-GetStyle_CommonСontrol(Style, ByRef NewStyle)  {
+GetStyle_CommonСontrol(Style, ByRef NewStyle) {   ;	Остаток от стилей контролов
 	;	https://www.autohotkey.com/boards/viewtopic.php?p=25846#p25846
 	Static oStyles, oEx
 	If !oStyles
