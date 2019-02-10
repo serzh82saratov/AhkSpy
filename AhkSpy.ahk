@@ -18,15 +18,15 @@
     Автор - serzh82saratov
     E-Mail: serzh82saratov@mail.ru
 
-    Спасибо wisgest и Malcev за помощь в создании HTML интерфейса
-    Также благодарность teadrinker, YMP, Irbis за их решения
+    Спасибо Malcev и wisgest за помощь в создании HTML интерфейса
+    Также благодарность Malcev, teadrinker, YMP, Irbis за их решения
     Описание - http://forum.script-coding.com/viewtopic.php?pid=72459#p72459
     Обсуждение - http://forum.script-coding.com/viewtopic.php?pid=72244#p72244
     Обсуждение на офф. форуме- https://autohotkey.com/boards/viewtopic.php?f=6&t=52872
     Актуальный исходник - https://raw.githubusercontent.com/serzh82saratov/AhkSpy/master/AhkSpy.ahk
 */
 
-Global AhkSpyVersion := 3.66
+Global AhkSpyVersion := 3.67
 
 	; _________________________________________________ Header _________________________________________________
 
@@ -88,11 +88,9 @@ Global ThisMode := IniRead("StartMode", "Control"), LastModeSave := (ThisMode = 
 , oDocEl, oPubObjGUID, oJScript, oBody, isConfirm, isAhkSpy := 1, TitleText, FreezeTitleText, TitleTextP1, oUIAInterface, Shift_Tab_Down, hButtonButton, hButtonControl, hButtonWindow
 , TitleTextP2 := TitleTextP2_Reserved := "     ( Shift+Tab - Freeze | RButton - CopySelected | Pause - Pause )     v" AhkSpyVersion
 
-, WM_USER := 0x0400
-
 #Include *i %A_AppData%\AhkSpy\IncludeSettings.ahk
 
-Global _DB := "<span style='position: relative; margin-right: 1em;'></span>"
+Global _S1 := "<span>", _S2 := "</span>", _DB := "<span style='position: relative; margin-right: 1em;'></span>"
 , _BT1 := "<span class='button' unselectable='on' oncontextmenu='return false' onmouseleave='OnButtonOut (this)' onmousedown='OnButtonDown (this)' "
 	. "onmouseup='OnButtonUp (this)' onmouseover='OnButtonOver (this)' contenteditable='false' ", _BT2 := "</span>"
 , _BP1 := "<span contenteditable='false' oncontextmenu='return false' class='BB'>" _BT1 "style='color: #" ColorParam ";' name='pre' ", _BP2 := "</span></span>"
@@ -102,7 +100,8 @@ Global _DB := "<span style='position: relative; margin-right: 1em;'></span>"
 , _T0 := "<span class='box'><span class='hr'></span></span>"
 , _PRE1 := "<pre contenteditable='true'>", _PRE2 := "</pre>"
 , _LPRE := "<pre contenteditable='true' class='lpre'"
-, _DP := "  <span id='delimiter' style='color: #" ColorDelimiter "'>&#9642</span>  "
+, _DP := "  <span style='color: #" ColorDelimiter "'>&#9642</span>  "
+, _StIf := "    <span style='color: #f0f0f0'>&#9642</span>    <span name='MS:' style='color: #C0C0C0'>"
 , _BR := "<p class='br'></p>", _DN := "`n"
 , _INPHK := "<input onfocus='funchkinputevent (this, ""focus"")' onblur='funchkinputevent(this, ""blur"")' "
 
@@ -624,7 +623,7 @@ Spot_Win(NotHTML = 0) {
 HTML_Win:
 	If w_ShowStyles
 		WinStyles := GetStyles(WinStyle, WinExStyle, WinID)
-	ButtonStyle_ := _DP _BB1 " id='get_styles_w'> " (w_ShowStyles ? "show styles" : "hide styles") " " _BB2
+	ButtonStyle_ := _DP _BB1 " id='get_styles_w'> " (!w_ShowStyles ? "show styles" : "hide styles") " " _BB2
 
 	HTML_Win =
 	( Ltrim
@@ -905,7 +904,7 @@ HTML_Control:
 	{
 		If c_ShowStyles
 			ControlStyles := GetControlStyles(ControlNN_Sub, CtrlStyle, CtrlExStyle, ControlID)
-		ButtonStyle_ := _DP _BB1 " id='get_styles_c'> " (c_ShowStyles ? "show styles" : "hide styles") " " _BB2
+		ButtonStyle_ := _DP _BB1 " id='get_styles_c'> " (!c_ShowStyles ? "show styles" : "hide styles") " " _BB2
 
 		HTML_ControlExist =
 		( Ltrim
@@ -3129,7 +3128,7 @@ UpdRegister() {
 	; _________________________________________________ WindowStyles _________________________________________________
 
 ViewStylesWin(elem) {  ;
-	elem.innerText := (w_ShowStyles := !w_ShowStyles) ? " show styles " : " hide styles "
+	elem.innerText := !(w_ShowStyles := !w_ShowStyles) ? " show styles " : " hide styles "
 	IniWrite(w_ShowStyles, "w_ShowStyles")
 
 	If w_ShowStyles
@@ -3140,15 +3139,17 @@ ViewStylesWin(elem) {  ;
 	oDoc.getElementById("WinStyles").innerHTML := Styles
 	HTML_Win := oBody.innerHTML
 }
-	;	http://www.frolov-lib.ru/books/bsp/v11/ch3_2.htm   хороший фак по стилям
-	;	http://msdn.microsoft.com/en-us/library/windows/desktop/ms632600(v=vs.85).aspx
-	;	http://msdn.microsoft.com/en-us/library/windows/desktop/ff700543(v=vs.85).aspx
-	;	https://github.com/AHK-just-me/AHK_Gui_Constants/tree/master/Sources
-	;	https://www.autohotkey.com/boards/viewtopic.php?f=6&t=4557
-	;	https://github.com/strobejb/winspy/blob/master/src/DisplayStyleInfo.c
-	;	http://forum.script-coding.com/viewtopic.php?pid=130846#p130846
 
 GetStyles(Style, ExStyle, hWnd, IsChild = 0, IsChildInfoExist = 0) {
+	;	http://msdn.microsoft.com/en-us/library/windows/desktop/ms632600(v=vs.85).aspx			Styles
+	;	http://msdn.microsoft.com/en-us/library/windows/desktop/ff700543(v=vs.85).aspx			ExStyles
+	;	https://www.autohotkey.com/boards/viewtopic.php?p=25880#p25880			Forum Constants
+	
+	;	http://www.frolov-lib.ru/books/bsp/v11/ch3_2.htm   русский фак по стилям
+	;	https://github.com/AHK-just-me/AHK_Gui_Constants/tree/master/Sources			GitHub Constants
+	;	https://github.com/strobejb/winspy/blob/master/src/DisplayStyleInfo.c			Логика WinSpy++
+	;	http://forum.script-coding.com/viewtopic.php?pid=130846#p130846
+	
 	Static Styles, ExStyles, ClassStyles, GCL_STYLE := -26
 	If !hWnd
 		Return
@@ -3226,13 +3227,13 @@ GetStyles(Style, ExStyle, hWnd, IsChild = 0, IsChildInfoExist = 0) {
 		RetEx .= "<span name='MS:'>WS_EX_LAYERED := <span class='param' name='MS:'>0x00080000 && !(CS_OWNDC | CS_CLASSDC)</span></span>`n"
 
 	IF !WS_EX_RIGHT  ;	WS_EX_LEFT
-		RetEx .= "<span name='MS:'>WS_EX_LEFT := <span class='param' name='MS:'>!(WS_EX_RIGHT)</span></span>`n"
+		RetEx .= "<span name='MS:'>WS_EX_LEFT := <span class='param' name='MS:'>0x00000000</span></span>" _StIf "!(WS_EX_RIGHT)</span>`n" 
 
 	IF !WS_EX_LEFTSCROLLBAR  ;	WS_EX_RIGHTSCROLLBAR
-		RetEx .= "<span name='MS:'>WS_EX_RIGHTSCROLLBAR := <span class='param' name='MS:'>!(WS_EX_LEFTSCROLLBAR)</span></span>`n"
+		RetEx .= "<span name='MS:'>WS_EX_RIGHTSCROLLBAR := <span class='param' name='MS:'>0x00000000</span></span>" _StIf "!(WS_EX_LEFTSCROLLBAR)</span>`n" 
 
 	IF !WS_EX_RTLREADING  ;	WS_EX_LTRREADING
-		RetEx .= "<span name='MS:'>WS_EX_LTRREADING := <span class='param' name='MS:'>!(WS_EX_RTLREADING)</span></span>`n"
+		RetEx .= "<span name='MS:'>WS_EX_LTRREADING := <span class='param' name='MS:'>0x00000000</span></span>" _StIf "!(WS_EX_RTLREADING)</span>`n"
 
 	IF WS_EX_WINDOWEDGE && WS_EX_CLIENTEDGE  ;	WS_EX_OVERLAPPEDWINDOW
 		RetEx .= "<span name='MS:'>WS_EX_OVERLAPPEDWINDOW := <span class='param' name='MS:'>(WS_EX_WINDOWEDGE | WS_EX_CLIENTEDGE)</span></span>`n"
@@ -3262,7 +3263,7 @@ GetStyles(Style, ExStyle, hWnd, IsChild = 0, IsChildInfoExist = 0) {
 	; _________________________________________________ ControlStyles _________________________________________________
 
 ViewStylesControl(elem) {
-	elem.innerText := (c_ShowStyles := !c_ShowStyles) ? " show styles " : " hide styles "
+	elem.innerText := !(c_ShowStyles := !c_ShowStyles) ? " show styles " : " hide styles "
 	IniWrite(c_ShowStyles, "c_ShowStyles")
 	If c_ShowStyles
 		Styles := "<a></a>" GetControlStyles(oOther.ControlNN_Sub, oDoc.getElementById("c_Style").innerText, oDoc.getElementById("c_ExStyle").innerText, oOther.MouseControlID)
@@ -4801,7 +4802,7 @@ Return
 +#PgUp::
 +#PgDn::
 +#WheelUp::
-+#WheelDown:: ChangeZoom(InStr(A_ThisHotKey, "Up") ? oZoom.Zoom + 1 : oZoom.Zoom - 1)
++#WheelDown:: ChangeZoom(FastZoom(InStr(A_ThisHotKey, "Up")))
 
 #If
 
@@ -4951,6 +4952,15 @@ ChangeZoom(Val = "")  {
 	SetSize()
 	Redraw()
 	SetTimer, MagnifyZoomSave, -200
+}
+
+FastZoom(Add) {
+ 	Z := oZoom.Zoom, R := Mod(Z, 5)
+	If Add
+		Z := Z >= 10 ? Z + (5 - R) : Z + 1
+	Else	
+		Z := Z > 10 ? Z - (!R ? 5 : R) : Z - 1
+	Return Z
 }
 
 MagnifyZoomSave() {
