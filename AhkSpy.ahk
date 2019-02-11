@@ -26,7 +26,7 @@
     Актуальный исходник - https://raw.githubusercontent.com/serzh82saratov/AhkSpy/master/AhkSpy.ahk
 */
 
-Global AhkSpyVersion := 3.68
+Global AhkSpyVersion := 3.69
 
 	; _________________________________________________ Header _________________________________________________
 
@@ -3143,21 +3143,21 @@ ViewStylesWin(elem) {  ;
 GetStyles(Style, ExStyle, hWnd, IsChild = 0, IsChildInfoExist = 0) {
 	;	http://msdn.microsoft.com/en-us/library/windows/desktop/ms632600(v=vs.85).aspx			Styles
 	;	http://msdn.microsoft.com/en-us/library/windows/desktop/ff700543(v=vs.85).aspx			ExStyles
-	;	https://www.autohotkey.com/boards/viewtopic.php?p=25880#p25880			Forum Constants
+	;	https://www.autohotkey.com/boards/viewtopic.php?p=25880#p25880							Forum Constants
 	
 	;	http://www.frolov-lib.ru/books/bsp/v11/ch3_2.htm   русский фак по стилям
 	;	https://github.com/AHK-just-me/AHK_Gui_Constants/tree/master/Sources			GitHub Constants
 	;	https://github.com/strobejb/winspy/blob/master/src/DisplayStyleInfo.c			Логика WinSpy++
 	;	http://forum.script-coding.com/viewtopic.php?pid=130846#p130846
 	
-	Static Styles, ExStyles, ClassStyles, GCL_STYLE := -26
+	Static Styles, ExStyles, ClassStyles, DlgStyles, ToolTipStyles, GCL_STYLE := -26
 	If !hWnd
 		Return
 	If !Styles
 		Styles := {"WS_BORDER":"0x00800000", "WS_TABSTOP":"0x00010000", "WS_SYSMENU":"0x00080000"
 		, "WS_CLIPCHILDREN":"0x02000000", "WS_CLIPSIBLINGS":"0x04000000", "WS_DISABLED":"0x08000000"
 		, "WS_HSCROLL":"0x00100000", "WS_MAXIMIZE":"0x01000000"
-		, "WS_VISIBLE":"0x10000000", "WS_VSCROLL":"0x00200000", "WS_DLGFRAME":"0x00400000"}
+		, "WS_VISIBLE":"0x10000000", "WS_VSCROLL":"0x00200000"}
 
 		, ExStyles := {"WS_EX_ACCEPTFILES":"0x00000010", "WS_EX_APPWINDOW":"0x00040000", "WS_EX_CLIENTEDGE":"0x00000200"
 		, "WS_EX_CONTROLPARENT":"0x00010000", "WS_EX_DLGMODALFRAME":"0x00000001", "WS_EX_LAYOUTRTL":"0x00400000"
@@ -3171,18 +3171,30 @@ GetStyles(Style, ExStyle, hWnd, IsChild = 0, IsChildInfoExist = 0) {
 		, "CS_DBLCLKS":"0x0008", "CS_DROPSHADOW":"0x00020000", "CS_GLOBALCLASS":"0x4000", "CS_HREDRAW":"0x0002"
 		, "CS_NOCLOSE":"0x0200", "CS_OWNDC":"0x0020", "CS_PARENTDC":"0x0080", "CS_SAVEBITS":"0x0800", "CS_VREDRAW":"0x0001"}
 
+		, DlgStyles := {"DS_3DLOOK":"0x00000004","DS_ABSALIGN":"0x00000001","DS_CENTER":"0x00000800","DS_CENTERMOUSE":"0x00001000","DS_CONTEXTHELP":"0x00002000"
+		,"DS_CONTROL":"0x00000400","DS_FIXEDSYS":"0x00000008","DS_LOCALEDIT":"0x00000020","DS_MODALFRAME":"0x00000080","DS_NOFAILCREATE":"0x00000010"
+		,"DS_NOIDLEMSG":"0x00000100","DS_SETFONT":"0x00000040","DS_SETFOREGROUND":"0x00000200","DS_SHELLFONT":"0x00000048","DS_SYSMODAL":"0x00000002"}
+		
+		, ToolTipStyles := {"TTS_ALWAYSTIP":"0x00000001","TTS_BALLOON":"0x00000040","TTS_CLOSE":"0x00000080","TTS_NOANIMATE":"0x00000010","TTS_NOFADE":"0x00000020"
+		,"TTS_NOPREFIX":"0x00000002","TTS_USEVISUALSTYLE":"0x00000100"}
+		
 	If IsChildInfoExist
 		Style := sStyle := Style & 0xffff0000
 	Else
 		sStyle := Style
 
+	IF (Style & 0x00C00000) = 0x00C00000  && (WS_CAPTION := 1, WS_BORDER := 1, Style -= 0x00C00000)  ;	WS_CAPTION && WS_BORDER
+	{
+		Ret .= "<span name='MS:'>WS_CAPTION := <span class='param' name='MS:'>0x00C00000</span></span>`n"
+		Ret .= "<span name='MS:'>WS_BORDER := <span class='param' name='MS:'>0x00800000</span></span>`n"
+	}
+	IF !WS_CAPTION && (Style & 0x00400000) && (WS_DLGFRAME := 1, Style -= 0x00400000)  ;	WS_DLGFRAME
+		Ret .= "<span name='MS:'>WS_DLGFRAME := <span class='param' name='MS:'>0x00400000</span></span>`n"
+		
 	For K, V In Styles
-		If (Style & V)&& (%K% := 1, Style -= V)
+		If (Style & V) = V && (%K% := 1, Style -= V)
 			Ret .= "<span name='MS:'>" K " := <span class='param' name='MS:'>" V "</span></span>`n"
  
-	IF WS_BORDER && WS_DLGFRAME && (WS_CAPTION := 1)  ;	WS_CAPTION
-		Ret .= "<span name='MS:'>WS_CAPTION := <span class='param' name='MS:'>0x00C00000</span></span>" _StIf "(WS_BORDER | WS_DLGFRAME)</span>`n" 
-
 	IF (Style & 0x00040000) && (WS_THICKFRAME := 1, Style -= 0x00040000)  ;	WS_SIZEBOX := WS_THICKFRAME
 		Ret .= "<span name='MS:'>WS_SIZEBOX := WS_THICKFRAME := <span class='param' name='MS:'>0x00040000</span></span>`n"
 
@@ -3213,7 +3225,22 @@ GetStyles(Style, ExStyle, hWnd, IsChild = 0, IsChildInfoExist = 0) {
 	If (WS_OVERLAPPED && WS_CAPTION && WS_SYSMENU && WS_THICKFRAME && WS_MINIMIZEBOX && WS_MAXIMIZEBOX)  ;	WS_OVERLAPPEDWINDOW := WS_TILEDWINDOW
 		Ret .= "<span name='MS:'>WS_OVERLAPPEDWINDOW := WS_TILEDWINDOW := <span class='param' name='MS:'>0x00CF0000</span></span>"
 		. _StIf "(WS_OVERLAPPED | WS_CAPTION | WS_SYSMENU | WS_THICKFRAME | WS_MINIMIZEBOX | WS_MAXIMIZEBOX)</span>`n"  
-		
+
+	If (Style && !IsChild)
+	{ 
+		If (oOther.WinClass = "#32770")		;	https://docs.microsoft.com/en-us/windows/desktop/dlgbox/dialog-box-styles
+		{
+			For K, V In DlgStyles
+				If (Style & V) = V && (1, Style -= V)
+					Ret .= "<span name='MS:'>" K " := <span class='param' name='MS:'>" V "</span></span>`n"
+		}
+		Else If (oOther.WinClass = "tooltips_class32")		;	https://docs.microsoft.com/en-us/windows/desktop/controls/tooltip-styles
+		{
+			For K, V In ToolTipStyles
+				If (Style & V) = V && (1, Style -= V)
+					Ret .= "<span name='MS:'>" K " := <span class='param' name='MS:'>" V "</span></span>`n" 
+		}
+	}
 	StyleBits := DllCall("GetClassLong", "Ptr", hWnd, "int", GCL_STYLE)	;  https://docs.microsoft.com/en-us/windows/desktop/api/winuser/nf-winuser-setclasslongw
 	For K, V In ClassStyles
 		If (StyleBits & V) && (%K% := 1)
@@ -3246,10 +3273,7 @@ GetStyles(Style, ExStyle, hWnd, IsChild = 0, IsChildInfoExist = 0) {
 
 	IF WS_EX_WINDOWEDGE && WS_EX_TOOLWINDOW && WS_EX_TOPMOST  ;	WS_EX_PALETTEWINDOW 
 		RetEx .= "<span name='MS:'>WS_EX_PALETTEWINDOW := <span class='param' name='MS:'>0x00000188</span></span>" _StIf "(WS_EX_WINDOWEDGE | WS_EX_TOOLWINDOW | WS_EX_TOPMOST)</span>`n" 
-
-	If (!IsChild && oOther.WinClass = "tooltips_class32")
-		Ret .= GetStyle_tooltips_class32(Style, Style)
-
+ 
 	IF Style
 		Ret .= "<span style='color: #" ColorDelimiter ";' name='MS:'>" Format("0x{1:08X}", Style) "</span>`n"
 	If Ret !=
@@ -3819,20 +3843,6 @@ GetStyle_SysTreeView(Style, hWnd)  {
 	If RetEx !=
 		Res .= _T1 " id='__ExStyles_Control'> ( ExStyles - SysTreeView32: <span name='MS:' style='color: #" ColorFont ";'>" Format("0x{:08X}", sExStyle) "</span> ) </span>" _T2 _PRE1 RetEx _PRE2
 	Return Res
-}
-
-GetStyle_tooltips_class32(Style, ByRef NewStyle)  {
-	;	https://www.autohotkey.com/boards/viewtopic.php?p=25874#p25874
-	;	https://docs.microsoft.com/en-us/windows/desktop/controls/tooltip-styles
-	Static oStyles
-	If !oStyles
-		oStyles := {"TTS_ALWAYSTIP":"0x0001","TTS_BALLOON":"0x0040","TTS_CLOSE":"0x0080","TTS_NOANIMATE":"0x0010","TTS_NOFADE":"0x0020","TTS_NOPREFIX":"0x0002","TTS_USEVISUALSTYLE":"0x0100"}
-
-	NewStyle := sStyle := Style
-	For K, V In oStyles
-		If ((sStyle & V) = V) && (1, NewStyle -= V)
-			Ret .= "<span name='MS:'>" K " := <span class='param' name='MS:'>" V "</span></span>`n"
-	Return Ret
 }
 
 GetStyle_ToolbarWindow(Style, hWnd)  {
