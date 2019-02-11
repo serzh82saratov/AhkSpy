@@ -26,7 +26,7 @@
     Актуальный исходник - https://raw.githubusercontent.com/serzh82saratov/AhkSpy/master/AhkSpy.ahk
 */
 
-Global AhkSpyVersion := 3.67
+Global AhkSpyVersion := 3.68
 
 	; _________________________________________________ Header _________________________________________________
 
@@ -101,7 +101,7 @@ Global _S1 := "<span>", _S2 := "</span>", _DB := "<span style='position: relativ
 , _PRE1 := "<pre contenteditable='true'>", _PRE2 := "</pre>"
 , _LPRE := "<pre contenteditable='true' class='lpre'"
 , _DP := "  <span style='color: #" ColorDelimiter "'>&#9642</span>  "
-, _StIf := "    <span style='color: #f0f0f0'>&#9642</span>    <span name='MS:' style='color: #C0C0C0'>"
+, _StIf := "    <span style='color: #f0f0f0'>&#9642</span>    <span class='faded_color' name='MS:' style='color: #C0C0C0'>"
 , _BR := "<p class='br'></p>", _DN := "`n"
 , _INPHK := "<input onfocus='funchkinputevent (this, ""focus"")' onblur='funchkinputevent(this, ""blur"")' "
 
@@ -3156,7 +3156,7 @@ GetStyles(Style, ExStyle, hWnd, IsChild = 0, IsChildInfoExist = 0) {
 	If !Styles
 		Styles := {"WS_BORDER":"0x00800000", "WS_TABSTOP":"0x00010000", "WS_SYSMENU":"0x00080000"
 		, "WS_CLIPCHILDREN":"0x02000000", "WS_CLIPSIBLINGS":"0x04000000", "WS_DISABLED":"0x08000000"
-		, "WS_GROUP":"0x00020000", "WS_HSCROLL":"0x00100000", "WS_MAXIMIZE":"0x01000000"
+		, "WS_HSCROLL":"0x00100000", "WS_MAXIMIZE":"0x01000000"
 		, "WS_VISIBLE":"0x10000000", "WS_VSCROLL":"0x00200000", "WS_DLGFRAME":"0x00400000"}
 
 		, ExStyles := {"WS_EX_ACCEPTFILES":"0x00000010", "WS_EX_APPWINDOW":"0x00040000", "WS_EX_CLIENTEDGE":"0x00000200"
@@ -3172,14 +3172,16 @@ GetStyles(Style, ExStyle, hWnd, IsChild = 0, IsChildInfoExist = 0) {
 		, "CS_NOCLOSE":"0x0200", "CS_OWNDC":"0x0020", "CS_PARENTDC":"0x0080", "CS_SAVEBITS":"0x0800", "CS_VREDRAW":"0x0001"}
 
 	If IsChildInfoExist
-		Style := Style & 0xffff0000
+		Style := sStyle := Style & 0xffff0000
+	Else
+		sStyle := Style
 
 	For K, V In Styles
 		If (Style & V)&& (%K% := 1, Style -= V)
 			Ret .= "<span name='MS:'>" K " := <span class='param' name='MS:'>" V "</span></span>`n"
-
-	IF WS_BORDER && WS_DLGFRAME && (WS_CAPTION := 1)  ;	WS_CAPTION 0x00C00000
-		Ret .= "<span name='MS:'>WS_CAPTION := <span class='param' name='MS:'>0x00C00000 = (WS_BORDER | WS_DLGFRAME)</span></span>`n"
+ 
+	IF WS_BORDER && WS_DLGFRAME && (WS_CAPTION := 1)  ;	WS_CAPTION
+		Ret .= "<span name='MS:'>WS_CAPTION := <span class='param' name='MS:'>0x00C00000</span></span>" _StIf "(WS_BORDER | WS_DLGFRAME)</span>`n" 
 
 	IF (Style & 0x00040000) && (WS_THICKFRAME := 1, Style -= 0x00040000)  ;	WS_SIZEBOX := WS_THICKFRAME
 		Ret .= "<span name='MS:'>WS_SIZEBOX := WS_THICKFRAME := <span class='param' name='MS:'>0x00040000</span></span>`n"
@@ -3187,28 +3189,31 @@ GetStyles(Style, ExStyle, hWnd, IsChild = 0, IsChildInfoExist = 0) {
 	IF (Style & 0x40000000) && (WS_CHILD := 1, Style -= 0x40000000)  ;	WS_CHILD := WS_CHILDWINDOW
 		Ret .= "<span name='MS:'>WS_CHILD := WS_CHILDWINDOW := <span class='param' name='MS:'>0x40000000</span></span>`n"
 
+	IF (Style & 0x00020000) && WS_CHILD && (WS_GROUP := 1, Style -= 0x00020000)  ;	WS_GROUP
+		Ret .= "<span name='MS:'>WS_GROUP := <span class='param' name='MS:'>0x00020000</span></span>" _StIf "(WS_CHILD)</span>`n"
+
 	IF (Style & 0x20000000) && (WS_MINIMIZE := 1, Style -= 0x20000000)  ;	WS_MINIMIZE := WS_ICONIC
 		Ret .= "<span name='MS:'>WS_MINIMIZE := WS_ICONIC := <span class='param' name='MS:'>0x20000000</span></span>`n"
 
 	IF (Style & 0x80000000) && !WS_CHILD && (WS_POPUP := 1, Style -= 0x80000000)  ;	WS_POPUP
-		Ret .= "<span name='MS:'>WS_POPUP := <span class='param' name='MS:'>0x80000000 && !(WS_CHILD)</span></span>`n"
+		Ret .= "<span name='MS:'>WS_POPUP := <span class='param' name='MS:'>0x80000000</span></span>" _StIf "!(WS_CHILD)</span>`n"
 
 	IF (WS_POPUP && WS_BORDER && WS_SYSMENU) && (WS_POPUPWINDOW := 1)  ;	WS_POPUPWINDOW
-		Ret .= "<span name='MS:'>WS_POPUPWINDOW := <span class='param' name='MS:'>(WS_POPUP | WS_BORDER | WS_SYSMENU)</span></span>`n"
+		Ret .= "<span name='MS:'>WS_POPUPWINDOW := <span class='param' name='MS:'>0x80880000</span></span>" _StIf "(WS_POPUP | WS_BORDER | WS_SYSMENU)</span>`n" 
 
 	IF !WS_POPUP && !WS_CHILD && WS_BORDER && WS_CAPTION && (WS_OVERLAPPED := 1)  ;	WS_OVERLAPPED := WS_TILED
-		Ret .= "<span name='MS:'>WS_OVERLAPPED := WS_TILED := <span class='param' name='MS:'>WS_BORDER && WS_CAPTION && !(WS_POPUP | WS_CHILD)</span></span>`n"
+		Ret .= "<span name='MS:'>WS_OVERLAPPED := WS_TILED := <span class='param' name='MS:'>0x00000000</span></span>" _StIf "(WS_BORDER | WS_CAPTION) & !(WS_POPUP | WS_CHILD)</span>`n" 
 
-	IF WS_SYSMENU && (Style & 0x00020000) && (WS_MINIMIZEBOX := 1, Style -= 0x00020000)  ;	WS_MINIMIZEBOX
-		Ret .= "<span name='MS:'>WS_MINIMIZEBOX := <span class='param' name='MS:'>0x00020000 && WS_SYSMENU</span></span>`n"
+	IF WS_SYSMENU && (sStyle & 0x00020000) && (WS_MINIMIZEBOX := 1, (Style & 0x00020000) && (Style -= 0x00020000))  ;	WS_MINIMIZEBOX
+		Ret .= "<span name='MS:'>WS_MINIMIZEBOX := <span class='param' name='MS:'>0x00020000</span></span>" _StIf "(WS_SYSMENU)</span>`n" 
 
-	IF WS_SYSMENU && (Style & 0x00010000) && (WS_MAXIMIZEBOX := 1, Style -= 0x00010000)  ;	WS_MAXIMIZEBOX
-		Ret .= "<span name='MS:'>WS_MAXIMIZEBOX := <span class='param' name='MS:'>0x00010000 && WS_SYSMENU</span></span>`n"
+	IF WS_SYSMENU && (sStyle & 0x00010000) && (WS_MAXIMIZEBOX := 1)  ;	WS_MAXIMIZEBOX
+		Ret .= "<span name='MS:'>WS_MAXIMIZEBOX := <span class='param' name='MS:'>0x00010000</span></span>" _StIf "(WS_SYSMENU)</span>`n"
 
 	If (WS_OVERLAPPED && WS_CAPTION && WS_SYSMENU && WS_THICKFRAME && WS_MINIMIZEBOX && WS_MAXIMIZEBOX)  ;	WS_OVERLAPPEDWINDOW := WS_TILEDWINDOW
-		Ret .= "<span name='MS:'>WS_OVERLAPPEDWINDOW := WS_TILEDWINDOW := "
-			. "<span class='param' name='MS:'>(WS_OVERLAPPED | WS_CAPTION | WS_SYSMENU | WS_THICKFRAME | WS_MINIMIZEBOX | WS_MAXIMIZEBOX)</span></span>`n"
-
+		Ret .= "<span name='MS:'>WS_OVERLAPPEDWINDOW := WS_TILEDWINDOW := <span class='param' name='MS:'>0x00CF0000</span></span>"
+		. _StIf "(WS_OVERLAPPED | WS_CAPTION | WS_SYSMENU | WS_THICKFRAME | WS_MINIMIZEBOX | WS_MAXIMIZEBOX)</span>`n"  
+		
 	StyleBits := DllCall("GetClassLong", "Ptr", hWnd, "int", GCL_STYLE)	;  https://docs.microsoft.com/en-us/windows/desktop/api/winuser/nf-winuser-setclasslongw
 	For K, V In ClassStyles
 		If (StyleBits & V) && (%K% := 1)
@@ -3219,12 +3224,13 @@ GetStyles(Style, ExStyle, hWnd, IsChild = 0, IsChildInfoExist = 0) {
 			RetEx .= "<span name='MS:'>" K " := <span class='param' name='MS:'>" V "</span></span>`n"
 
 	IF !CS_OWNDC && !CS_CLASSDC && (ExStyle & 0x02000000) && (1, ExStyle -= 0x02000000)  ;	WS_EX_COMPOSITED
-		RetEx .= "<span name='MS:'>WS_EX_COMPOSITED := <span class='param' name='MS:'>0x02000000 && !(CS_OWNDC | CS_CLASSDC)</span></span>`n"
+		RetEx .= "<span name='MS:'>WS_EX_COMPOSITED := <span class='param' name='MS:'>0x02000000</span></span>" _StIf "!(CS_OWNDC | CS_CLASSDC)</span>`n"
 
 	IF !WS_MAXIMIZEBOX && !WS_MINIMIZEBOX && (ExStyle & 0x00000400) && (1, ExStyle -= 0x00000400)  ;	WS_EX_CONTEXTHELP
-		RetEx .= "<span name='MS:'>WS_EX_CONTEXTHELP := <span class='param' name='MS:'>0x00000400 && !(WS_MAXIMIZEBOX | WS_MINIMIZEBOX)</span></span>`n"
+		RetEx .= "<span name='MS:'>WS_EX_CONTEXTHELP := <span class='param' name='MS:'>0x00000400</span></span>" _StIf "!(WS_MAXIMIZEBOX | WS_MINIMIZEBOX)</span>`n"
+		
 	IF !CS_OWNDC && !CS_CLASSDC && (ExStyle & 0x00080000) && (1, ExStyle -= 0x00080000)  ;	WS_EX_LAYERED
-		RetEx .= "<span name='MS:'>WS_EX_LAYERED := <span class='param' name='MS:'>0x00080000 && !(CS_OWNDC | CS_CLASSDC)</span></span>`n"
+		RetEx .= "<span name='MS:'>WS_EX_LAYERED := <span class='param' name='MS:'>0x00080000</span></span>" _StIf "!(CS_OWNDC | CS_CLASSDC)</span>`n"
 
 	IF !WS_EX_RIGHT  ;	WS_EX_LEFT
 		RetEx .= "<span name='MS:'>WS_EX_LEFT := <span class='param' name='MS:'>0x00000000</span></span>" _StIf "!(WS_EX_RIGHT)</span>`n" 
@@ -3236,10 +3242,10 @@ GetStyles(Style, ExStyle, hWnd, IsChild = 0, IsChildInfoExist = 0) {
 		RetEx .= "<span name='MS:'>WS_EX_LTRREADING := <span class='param' name='MS:'>0x00000000</span></span>" _StIf "!(WS_EX_RTLREADING)</span>`n"
 
 	IF WS_EX_WINDOWEDGE && WS_EX_CLIENTEDGE  ;	WS_EX_OVERLAPPEDWINDOW
-		RetEx .= "<span name='MS:'>WS_EX_OVERLAPPEDWINDOW := <span class='param' name='MS:'>(WS_EX_WINDOWEDGE | WS_EX_CLIENTEDGE)</span></span>`n"
+		RetEx .= "<span name='MS:'>WS_EX_OVERLAPPEDWINDOW := <span class='param' name='MS:'>0x00000300</span></span>" _StIf "(WS_EX_WINDOWEDGE | WS_EX_CLIENTEDGE)</span>`n"
 
-	IF WS_EX_WINDOWEDGE && WS_EX_TOOLWINDOW && WS_EX_TOPMOST  ;	WS_EX_PALETTEWINDOW
-		RetEx .= "<span name='MS:'>WS_EX_PALETTEWINDOW := <span class='param' name='MS:'>(WS_EX_WINDOWEDGE | WS_EX_TOOLWINDOW | WS_EX_TOPMOST)</span></span>`n"
+	IF WS_EX_WINDOWEDGE && WS_EX_TOOLWINDOW && WS_EX_TOPMOST  ;	WS_EX_PALETTEWINDOW 
+		RetEx .= "<span name='MS:'>WS_EX_PALETTEWINDOW := <span class='param' name='MS:'>0x00000188</span></span>" _StIf "(WS_EX_WINDOWEDGE | WS_EX_TOOLWINDOW | WS_EX_TOPMOST)</span>`n" 
 
 	If (!IsChild && oOther.WinClass = "tooltips_class32")
 		Ret .= GetStyle_tooltips_class32(Style, Style)
@@ -4179,7 +4185,7 @@ MS_IsSelection() {
 	Return oMS.ELSel.OuterText != ""
 }
 
-MS_Select(EL) {
+MS_Select(EL) { 
 	If InStr(EL.Name, ":S")
 		oMS.ELSel := EL.ParentElement, oMS.ELSel.style.background := "#" ColorSelMouseHover
 	Else If InStr(EL.Name, ":N")
@@ -4187,7 +4193,7 @@ MS_Select(EL) {
 	Else If InStr(EL.Name, ":P")
 		oMS.ELSel := oDoc.all.item(EL.sourceIndex - 1).ParentElement, oMS.ELSel.style.background := "#" ColorSelMouseHover
 	Else
-		oMS.ELSel := EL, EL.style.background := "#" ColorSelMouseHover
+		oMS.ELSel := EL, EL.style.background := "#" ColorSelMouseHover 
 }
 
 	; _________________________________________________ Load JScripts _________________________________________________
