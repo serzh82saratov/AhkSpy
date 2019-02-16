@@ -26,7 +26,7 @@
     Актуальный исходник - https://raw.githubusercontent.com/serzh82saratov/AhkSpy/master/AhkSpy.ahk
 */
 
-Global AhkSpyVersion := 3.71
+Global AhkSpyVersion := 3.72
 
 	; _________________________________________________ Header _________________________________________________
 
@@ -65,10 +65,10 @@ Global MemoryFontSize := IniRead("MemoryFontSize", 0)
 , ColorTitle := "27419B"												;  Цвет шрифта заголовка
 , ColorParam := "189200"												;  Цвет шрифта параметров
 , HeigtButton := 32														;  Высота кнопок
+, RangeTimer := 100														;  Период опроса данных, увеличьте на слабом ПК
   HeightStart := 530													;  Высота окна при старте
   wKey := 142															;  Ширина кнопок
   wColor := wKey//2														;  Ширина цветного фрагмента
-  RangeTimer := 100														;  Период опроса данных, увеличьте на слабом ПК
 
 Global ThisMode := IniRead("StartMode", "Control"), LastModeSave := (ThisMode = "LastMode"), ThisMode := ThisMode = "LastMode" ? IniRead("LastMode", "Control") : ThisMode
 , ActiveNoPause := IniRead("ActiveNoPause", 0), MemoryPos := IniRead("MemoryPos", 0), MemorySize := IniRead("MemorySize", 0)
@@ -338,7 +338,10 @@ F8 Up:: ChangeMode()
 #If isAhkSpy && (StateLight = 3 || Shift_Tab_Down)
 
 ~*RShift Up::
-~*LShift Up:: HideAllMarkers(), Shift_Tab_Down := 0, CheckHideMarker()
+~*LShift Up:: 
+ShiftUpHide:
+	HideAllMarkers(), Shift_Tab_Down := 0, CheckHideMarker()
+	Return
 
 #If isAhkSpy && Sleep != 1
 
@@ -766,7 +769,7 @@ Mode_Control:
 	If isFindView
 		FindNewText()
 
-Loop_Control:
+Loop_Control: 
 	If (WinActive("ahk_id" hGui) && !ActiveNoPause) || Sleep = 1
 		GoTo Repeat_Loop_Control
 	If !OnlyShiftTab && Spot_Control()
@@ -2338,10 +2341,23 @@ WM_LBUTTONDOWN(wp, lp, msg, hwnd) {
 			SendInput {LAlt Down}{Escape}{LAlt Up}
 			ToolTip("Alt+Escape", 300)
 			ZoomMsg(7, 0)
+			If (OnlyShiftTab && !isPaused && ThisMode != "Hotkey")
+			{
+				OnlyShiftTab := 0
+				SetTimer, Loop_%ThisMode%, -1
+				SetTimer, OnlyShiftTab_LButton_Up_Wait, -1
+			}
 		}
 	}
 }
 
+OnlyShiftTab_LButton_Up_Wait:
+	KeyWait, LButton
+	OnlyShiftTab := 1
+	SetTimer, Loop_%ThisMode%, Off
+	SetTimer, ShiftUpHide, -300
+	return
+	
 ChildToPath(hwnd, str = "", WinID = 0, i = "")
 {
 	Static GA_ROOT := 2, GW_HWNDPREV := 3
@@ -3194,7 +3210,7 @@ GetStyles(Style, ExStyle, hWnd, IsChild = 0, IsChildInfoExist = 0) {
 		If (Style & V) = V && (%K% := 1, Style -= V) 
 			Ret .= QStyle(K, V)
  
-	IF (Style & 0x00040000) && (WS_THICKFRAME := 1, Style -= 0x00040000)  ;	WS_SIZEBOX := WS_THICKFRAME 
+	IF (Style & 0x00040000) && (WS_SIZEBOX := 1, WS_THICKFRAME := 1, Style -= 0x00040000)  ;	WS_SIZEBOX := WS_THICKFRAME 
 		Ret .= QStyle("WS_SIZEBOX := WS_THICKFRAME", "0x00040000")
 
 	IF (Style & 0x40000000) && (WS_CHILD := 1, Style -= 0x40000000)  ;	WS_CHILD := WS_CHILDWINDOW
@@ -3224,8 +3240,8 @@ GetStyles(Style, ExStyle, hWnd, IsChild = 0, IsChildInfoExist = 0) {
 	IF WS_SYSMENU && (sStyle & 0x00010000) && (WS_MAXIMIZEBOX := 1)  ;	WS_MAXIMIZEBOX
 		Ret .= QStyle("WS_MAXIMIZEBOX", "0x00010000", "(WS_SYSMENU)")
 
-	If (WS_OVERLAPPED && WS_THICKFRAME && WS_SYSMENU && WS_MINIMIZEBOX && WS_MAXIMIZEBOX)  ;	WS_OVERLAPPEDWINDOW := WS_TILEDWINDOW
-		Ret .= QStyle("WS_OVERLAPPEDWINDOW := WS_TILEDWINDOW", "0x00CF0000", "(WS_OVERLAPPED | WS_THICKFRAME | WS_SYSMENU | WS_MINIMIZEBOX | WS_MAXIMIZEBOX)") 
+	If (WS_OVERLAPPED && WS_SIZEBOX && WS_SYSMENU && WS_MINIMIZEBOX && WS_MAXIMIZEBOX)  ;	WS_OVERLAPPEDWINDOW := WS_TILEDWINDOW
+		Ret .= QStyle("WS_OVERLAPPEDWINDOW := WS_TILEDWINDOW", "0x00CF0000", "(WS_OVERLAPPED | WS_SIZEBOX | WS_SYSMENU | WS_MINIMIZEBOX | WS_MAXIMIZEBOX)") 
 
 	If (Style && !IsChild)
 	{ 
@@ -3414,10 +3430,10 @@ GetStyle_Edit(Style, hWnd)  {
 	Style := sStyle := Style & 0xffff
 	For K, V In oStyles
 		If ((Style & V) = V) && (%K% := 1, Style -= V)
-			Ret .= "<span name='MS:'>" K " := <span class='param' name='MS:'>" V "</span></span>`n"
+			Ret .= QStyle(K, V)
 
 	IF !ES_CENTER && !ES_RIGHT  ;	ES_LEFT
-		Ret .= "<span name='MS:'>ES_LEFT := <span class='param' name='MS:'>!(ES_CENTER | ES_RIGHT)</span></span>`n"
+		Ret .= QStyle("ES_LEFT", "0x0000", "!(ES_CENTER | ES_RIGHT)")
 
 	IF Style
 		Ret .= GetStyle_CommonСontrol(Style, Style)
@@ -3444,22 +3460,22 @@ GetStyle_SysTabControl(Style, hWnd)  {
 	Style := sStyle := Style & 0xffff
 	For K, V In oStyles
 		If ((Style & V) = V) && (%K% := 1, Style -= V)
-			Ret .= "<span name='MS:'>" K " := <span class='param' name='MS:'>" V "</span></span>`n"
+			Ret .= QStyle(K, V)
 
 	IF !TCS_BUTTONS   ;	TCS_TABS
-		Ret .= "<span name='MS:'>TCS_TABS := <span class='param' name='MS:'>!(TCS_BUTTONS)</span></span>`n"
+		Ret .= QStyle("TCS_TABS", "0x0000", "!(TCS_BUTTONS)")
 	IF !TCS_MULTILINE   ;	TCS_SINGLELINE
-		Ret .= "<span name='MS:'>TCS_SINGLELINE := <span class='param' name='MS:'>!(TCS_MULTILINE)</span></span>`n"
+		Ret .= QStyle("TCS_SINGLELINE", "0x0000", "!(TCS_MULTILINE)")
 	IF TCS_MULTILINE   ;	TCS_RIGHTJUSTIFY
-		Ret .= "<span name='MS:'>TCS_RIGHTJUSTIFY := <span class='param' name='MS:'>TCS_MULTILINE</span></span>`n"
+		Ret .= QStyle("TCS_RIGHTJUSTIFY", "0x0000", "(TCS_MULTILINE)")
 	IF TCS_MULTILINE && ((Style & 0x0080) = 0x0080) && (TCS_VERTICAL := 1, Style -= 0x0080)  ;	"TCS_VERTICAL":"0x0080"
-		Ret .= "<span name='MS:'>TCS_VERTICAL := <span class='param' name='MS:'>0x0080 && TCS_MULTILINE</span></span>`n"
+		Ret .= QStyle("TCS_VERTICAL", "0x0080", "(TCS_MULTILINE)")
 	IF ((Style & 0x0002) = 0x0002) && (1, Style -= 0x0002)   ;	"TCS_BOTTOM":"0x0002","TCS_RIGHT":"0x0002"
 	{
 		IF TCS_VERTICAL
-			Ret .= "<span name='MS:'>TCS_RIGHT := <span class='param' name='MS:'>0x0002 && TCS_VERTICAL</span></span>`n"
+			Ret .= QStyle("TCS_RIGHT", "0x0002", "(TCS_VERTICAL)")
 		Else
-			Ret .= "<span name='MS:'>TCS_BOTTOM := <span class='param' name='MS:'>0x0002 && !(TCS_VERTICAL)</span></span>`n"
+			Ret .= QStyle("TCS_BOTTOM", "0x0002", "!(TCS_VERTICAL)")
 	}
 	IF Style
 		Ret .= GetStyle_CommonСontrol(Style, Style)
@@ -3469,9 +3485,9 @@ GetStyle_SysTabControl(Style, hWnd)  {
 		Res .= _T1 " id='__Styles_Control'> ( Styles - SysTabControl32: <span name='MS:' style='color: #" ColorFont ";'>" Format("0x{:04X}", sStyle) "</span> ) </span>" _T2 _PRE1 Ret _PRE2
 
 	If ((ExStyle & 0x00000001) = 0x00000001) && (1, ExStyle -= 0x00000001)  ;	TCS_EX_FLATSEPARATORS
-		RetEx .= "<span name='MS:'>TCS_EX_FLATSEPARATORS := <span class='param' name='MS:'>0x00000001</span></span>`n"
+		RetEx .= QStyle("TCS_EX_FLATSEPARATORS", "0x00000001")
 	If ((ExStyle & 0x00000002) = 0x00000002) && (1, ExStyle -= 0x00000002)  ;	TCS_EX_REGISTERDROP
-		RetEx .= "<span name='MS:'>TCS_EX_REGISTERDROP := <span class='param' name='MS:'>0x00000002</span></span>`n"
+		RetEx .= QStyle("TCS_EX_REGISTERDROP", "0x00000002")
 
 	IF ExStyle
 		Ret .= "<span style='color: #" ColorDelimiter ";' name='MS:'>" Format("0x{1:08X}", ExStyle)  "</span>`n"
@@ -3501,18 +3517,18 @@ GetStyle_ComboBox(Style, hWnd)  {
 			SendMessage, CBEM_GETEXTENDEDSTYLE, 0, 0, , ahk_id %hParent%
 			ExStyle := sExStyle := ErrorLevel
 			For K, V In oExStyles
-				If ((ExStyle & V) = V) && (1, ExStyle -= V)
-					RetEx .= "<span name='MS:'>" K " := <span class='param' name='MS:'>" V "</span></span>`n"
+				If ((ExStyle & V) = V) && (1, ExStyle -= V) 
+					RetEx .= QStyle(K, V)
 			IF ExStyle
 				RetEx .= "<span style='color: #" ColorDelimiter ";' name='MS:'>" Format("0x{1:04X}", ExStyle) "</span>`n"
 		} 
 	}
 	Style := sStyle := Style & 0xffff
 	If ((Style & oEx.CBS_DROPDOWNLIST) = oEx.CBS_DROPDOWNLIST) && (1, Style -= oEx.CBS_DROPDOWNLIST)  ;	CBS_DROPDOWNLIST
-		Ret .= "<span name='MS:'>CBS_DROPDOWNLIST := <span class='param' name='MS:'>" oEx.CBS_DROPDOWNLIST "</span></span>`n"
+		Ret .= QStyle("CBS_DROPDOWNLIST", oEx.CBS_DROPDOWNLIST)
 	For K, V In oStyles
 		If ((Style & V) = V) && (1, Style -= V)
-			Ret .= "<span name='MS:'>" K " := <span class='param' name='MS:'>" V "</span></span>`n"
+			Ret .= QStyle(K, V)
 	IF Style
 		Ret .= GetStyle_CommonСontrol(Style, Style)
 	IF Style
@@ -3544,10 +3560,10 @@ GetStyle_ListBox(Style, hWnd)  {
 
 	For K, V In oStyles
 		If ((Style & V) = V) && (%K% := 1, Style -= V)
-			Ret .= "<span name='MS:'>" K " := <span class='param' name='MS:'>" V "</span></span>`n"
+			Ret .= QStyle(K, V) 
 
-	IF LBS_NOTIFY && LBS_SORT && (wStyle & WS_VSCROLL) && (wStyle & WS_BORDER) && (1, Style -= 0x0003)  ;	LBS_STANDARD
-		Ret .= "<span name='MS:'>LBS_STANDARD := <span class='param' name='MS:'>0xA00003 && (LBS_NOTIFY | LBS_SORT | WS_VSCROLL | WS_BORDER)</span></span>`n"
+	IF LBS_NOTIFY && LBS_SORT && (wStyle & WS_VSCROLL) && (wStyle & WS_BORDER) && (1, Style -= 0x0003)  ;	LBS_STANDARD 
+		Ret .= QStyle("LBS_STANDARD", "0xA00003", "(LBS_NOTIFY | LBS_SORT | WS_VSCROLL | WS_BORDER)")
 
 	IF Style
 		Ret .= GetStyle_CommonСontrol(Style, Style)
@@ -3567,7 +3583,7 @@ GetStyle_SysAnimate(Style, hWnd)  {
 	Style := sStyle := Style & 0xffff
 	For K, V In oStyles
 		If ((Style & V) = V) && (1, Style -= V)
-			Ret .= "<span name='MS:'>" K " := <span class='param' name='MS:'>" V "</span></span>`n"
+			Ret .= QStyle(K, V)  
 	IF Style
 		Ret .= GetStyle_CommonСontrol(Style, Style)
 	IF Style
@@ -3588,7 +3604,7 @@ GetStyle_SysPager(Style, hWnd)  {
 		Ret .= "<span name='MS:'>PGS_VERT := <span class='param' name='MS:'>0x0000   !(PGS_HORZ)</span></span>`n"
 	For K, V In oStyles
 		If ((Style & V) = V) && (1, Style -= V)
-			Ret .= "<span name='MS:'>" K " := <span class='param' name='MS:'>" V "</span></span>`n"
+			Ret .= QStyle(K, V)
 	IF Style
 		Ret .= GetStyle_CommonСontrol(Style, Style)
 	IF Style
@@ -3608,8 +3624,8 @@ GetStyle_msctls_updown(Style, hWnd)  {
 
 	Style := sStyle := Style & 0xffff
 	For K, V In oStyles
-		If ((Style & V) = V) && (1, Style -= V)
-			Ret .= "<span name='MS:'>" K " := <span class='param' name='MS:'>" V "</span></span>`n"
+		If ((Style & V) = V) && (1, Style -= V) 
+			Ret .= QStyle(K, V) 
 	IF Style
 		Ret .= GetStyle_CommonСontrol(Style, Style)
 	IF Style
@@ -3630,9 +3646,9 @@ GetStyle_SysDateTimePick(Style, hWnd)  {
 	Style := sStyle := Style & 0xffff
 	For K, V In oStyles
 		If ((Style & V) = V) && (%K% := 1, Style -= V)
-			Ret .= "<span name='MS:'>" K " := <span class='param' name='MS:'>" V "</span></span>`n"
+			Ret .= QStyle(K, V) 
 	IF !DTS_LONGDATEFORMAT  ;	DTS_SHORTDATEFORMAT
-		Ret .= "<span name='MS:'>DTS_SHORTDATEFORMAT := <span class='param' name='MS:'>!(DTS_LONGDATEFORMAT)</span></span>`n"
+		Ret .= QStyle("DTS_SHORTDATEFORMAT", "0x0000", "!(DTS_LONGDATEFORMAT)")
 
 	IF Style
 		Ret .= GetStyle_CommonСontrol(Style, Style)
@@ -3654,7 +3670,7 @@ GetStyle_SysMonthCal(Style, hWnd)  {
 	Style := sStyle := Style & 0xffff
 	For K, V In oStyles
 		If ((Style & V) = V) && (1, Style -= V)
-			Ret .= "<span name='MS:'>" K " := <span class='param' name='MS:'>" V "</span></span>`n"
+			Ret .= QStyle(K, V) 
 	IF Style
 		Ret .= GetStyle_CommonСontrol(Style, Style)
 	IF Style
@@ -3677,23 +3693,24 @@ GetStyle_msctls_trackbar(Style, hWnd)  {
 	Style := sStyle := Style & 0xffff
 	For K, V In oStyles
 		If ((Style & V) = V) && (%K% := 1, Style -= V)
-			Ret .= "<span name='MS:'>" K " := <span class='param' name='MS:'>" V "</span></span>`n"
+			Ret .= QStyle(K, V)
 
 	IF !TBS_VERT
 	{
-		Ret .= "<span name='MS:'>TBS_HORZ := <span class='param' name='MS:'>!(TBS_VERT)</span></span>`n"  ;	TBS_HORZ
-		IF ((Style & 0x0004) = 0x0004) && (1, Style -= 0x0004)  ;	TBS_TOP
-			Ret .= "<span name='MS:'>TBS_TOP := <span class='param' name='MS:'>0x0004 && TBS_HORZ</span></span>`n"
+		Ret .= QStyle("TBS_HORZ", "0x0000", "!(TBS_VERT)")  ;	TBS_HORZ
+		IF ((Style & 0x0004) = 0x0004) && (1, Style -= 0x0004)  ;	TBS_TOP 
+			Ret .= QStyle("TBS_TOP", "0x0004", "(TBS_HORZ)")
 		IF !TBS_TOP  ;	TBS_BOTTOM
 			Ret .= "<span name='MS:'>TBS_BOTTOM := <span class='param' name='MS:'>!(TBS_TOP) && TBS_HORZ</span></span>`n"
+			Ret .= QStyle("TBS_BOTTOM", "0x0000", "!(TBS_TOP) && (TBS_HORZ)")
 	}
 	Else
 	{
 		IF ((Style & 0x0004) = 0x0004) && (TBS_LEFT := 1, Style -= 0x0004)  ;	TBS_LEFT
-			Ret .= "<span name='MS:'>TBS_LEFT := <span class='param' name='MS:'>0x0004 && TBS_VERT</span></span>`n"
+			Ret .= QStyle("TBS_LEFT", "0x0004", "(TBS_VERT)")
 
-		IF !TBS_LEFT  ;	TBS_RIGHT
-			Ret .= "<span name='MS:'>TBS_RIGHT := <span class='param' name='MS:'>!(TBS_LEFT) && TBS_VERT</span></span>`n"
+		IF !TBS_LEFT  ;	TBS_RIGHT 
+			Ret .= QStyle("TBS_RIGHT", "0x0000", "!(TBS_LEFT) && (TBS_VERT)")
 	}
 	IF Style
 		Ret .= GetStyle_CommonСontrol(Style, Style)
@@ -3714,7 +3731,7 @@ GetStyle_msctls_statusbar(Style, hWnd)  {
 	Style := sStyle := Style & 0xffff
 	For K, V In oStyles
 		If ((Style & V) = V) && (1, Style -= V)
-			Ret .= "<span name='MS:'>" K " := <span class='param' name='MS:'>" V "</span></span>`n"
+			Ret .= QStyle(K, V)
 	IF Style
 		Ret .= GetStyle_CommonСontrol(Style, Style)
 	IF Style
@@ -3733,8 +3750,8 @@ GetStyle_msctls_progress(Style, hWnd)  {
 
 	Style := sStyle := Style & 0xffff
 	For K, V In oStyles
-		If ((Style & V) = V) && (1, Style -= V)
-			Ret .= "<span name='MS:'>" K " := <span class='param' name='MS:'>" V "</span></span>`n"
+		If ((Style & V) = V) && (1, Style -= V) 
+			Ret .= QStyle(K, V) 
 	IF Style
 		Ret .= GetStyle_CommonСontrol(Style, Style)
 	IF Style
