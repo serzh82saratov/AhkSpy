@@ -26,7 +26,7 @@
     Актуальный исходник - https://raw.githubusercontent.com/serzh82saratov/AhkSpy/master/AhkSpy.ahk
 */
 
-Global AhkSpyVersion := 3.73
+Global AhkSpyVersion := 3.74
 
 	; _________________________________________________ Header _________________________________________________
 
@@ -927,7 +927,7 @@ HTML_Control:
 	<body id='body'>
 	%_T1% id='__Mouse'> ( Mouse ) </span>%_BT1% id='pause_button'> pause %_BT2%%_DB%%_DB%%_BT1% id='run_zoom'> zoom %_BT2%%_T2%%_BR%
 	%_PRE1%%_BP1% id='set_pos'>Screen:%_BP2%  <span name='MS:'>x%MXS% y%MYS%</span>%_DP%%_BP1% id='set_pos'>Window:%_BP2%  <span name='MS:'>x%RWinX% y%RWinY%</span>%_DP%%_BP1% id='set_pos'>Client:%_BP2%  <span name='MS:'>x%MXC% y%MYC%</span>%WithRespectWin%%WithRespectClient%
-	<span class='param'>Relative active window:</span>  <span name='MS:'>x%MXWA% y%MYWA%</span>%_DP%<span class='param'>exe</span> <span name='MS:'>%ProcessName_A%</span> <span class='param'>class</span> <span name='MS:'>%WinClass_A%</span> <span class='param'>hwnd</span> <span name='MS:'>%HWND_A%</span>%_PRE2%
+	<span class='param'>Relative active window:</span>  <span name='MS:'>x%MXWA% y%MYWA%</span>%_DP%<span class='param'>class</span> <span name='MS:'>%WinClass_A%</span> <span class='param'>exe</span> <span name='MS:'>%ProcessName_A%</span> <span class='param'>hwnd</span> <span name='MS:'>%HWND_A%</span>%_PRE2%
 	%_T1% id='__PixelColor'> ( PixelColor ) </span>%_T2%
 	%_PRE1%<span class='param'>RGB: </span> <span name='MS:'>%ColorRGB%</span>%_DP%<span name='MS:'>#%sColorRGB%</span>%_DP%<span class='param'>BGR: </span> <span name='MS:'>%ColorBGR%</span>%_DP%<span name='MS:'>#%sColorBGR%</span>%_PRE2%
 	%_T1% id='__Window'> ( Window ) </span>%_BT1% id='flash_ctrl_window'> flash %_BT2%%_T2%
@@ -1386,8 +1386,8 @@ AccInfoUnderMouse(mx, my, wx, wy, cx, cy, WinID, ControlID) {
 		WinGet, WinPID, PID, ahk_id %Hwnd%
 		code .= _T1 " id='P__WindowFromObject'" _T1P "> ( WindowFromObject ) </span><a></a>" _T2 _PRE1
 		. "<span class='param' name='MS:N'>HWND:</span>  <span name='MS:'>" Format("0x{:x}", Hwnd) "</span>"
-		. _DP "<span class='param' name='MS:N'>Win class:</span>  <span name='MS:'>" TransformHTML(CtrlClass) "</span>"
-		. _DP "<span class='param' name='MS:N'>EXE:</span>  <span name='MS:'>" TransformHTML(WinProcess) "</span>"
+		. _DP "<span class='param' name='MS:N'>Class:</span>  <span name='MS:'>" TransformHTML(CtrlClass) "</span>"
+		. _DP "<span class='param' name='MS:N'>Exe:</span>  <span name='MS:'>" TransformHTML(WinProcess) "</span>"
 		. _DP "<span class='param' name='MS:N'>PID:</span>  <span name='MS:'>" WinPID "</span>" _PRE2
 	}
 	If ((Var := Acc.accName(child)) != "")
@@ -2344,6 +2344,7 @@ WM_LBUTTONDOWN(wp, lp, msg, hwnd) {
 			If (OnlyShiftTab && !isPaused && ThisMode != "Hotkey")
 			{
 				OnlyShiftTab := 0
+				ZoomMsg(12, 0)
 				SetTimer, Loop_%ThisMode%, -1
 				SetTimer, OnlyShiftTab_LButton_Up_Wait, -1
 			}
@@ -2354,6 +2355,7 @@ WM_LBUTTONDOWN(wp, lp, msg, hwnd) {
 OnlyShiftTab_LButton_Up_Wait:
 	KeyWait, LButton
 	OnlyShiftTab := 1
+	ZoomMsg(12, 1)
 	SetTimer, Loop_%ThisMode%, Off
 	SetTimer, ShiftUpHide, -300
 	return
