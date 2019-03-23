@@ -26,7 +26,7 @@
     Актуальный исходник - https://raw.githubusercontent.com/serzh82saratov/AhkSpy/master/AhkSpy.ahk
 */
 
-Global AhkSpyVersion := 3.75
+Global AhkSpyVersion := 3.76
 
 	; _________________________________________________ Header _________________________________________________
 
@@ -297,6 +297,8 @@ Gui, Show, % "NA " (MemoryPos ? " x" IniRead("MemoryPosX", "Center") " y" IniRea
 . (MemorySize ? " h" IniRead("MemorySizeH", HeightStart) " w" IniRead("MemorySizeW", widthTB) : " h" HeightStart " w" widthTB)
 Gui, % "+MinSize" widthTB "x" 313
 
+If ThisMode = Hotkey
+	Gui, Show
 Gosub, Mode_%ThisMode%
 
 Hotkey_Init("Write_HotkeyHTML", "MLRJ")
@@ -575,17 +577,22 @@ Spot_Win(NotHTML = 0) {
 		CLSID := GetCLSIDExplorer(WinID)
 	WinGet, WinCountProcess, Count, ahk_pid %WinPID%
 	WinGet, WinStyle, Style, ahk_id %WinID%
-	WinGet, WinExStyle, ExStyle, ahk_id %WinID%
-
-	WinGet, WinTransparent, Transparent, ahk_id %WinID%
-	If WinTransparent !=
-		WinTransparent := "`n" _BP1 "id='set_button_Transparent'>Transparent:</span>" _BP2 "  <span id='get_win_Transparent' name='MS:'>"  WinTransparent "</span>"
-
-	WinGet, WinTransColor, TransColor, ahk_id %WinID%
-	If WinTransColor !=
-		WinTransColor := (WinTransparent = "" ? "`n" : DP)
-			. _BP1 "id='set_button_TransColor'>TransColor:</span>" _BP2 "  <span id='get_win_TransColor' name='MS:'>"  WinTransColor "</span>"
-
+	WinGet, WinExStyle, ExStyle, ahk_id %WinID% 
+	{
+		WinGet, WinTransparent, Transparent, ahk_id %WinID%
+		If WinTransparent !=
+			TransparentStr := _BP1 "id='set_button_Transparent'>Transparent:</span>" _BP2 "  <span id='get_win_Transparent' name='MS:'>"  WinTransparent "</span>"
+	
+		WinGet, WinTransColor, TransColor, ahk_id %WinID%
+		If WinTransColor !=
+			TransColorStr := _BP1 "id='set_button_TransColor'>TransColor:</span>" _BP2 "  <span id='get_win_TransColor' name='MS:'>"  WinTransColor "</span>"
+	
+		OwnedId := DllCall("GetWindow", "Ptr", WinID, UInt, 4, "Ptr")
+		If OwnedId
+			OwnedIdStr := "<span class='param'>Owned Id:</span> <span name='MS:'>" Format("0x{:X}", OwnedId) "</span>"
+			
+		EX1Str := Add_DP(1, TransparentStr, TransColorStr, OwnedIdStr)
+	} 
 	WinGet, CountControl, ControlListHwnd, ahk_id %WinID%
 	RegExReplace(CountControl, "m`a)$", "", CountControl)
 	GetClientPos(WinID, caX, caY, caW, caH)
@@ -653,8 +660,8 @@ HTML_Win:
 	<span class='param'>Client area size:</span>  <span name='MS:'>w%caW% h%caH%</span>%_DP%<span class='param'>left</span> %caX% <span class='param'>top</span> %caY% <span class='param'>right</span> %caWinRight% <span class='param'>bottom</span> %caWinBottom%%_PRE2%
 	%_T1% id='__Other'> ( Other ) </span>%_BT1% id='flash_window'> flash %_BT2%%_ButWindow_Detective%%_T2%
 	%_PRE1%<span class='param' name='MS:N'>PID:</span>  <span name='MS:'>%WinPID%</span>%_DP%%ProcessBitSize%%IsAdmin%<span class='param'>Window count:</span> %WinCountProcess%%_DP%%_BB1% id='process_close'> process close %_BB2%
-	<span class='param' name='MS:N'>HWND:</span>  <span name='MS:'>%WinID%</span>%_DP%%_BB1% id='win_close'> win close %_BB2%%_DP%<span class='param'>Control count:</span>  %CountControl%%IsWindowUnicodeStr%
-	<span class='param'>Style:  </span><span id='w_Style' name='MS:'>%WinStyle%</span>%_DP%<span class='param'>ExStyle:  </span><span id='w_ExStyle' name='MS:'>%WinExStyle%</span>%ButtonStyle_%%WinTransparent%%WinTransColor%%CLSID%%_PRE2%
+	<span class='param' name='MS:N'>HWND:</span>  <span name='MS:'>%WinID%</span>%_DP%%_BB1% id='win_close'> win close %_BB2%%_DP%<span class='param'>Control count:</span>  %CountControl%%IsWindowUnicodeStr%%EX1Str%%CLSID%
+	<span class='param'>Style:  </span><span id='w_Style' name='MS:'>%WinStyle%</span>%_DP%<span class='param'>ExStyle:  </span><span id='w_ExStyle' name='MS:'>%WinExStyle%</span>%ButtonStyle_%%_PRE2%
 	<span id=WinStyles>%WinStyles%</span>%SBText%%WinText%%MenuText%<a></a>%_T0%
 	</body>
 
@@ -808,23 +815,78 @@ Spot_Control(NotHTML = 0) {
 
 	WithRespectWin := "`n" _BP1 " id='set_pos'>Relative window:" _BP2 "  <span name='MS:'>"
 		. Round(RWinX / WinW, 4) ", " Round(RWinY / WinH, 4) "</span>  <span class='param'>for</span> <span name='MS:'>w" WinW " h" WinH "</span>" _DP
-
-	ControlGetPos, CtrlX, CtrlY, CtrlW, CtrlH,, ahk_id %ControlID%
-	CtrlCAX := CtrlX - caX, CtrlCAY := CtrlY - caY
-	CtrlX2 := CtrlX + CtrlW - 1, CtrlY2 := CtrlY + CtrlH - 1
-	CtrlCAX2 := CtrlX2 - caX, CtrlCAY2 := CtrlY2 - caY
-
 	WithRespectClient := _BP1 " id='set_pos'>Relative client:" _BP2 "  <span name='MS:'>" Round(MXC / caW, 4) ", " Round(MYC / caH, 4)
 		. "</span>  <span class='param'>for</span> <span name='MS:'>w" caW " h" caH "</span>"
-
-	ControlGetText, CtrlText, , ahk_id %ControlID%
-	If CtrlText !=
-		CtrlText := _T1 " id='__Control_Text'> ( Control Text ) </span><a></a>" _BT1 " id='copy_button'> copy " _BT2 _T2 _LPRE ">" TransformHTML(CtrlText) _PRE2
 
 	AccText := AccInfoUnderMouse(MXS, MYS, WinX, WinY, CtrlX, CtrlY, WinID, ControlID)
 	If AccText !=
 		AccText := _T1 " id='__AccInfo'> ( Accessible ) </span><a></a>" _BT1 " id='flash_acc'> flash " _BT2 _ButAccViewer _T2 AccText
-
+	
+	
+	If ControlID
+	{
+		If (!isIE && ThisMode = "Control" && (StateLight = 1 || (StateLight = 3 && GetKeyState("Shift", "P"))))
+		{
+			WinGetPos, X, Y, W, H, ahk_id %ControlID%
+			StateLightMarker ? ShowMarker(X, Y, W, H) : 0
+			; StateLightMarker ? ShowMarker(WinX+CtrlX, WinY+CtrlY, CtrlW, CtrlH) : 0
+			StateLightAcc ? ShowAccMarker(AccCoord[1], AccCoord[2], AccCoord[3], AccCoord[4]) : 0
+		}
+		ControlGetPos, CtrlX, CtrlY, CtrlW, CtrlH,, ahk_id %ControlID%
+		CtrlCAX := CtrlX - caX, CtrlCAY := CtrlY - caY
+		
+		CtrlX2 := CtrlX + CtrlW - 1, CtrlY2 := CtrlY + CtrlH - 1
+		CtrlCAX2 := CtrlX2 - caX, CtrlCAY2 := CtrlY2 - caY
+		
+		CtrlSCX := WinX + CtrlX, CtrlSCY := WinY + CtrlY
+		CtrlSCX2 := CtrlSCX + CtrlW - 1, CtrlSCY2 := CtrlSCY + CtrlH - 1 
+		
+		ControlGetText, CtrlText, , ahk_id %ControlID%
+		If CtrlText !=
+			CtrlText := _T1 " id='__Control_Text'> ( Control Text ) </span><a></a>" _BT1 " id='copy_button'> copy " _BT2 _T2 _LPRE ">" TransformHTML(CtrlText) _PRE2
+			
+		ControlGet, CtrlStyle, Style,,, ahk_id %ControlID%
+		ControlGet, CtrlExStyle, ExStyle,,, ahk_id %ControlID%
+		WinGetClass, CtrlClass, ahk_id %ControlID%
+		
+		If (hParent := DllCall("GetParent", "Ptr", ControlID)) && (hParent != WinID)
+		{
+			WinGetClass, ParentClass, ahk_id %hParent%
+			_ParentControl := _DP "<span class='param'>Parent control:</span>  <span name='MS:'>" ParentClass "</span>" _DP "<span name='MS:'>" Format("0x{:x}", hParent) "</span>"
+		}
+		
+		If ViewStrPos
+			ViewStrPos1 := _DP "<span name='MS:'>" CtrlX ", " CtrlY ", " CtrlX2 ", " CtrlY2 "</span>" _DP "<span name='MS:'>" CtrlX ", " CtrlY ", " CtrlW ", " CtrlH "</span>"
+			, ViewStrPos2 := _DP "<span name='MS:'>" CtrlCAX ", " CtrlCAY ", " CtrlCAX2 ", " CtrlCAY2 "</span>" _DP "<span name='MS:'>" CtrlCAX ", " CtrlCAY ", " CtrlW ", " CtrlH "</span>"
+			. _DP "<span name='MS:'>" CtrlSCX ", " CtrlSCY ", " CtrlSCX2 ", " CtrlSCY2 "</span>" _DP "<span name='MS:'>" CtrlSCX ", " CtrlSCY ", " CtrlW ", " CtrlH "</span>" 	
+		
+		If DynamicControlPath
+			control_path_value := ChildToPath(ControlID)
+	
+		If UseUIA 
+		{
+			UIAElement := oUIAInterface.ElementFromPoint(MXS, MYS)
+			UIAPID := UIAElement.CurrentProcessId
+			UIAHWND := UIAElement.CurrentNativeWindowHandle
+	
+			If (UIAPID && UIAPID != WinPID && UIAPID != oOther.CurrentProcessId)
+			; If 1
+			{
+				WinGet, UIAProcessName, ProcessName, ahk_pid %UIAPID%
+				WinGet, UIAProcessPath, ProcessPath, ahk_pid %UIAPID%
+				Loop, %UIAProcessPath%
+					UIAProcessPath = %A_LoopFileLongPath%
+	
+				UseUIAStr := "`n" _T1 " id='P__UIA_Object'> ( UIA Interface ) </span><a></a>" _T2
+				. _PRE1 "<span class='param' name='MS:N'>PID:</span>  <span name='MS:'>" UIAPID "</span>" _DP
+				. (UIAHWND ? ""
+				. "<span class='param' name='MS:N'>HWND:</span>  <span name='MS:'>" Format("0x{:x}", UIAHWND) "</span>"
+				. _DP "<span class='param' name='MS:N'>ControlClass:</span>  <span name='MS:'>" TransformHTML(UIAElement.CurrentClassName) "</span>" : "HWND undefined")
+				. _DN "<span class='param' name='MS:N'>ProcessName:</span>  <span name='MS:'>" TransformHTML(UIAProcessName) "</span>"
+				. _DP "<span class='param' name='MS:N'>ProcessPath:</span>  <span name='MS:'>" TransformHTML(UIAProcessPath) "</span>" _PRE2
+			}
+		}
+	} 
 	If ControlNN !=
 	{
 		rmCtrlX := MXS - WinX - CtrlX, rmCtrlY := MYS - WinY - CtrlY
@@ -844,57 +906,14 @@ Spot_Control(NotHTML = 0) {
 	}
 	Else
 		rmCtrlX := rmCtrlY := ""
-
-	If (!isIE && ThisMode = "Control" && (StateLight = 1 || (StateLight = 3 && GetKeyState("Shift", "P"))))
-	{
-		WinGetPos, X, Y, W, H, ahk_id %ControlID%
-		StateLightMarker ? ShowMarker(X, Y, W, H) : 0
-		; StateLightMarker ? ShowMarker(WinX+CtrlX, WinY+CtrlY, CtrlW, CtrlH) : 0
-		StateLightAcc ? ShowAccMarker(AccCoord[1], AccCoord[2], AccCoord[3], AccCoord[4]) : 0
-	}
-	ControlGet, CtrlStyle, Style,,, ahk_id %ControlID%
-	ControlGet, CtrlExStyle, ExStyle,,, ahk_id %ControlID%
-	WinGetClass, CtrlClass, ahk_id %ControlID%
+	
+	
+	
 	ControlGetFocus, CtrlFocus, ahk_id %WinID%
 	WinGet, ProcessName, ProcessName, ahk_id %WinID%
 	WinGet, WinPID, PID, ahk_id %WinID%
 	WinGetClass, WinClass, ahk_id %WinID%
-
-	If (hParent := DllCall("GetParent", "Ptr", ControlID)) && (hParent != WinID)
-	{
-		WinGetClass, ParentClass, ahk_id %hParent%
-		_ParentControl := _DP "<span class='param'>Parent control:</span>  <span name='MS:'>" ParentClass "</span>" _DP "<span name='MS:'>" Format("0x{:x}", hParent) "</span>"
-	}
-	If ViewStrPos
-		ViewStrPos1 := _DP "<span name='MS:'>" CtrlX ", " CtrlY ", " CtrlX2 ", " CtrlY2 "</span>" _DP "<span name='MS:'>" CtrlX ", " CtrlY ", " CtrlW ", " CtrlH "</span>"
-		, ViewStrPos2 := _DP "<span name='MS:'>" CtrlCAX ", " CtrlCAY ", " CtrlCAX2 ", " CtrlCAY2 "</span>" _DP "<span name='MS:'>" CtrlCAX ", " CtrlCAY ", " CtrlW ", " CtrlH "</span>"
-
-	If DynamicControlPath && ControlID
-		control_path_value := ChildToPath(ControlID)
-
-	If UseUIA && ControlID
-	{
-		UIAElement := oUIAInterface.ElementFromPoint(MXS, MYS)
-		UIAPID := UIAElement.CurrentProcessId
-		UIAHWND := UIAElement.CurrentNativeWindowHandle
-
-		If (UIAPID && UIAPID != WinPID && UIAPID != oOther.CurrentProcessId)
-		; If 1
-		{
-			WinGet, UIAProcessName, ProcessName, ahk_pid %UIAPID%
-			WinGet, UIAProcessPath, ProcessPath, ahk_pid %UIAPID%
-			Loop, %UIAProcessPath%
-				UIAProcessPath = %A_LoopFileLongPath%
-
-			UseUIAStr := "`n" _T1 " id='P__UIA_Object'> ( UIA Interface ) </span><a></a>" _T2
-			. _PRE1 "<span class='param' name='MS:N'>PID:</span>  <span name='MS:'>" UIAPID "</span>" _DP
-			. (UIAHWND ? ""
-			. "<span class='param' name='MS:N'>HWND:</span>  <span name='MS:'>" Format("0x{:x}", UIAHWND) "</span>"
-			. _DP "<span class='param' name='MS:N'>ControlClass:</span>  <span name='MS:'>" TransformHTML(UIAElement.CurrentClassName) "</span>" : "HWND undefined")
-			. _DN "<span class='param' name='MS:N'>ProcessName:</span>  <span name='MS:'>" TransformHTML(UIAProcessName) "</span>"
-			. _DP "<span class='param' name='MS:N'>ProcessPath:</span>  <span name='MS:'>" TransformHTML(UIAProcessPath) "</span>" _PRE2
-		}
-	}
+	
 	MouseGetPos, , , h
 	If (h = hGui || h = oOther.hZoom || h = oOther.hZoomLW)
 		Return HideAllMarkers()
@@ -914,14 +933,16 @@ HTML_Control:
 	{
 		If c_ShowStyles
 			ControlStyles := GetStyles(CtrlClass, CtrlStyle, CtrlExStyle, ControlID)
-		ButtonStyle_ := _DP _BB1 " id='get_styles_c'> " (!c_ShowStyles ? "show styles" : "hide styles") " " _BB2
-
+		ButtonStyle_ := _DP _BB1 " id='get_styles_c'> " (!c_ShowStyles ? "show styles" : "hide styles") " " _BB2 
+		
+		Relativescreen = <span class='param'>Relative screen:</span>  <span name='MS:'>x%CtrlSCX% y%CtrlSCY%</span>%_DP%<span name='MS:'>x&sup2;%CtrlSCX2% y&sup2;%CtrlSCY2%</span>
+		
 		HTML_ControlExist =
 		( Ltrim
 		%_T1% id='__Control'> ( Control ) </span>%_BT1% id='flash_control'> flash %_BT2%%_ButWindow_Detective%%_T2%
 		%_PRE1%<span class='param'>ClassNN:</span>  <span name='MS:'>%ControlNN%</span>%_DP%<span class='param'>Class:</span>  <span name='MS:'>%CtrlClass%</span>
 		%_BP1% id='set_button_pos'>Pos:%_BP2%  <span name='MS:'>x%CtrlX% y%CtrlY%</span>%_DP%<span name='MS:'>x&sup2;%CtrlX2% y&sup2;%CtrlY2%</span>%_DP%%_BP1% id='set_button_pos'>Size:%_BP2%  <span name='MS:'>w%CtrlW% h%CtrlH%</span>%ViewStrPos1%
-		<span class='param'>Pos relative client area:</span>  <span name='MS:'>x%CtrlCAX% y%CtrlCAY%</span>%_DP%<span name='MS:'>x&sup2;%CtrlCAX2% y&sup2;%CtrlCAY2%</span>%ViewStrPos2%
+		<span class='param'>Relative client area:</span>  <span name='MS:'>x%CtrlCAX% y%CtrlCAY%</span>%_DP%<span name='MS:'>x&sup2;%CtrlCAX2% y&sup2;%CtrlCAY2%</span>%_DP%%Relativescreen%%ViewStrPos2%
 		%_BP1% id='set_pos'>Mouse relative control:%_BP2%  <span name='MS:'>x%rmCtrlX% y%rmCtrlY%</span>%WithRespectControl%%_DP%%_BP1% id='control_path'> Get path: %_BP2%  <span id='control_path_value' name='MS:'>%control_path_value%</span>
 		<span class='param'>HWND:</span>  <span name='MS:'>%ControlID%</span>%_ParentControl%
 		<span class='param'>Style:</span>  <span id='c_Style' name='MS:'>%CtrlStyle%</span>%_DP%<span class='param'>ExStyle:</span>  <span id='c_ExStyle' name='MS:'>%CtrlExStyle%</span>%ButtonStyle_%%_PRE2%
@@ -1560,7 +1581,7 @@ Acc_Query(Acc) {
 
 Mode_Hotkey:
 	Try SetTimer, Loop_%ThisMode%, Off
-	ZoomMsg(10, 1)
+	ZoomMsg(10, 1) 
 	If ThisMode = Hotkey
 		oDocEl.scrollLeft := 0
 	oBody.createTextRange().execCommand("RemoveFormat")
@@ -2565,7 +2586,6 @@ RunShell(Path) {
 	ComObjCreate("WScript.Shell").Exec(Path)
 }
 
-
 ExtraFile(Name, GetNoCompile = 0) {
 	If FileExist(Path_User "\" Name ".exe")
 		Return Path_User "\" Name ".exe"
@@ -2784,6 +2804,15 @@ CopyCommaParam(Text) {
 	Text := RegExReplace(Text, "i)(x|y|w|h|#|\s|" Chr(178) "|" Chr(9642) ")+", " ")
 	Text := TRim(Text, " "), Text := RegExReplace(Text, "(\s|,)+", ", ")
 	Return Text
+}
+
+Add_DP(addN, Items*) {
+ 	For k, v in Items 
+		If v != 
+			Ret .= v _DP
+	If Ret =
+		Return
+	Return (addN ? "`n" : "") SubStr(Ret, 1, -StrLen(_DP))
 }
 
 	;  http://forum.script-coding.com/viewtopic.php?pid=53516#p53516
@@ -3292,12 +3321,12 @@ GetStyles(Class, Style, ExStyle, hWnd, IsChild = 0, IsChildInfoExist = 0) {
 		RetEx .= QStyle("WS_EX_PALETTEWINDOW", "0x00000188", "(WS_EX_WINDOWEDGE | WS_EX_TOOLWINDOW | WS_EX_TOPMOST)")
  
 	IF Style
-		Ret .= "<span style='color: #" ColorDelimiter ";' name='MS:'>" Format("0x{1:08X}", Style) "</span>`n"
+		Ret .= QStyleRest(8, Style) 
 	If Ret !=
 		Res .= _T1 " id='__Styles_Win'>" QStyleTitle("Styles", "", 4, sStyle) "</span>" _T2 _PRE1 Ret _PRE2  
 	Res .= ChildStyles
 	IF ExStyle
-		RetEx .= "<span style='color: #" ColorDelimiter ";' name='MS:'>" Format("0x{1:08X}", ExStyle) "</span>`n"
+		RetEx .= QStyleRest(8, ExStyle)  
 	If RetEx !=
 		Res .= _T1 " id='__ExStyles_Win'>" QStyleTitle("ExStyles", "", 8, sExStyle) "</span>" _T2 _PRE1 RetEx _PRE2 
 	Res .= ChildExStyles 
@@ -3317,6 +3346,9 @@ QStyleTitle(Title, Name, F, V) {
 	If Name !=
 		Return " ( " Title " - <span name='MS:' style='color: #" ColorParam ";'>" Name "</span>: <span name='MS:' style='color: #" ColorFont ";'>" Format("0x{:0" F "X}", V) "</span> ) " 
 	Return " ( " Title ": <span name='MS:' style='color: #" ColorFont ";'>" Format("0x{:0" F "X}", V) "</span> ) "  
+}
+QStyleRest(F, V) {
+	Return "<span style='color: #" ColorDelimiter ";' name='MS:'>" Format("0x{1:0" F "X}", V) "</span>`n"
 }
 QStyle(k, v, q = "") {
 	Return "<span name='MS:Q'>" k " := <span class='param' name='MS:'>" v "</span></span>" . (q != "" ? _StIf q "</span>`n" : "`n")
@@ -3345,7 +3377,7 @@ GetStyle_#32770(Style, hWnd)  {
 	IF Style
 		Ret .= GetStyle_CommonСontrol(Style, Style)
 	IF Style
-		Ret .= "<span style='color: #" ColorDelimiter ";' name='MS:'>" Format("0x{1:04X}", Style)  "</span>`n"
+		Ret .= QStyleRest(4, Style)
 	If Ret !=
 		Res .= _T1 " id='__Styles_Control'>" QStyleTitle("Styles", "#32770", 4, sStyle) "</span>" _T2 _PRE1 Ret _PRE2
 	
@@ -3367,7 +3399,7 @@ GetStyle_tooltips_class32(Style, hWnd)  {
 	IF Style
 		Ret .= GetStyle_CommonСontrol(Style, Style)
 	IF Style
-		Ret .= "<span style='color: #" ColorDelimiter ";' name='MS:'>" Format("0x{1:04X}", Style)  "</span>`n"
+		Ret .= QStyleRest(4, Style)
 	If Ret !=
 		Res .= _T1 " id='__Styles_Control'>" QStyleTitle("Styles", "tooltips_class32", 4, sStyle) "</span>" _T2 _PRE1 Ret _PRE2
 	
@@ -3406,7 +3438,7 @@ GetStyle_Static(Style, hWnd)  {
 	IF Style
 		Ret .= GetStyle_CommonСontrol(Style, Style)
 	IF Style
-		Ret .= "<span style='color: #" ColorDelimiter ";' name='MS:'>" Format("0x{1:04X}", Style)  "</span>`n"
+		Ret .= QStyleRest(4, Style)
 	If Ret !=
 		Res .= _T1 " id='__Styles_Control'>" QStyleTitle("Styles", "Static", 4, sStyle) "</span>" _T2 _PRE1 Ret _PRE2
 	
@@ -3451,7 +3483,7 @@ GetStyle_Button(Style, hWnd)  {
 	IF Style
 		Ret .= GetStyle_CommonСontrol(Style, Style)
 	IF Style
-		Ret .= "<span style='color: #" ColorDelimiter ";' name='MS:'>" Format("0x{1:04X}", Style)  "</span>`n"
+		Ret .= QStyleRest(4, Style)
 	If Ret !=
 		Res .= _T1 " id='__Styles_Control'>" QStyleTitle("Styles", "Button", 4, sStyle) "</span>" _T2 _PRE1 Ret _PRE2
 	
@@ -3479,7 +3511,7 @@ GetStyle_Edit(Style, hWnd)  {
 	IF Style
 		Ret .= GetStyle_CommonСontrol(Style, Style)
 	IF Style
-		Ret .= "<span style='color: #" ColorDelimiter ";' name='MS:'>" Format("0x{1:04X}", Style)  "</span>`n"
+		Ret .= QStyleRest(4, Style)
 	If Ret !=
 		Res .= _T1 " id='__Styles_Control'>" QStyleTitle("Styles", "Edit", 4, sStyle) "</span>" _T2 _PRE1 Ret _PRE2
 	
@@ -3514,7 +3546,7 @@ GetStyle_ListBox(Style, hWnd)  {
 	IF Style
 		Ret .= GetStyle_CommonСontrol(Style, Style)
 	IF Style
-		Ret .= "<span style='color: #" ColorDelimiter ";' name='MS:'>" Format("0x{1:04X}", Style)  "</span>`n"
+		Ret .= QStyleRest(4, Style)
 	If Ret !=
 		Res .= _T1 " id='__Styles_Control'>" QStyleTitle("Styles", "ListBox", 4, sStyle) "</span>" _T2 _PRE1 Ret _PRE2
 	
@@ -3534,7 +3566,7 @@ GetStyle_SysAnimate32(Style, hWnd)  {
 	IF Style
 		Ret .= GetStyle_CommonСontrol(Style, Style)
 	IF Style
-		Ret .= "<span style='color: #" ColorDelimiter ";' name='MS:'>" Format("0x{1:04X}", Style)  "</span>`n"
+		Ret .= QStyleRest(4, Style)
 	If Ret !=
 		Res .= _T1 " id='__Styles_Control'>" QStyleTitle("Styles", "SysAnimate32", 4, sStyle) "</span>" _T2 _PRE1 Ret _PRE2
 	
@@ -3556,7 +3588,7 @@ GetStyle_SysPager(Style, hWnd)  {
 	IF Style
 		Ret .= GetStyle_CommonСontrol(Style, Style)
 	IF Style
-		Ret .= "<span style='color: #" ColorDelimiter ";' name='MS:'>" Format("0x{1:04X}", Style)  "</span>`n"
+		Ret .= QStyleRest(4, Style)  
 	If Ret !=
 		Res .= _T1 " id='__Styles_Control'>" QStyleTitle("Styles", "SysPager", 4, sStyle) "</span>" _T2 _PRE1 Ret _PRE2
 	
@@ -3578,7 +3610,7 @@ GetStyle_msctls_updown32(Style, hWnd)  {
 	IF Style
 		Ret .= GetStyle_CommonСontrol(Style, Style)
 	IF Style
-		Ret .= "<span style='color: #" ColorDelimiter ";' name='MS:'>" Format("0x{1:04X}", Style)  "</span>`n"
+		Ret .= QStyleRest(4, Style)  
 	If Ret !=
 		Res .= _T1 " id='__Styles_Control'>" QStyleTitle("Styles", "msctls_updown32", 4, sStyle) "</span>" _T2 _PRE1 Ret _PRE2
 	
@@ -3603,7 +3635,7 @@ GetStyle_SysDateTimePick32(Style, hWnd)  {
 	IF Style
 		Ret .= GetStyle_CommonСontrol(Style, Style)
 	IF Style
-		Ret .= "<span style='color: #" ColorDelimiter ";' name='MS:'>" Format("0x{1:04X}", Style)  "</span>`n"
+		Ret .= QStyleRest(4, Style)  
 	If Ret !=
 		Res .= _T1 " id='__Styles_Control'>" QStyleTitle("Styles", "SysDateTimePick32", 4, sStyle) "</span>" _T2 _PRE1 Ret _PRE2
 	
@@ -3625,7 +3657,7 @@ GetStyle_SysMonthCal32(Style, hWnd)  {
 	IF Style
 		Ret .= GetStyle_CommonСontrol(Style, Style)
 	IF Style
-		Ret .= "<span style='color: #" ColorDelimiter ";' name='MS:'>" Format("0x{1:04X}", Style)  "</span>`n"
+		Ret .= QStyleRest(4, Style) 
 	If Ret !=
 		Res .= _T1 " id='__Styles_Control'>" QStyleTitle("Styles", "SysMonthCal32", 4, sStyle) "</span>" _T2 _PRE1 Ret _PRE2
 	
@@ -3666,7 +3698,7 @@ GetStyle_msctls_trackbar32(Style, hWnd)  {
 	IF Style
 		Ret .= GetStyle_CommonСontrol(Style, Style)
 	IF Style
-		Ret .= "<span style='color: #" ColorDelimiter ";' name='MS:'>" Format("0x{1:04X}", Style)  "</span>`n"
+		Ret .= QStyleRest(4, Style)  
 	If Ret !=
 		Res .= _T1 " id='__Styles_Control'>" QStyleTitle("Styles", "msctls_trackbar32", 4, sStyle) "</span>" _T2 _PRE1 Ret _PRE2
 	
@@ -3687,7 +3719,7 @@ GetStyle_msctls_statusbar32(Style, hWnd)  {
 	IF Style
 		Ret .= GetStyle_CommonСontrol(Style, Style)
 	IF Style
-		Ret .= "<span style='color: #" ColorDelimiter ";' name='MS:'>" Format("0x{1:04X}", Style)  "</span>`n"
+		Ret .= QStyleRest(4, Style)  
 	If Ret !=
 		Res .= _T1 " id='__Styles_Control'>" QStyleTitle("Styles", "msctls_statusbar32", 4, sStyle) "</span>" _T2 _PRE1 Ret _PRE2
 	
@@ -3708,7 +3740,7 @@ GetStyle_msctls_progress32(Style, hWnd)  {
 	IF Style
 		Ret .= GetStyle_CommonСontrol(Style, Style)
 	IF Style
-		Ret .= "<span style='color: #" ColorDelimiter ";' name='MS:'>" Format("0x{1:04X}", Style)  "</span>`n"
+		Ret .= QStyleRest(4, Style)  
 	If Ret !=
 		Res .= _T1 " id='__Styles_Control'>" QStyleTitle("Styles", "msctls_progress32", 4, sStyle) "</span>" _T2 _PRE1 Ret _PRE2
 	
@@ -3732,7 +3764,7 @@ GetStyle_SysHeader32(Style, hWnd)  {
 	IF Style
 		Ret .= GetStyle_CommonСontrol(Style, Style)
 	IF Style
-		Ret .= "<span style='color: #" ColorDelimiter ";' name='MS:'>" Format("0x{1:04X}", Style)  "</span>`n"
+		Ret .= QStyleRest(4, Style)  
 	If Ret !=
 		Res .= _T1 " id='__Styles_Control'>" QStyleTitle("Styles", "SysHeader32", 4, sStyle) "</span>" _T2 _PRE1 Ret _PRE2
 	
@@ -3753,7 +3785,7 @@ GetStyle_SysLink(Style, hWnd) {
 	IF Style
 		Ret .= GetStyle_CommonСontrol(Style, Style)
 	IF Style
-		Ret .= "<span style='color: #" ColorDelimiter ";' name='MS:'>" Format("0x{1:04X}", Style)  "</span>`n"
+		Ret .= QStyleRest(4, Style) 
 	If Ret !=
 		Res .= _T1 " id='__Styles_Control'>" QStyleTitle("Styles", "SysLink", 4, sStyle) "</span>" _T2 _PRE1 Ret _PRE2
 	
@@ -3775,7 +3807,7 @@ GetStyle_ReBarWindow32(Style, hWnd) {
 	IF Style
 		Ret .= GetStyle_CommonСontrol(Style, Style)
 	IF Style
-		Ret .= "<span style='color: #" ColorDelimiter ";' name='MS:'>" Format("0x{1:04X}", Style)  "</span>`n"
+		Ret .= QStyleRest(4, Style)  
 	If Ret !=
 		Res .= _T1 " id='__Styles_Control'>" QStyleTitle("Styles", "ReBarWindow32", 4, sStyle) "</span>" _T2 _PRE1 Ret _PRE2
 	Return Res
@@ -3857,7 +3889,7 @@ GetStyle_SysListView32(Style, hWnd, byref ResEx)  {
 	IF Style
 		Ret .= GetStyle_CommonСontrol(Style, Style)
 	IF Style
-		Ret .= "<span style='color: #" ColorDelimiter ";' name='MS:'>" Format("0x{1:04X}", Style)  "</span>`n"
+		Ret .= QStyleRest(4, Style)  
 	If Ret !=
 		Res .= _T1 " id='__Styles_Control'>" QStyleTitle("Styles", "SysListView32", 4, sStyle) "</span>" _T2 _PRE1 Ret _PRE2
 	 
@@ -3866,7 +3898,7 @@ GetStyle_SysListView32(Style, hWnd, byref ResEx)  {
 			RetEx .= QStyle(K, V)
 
 	IF ExStyle
-		RetEx .= "<span style='color: #" ColorDelimiter ";' name='MS:'>" Format("0x{1:08X}", ExStyle)  "</span>`n"
+		RetEx .= QStyleRest(8, ExStyle)  
 	If RetEx !=
 		ResEx := _T1 " id='__ExStyles_Control'>" QStyleTitle("ExStyles", "SysListView32", 8, sExStyle) "</span>" _T2 _PRE1 RetEx _PRE2
 	 
@@ -3898,7 +3930,7 @@ GetStyle_SysTreeView32(Style, hWnd, byref ResEx)  {
 	IF Style
 		Ret .= GetStyle_CommonСontrol(Style, Style)
 	IF Style
-		Ret .= "<span style='color: #" ColorDelimiter ";' name='MS:'>" Format("0x{1:04X}", Style)  "</span>`n"
+		Ret .= QStyleRest(4, Style)  
 	If Ret !=
 		Res .= _T1 " id='__Styles_Control'>" QStyleTitle("Styles", "SysTreeView32", 4, sStyle) "</span>" _T2 _PRE1 Ret _PRE2
  
@@ -3907,7 +3939,7 @@ GetStyle_SysTreeView32(Style, hWnd, byref ResEx)  {
 			RetEx .= QStyle(K, V)
 
 	IF ExStyle
-		RetEx .= "<span style='color: #" ColorDelimiter ";' name='MS:'>" Format("0x{1:08X}", ExStyle)  "</span>`n"
+		RetEx .= QStyleRest(8, ExStyle)  
 	If RetEx !=
 		ResEx := _T1 " id='__ExStyles_Control'>" QStyleTitle("ExStyles", "SysTreeView32", 8, sExStyle) "</span>" _T2 _PRE1 RetEx _PRE2
 	
@@ -3950,7 +3982,7 @@ GetStyle_SysTabControl32(Style, hWnd, byref ResEx)  {
 	IF Style
 		Ret .= GetStyle_CommonСontrol(Style, Style)
 	IF Style
-		Ret .= "<span style='color: #" ColorDelimiter ";' name='MS:'>" Format("0x{1:04X}", Style)  "</span>`n"
+		Ret .= QStyleRest(4, Style)  
 	If Ret !=
 		Res .= _T1 " id='__Styles_Control'>" QStyleTitle("Styles", "SysTabControl32", 4, sStyle) "</span>" _T2 _PRE1 Ret _PRE2
  
@@ -3960,7 +3992,7 @@ GetStyle_SysTabControl32(Style, hWnd, byref ResEx)  {
 		RetEx .= QStyle("TCS_EX_REGISTERDROP", "0x00000002")
 
 	IF ExStyle
-		RetEx .= "<span style='color: #" ColorDelimiter ";' name='MS:'>" Format("0x{1:08X}", ExStyle)  "</span>`n"
+		RetEx .= QStyleRest(8, ExStyle)  
 	If RetEx !=
 		ResEx := _T1 " id='__ExStyles_Control'>" QStyleTitle("ExStyles", "SysTabControl32", 8, sExStyle) "</span>" _T2 _PRE1 RetEx _PRE2
 	
@@ -3991,7 +4023,7 @@ GetStyle_ComboBox(Style, hWnd, byref ResEx)  {
 				If ((ExStyle & V) = V) && (1, ExStyle -= V) 
 					RetEx .= QStyle(K, V)
 			IF ExStyle
-				RetEx .= "<span style='color: #" ColorDelimiter ";' name='MS:'>" Format("0x{1:04X}", ExStyle) "</span>`n"
+				RetEx .= QStyleRest(4, ExStyle) 
 		} 
 	}
 	Style := sStyle := Style & 0xffff
@@ -4003,7 +4035,7 @@ GetStyle_ComboBox(Style, hWnd, byref ResEx)  {
 	IF Style
 		Ret .= GetStyle_CommonСontrol(Style, Style)
 	IF Style
-		Ret .= "<span style='color: #" ColorDelimiter ";' name='MS:'>" Format("0x{1:04X}", Style)  "</span>`n"
+		Ret .= QStyleRest(4, Style) 
 	If Ret !=
 		Res .= _T1 " id='__Styles_Control'>" QStyleTitle("Styles", "ComboBox", 4, sStyle) "</span>" _T2 _PRE1 Ret _PRE2 
 	If RetEx !=
@@ -4037,7 +4069,7 @@ GetStyle_ToolbarWindow32(Style, hWnd, byref ResEx)  {
 	IF Style
 		Ret .= GetStyle_CommonСontrol(Style, Style)
 	IF Style
-		Ret .= "<span style='color: #" ColorDelimiter ";' name='MS:'>" Format("0x{1:04X}", Style)  "</span>`n"
+		Ret .= QStyleRest(8, Style)   
 	If Ret !=
 		Res .= _T1 " id='__Styles_Control'>" QStyleTitle("Styles", "ToolbarWindow32", 4, sStyle) "</span>" _T2 _PRE1 Ret _PRE2 
 	For K, V In oExStyles
@@ -4045,7 +4077,7 @@ GetStyle_ToolbarWindow32(Style, hWnd, byref ResEx)  {
 			RetEx .= QStyle(K, V)
 
 	IF ExStyle
-		RetEx .= "<span style='color: #" ColorDelimiter ";' name='MS:'>" Format("0x{1:04X}", ExStyle)  "</span>`n"
+		RetEx .= QStyleRest(4, ExStyle)  
 	If RetEx !=
 		ResEx := _T1 " id='__ExStyles_Control'>" QStyleTitle("ExStyles", "ToolbarWindow32", 4, sExStyle) "</span>" _T2 _PRE1 RetEx _PRE2 
 		
