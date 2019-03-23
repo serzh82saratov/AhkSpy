@@ -26,7 +26,7 @@
     Актуальный исходник - https://raw.githubusercontent.com/serzh82saratov/AhkSpy/master/AhkSpy.ahk
 */
 
-Global AhkSpyVersion := 3.76
+Global AhkSpyVersion := 3.77
 
 	; _________________________________________________ Header _________________________________________________
 
@@ -589,9 +589,9 @@ Spot_Win(NotHTML = 0) {
 	
 		OwnedId := DllCall("GetWindow", "Ptr", WinID, UInt, 4, "Ptr")
 		If OwnedId
-			OwnedIdStr := "<span class='param'>Owned Id:</span> <span name='MS:'>" Format("0x{:X}", OwnedId) "</span>"
+			OwnedIdStr := "<span class='param'>Owned Id:</span> <span name='MS:'>" Format("0x{:x}", OwnedId) "</span>"
 			
-		EX1Str := Add_DP(1, TransparentStr, TransColorStr, OwnedIdStr)
+		EX1Str := Add_DP(1, OwnedIdStr, TransparentStr, TransColorStr)
 	} 
 	WinGet, CountControl, ControlListHwnd, ahk_id %WinID%
 	RegExReplace(CountControl, "m`a)$", "", CountControl)
@@ -809,6 +809,7 @@ Spot_Control(NotHTML = 0) {
 	CtrlInfo := "", isIE := 0
 	ControlNN := tControlNN, ControlID := tControlID
 	WinGetPos, WinX, WinY, WinW, WinH, ahk_id %WinID%
+	WinGet, WinPID, PID, ahk_id %WinID%
 	RWinX := MXS - WinX, RWinY := MYS - WinY
 	GetClientPos(WinID, caX, caY, caW, caH)
 	MXC := RWinX - caX, MYC := RWinY - caY
@@ -867,23 +868,27 @@ Spot_Control(NotHTML = 0) {
 		{
 			UIAElement := oUIAInterface.ElementFromPoint(MXS, MYS)
 			UIAPID := UIAElement.CurrentProcessId
-			UIAHWND := UIAElement.CurrentNativeWindowHandle
-	
-			If (UIAPID && UIAPID != WinPID && UIAPID != oOther.CurrentProcessId)
-			; If 1
+			
+			If (UIAPID && UIAPID != oOther.CurrentProcessId)
 			{
+				UIAHWND := UIAElement.CurrentNativeWindowHandle
 				WinGet, UIAProcessName, ProcessName, ahk_pid %UIAPID%
 				WinGet, UIAProcessPath, ProcessPath, ahk_pid %UIAPID%
 				Loop, %UIAProcessPath%
 					UIAProcessPath = %A_LoopFileLongPath%
-	
+					
+				If (UIAPID != WinPID)
+					bc = style='background-color: #%ColorSelAnchor%'
+				
 				UseUIAStr := "`n" _T1 " id='P__UIA_Object'> ( UIA Interface ) </span><a></a>" _T2
-				. _PRE1 "<span class='param' name='MS:N'>PID:</span>  <span name='MS:'>" UIAPID "</span>" _DP
+				. _PRE1 "<div " bc "><span class='param' name='MS:N'>PID:</span>  <span name='MS:'>" UIAPID "</span>" _DP
+				
 				. (UIAHWND ? ""
 				. "<span class='param' name='MS:N'>HWND:</span>  <span name='MS:'>" Format("0x{:x}", UIAHWND) "</span>"
 				. _DP "<span class='param' name='MS:N'>ControlClass:</span>  <span name='MS:'>" TransformHTML(UIAElement.CurrentClassName) "</span>" : "HWND undefined")
+				
 				. _DN "<span class='param' name='MS:N'>ProcessName:</span>  <span name='MS:'>" TransformHTML(UIAProcessName) "</span>"
-				. _DP "<span class='param' name='MS:N'>ProcessPath:</span>  <span name='MS:'>" TransformHTML(UIAProcessPath) "</span>" _PRE2
+				. _DP "<span class='param' name='MS:N'>ProcessPath:</span>  <span name='MS:'>" TransformHTML(UIAProcessPath) "</span></div>" _PRE2
 			}
 		}
 	} 
@@ -911,7 +916,6 @@ Spot_Control(NotHTML = 0) {
 	
 	ControlGetFocus, CtrlFocus, ahk_id %WinID%
 	WinGet, ProcessName, ProcessName, ahk_id %WinID%
-	WinGet, WinPID, PID, ahk_id %WinID%
 	WinGetClass, WinClass, ahk_id %WinID%
 	
 	MouseGetPos, , , h
