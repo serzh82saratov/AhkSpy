@@ -26,7 +26,7 @@
     Актуальный исходник - https://raw.githubusercontent.com/serzh82saratov/AhkSpy/master/AhkSpy.ahk
 */
 
-Global AhkSpyVersion := 3.77
+Global AhkSpyVersion := 3.78
 
 	; _________________________________________________ Header _________________________________________________
 
@@ -236,7 +236,7 @@ Menu, View, Add, % name := "Dynamic control path (low speed)", % oMenu.View[name
 Menu, View, % DynamicControlPath ? "Check" : "UnCheck", % name
 Menu, View, Add, % name := "Dynamic accesible path (low speed)", % oMenu.View[name] := "_DynamicAccPath"
 Menu, View, % DynamicAccPath ? "Check" : "UnCheck", % name
-Menu, View, Add, % name := "UIA detect control parent process", % oMenu.View[name] := "_UseUIA"
+Menu, View, Add, % name := "Use UI Automation interface", % oMenu.View[name] := "_UseUIA"
 Menu, View, % UseUIA ? "Check" : "UnCheck", % name
 Menu, View, Add
 Menu, View, Add, % name := "Moving titles", % oMenu.View[name] := "_MoveTitles"
@@ -823,16 +823,8 @@ Spot_Control(NotHTML = 0) {
 	If AccText !=
 		AccText := _T1 " id='__AccInfo'> ( Accessible ) </span><a></a>" _BT1 " id='flash_acc'> flash " _BT2 _ButAccViewer _T2 AccText
 	
-	
 	If ControlID
 	{
-		If (!isIE && ThisMode = "Control" && (StateLight = 1 || (StateLight = 3 && GetKeyState("Shift", "P"))))
-		{
-			WinGetPos, X, Y, W, H, ahk_id %ControlID%
-			StateLightMarker ? ShowMarker(X, Y, W, H) : 0
-			; StateLightMarker ? ShowMarker(WinX+CtrlX, WinY+CtrlY, CtrlW, CtrlH) : 0
-			StateLightAcc ? ShowAccMarker(AccCoord[1], AccCoord[2], AccCoord[3], AccCoord[4]) : 0
-		}
 		ControlGetPos, CtrlX, CtrlY, CtrlW, CtrlH,, ahk_id %ControlID%
 		CtrlCAX := CtrlX - caX, CtrlCAY := CtrlY - caY
 		
@@ -863,34 +855,6 @@ Spot_Control(NotHTML = 0) {
 		
 		If DynamicControlPath
 			control_path_value := ChildToPath(ControlID)
-	
-		If UseUIA 
-		{
-			UIAElement := oUIAInterface.ElementFromPoint(MXS, MYS)
-			UIAPID := UIAElement.CurrentProcessId
-			
-			If (UIAPID && UIAPID != oOther.CurrentProcessId)
-			{
-				UIAHWND := UIAElement.CurrentNativeWindowHandle
-				WinGet, UIAProcessName, ProcessName, ahk_pid %UIAPID%
-				WinGet, UIAProcessPath, ProcessPath, ahk_pid %UIAPID%
-				Loop, %UIAProcessPath%
-					UIAProcessPath = %A_LoopFileLongPath%
-					
-				If (UIAPID != WinPID)
-					bc = style='background-color: #%ColorSelAnchor%'
-				
-				UseUIAStr := "`n" _T1 " id='P__UIA_Object'> ( UIA Interface ) </span><a></a>" _T2
-				. _PRE1 "<div " bc "><span class='param' name='MS:N'>PID:</span>  <span name='MS:'>" UIAPID "</span>" _DP
-				
-				. (UIAHWND ? ""
-				. "<span class='param' name='MS:N'>HWND:</span>  <span name='MS:'>" Format("0x{:x}", UIAHWND) "</span>"
-				. _DP "<span class='param' name='MS:N'>ControlClass:</span>  <span name='MS:'>" TransformHTML(UIAElement.CurrentClassName) "</span>" : "HWND undefined")
-				
-				. _DN "<span class='param' name='MS:N'>ProcessName:</span>  <span name='MS:'>" TransformHTML(UIAProcessName) "</span>"
-				. _DP "<span class='param' name='MS:N'>ProcessPath:</span>  <span name='MS:'>" TransformHTML(UIAProcessPath) "</span></div>" _PRE2
-			}
-		}
 	} 
 	If ControlNN !=
 	{
@@ -912,8 +876,6 @@ Spot_Control(NotHTML = 0) {
 	Else
 		rmCtrlX := rmCtrlY := ""
 	
-	
-	
 	ControlGetFocus, CtrlFocus, ahk_id %WinID%
 	WinGet, ProcessName, ProcessName, ahk_id %WinID%
 	WinGetClass, WinClass, ahk_id %WinID%
@@ -921,7 +883,45 @@ Spot_Control(NotHTML = 0) {
 	MouseGetPos, , , h
 	If (h = hGui || h = oOther.hZoom || h = oOther.hZoomLW)
 		Return HideAllMarkers()
-
+	
+	If UseUIA 
+	{
+		UIAElement := oUIAInterface.ElementFromPoint(MXS, MYS)
+		UIAPID := UIAElement.CurrentProcessId
+		CurrentControlTypeIndex := Format("0x{:X}", UIAElement.CurrentControlType)
+		CurrentControlTypeName := UIA_ControlType(CurrentControlTypeIndex)
+		CurrentAutomationId := UIAElement.CurrentAutomationId  
+		CurrentLocalizedControlType := UIAElement.CurrentLocalizedControlType
+		UIAHWND := UIAElement.CurrentNativeWindowHandle
+		
+		WinGet, UIAProcessName, ProcessName, ahk_pid %UIAPID%
+		WinGet, UIAProcessPath, ProcessPath, ahk_pid %UIAPID%
+		Loop, %UIAProcessPath%
+			UIAProcessPath = %A_LoopFileLongPath%
+		
+		If (UIAPID != WinPID)
+			bc = style='background-color: #%ColorSelAnchor%'
+		
+		UseUIAStr := "`n" _T1 " id='P__UIA_Object'> ( UIA Interface ) </span><a></a>" _T2
+		. _PRE1 "<div " bc "><span class='param' name='MS:N'>PID:</span>  <span name='MS:'>" UIAPID "</span>" 
+		
+		. (UIAHWND ? _DP
+		. "<span class='param' name='MS:N'>HWND:</span>  <span name='MS:'>" Format("0x{:x}", UIAHWND) "</span>"
+		. _DP "<span class='param' name='MS:N'>ControlClass:</span>  <span name='MS:'>" TransformHTML(UIAElement.CurrentClassName) "</span>" : _DP "HWND undefined")
+		. _DN
+		. (CurrentControlTypeIndex != "" ? ""
+		. "<span class='param' name='MS:N'>ControlType:</span>  <span name='MS:'>" CurrentControlTypeName "</span>"
+		. _DP " <span name='MS:'>" CurrentControlTypeIndex "</span>" : "ControlType undefined")
+		
+		. (CurrentAutomationId != "" ? _DP
+		. "<span class='param' name='MS:N'>AutomationId:</span>  <span name='MS:'>" CurrentAutomationId "</span>" : _DP "AutomationId undefined")
+		
+		. (CurrentLocalizedControlType != "" ? _DP
+		. "<span class='param' name='MS:N'>LocalizedControlType:</span>  <span name='MS:'>" CurrentLocalizedControlType "</span>" : _DP "LocalizedControlType undefined")
+		
+		. _DN "<span class='param' name='MS:N'>ProcessName:</span>  <span name='MS:'>" TransformHTML(UIAProcessName) "</span>"
+		. _DP "<span class='param' name='MS:N'>ProcessPath:</span>  <span name='MS:'>" TransformHTML(UIAProcessPath) "</span></div>" _PRE2
+	}
 	PixelGetColor, ColorBGR, %MXS%, %MYS%
 	ColorRGB := Format("0x{:06X}", (ColorBGR & 0xFF) << 16 | (ColorBGR & 0xFF00) | (ColorBGR >> 16))
 	sColorBGR := SubStr(ColorBGR, 3)
@@ -929,6 +929,16 @@ Spot_Control(NotHTML = 0) {
 	GuiControl, TB: -Redraw, ColorProgress
 	GuiControl, % "TB: +c" sColorRGB, ColorProgress
 	GuiControl, TB: +Redraw, ColorProgress
+
+	If (!isIE && ThisMode = "Control" && (StateLight = 1 || (StateLight = 3 && GetKeyState("Shift", "P"))))
+	{
+		If ControlID && StateLightMarker 
+			ShowMarker(CtrlSCX, CtrlSCY, CtrlW, CtrlH)
+		Else
+			HideMarker()
+			
+		StateLightAcc ? ShowAccMarker(AccCoord[1], AccCoord[2], AccCoord[3], AccCoord[4]) : 0
+	}
 
 	; _________________________________________________ HTML_Control _________________________________________________
 
@@ -950,7 +960,7 @@ HTML_Control:
 		%_BP1% id='set_pos'>Mouse relative control:%_BP2%  <span name='MS:'>x%rmCtrlX% y%rmCtrlY%</span>%WithRespectControl%%_DP%%_BP1% id='control_path'> Get path: %_BP2%  <span id='control_path_value' name='MS:'>%control_path_value%</span>
 		<span class='param'>HWND:</span>  <span name='MS:'>%ControlID%</span>%_ParentControl%
 		<span class='param'>Style:</span>  <span id='c_Style' name='MS:'>%CtrlStyle%</span>%_DP%<span class='param'>ExStyle:</span>  <span id='c_ExStyle' name='MS:'>%CtrlExStyle%</span>%ButtonStyle_%%_PRE2%
-		%UseUIAStr%<span id=ControlStyles>%ControlStyles%</span>
+		<span id=ControlStyles>%ControlStyles%</span>
 		)
 	}
 	HTML_Control =
@@ -966,7 +976,7 @@ HTML_Control:
 	<span class='param'>Cursor:</span>  <span name='MS:'>%A_Cursor%</span>%_DP%<span class='param'>Caret:</span>  <span name='MS:'>x%A_CaretX% y%A_CaretY%</span>%_DP%<span class='param'>Client area:</span>  <span name='MS:'>x%caX% y%caY% w%caW% h%caH%</span>
 	%_BP1% id='set_button_focus_ctrl'>Focus control:%_BP2%  <span name='MS:'>%CtrlFocus%</span>%_PRE2%
 	%HTML_ControlExist%
-	%CtrlInfo%%CtrlText%%AccText%
+	%CtrlInfo%%CtrlText%%UseUIAStr%%AccText%
 	<a></a>%_T0%
 	</body>
 
@@ -6269,6 +6279,15 @@ DllCall("oleaut32\SafeArrayDestroy", "ptr",ComObjValue(SafeArray))
 HRESULT SafeArrayDestroy(
   _In_  SAFEARRAY *psa
 );
+*/
+
+
+  ;	Added
+  
+UIA_ControlType(n) {
+	Static name:={50000:"Button",50001:"Calendar",50002:"CheckBox",50003:"ComboBox",50004:"Edit",50005:"Hyperlink",50006:"Image",50007:"ListItem",50008:"List",50009:"Menu",50010:"MenuBar",50011:"MenuItem",50012:"ProgressBar",50013:"RadioButton",50014:"ScrollBar",50015:"Slider",50016:"Spinner",50017:"StatusBar",50018:"Tab",50019:"TabItem",50020:"Text",50021:"ToolBar",50022:"ToolTip",50023:"Tree",50024:"TreeItem",50025:"Custom",50026:"Group",50027:"Thumb",50028:"DataGrid",50029:"DataItem",50030:"Document",50031:"SplitButton",50032:"Window",50033:"Pane",50034:"Header",50035:"HeaderItem",50036:"Table",50037:"TitleBar",50038:"Separator"}
+	return name[n]
+}
 
 	; _________________________________________________ End _________________________________________________
 
