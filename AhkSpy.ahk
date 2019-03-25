@@ -26,7 +26,7 @@
     Актуальный исходник - https://raw.githubusercontent.com/serzh82saratov/AhkSpy/master/AhkSpy.ahk
 */
 
-Global AhkSpyVersion := 3.78
+Global AhkSpyVersion := 3.79
 
 	; _________________________________________________ Header _________________________________________________
 
@@ -61,6 +61,7 @@ Global MemoryFontSize := IniRead("MemoryFontSize", 0)
 , ColorSelMouseHover := "F9D886"										;  Цвет фона элемента при наведении мыши     96C3DC F9D886 8FC5FC AEC7E1
 , ColorSelButton := "96C3DC"											;  Цвет фона при нажатии на кнопки
 , ColorSelAnchor := "FFFF80"											;  Цвет фона заголовка для якоря
+, HighLightBckg := "FFE0E0"												;  Цвет фона некоторых абзацев
 , ColorDelimiter := "E14B30"											;  Цвет шрифта разделителя заголовков и параметров
 , ColorTitle := "27419B"												;  Цвет шрифта заголовка
 , ColorParam := "189200"												;  Цвет шрифта параметров
@@ -900,7 +901,7 @@ Spot_Control(NotHTML = 0) {
 			UIAProcessPath = %A_LoopFileLongPath%
 		
 		If (UIAPID != WinPID)
-			bc = style='background-color: #%ColorSelAnchor%'
+			bc = style='background-color: #%HighLightBckg%'
 		
 		UseUIAStr := "`n" _T1 " id='P__UIA_Object'> ( UIA Interface ) </span><a></a>" _T2
 		. _PRE1 "<div " bc "><span class='param' name='MS:N'>PID:</span>  <span name='MS:'>" UIAPID "</span>" 
@@ -1426,10 +1427,10 @@ AccInfoUnderMouse(mx, my, wx, wy, cx, cy, WinID, ControlID) {
 		WinGet, WinProcess, ProcessName, ahk_id %Hwnd%
 		WinGet, WinPID, PID, ahk_id %Hwnd%
 		code .= _T1 " id='P__WindowFromObject'" _T1P "> ( WindowFromObject ) </span><a></a>" _T2 _PRE1
-		. "<span class='param' name='MS:N'>HWND:</span>  <span name='MS:'>" Format("0x{:x}", Hwnd) "</span>"
+		. "<div style='background-color: #" HighLightBckg "'><span class='param' name='MS:N'>HWND:</span>  <span name='MS:'>" Format("0x{:x}", Hwnd) "</span>"
 		. _DP "<span class='param' name='MS:N'>Class:</span>  <span name='MS:'>" TransformHTML(CtrlClass) "</span>"
 		. _DP "<span class='param' name='MS:N'>Exe:</span>  <span name='MS:'>" TransformHTML(WinProcess) "</span>"
-		. _DP "<span class='param' name='MS:N'>PID:</span>  <span name='MS:'>" WinPID "</span>" _PRE2
+		. _DP "<span class='param' name='MS:N'>PID:</span>  <span name='MS:'>" WinPID "</span></div>" _PRE2
 	}
 	If ((Var := Acc.accName(child)) != "")
 		code .= _T1 " id='P__Name_Acc'" _T1P "> ( Name ) </span><a></a>" _BT1 " id='copy_button'> copy " _BT2 _T2 _LPRE ">" TransformHTML(Var) _PRE2
