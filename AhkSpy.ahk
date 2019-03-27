@@ -26,7 +26,7 @@
     Актуальный исходник - https://raw.githubusercontent.com/serzh82saratov/AhkSpy/master/AhkSpy.ahk
 */
 
-Global AhkSpyVersion := 3.79
+Global AhkSpyVersion := 3.80
 
 	; _________________________________________________ Header _________________________________________________
 
@@ -86,7 +86,7 @@ Global ThisMode := IniRead("StartMode", "Control"), LastModeSave := (ThisMode = 
 
 , ClipAdd_Before := 0, ClipAdd_Delimiter := "`r`n"
 , HTML_Win, HTML_Control, HTML_Hotkey, rmCtrlX, rmCtrlY, widthTB, FullScreenMode, hColorProgress, hFindAllText, MsgAhkSpyZoom, Sleep, oShowMarkers, oShowAccMarkers, oShowMarkersEx
-, hGui, hTBGui, hActiveX, hFindGui, oDoc, ShowMarker, isFindView, isIE, isPaused, PreMaxHeight := MaxHeightStrToNum(), PreOverflowHide := !!PreMaxHeight, DecimalCode
+, hGui, hTBGui, hActiveX, hFindGui, oDoc, ShowMarker, isFindView, isIE, isPaused, PreMaxHeight := MaxHeightStrToNum(), PreOverflowHide := !!PreMaxHeight, DecimalCode, GetVKCodeNameStr
 , oDocEl, oPubObjGUID, oJScript, oBody, isConfirm, isAhkSpy := 1, TitleText, FreezeTitleText, TitleTextP1, oUIAInterface, Shift_Tab_Down, hButtonButton, hButtonControl, hButtonWindow
 , TitleTextP2 := TitleTextP2_Reserved := "     ( Shift+Tab - Freeze | RButton - CopySelected | Pause - Pause )     v" AhkSpyVersion
 
@@ -1675,7 +1675,7 @@ Write_HotkeyHTML(K) {
 		ThisKeySC := "   " _DP "   <span name='MS:' id='v_VKDHCode'>" VKCode_ "</span>"
 
 	inp_hotkey := oDoc.getElementById("edithotkey").value, inp_keyname := oDoc.getElementById("editkeyname").value
-
+	
 	HTML_Hotkey =
 	( Ltrim
 	<body id='body'>
@@ -1696,11 +1696,12 @@ Write_HotkeyHTML(K) {
 	%_PRE1%<br><span name='MS:'>%ThisKey%</span>   %_DP%   <span name='MS:'>%VKCode%%SCCode%</span>%ThisKeySC%
 
 	%_PRE2%
-	%_T1%> ( Get name or code ) </span>%_BT1% id='paste_keyname'> paste %_BT2%%_T2%
+	%_T1%> ( GetKeyName ) </span>%_BT1% id='paste_keyname'> paste %_BT2%%_T2%
 	<br>
 	<span id='hotkeybox'>%_INPHK% id='edithotkey' value='%inp_hotkey%'><button id='keyname'> &#8250 </button>%_INPHK% id='editkeyname' value='%inp_keyname%'></span>
 	<br>
 	<br>
+	<span id='vkname'>%GetVKCodeNameStr%</span>
 	%_T0%
 	</body>
 
@@ -1795,6 +1796,10 @@ Write_HotkeyHTML(K) {
 	#editkeyname {
 		position: relative;
 		left: 4px; top: 0px;
+	}
+	#vkname {
+		position: relative; 
+		left: 5px; 
 	}
 	</style>
 	)
@@ -1992,6 +1997,78 @@ Hotkey_SetHook(On = 1) {
 		DllCall("UnhookWindowsHookEx", "Ptr", hHook), hHook := "", Hotkey_Hook(0)
 }
 
+GetVKCodeName(id) {
+	Static Start, VK_, Chr, Num, Undefined, Reserved, Unassigned, Description
+	
+	If !Start
+	{
+		Start := 1
+		VK_ := {01:"VK_LBUTTON",02:"VK_RBUTTON",03:"VK_CANCEL",04:"VK_MBUTTON",05:"VK_XBUTTON1",06:"VK_XBUTTON2",08:"VK_BACK",09:"VK_TAB",0C:"VK_CLEAR",0D:"VK_RETURN",10:"VK_SHIFT"
+		,11:"VK_CONTROL",12:"VK_MENU",13:"VK_PAUSE",14:"VK_CAPITAL",15:"VK_KANA := VK_HANGEUL := VK_HANGUL",17:"VK_JUNJA",18:"VK_FINAL",19:"VK_HANJA := VK_KANJI",1B:"VK_ESCAPE"
+		,1C:"VK_CONVERT",1D:"VK_NONCONVERT",1E:"VK_ACCEPT",1F:"VK_MODECHANGE",20:"VK_SPACE",21:"VK_PRIOR",22:"VK_NEXT",23:"VK_END",24:"VK_HOME",25:"VK_LEFT",26:"VK_UP",27:"VK_RIGHT"
+		,28:"VK_DOWN",29:"VK_SELECT",2A:"VK_PRINT",2B:"VK_EXECUTE",2C:"VK_SNAPSHOT",2D:"VK_INSERT",2E:"VK_DELETE",2F:"VK_HELP",5B:"VK_LWIN",5C:"VK_RWIN",5D:"VK_APPS",5F:"VK_SLEEP"
+		,60:"VK_NUMPAD0",61:"VK_NUMPAD1",62:"VK_NUMPAD2",63:"VK_NUMPAD3",64:"VK_NUMPAD4",65:"VK_NUMPAD5",66:"VK_NUMPAD6",67:"VK_NUMPAD7",68:"VK_NUMPAD8",69:"VK_NUMPAD9",6A:"VK_MULTIPLY"
+		,6B:"VK_ADD",6C:"VK_SEPARATOR",6D:"VK_SUBTRACT",6E:"VK_DECIMAL",6F:"VK_DIVIDE",70:"VK_F1",71:"VK_F2",72:"VK_F3",73:"VK_F4",74:"VK_F5",75:"VK_F6",76:"VK_F7",77:"VK_F8",78:"VK_F9"
+		,79:"VK_F10",7A:"VK_F11",7B:"VK_F12",7C:"VK_F13",7D:"VK_F14",7E:"VK_F15",7F:"VK_F16",80:"VK_F17",81:"VK_F18",82:"VK_F19",83:"VK_F20",84:"VK_F21",85:"VK_F22",86:"VK_F23",87:"VK_F24"
+		,90:"VK_NUMLOCK",91:"VK_SCROLL",92:"VK_OEM_FJ_JISHO, VK_OEM_NEC_EQUAL",93:"VK_OEM_FJ_MASSHOU",94:"VK_OEM_FJ_TOUROKU",95:"VK_OEM_FJ_LOYA",96:"VK_OEM_FJ_ROYA",A0:"VK_LSHIFT",A1:"VK_RSHIFT",A2:"VK_LCONTROL"
+		,A3:"VK_RCONTROL",A4:"VK_LMENU",A5:"VK_RMENU",A6:"VK_BROWSER_BACK",A7:"VK_BROWSER_FORWARD",A8:"VK_BROWSER_REFRESH",A9:"VK_BROWSER_STOP",AA:"VK_BROWSER_SEARCH",AB:"VK_BROWSER_FAVORITES"
+		,AC:"VK_BROWSER_HOME",AD:"VK_VOLUME_MUTE",AE:"VK_VOLUME_DOWN",AF:"VK_VOLUME_UP",B0:"VK_MEDIA_NEXT_TRACK",B1:"VK_MEDIA_PREV_TRACK",B2:"VK_MEDIA_STOP",B3:"VK_MEDIA_PLAY_PAUSE",B4:"VK_LAUNCH_MAIL"
+		,B5:"VK_LAUNCH_MEDIA_SELECT",B6:"VK_LAUNCH_APP1",B7:"VK_LAUNCH_APP2",BA:"VK_OEM_1",BB:"VK_OEM_PLUS",BC:"VK_OEM_COMMA",BD:"VK_OEM_MINUS",BE:"VK_OEM_PERIOD",BF:"VK_OEM_2",C0:"VK_OEM_3",DB:"VK_OEM_4"}
+	
+		VK__ := {DC:"VK_OEM_5",DD:"VK_OEM_6",DE:"VK_OEM_7",DF:"VK_OEM_8",E1:"VK_OEM_AX",E2:"VK_OEM_102",E3:"VK_ICO_HELP",E4:"VK_ICO_00",E5:"VK_PROCESSKEY",E6:"VK_ICO_CLEAR",E7:"VK_PACKET",E9:"VK_OEM_RESET"
+		,EA:"VK_OEM_JUMP",EB:"VK_OEM_PA1",EC:"VK_OEM_PA2",ED:"VK_OEM_PA3",EE:"VK_OEM_WSCTRL",EF:"VK_OEM_CUSEL",F0:"VK_OEM_ATTN",F1:"VK_OEM_FINISH",F2:"VK_OEM_COPY",F3:"VK_OEM_AUTO",F4:"VK_OEM_ENLW",F5:"VK_OEM_BACKTAB"
+		,F6:"VK_ATTN",F7:"VK_CRSEL",F8:"VK_EXSEL",F9:"VK_EREOF",FA:"VK_PLAY",FB:"VK_ZOOM",FC:"VK_NONAME",FD:"VK_PA1",FE:"VK_OEM_CLEAR"}
+	
+		for k, v in VK__
+			VK_[k] := v
+		
+		Chr := "41|42|43|44|45|46|47|48|49|4a|4b|4c|4d|4e|4f|50|51|52|53|54|55|56|57|58|59|5a"
+		Num := "30|31|32|33|34|35|36|37|38|39"
+		Undefined := "07|0e|0f|16|1a|3a|3b|3c|3d|3e|3f|40"
+		Reserved := "0a|0b|5e|b8|b9|c1|c2|c3|c4|c5|c6|c7|c8|c9|ca|cb|cc|cd|ce|cf|d0|d1|d2|d3|d4|d5|d6|d7|e0"
+		Unassigned := "88|89|8a|8b|8c|8d|8e|8f|97|98|99|9a|9b|9c|9d|9e|9f|d8|d9|da|e8"
+	}
+	If InStr(id, "vk")
+		id := StrReplace("|" id, "|vk", "0x", , 1) 
+	If !(InStr(id, "0x") && id > 0 && id < 256)
+		Return   ;	"Is not virtual key code" 
+	id := Format("{:02X}", id) 
+	If VK_[id]
+		Return  QVK(VK_[id], "0x" id)
+	If InStr("|" Chr "|", "|" id "|")
+		Return QVK("0x" id " is Letter " Chr("0x" id), "", 0)
+	If InStr("|" Num "|", "|" id "|")
+		Return QVK("0x" id " is Number " Chr("0x" id), "", 0)
+	If InStr("|" Undefined "|", "|" id "|")
+		Return QVK("0x" id " is Undefined", "", 0)
+	If InStr("|" Reserved "|", "|" id "|")
+		Return QVK("0x" id " is Reserved", "", 0)
+	If InStr("|" Unassigned "|", "|" id "|")
+		Return QVK("0x" id " is Unassigned", "", 0)
+	If id = ff
+		Return QVK("0x" id " is Unknown", "", 0) 
+}
+
+vk___(str) {
+	If str ~= "^vk"
+		str := "0x" RegExReplace(str, "i)(^vk([0-9a-f]+)).*", "$2")    
+	; Else If str ~= "^\s*[0-9a-f]+\s*$"
+		; str := "0x" RegExReplace(str, "i)\s*(.*)\s*", "$1")
+	If (str + 0 = "")
+		Return
+ 	Return str
+}
+
+QVK(key, value, VK = 1) {
+	Static S, Description1, Description2
+	If !S && S := 1
+		Description1 := "<span style='color: #" ColorParam "'>Virtual-key code symbolic names:  </span>"
+		, Description2 := "<span style='color: #" ColorDelimiter "'>Virtual-key code symbolic names:  </span>"
+	If VK
+		Return _PRE1 Description1 "<span><span name='MS:'>" key "</span><span class='param' name='MS:SP'> := " value "</span></span><br>" _PRE2
+	Return _PRE1 Description2 "<span style='color: #C0C0C0'>" key "</span><br>" _PRE2
+}
+	
 	; _________________________________________________ Menu Labels _________________________________________________
 
 ShowSys(x, y) {
@@ -4648,7 +4725,7 @@ ButtonClick(oevent) {
 		Text := RTrim(Text, "`r`n"), GetKeyState("Shift", "P") ? ClipAdd(Text, 1) : (Clipboard := Text)
 	}
 	Else If thisid = keyname
-	{
+	{ 
 		edithotkey := oDoc.getElementById("edithotkey"), editkeyname := oDoc.getElementById("editkeyname")
 		v_edit := Format("{:L}", edithotkey.value), name := GetKeyName(v_edit)
 		If (name = v_edit)
@@ -4656,7 +4733,8 @@ ButtonClick(oevent) {
 		Else
 			editkeyname.value := (StrLen(name) = 1 ? (Format("{:U}", name)) : name)
 		o := name = "" ? edithotkey : editkeyname
-		o.focus(), o.createTextRange().select()
+		o.focus(), o.createTextRange().select() 
+		oDoc.getElementById("vkname").innerHTML := GetVKCodeNameStr := GetVKCodeName(vk___(v_edit)) 
 	}
 	Else If thisid = hook_reload
 	{
