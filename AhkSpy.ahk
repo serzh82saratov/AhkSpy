@@ -26,7 +26,7 @@
     Актуальный исходник - https://raw.githubusercontent.com/serzh82saratov/AhkSpy/master/AhkSpy.ahk
 */
 
-Global AhkSpyVersion := 3.81
+Global AhkSpyVersion := 3.82
 
 	; _________________________________________________ Header _________________________________________________
 
@@ -1997,7 +1997,10 @@ Hotkey_SetHook(On = 1) {
 		DllCall("UnhookWindowsHookEx", "Ptr", hHook), hHook := "", Hotkey_Hook(0)
 }
 
-GetVKCodeName(id) {  ;	https://docs.microsoft.com/en-us/windows/desktop/inputdev/virtual-key-codes
+GetVKCodeName(id) {  
+  ;	https://docs.microsoft.com/en-us/windows/desktop/inputdev/virtual-key-codes
+  ;	http://www.kbdedit.com/manual/low_level_vk_list.html
+
 	Static Start, VK_, Chr, Num, Undefined, Reserved, Unassigned, VK_Names
 	
 	If !Start
@@ -2017,7 +2020,7 @@ GetVKCodeName(id) {  ;	https://docs.microsoft.com/en-us/windows/desktop/inputdev
 	
 		VK__ := {DC:"VK_OEM_5",DD:"VK_OEM_6",DE:"VK_OEM_7",DF:"VK_OEM_8",E1:"VK_OEM_AX",E2:"VK_OEM_102",E3:"VK_ICO_HELP",E4:"VK_ICO_00",E5:"VK_PROCESSKEY",E6:"VK_ICO_CLEAR",E7:"VK_PACKET",E9:"VK_OEM_RESET"
 		,EA:"VK_OEM_JUMP",EB:"VK_OEM_PA1",EC:"VK_OEM_PA2",ED:"VK_OEM_PA3",EE:"VK_OEM_WSCTRL",EF:"VK_OEM_CUSEL",F0:"VK_OEM_ATTN",F1:"VK_OEM_FINISH",F2:"VK_OEM_COPY",F3:"VK_OEM_AUTO",F4:"VK_OEM_ENLW",F5:"VK_OEM_BACKTAB"
-		,F6:"VK_ATTN",F7:"VK_CRSEL",F8:"VK_EXSEL",F9:"VK_EREOF",FA:"VK_PLAY",FB:"VK_ZOOM",FC:"VK_NONAME",FD:"VK_PA1",FE:"VK_OEM_CLEAR"}
+		,F6:"VK_ATTN",F7:"VK_CRSEL",F8:"VK_EXSEL",F9:"VK_EREOF",FA:"VK_PLAY",FB:"VK_ZOOM",FC:"VK_NONAME",FD:"VK_PA1",FE:"VK_OEM_CLEAR",C1:"VK_ABNT_C1",C2:"VK_ABNT_C2"}
 	
 		for k, v in VK__
 			VK_[k] := v
@@ -2031,7 +2034,7 @@ GetVKCodeName(id) {  ;	https://docs.microsoft.com/en-us/windows/desktop/inputdev
 		Undefined := "07|0e|0f|16|1a|3a|3b|3c|3d|3e|3f|40"
 		Reserved := "0a|0b|5e|b8|b9|c1|c2|c3|c4|c5|c6|c7|c8|c9|ca|cb|cc|cd|ce|cf|d0|d1|d2|d3|d4|d5|d6|d7|e0"
 		Unassigned := "88|89|8a|8b|8c|8d|8e|8f|97|98|99|9a|9b|9c|9d|9e|9f|d8|d9|da|e8"
-	}  
+	}
 	id := Trim(Format("{:U}", id), " ")
 	If (InStr(id, "vk_") && VK_Names.HasKey(id))
 		Return QVK(id, "0x" VK_Names[id])
@@ -2048,9 +2051,9 @@ GetVKCodeName(id) {  ;	https://docs.microsoft.com/en-us/windows/desktop/inputdev
 	If VK_[id]
 		Return  QVK(VK_[id], "0x" id)
 	If InStr("|" Chr "|", "|" id "|")
-		Return QVK("0x" id " is Letter " Chr("0x" id), "", 0)
+		Return QVK("VK_KEY_" Chr("0x" id), "0x" id)
 	If InStr("|" Num "|", "|" id "|")
-		Return QVK("0x" id " is Number " Chr("0x" id), "", 0)
+		Return QVK("VK_KEY_" Chr("0x" id), "0x" id) 
 	If InStr("|" Undefined "|", "|" id "|")
 		Return QVK("0x" id " is Undefined", "", 0)
 	If InStr("|" Reserved "|", "|" id "|")
