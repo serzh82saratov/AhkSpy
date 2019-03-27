@@ -2032,7 +2032,7 @@ GetVKCodeName(id) {  ;	https://docs.microsoft.com/en-us/windows/desktop/inputdev
 		Reserved := "0a|0b|5e|b8|b9|c1|c2|c3|c4|c5|c6|c7|c8|c9|ca|cb|cc|cd|ce|cf|d0|d1|d2|d3|d4|d5|d6|d7|e0"
 		Unassigned := "88|89|8a|8b|8c|8d|8e|8f|97|98|99|9a|9b|9c|9d|9e|9f|d8|d9|da|e8"
 	}  
-	id := StrReplace(Format("{:U}", id), " ") 
+	id := Trim(Format("{:U}", id), " ")
 	If (InStr(id, "vk_") && VK_Names.HasKey(id))
 		Return QVK(id, "0x" VK_Names[id])
 
