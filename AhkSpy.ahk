@@ -1997,12 +1997,12 @@ Hotkey_SetHook(On = 1) {
 		DllCall("UnhookWindowsHookEx", "Ptr", hHook), hHook := "", Hotkey_Hook(0)
 }
 
-GetVKCodeName(id) {
-	Static Start, VK_, Chr, Num, Undefined, Reserved, Unassigned, Description
+GetVKCodeName(id) {  ;	https://docs.microsoft.com/en-us/windows/desktop/inputdev/virtual-key-codes
+	Static Start, VK_, Chr, Num, Undefined, Reserved, Unassigned, VK_Names
 	
 	If !Start
 	{
-		Start := 1
+		Start := 1 
 		VK_ := {01:"VK_LBUTTON",02:"VK_RBUTTON",03:"VK_CANCEL",04:"VK_MBUTTON",05:"VK_XBUTTON1",06:"VK_XBUTTON2",08:"VK_BACK",09:"VK_TAB",0C:"VK_CLEAR",0D:"VK_RETURN",10:"VK_SHIFT"
 		,11:"VK_CONTROL",12:"VK_MENU",13:"VK_PAUSE",14:"VK_CAPITAL",15:"VK_KANA := VK_HANGEUL := VK_HANGUL",17:"VK_JUNJA",18:"VK_FINAL",19:"VK_HANJA := VK_KANJI",1B:"VK_ESCAPE"
 		,1C:"VK_CONVERT",1D:"VK_NONCONVERT",1E:"VK_ACCEPT",1F:"VK_MODECHANGE",20:"VK_SPACE",21:"VK_PRIOR",22:"VK_NEXT",23:"VK_END",24:"VK_HOME",25:"VK_LEFT",26:"VK_UP",27:"VK_RIGHT"
@@ -2010,7 +2010,7 @@ GetVKCodeName(id) {
 		,60:"VK_NUMPAD0",61:"VK_NUMPAD1",62:"VK_NUMPAD2",63:"VK_NUMPAD3",64:"VK_NUMPAD4",65:"VK_NUMPAD5",66:"VK_NUMPAD6",67:"VK_NUMPAD7",68:"VK_NUMPAD8",69:"VK_NUMPAD9",6A:"VK_MULTIPLY"
 		,6B:"VK_ADD",6C:"VK_SEPARATOR",6D:"VK_SUBTRACT",6E:"VK_DECIMAL",6F:"VK_DIVIDE",70:"VK_F1",71:"VK_F2",72:"VK_F3",73:"VK_F4",74:"VK_F5",75:"VK_F6",76:"VK_F7",77:"VK_F8",78:"VK_F9"
 		,79:"VK_F10",7A:"VK_F11",7B:"VK_F12",7C:"VK_F13",7D:"VK_F14",7E:"VK_F15",7F:"VK_F16",80:"VK_F17",81:"VK_F18",82:"VK_F19",83:"VK_F20",84:"VK_F21",85:"VK_F22",86:"VK_F23",87:"VK_F24"
-		,90:"VK_NUMLOCK",91:"VK_SCROLL",92:"VK_OEM_FJ_JISHO, VK_OEM_NEC_EQUAL",93:"VK_OEM_FJ_MASSHOU",94:"VK_OEM_FJ_TOUROKU",95:"VK_OEM_FJ_LOYA",96:"VK_OEM_FJ_ROYA",A0:"VK_LSHIFT",A1:"VK_RSHIFT",A2:"VK_LCONTROL"
+		,90:"VK_NUMLOCK",91:"VK_SCROLL",92:"VK_OEM_FJ_JISHO := VK_OEM_NEC_EQUAL",93:"VK_OEM_FJ_MASSHOU",94:"VK_OEM_FJ_TOUROKU",95:"VK_OEM_FJ_LOYA",96:"VK_OEM_FJ_ROYA",A0:"VK_LSHIFT",A1:"VK_RSHIFT",A2:"VK_LCONTROL"
 		,A3:"VK_RCONTROL",A4:"VK_LMENU",A5:"VK_RMENU",A6:"VK_BROWSER_BACK",A7:"VK_BROWSER_FORWARD",A8:"VK_BROWSER_REFRESH",A9:"VK_BROWSER_STOP",AA:"VK_BROWSER_SEARCH",AB:"VK_BROWSER_FAVORITES"
 		,AC:"VK_BROWSER_HOME",AD:"VK_VOLUME_MUTE",AE:"VK_VOLUME_DOWN",AF:"VK_VOLUME_UP",B0:"VK_MEDIA_NEXT_TRACK",B1:"VK_MEDIA_PREV_TRACK",B2:"VK_MEDIA_STOP",B3:"VK_MEDIA_PLAY_PAUSE",B4:"VK_LAUNCH_MAIL"
 		,B5:"VK_LAUNCH_MEDIA_SELECT",B6:"VK_LAUNCH_APP1",B7:"VK_LAUNCH_APP2",BA:"VK_OEM_1",BB:"VK_OEM_PLUS",BC:"VK_OEM_COMMA",BD:"VK_OEM_MINUS",BE:"VK_OEM_PERIOD",BF:"VK_OEM_2",C0:"VK_OEM_3",DB:"VK_OEM_4"}
@@ -2021,15 +2021,27 @@ GetVKCodeName(id) {
 	
 		for k, v in VK__
 			VK_[k] := v
-		
+		VK_Names := {}
+		for k, v in VK_
+			for a, b in StrSplit(v, ":=", " ")
+				VK_Names[b] := k
+			
 		Chr := "41|42|43|44|45|46|47|48|49|4a|4b|4c|4d|4e|4f|50|51|52|53|54|55|56|57|58|59|5a"
 		Num := "30|31|32|33|34|35|36|37|38|39"
 		Undefined := "07|0e|0f|16|1a|3a|3b|3c|3d|3e|3f|40"
 		Reserved := "0a|0b|5e|b8|b9|c1|c2|c3|c4|c5|c6|c7|c8|c9|ca|cb|cc|cd|ce|cf|d0|d1|d2|d3|d4|d5|d6|d7|e0"
 		Unassigned := "88|89|8a|8b|8c|8d|8e|8f|97|98|99|9a|9b|9c|9d|9e|9f|d8|d9|da|e8"
-	}
+	}  
+	id := StrReplace(Format("{:U}", id), " ") 
+	If (InStr(id, "vk_") && VK_Names.HasKey(id))
+		Return QVK(id, "0x" VK_Names[id])
+
+	If str ~= "^vk"
+		str := "0x" RegExReplace(str, "i)(^vk([0-9a-f]+)).*", "$2")   
+		
 	If InStr(id, "vk")
 		id := StrReplace("|" id, "|vk", "0x", , 1) 
+		
 	If !(InStr(id, "0x") && id > 0 && id < 256)
 		Return   ;	"Is not virtual key code" 
 	id := Format("{:02X}", id) 
@@ -2047,17 +2059,7 @@ GetVKCodeName(id) {
 		Return QVK("0x" id " is Unassigned", "", 0)
 	If id = ff
 		Return QVK("0x" id " is Unknown", "", 0) 
-}
-
-vk___(str) {
-	If str ~= "^vk"
-		str := "0x" RegExReplace(str, "i)(^vk([0-9a-f]+)).*", "$2")    
-	; Else If str ~= "^\s*[0-9a-f]+\s*$"
-		; str := "0x" RegExReplace(str, "i)\s*(.*)\s*", "$1")
-	If (str + 0 = "")
-		Return
- 	Return str
-}
+} 
 
 QVK(key, value, VK = 1) {
 	Static S, Description1, Description2
@@ -4734,7 +4736,7 @@ ButtonClick(oevent) {
 			editkeyname.value := (StrLen(name) = 1 ? (Format("{:U}", name)) : name)
 		o := name = "" ? edithotkey : editkeyname
 		o.focus(), o.createTextRange().select() 
-		oDoc.getElementById("vkname").innerHTML := GetVKCodeNameStr := GetVKCodeName(vk___(v_edit)) 
+		oDoc.getElementById("vkname").innerHTML := GetVKCodeNameStr := GetVKCodeName(v_edit) 
 	}
 	Else If thisid = hook_reload
 	{
