@@ -26,7 +26,7 @@
     Актуальный исходник - https://raw.githubusercontent.com/serzh82saratov/AhkSpy/master/AhkSpy.ahk
 */
 
-Global AhkSpyVersion := 3.84
+Global AhkSpyVersion := 3.85
 
 	; _________________________________________________ Header _________________________________________________
 
@@ -447,7 +447,7 @@ Esc::
 
 Del:: DeleteSelection()							;  Delete
 
-Tab:: PasteStrSelection("    ")							;  &emsp
+Tab:: PasteStrSelection("    ")							;  &emsp	"&#x9;"  PasteStrSelection("&#x9;")
 
 Enter:: PasteHTMLSelection("<br>")
 
@@ -2032,19 +2032,17 @@ GetVKCodeName(id) {
 			for a, b in StrSplit(v, ":=", " ")
 				VK_Names[b] := k
 			 
-		Undefined := "07|0e|0f|16|1a|3a|3b|3c|3d|3e|3f|40"
-		Reserved := "0a|0b|5e|b8|b9|c1|c2|c3|c4|c5|c6|c7|c8|c9|ca|cb|cc|cd|ce|cf|d0|d1|d2|d3|d4|d5|d6|d7|e0"
-		Unassigned := "88|89|8a|8b|8c|8d|8e|8f|97|98|99|9a|9b|9c|9d|9e|9f|d8|d9|da|e8"
+		Undefined := "07|0E|0F|16|1A|3A|3B|3C|3D|3E|3F|40"
+		Reserved := "0A|0B|5E|B8|B9|C3|C4|C5|C6|C7|C8|C9|CA|CB|CC|CD|CE|CF|D0|D1|D2|D3|D4|D5|D6|D7|E0"
+		Unassigned := "88|89|8A|8B|8C|8D|8E|8F|97|98|99|9A|9B|9C|9D|9E|9F|D8|D9|DA|E8"
 	}
-	id := Trim(Format("{:U}", id), " ")
-	If (InStr(id, "vk_") && VK_Names.HasKey(id))
-		Return QVK(id, "0x" VK_Names[id])
-
-	If str ~= "^vk"
-		str := "0x" RegExReplace(str, "i)(^vk([0-9a-f]+)).*", "$2")   
+	If (id ~= "i)^vk_") && VK_Names.HasKey(id)
+		Return QVK(oDoc.getElementById("edithotkey").value := Format("{:U}", id), "0x" VK_Names[id])  ;	vK_EreOF
 		
-	If InStr(id, "vk")
-		id := StrReplace("|" id, "|vk", "0x", , 1) 
+	If GetKeyVK(id)  
+		id := Format("0x{:02X}", GetKeyVK(id))
+	Else If (id ~= "i)^vk")
+		id := "0x" RegExReplace(id, "i)(^vk([0-9a-f]+)).*", "$2")  
 		
 	If !(InStr(id, "0x") && id > 0 && id < 256)
 		Return   ;	"Is not virtual key code" 
@@ -2088,10 +2086,9 @@ MenuCheck()  {
 	{
 		MouseGetPos, , , WinID
 		Menu := MenuGetName(GetMenuForMenu(WinID))
-		If Menu && (F := oMenu[Menu][oOther.ThisMenuItem := AccUnderMouse(WinID, Id).accName(Id)])
+		If Menu && (F := oMenu[Menu][oOther.ThisMenuItem := AccUnderMouse(WinID, Id).accName(Id)]) && (F ~= "^_")
 		{
-			If !(F ~= "^_")
-				Return DllCall("mouse_event", "UInt", 0x0002|0x0004)  ;	WinClose("ahk_class #32768 ahk_pid " oOther.CurrentProcessId), SetTimer(F, -1)
+			; If !(F ~= "^_") ; Return DllCall("mouse_event", "UInt", 0x0002|0x0004)  ;	WinClose("ahk_class #32768 ahk_pid " oOther.CurrentProcessId), SetTimer(F, -1)
 			oOther.MenuItemExist := 1
 			If IsLabel(F)
 				GoSub, % F
@@ -2870,6 +2867,13 @@ PasteStrSelection(Str) {
 		oDoc.selection.createRange().text := Str
 }
 
+PasteTab() {
+	TempClipboard := ClipboardAll
+	Clipboard := "" A_Tab ""
+	oDoc.execCommand("Paste")
+	Clipboard := TempClipboard 
+}
+
 PasteHTMLSelection(Str) {
  	If MS_IsSelection()
 		oMS.ELSel.innerHTML := Str, MoveCaretToSelection(0)
@@ -3199,6 +3203,10 @@ WinClose(title) {
 
 Sleep(time) {
 	Sleep time
+}
+
+SendInput(key) {
+	SendInput % key
 }
 
 SetTimer(funcorlabel, time) {
@@ -4729,22 +4737,17 @@ ButtonClick(oevent) {
 		edithotkey := oDoc.getElementById("edithotkey"), editkeyname := oDoc.getElementById("editkeyname")
 		value := edithotkey.value 
 		
-		If (value = "    ")
+		If (value = "    " || value = A_Tab)
 			value := A_Tab
 		Else If (value != " ")
-			value := Trim(value, " ") 
+			value := RegExReplace(value, "^\s*(.*?)\s*$", "$1")
 			
 		If RegExMatch(value, "i)^0x([0-9a-f]+)$", M)
-		{
-			If StrLen(M1) > 2
-				key := "sc" M1
-			Else 
-				key := "vk" M1
-			oDoc.getElementById("edithotkey").value := key
-		}
+			key := (StrLen(M1) > 2 ? "sc" : "vk") . Format("{:U}", M1)
 		Else
 			key := value 
-			
+		oDoc.getElementById("edithotkey").value := key 
+		
 		name := GetKeyName(key)
 		If (name = key)
 			editkeyname.value := Format("vk{:X}", GetKeyVK(key)) (!(sc := GetKeySC(key)) ? "" : Format("sc{:X}", sc))
@@ -4752,9 +4755,8 @@ ButtonClick(oevent) {
 			editkeyname.value := (StrLen(name) = 1 ? (Format("{:U}", name)) : name)
 			
 		o := name = "" ? edithotkey : editkeyname
-		o.focus(), o.createTextRange().select() 
-		
-		oDoc.getElementById("vkname").innerHTML := GetVKCodeNameStr := GetVKCodeName(key) 
+		o.focus(), o.createTextRange().select()
+		oDoc.getElementById("vkname").innerHTML := GetVKCodeNameStr := GetVKCodeName(key)
 	}
 	Else If thisid = hook_reload
 	{
