@@ -26,7 +26,7 @@
     Актуальный исходник - https://raw.githubusercontent.com/serzh82saratov/AhkSpy/master/AhkSpy.ahk
 */
 
-Global AhkSpyVersion := 3.85
+Global AhkSpyVersion := 3.86
 
 	; _________________________________________________ Header _________________________________________________
 
@@ -86,7 +86,7 @@ Global ThisMode := IniRead("StartMode", "Control"), LastModeSave := (ThisMode = 
 
 , ClipAdd_Before := 0, ClipAdd_Delimiter := "`r`n"
 , HTML_Win, HTML_Control, HTML_Hotkey, rmCtrlX, rmCtrlY, widthTB, FullScreenMode, hColorProgress, hFindAllText, MsgAhkSpyZoom, Sleep, oShowMarkers, oShowAccMarkers, oShowMarkersEx
-, hGui, hTBGui, hActiveX, hFindGui, oDoc, ShowMarker, isFindView, isIE, isPaused, PreMaxHeight := MaxHeightStrToNum(), PreOverflowHide := !!PreMaxHeight, DecimalCode, GetVKCodeNameStr
+, hGui, hTBGui, hActiveX, hFindGui, oDoc, ShowMarker, isFindView, isIE, isPaused, PreMaxHeight := MaxHeightStrToNum(), PreOverflowHide := !!PreMaxHeight, DecimalCode, GetVKCodeNameStr, GetSCCodeNameStr
 , oDocEl, oPubObjGUID, oJScript, oBody, isConfirm, isAhkSpy := 1, TitleText, FreezeTitleText, TitleTextP1, oUIAInterface, Shift_Tab_Down, hButtonButton, hButtonControl, hButtonWindow
 , TitleTextP2 := TitleTextP2_Reserved := "     ( Shift+Tab - Freeze | RButton - CopySelected | Pause - Pause )     v" AhkSpyVersion
 
@@ -1701,7 +1701,7 @@ Write_HotkeyHTML(K) {
 	<span id='hotkeybox'>%_INPHK% id='edithotkey' value='%inp_hotkey%'><button id='keyname'> &#8250 </button>%_INPHK% id='editkeyname' value='%inp_keyname%'></span>
 	<br>
 	<br>
-	<span id='vkname'>%GetVKCodeNameStr%</span>
+	<span id='vkname'>%GetVKCodeNameStr%</span><span id='scname'>%GetSCCodeNameStr%</span>
 	%_T0%
 	</body>
 
@@ -1796,11 +1796,7 @@ Write_HotkeyHTML(K) {
 	#editkeyname {
 		position: relative;
 		left: 4px; top: 0px;
-	}
-	#vkname {
-		position: relative; 
-		left: 5px; 
-	}
+	} 
 	</style>
 	)
 	Write_Hotkey()
@@ -2039,8 +2035,8 @@ GetVKCodeName(id) {
 	If (id ~= "i)^vk_") && VK_Names.HasKey(id)
 		Return QVK(oDoc.getElementById("edithotkey").value := Format("{:U}", id), "0x" VK_Names[id])  ;	vK_EreOF
 		
-	If GetKeyVK(id)  
-		id := Format("0x{:02X}", GetKeyVK(id))
+	If VK := GetKeyVK(id)  
+		id := Format("0x{:02X}", VK)
 	Else If (id ~= "i)^vk")
 		id := "0x" RegExReplace(id, "i)(^vk([0-9a-f]+)).*", "$2")  
 		
@@ -2058,15 +2054,22 @@ GetVKCodeName(id) {
 } 
 
 QVK(key, value, VK = 1) {
-	Static S, Description1, Description2
-	If !S && S := 1
-		Description1 := "<span style='color: #" ColorParam "'>Virtual-key code symbolic names:  </span>"
+	Static S, T, Description1, Description2
+	If !S && S := 1 
+		T := _T1 "> ( GetKeyVK ) </span>" _T2 "<br>"
+		, Description1 := "<span style='color: #" ColorParam "'>Virtual-key code symbolic names:  </span>"
 		, Description2 := "<span style='color: #" ColorDelimiter "'>Virtual-key code symbolic names:  </span>"
 	If VK
-		Return _PRE1 Description1 "<span><span name='MS:'>" key "</span><span class='param' name='MS:SP'> := " value "</span></span><br>" _PRE2
-	Return _PRE1 Description2 "<span style='color: #C0C0C0'>" key "</span><br>" _PRE2
+		Return T _PRE1 Description1 "<span><span name='MS:'>" key "</span><span class='param' name='MS:SP'> := " value "</span></span><br>" _PRE2
+	Return T _PRE1 Description2 "<span style='color: #C0C0C0'>" key "</span><br>" _PRE2
 }
-	
+
+GetScanCode(id) { 
+	If SC := GetKeySC(id) 
+		Return _T1 "> ( GetKeySC ) </span>" _T2 "<br>" _PRE1 "<span name='MS:'>" Format("0x{:03X}", SC) "</span><br>" _PRE2 
+}
+
+
 	; _________________________________________________ Menu Labels _________________________________________________
 
 ShowSys(x, y) {
@@ -4757,6 +4760,8 @@ ButtonClick(oevent) {
 		o := name = "" ? edithotkey : editkeyname
 		o.focus(), o.createTextRange().select()
 		oDoc.getElementById("vkname").innerHTML := GetVKCodeNameStr := GetVKCodeName(key)
+		oDoc.getElementById("scname").innerHTML := GetSCCodeNameStr := GetScanCode(key)
+		HTML_Hotkey := oBody.innerHTML 
 	}
 	Else If thisid = hook_reload
 	{
