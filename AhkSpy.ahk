@@ -26,7 +26,7 @@
     Актуальный исходник - https://raw.githubusercontent.com/serzh82saratov/AhkSpy/master/AhkSpy.ahk
 */
 
-Global AhkSpyVersion := 3.86
+Global AhkSpyVersion := 3.87
 
 	; _________________________________________________ Header _________________________________________________
 
@@ -145,7 +145,7 @@ Gui, Add, ActiveX, Border voDoc HWNDhActiveX x0 y+0, HTMLFile
 ComObjError(false)
 LoadJScript()
 oBody := oDoc.body
-oDocEl := oDoc.documentElement
+oDocEl := oDoc.documentElement 
 oJScript := oDoc.Script
 oJScript.WordWrap := WordWrap
 oJScript.MoveTitles := MoveTitles
@@ -820,13 +820,14 @@ Spot_Control(NotHTML = 0) {
 	WithRespectClient := _BP1 " id='set_pos'>Relative client:" _BP2 "  <span name='MS:'>" Round(MXC / caW, 4) ", " Round(MYC / caH, 4)
 		. "</span>  <span class='param'>for</span> <span name='MS:'>w" caW " h" caH "</span>"
 
-	AccText := AccInfoUnderMouse(MXS, MYS, WinX, WinY, CtrlX, CtrlY, WinID, ControlID)
+	ControlGetPos, CtrlX, CtrlY, CtrlW, CtrlH,, ahk_id %ControlID%
+	
+	AccText := AccInfoUnderMouse(MXS, MYS, WinX, WinY, CtrlX, CtrlY, caX, caY, WinID, ControlID)
 	If AccText !=
 		AccText := _T1 " id='__AccInfo'> ( Accessible ) </span><a></a>" _BT1 " id='flash_acc'> flash " _BT2 _ButAccViewer _T2 AccText
 	
 	If ControlID
 	{
-		ControlGetPos, CtrlX, CtrlY, CtrlW, CtrlH,, ahk_id %ControlID%
 		CtrlCAX := CtrlX - caX, CtrlCAY := CtrlY - caY
 		
 		CtrlX2 := CtrlX + CtrlW - 1, CtrlY2 := CtrlY + CtrlH - 1
@@ -940,7 +941,11 @@ Spot_Control(NotHTML = 0) {
 			
 		StateLightAcc ? ShowAccMarker(AccCoord[1], AccCoord[2], AccCoord[3], AccCoord[4]) : 0
 	}
-
+	If ((S_CaretX := A_CaretX) != "")
+		CaretPosStr = <span class='param'>Caret:</span>  <span name='MS:'>x%S_CaretX% y%A_CaretY%</span>
+	Else 
+		CaretPosStr = <span class='error'>Caret position undefined</span>
+	
 	; _________________________________________________ HTML_Control _________________________________________________
 
 HTML_Control:
@@ -974,7 +979,7 @@ HTML_Control:
 	%_PRE1%<span class='param'>RGB: </span> <span name='MS:'>%ColorRGB%</span>%_DP%<span name='MS:'>#%sColorRGB%</span>%_DP%<span class='param'>BGR: </span> <span name='MS:'>%ColorBGR%</span>%_DP%<span name='MS:'>#%sColorBGR%</span>%_PRE2%
 	%_T1% id='__Window'> ( Window ) </span>%_BT1% id='flash_ctrl_window'> flash %_BT2%%_T2%
 	%_PRE1%<span><span class='param' name='MS:S'>ahk_class</span> <span name='MS:'>%WinClass%</span></span> <span><span class='param' name='MS:S'>ahk_exe</span> <span name='MS:'>%ProcessName%</span></span> <span><span class='param' name='MS:S'>ahk_id</span> <span name='MS:'>%WinID%</span></span> <span><span class='param' name='MS:S'>ahk_pid</span> <span name='MS:'>%WinPID%</span></span>
-	<span class='param'>Cursor:</span>  <span name='MS:'>%A_Cursor%</span>%_DP%<span class='param'>Caret:</span>  <span name='MS:'>x%A_CaretX% y%A_CaretY%</span>%_DP%<span class='param'>Client area:</span>  <span name='MS:'>x%caX% y%caY% w%caW% h%caH%</span>
+	<span class='param'>Cursor:</span>  <span name='MS:'>%A_Cursor%</span>%_DP%%CaretPosStr%%_DP%<span class='param'>Client area:</span>  <span name='MS:'>x%caX% y%caY% w%caW% h%caH%</span>
 	%_BP1% id='set_button_focus_ctrl'>Focus control:%_BP2%  <span name='MS:'>%CtrlFocus%</span>%_PRE2%
 	%HTML_ControlExist%
 	%CtrlInfo%%CtrlText%%UseUIAStr%%AccText%
@@ -1042,6 +1047,9 @@ HTML_Control:
 	} 
 	.param {
 		color: #%ColorParam%;
+	}
+	.error {
+		color: #%ColorDelimiter%;
 	}
 	#anchor {
 		background-color: #%ColorSelAnchor%;
@@ -1387,7 +1395,7 @@ WBGet(hwnd) {
 
 	;  http://www.autohotkey.com/board/topic/77888-accessible-info-viewer-alpha-release-2012-09-20/
 
-AccInfoUnderMouse(mx, my, wx, wy, cx, cy, WinID, ControlID) {
+AccInfoUnderMouse(mx, my, wx, wy, cx, cy, caX, caY, WinID, ControlID) {
 	Static h
 	If Not h
 		h := DllCall("LoadLibrary", "Str", "oleacc", "Ptr")
@@ -1418,7 +1426,10 @@ AccInfoUnderMouse(mx, my, wx, wy, cx, cy, WinID, ControlID) {
 
 		. "<span class='param'>Window: </span><span name='MS:'>x" x - wx " y" y - wy "</span>"
 		. _DP "<span name='MS:'>x&sup2;" x - wx + w - 1 " y&sup2;" y - wy + h - 1 "</span>"
-
+		
+		. _DP "<span class='param'>Client: </span><span name='MS:'>x" x - wx - caX " y" y - wy - caY "</span>"
+		. _DP "<span name='MS:'>x&sup2;" x - wx + w - 1 - caX " y&sup2;" y - wy + h - 1 - caY "</span>"
+		 
 		. (cx != "" ? _DP "<span class='param'>Control: </span><span name='MS:'>x" (x - wx - cx) " y" (y - wy - cy) "</span>"
 		. _DP "<span name='MS:'>x&sup2;" (x - wx - cx) + w - 1 " y&sup2;" (y - wy - cy) + h - 1 "</span>" : "")  _PRE2
 
@@ -2003,7 +2014,7 @@ GetVKCodeName(id) {
 	{
 		Start := 1 
 		VK_ := {01:"VK_LBUTTON",02:"VK_RBUTTON",03:"VK_CANCEL",04:"VK_MBUTTON",05:"VK_XBUTTON1",06:"VK_XBUTTON2",08:"VK_BACK",09:"VK_TAB",0C:"VK_CLEAR",0D:"VK_RETURN",10:"VK_SHIFT"
-		,11:"VK_CONTROL",12:"VK_MENU",13:"VK_PAUSE",14:"VK_CAPITAL",15:"VK_KANA := VK_HANGEUL := VK_HANGUL",17:"VK_JUNJA",18:"VK_FINAL",19:"VK_HANJA := VK_KANJI",1B:"VK_ESCAPE"
+		,11:"VK_CONTROL",12:"VK_MENU",13:"VK_PAUSE",14:"VK_CAPITAL",15:"VK_KANA := VK_HANGEUL := VK_HANGUL := VK_HANGUEL",17:"VK_JUNJA",18:"VK_FINAL",19:"VK_HANJA := VK_KANJI",1B:"VK_ESCAPE"
 		,1C:"VK_CONVERT",1D:"VK_NONCONVERT",1E:"VK_ACCEPT",1F:"VK_MODECHANGE",20:"VK_SPACE",21:"VK_PRIOR",22:"VK_NEXT",23:"VK_END",24:"VK_HOME",25:"VK_LEFT",26:"VK_UP",27:"VK_RIGHT"
 		,28:"VK_DOWN",29:"VK_SELECT",2A:"VK_PRINT",2B:"VK_EXECUTE",2C:"VK_SNAPSHOT",2D:"VK_INSERT",2E:"VK_DELETE",2F:"VK_HELP",30:"VK_KEY_0",31:"VK_KEY_1",32:"VK_KEY_2",33:"VK_KEY_3"
 		,34:"VK_KEY_4",35:"VK_KEY_5",36:"VK_KEY_6",37:"VK_KEY_7",38:"VK_KEY_8",39:"VK_KEY_9",41:"VK_KEY_A",42:"VK_KEY_B",43:"VK_KEY_C",44:"VK_KEY_D",45:"VK_KEY_E",46:"VK_KEY_F"
@@ -2020,7 +2031,7 @@ GetVKCodeName(id) {
 		,DC:"VK_OEM_5",DD:"VK_OEM_6",DE:"VK_OEM_7",DF:"VK_OEM_8",E1:"VK_OEM_AX",E2:"VK_OEM_102",E3:"VK_ICO_HELP",E4:"VK_ICO_00",E5:"VK_PROCESSKEY",E6:"VK_ICO_CLEAR",E7:"VK_PACKET",E9:"VK_OEM_RESET"
 		,EA:"VK_OEM_JUMP",EB:"VK_OEM_PA1",EC:"VK_OEM_PA2",ED:"VK_OEM_PA3",EE:"VK_OEM_WSCTRL",EF:"VK_OEM_CUSEL",F0:"VK_OEM_ATTN",F1:"VK_OEM_FINISH",F2:"VK_OEM_COPY",F3:"VK_OEM_AUTO",F4:"VK_OEM_ENLW",F5:"VK_OEM_BACKTAB"
 		,F6:"VK_ATTN",F7:"VK_CRSEL",F8:"VK_EXSEL",F9:"VK_EREOF",FA:"VK_PLAY",FB:"VK_ZOOM",FC:"VK_NONAME",FD:"VK_PA1",FE:"VK_OEM_CLEAR",FF:"VK__none_"}
-	
+	 
 		for k, v in VK__
 			VK_[k] := v
 		VK_Names := {}
@@ -2289,7 +2300,7 @@ _WordWrap:
 	ChangeCSS("css_Body", WordWrap ? _BodyWrapCSS : "")
 	Return
 
-Sys_Help: 
+Sys_Help:
 	ThisMenuItem := oOther.MenuItemExist ? oOther.ThisMenuItem : A_ThisMenuItem
 	If ThisMenuItem = AutoHotKey official help online
 		RunPath("http://ahkscript.org/docs/AutoHotkey.htm")
@@ -3361,7 +3372,7 @@ GetStyles(Class, Style, ExStyle, hWnd, IsChild = 0, IsChildInfoExist = 0) {
 	IF (Style & 0x00040000) && (WS_SIZEBOX := 1, WS_THICKFRAME := 1, Style -= 0x00040000)  ;	WS_SIZEBOX := WS_THICKFRAME 
 		Ret .= QStyle("WS_SIZEBOX := WS_THICKFRAME", "0x00040000")
 
-	IF (Style & 0x40000000) && (WS_CHILD := 1, Style -= 0x40000000)  ;	WS_CHILD := WS_CHILDWINDOW
+	IF (Style & 0x40000000) && (WS_CHILD := 1, Style -= 0x40000000)  ;	WS_CHILD := WS_CHILDWINDOW := 0x40000000
 		Ret .= QStyle("WS_CHILD := WS_CHILDWINDOW", "0x40000000") 
 		
 	IF (Style & 0x00010000) && WS_CHILD && (WS_TABSTOP := 1, Style -= 0x00010000)  ;	WS_TABSTOP
@@ -6391,7 +6402,10 @@ HRESULT SafeArrayDestroy(
   ;	Added
   
 UIA_ControlType(n) {
-	Static name:={50000:"Button",50001:"Calendar",50002:"CheckBox",50003:"ComboBox",50004:"Edit",50005:"Hyperlink",50006:"Image",50007:"ListItem",50008:"List",50009:"Menu",50010:"MenuBar",50011:"MenuItem",50012:"ProgressBar",50013:"RadioButton",50014:"ScrollBar",50015:"Slider",50016:"Spinner",50017:"StatusBar",50018:"Tab",50019:"TabItem",50020:"Text",50021:"ToolBar",50022:"ToolTip",50023:"Tree",50024:"TreeItem",50025:"Custom",50026:"Group",50027:"Thumb",50028:"DataGrid",50029:"DataItem",50030:"Document",50031:"SplitButton",50032:"Window",50033:"Pane",50034:"Header",50035:"HeaderItem",50036:"Table",50037:"TitleBar",50038:"Separator"}
+	Static name:={50000:"Button",50001:"Calendar",50002:"CheckBox",50003:"ComboBox",50004:"Edit",50005:"Hyperlink",50006:"Image",50007:"ListItem",50008:"List",50009:"Menu"
+	,50010:"MenuBar",50011:"MenuItem",50012:"ProgressBar",50013:"RadioButton",50014:"ScrollBar",50015:"Slider",50016:"Spinner",50017:"StatusBar",50018:"Tab",50019:"TabItem"
+	,50020:"Text",50021:"ToolBar",50022:"ToolTip",50023:"Tree",50024:"TreeItem",50025:"Custom",50026:"Group",50027:"Thumb",50028:"DataGrid",50029:"DataItem",50030:"Document"
+	,50031:"SplitButton",50032:"Window",50033:"Pane",50034:"Header",50035:"HeaderItem",50036:"Table",50037:"TitleBar",50038:"Separator"}
 	return name[n]
 }
 
