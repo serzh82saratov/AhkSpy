@@ -26,7 +26,7 @@
     Актуальный исходник - https://raw.githubusercontent.com/serzh82saratov/AhkSpy/master/AhkSpy.ahk
 */
 
-Global AhkSpyVersion := 3.87
+Global AhkSpyVersion := 3.89
 
 	; _________________________________________________ Header _________________________________________________
 
@@ -77,12 +77,12 @@ Global ThisMode := IniRead("StartMode", "Control"), LastModeSave := (ThisMode = 
 , StateLightAcc := IniRead("StateLightAcc", 1), SendCode := IniRead("SendCode", "vk"), StateLightMarker := IniRead("StateLightMarker", 1)
 , StateUpdate := IniRead("StateUpdate", 0), SendMode := IniRead("SendMode", "send"), SendModeStr := Format("{:L}", SendMode), MemoryAnchor := IniRead("MemoryAnchor", 1)
 , StateAllwaysSpot := IniRead("AllwaysSpot", 0), w_ShowStyles := IniRead("w_ShowStyles", 0), c_ShowStyles := IniRead("c_ShowStyles", 0), ViewStrPos := IniRead("ViewStrPos", 0)
-, WordWrap := IniRead("WordWrap", 0), PreMaxHeightStr := IniRead("MaxHeightOverFlow", "1 / 3"), UseUIA := IniRead("UseUIA", 0), OnlyShiftTab := IniRead("OnlyShiftTab", 0)
-, MoveTitles := IniRead("MoveTitles", 1), DetectHiddenText := IniRead("DetectHiddenText", "on"), MenuIdView := IniRead("MenuIdView", 0)
-, DynamicControlPath := IniRead("DynamicControlPath", 0), DynamicAccPath := IniRead("DynamicAccPath", 0)
+, WordWrap := IniRead("WordWrap", 0), PreMaxHeightStr := IniRead("MaxHeightOverFlow", "1 / 3"), UseUIA := IniRead("UseUIA", 0), UIAAlienDetect := IniRead("UIAAlienDetect", 0)
+, OnlyShiftTab := IniRead("OnlyShiftTab", 0), MoveTitles := IniRead("MoveTitles", 1), DetectHiddenText := IniRead("DetectHiddenText", "on")
+, DynamicControlPath := IniRead("DynamicControlPath", 0), DynamicAccPath := IniRead("DynamicAccPath", 0), MenuIdView := IniRead("MenuIdView", 0)
 , UpdRegister := IniRead("UpdRegister2", 0), UpdRegisterLink := "https://u.to/zeONFA"
 
-, ScrollPos := {}, AccCoord := [], oOther := {}, oFind := {}, Edits := [], oMS := {}, oMenu := {}, oPubObj := {}
+, FontDPI := {96:12,120:10,144:8,168:6}[A_ScreenDPI], ScrollPos := {}, AccCoord := [], oOther := {}, oFind := {}, Edits := [], oMS := {}, oMenu := {}, oPubObj := {}
 
 , ClipAdd_Before := 0, ClipAdd_Delimiter := "`r`n"
 , HTML_Win, HTML_Control, HTML_Hotkey, rmCtrlX, rmCtrlY, widthTB, FullScreenMode, hColorProgress, hFindAllText, MsgAhkSpyZoom, Sleep, oShowMarkers, oShowAccMarkers, oShowMarkersEx
@@ -163,7 +163,7 @@ OnMessage(MsgAhkSpyZoom := DllCall("RegisterWindowMessage", "Str", "MsgAhkSpyZoo
 DllCall("PostMessage", "Ptr", A_ScriptHWND, "UInt", 0x50, "UInt", 0, "UInt", 0x409) ; eng layout
 
 Gui, TB: +HWNDhTBGui -Caption -DPIScale +Parent%hGui% +E0x08000000 +0x40000000 -0x80000000
-Gui, TB: Font, % " s" (A_ScreenDPI = 120 ? 8 : 10), Verdana
+Gui, TB: Font, % " s" FontDPI, Verdana
 Gui, TB: Add, Button, x0 y0 h%HeigtButton% w%wKey% vBut1 gMode_Win hwndhButtonWindow, Window
 Gui, TB: Add, Button, x+0 yp hp wp vBut2 gMode_Control hwndhButtonControl, Control
 Gui, TB: Add, Progress, x+0 yp hp w%wColor% vColorProgress HWNDhColorProgress cWhite, 100
@@ -172,12 +172,12 @@ Gui, TB: Show, % "x0 y0 NA h" HeigtButton " w" widthTB := wKey*3+wColor
 
 Gui, F: +HWNDhFindGui -Caption -DPIScale +Parent%hGui% +0x40000000 -0x80000000
 Gui, F: Color, %ColorBgPaused%
-Gui, F: Font, % " s" (A_ScreenDPI = 120 ? 10 : 12)
+Gui, F: Font, % " s" FontDPI
 Gui, F: Add, Edit, x1 y0 w180 h26 gFindNew WantTab HWNDhFindEdit
 SendMessage, 0x1501, 1, "Find to page",, ahk_id %hFindEdit%   ; EM_SETCUEBANNER
 Gui, F: Add, UpDown, -16 Horz Range0-1 x+0 yp h26 w52 gFindNext vFindUpDown
 GuiControl, F: Move, FindUpDown, h26 w52
-Gui, F: Font, % (A_ScreenDPI = 120 ? "" : "s10")
+Gui, F: Font, % " s" FontDPI
 Gui, F: Add, Text, x+10 yp+1 h24 c2F2F2F +0x201 gFindOption, % " case sensitive "
 Gui, F: Add, Text, x+10 yp hp c2F2F2F +0x201 gFindOption, % " whole word "
 Gui, F: Add, Text, x+3 yp hp +0x201 w52 vFindMatches HWNDhFindAllText
@@ -239,6 +239,8 @@ Menu, View, Add, % name := "Dynamic accesible path (low speed)", % oMenu.View[na
 Menu, View, % DynamicAccPath ? "Check" : "UnCheck", % name
 Menu, View, Add, % name := "Use UI Automation interface", % oMenu.View[name] := "_UseUIA"
 Menu, View, % UseUIA ? "Check" : "UnCheck", % name
+Menu, View, Add, % name := "UIA change background for different hwnd", % oMenu.View[name] := "_UIAAlienDetect"
+Menu, View, % UIAAlienDetect ? "Check" : "UnCheck", % name  
 Menu, View, Add
 Menu, View, Add, % name := "Moving titles", % oMenu.View[name] := "_MoveTitles"
 Menu, View, % MoveTitles ? "Check" : "UnCheck", % name
@@ -900,8 +902,8 @@ Spot_Control(NotHTML = 0) {
 		WinGet, UIAProcessPath, ProcessPath, ahk_pid %UIAPID%
 		Loop, %UIAProcessPath%
 			UIAProcessPath = %A_LoopFileLongPath%
-		
-		If (UIAPID != WinPID)
+			
+		If UIAAlienDetect && ((UIAPID != WinPID) || (ControlID && ControlID != UIAHWND) || (!ControlID && WinID != UIAHWND))
 			bc = style='background-color: #%HighLightBckg%'
 		
 		UseUIAStr := "`n" _T1 " id='P__UIA_Object'> ( UIA Interface ) </span><a></a>" _T2
@@ -2185,6 +2187,12 @@ _UseUIA:
 		oUIAInterface := UIA_Interface()
 	Menu, View, % UseUIA ? "Check" : "UnCheck", % ThisMenuItem
 	Return
+	
+_UIAAlienDetect:
+	ThisMenuItem := oOther.MenuItemExist ? oOther.ThisMenuItem : A_ThisMenuItem
+	IniWrite(UIAAlienDetect := !UIAAlienDetect, "UIAAlienDetect") 
+	Menu, View, % UIAAlienDetect ? "Check" : "UnCheck", % ThisMenuItem
+	Return
 
 _SelStartMode:
 	ThisMenuItem := oOther.MenuItemExist ? oOther.ThisMenuItem : A_ThisMenuItem
@@ -3076,10 +3084,9 @@ MsgConfirm(Info, Title, hWnd) {
 	Static IsStart, hMsgBox, Text, Yes, No, WinW, WinH
 	If !IsStart && (IsStart := 1) {
 		Gui, MsgBox:+HWNDhMsgBox -DPIScale -SysMenu +Owner%hWnd% +AlwaysOnTop
-		Gui, MsgBox:Font, % "s" (A_ScreenDPI = 120 ? 10 : 12)
+		Gui, MsgBox:Font, % "s" FontDPI
 		Gui, MsgBox:Color, FFFFFF
-		Gui, MsgBox:Add, Text, w200 vText r1 Center
-		Gui, MsgBox:Font
+		Gui, MsgBox:Add, Text, w200 vText r1 Center 
 		Gui, MsgBox:Add, Button, w88 vYes xp+4 y+20 gMsgBoxLabel, Yes
 		Gui, MsgBox:Add, Button, w88 vNo x+20 gMsgBoxLabel, No
 		Gui, MsgBox:Show, Hide NA
@@ -5086,7 +5093,7 @@ ZoomCreate() {
 	oZoom.MemoryZoomSize := IniRead("MemoryZoomSize", 0)
 	oZoom.GuiMinW := 306
 	oZoom.GuiMinH := 351
-	FontSize := (A_ScreenDPI = 120 ? 10 : 12)
+	FontSize := {96:12,120:10,144:8,168:6}[A_ScreenDPI]
 	If oZoom.MemoryZoomSize
 		GuiW := IniRead("MemoryZoomSizeW", oZoom.GuiMinW), GuiH := IniRead("MemoryZoomSizeH", oZoom.GuiMinH)
 	Else
@@ -5101,12 +5108,13 @@ ZoomCreate() {
 
 	Gui, ZoomTB: +HWNDhTBGui -Caption -DPIScale +Parent%hGui% +E0x08000000 +0x40000000 -0x80000000
 	Gui, ZoomTB: Color, F5F5F5
-	Gui, ZoomTB: Font, s%FontSize%
-	Gui, ZoomTB: Add, Slider, hwndhSliderZoom gSliderZoom x8 Range1-50 w152 Center AltSubmit NoTicks, % oZoom.Zoom
-	Gui, ZoomTB: Add, Text, hwndhTextZoom Center x+10 yp+3 w36, % oZoom.Zoom
-	Gui, ZoomTB: Font
-	Gui, ZoomTB: Add, Button, hwndhChangeMark gChangeMark x+10 yp w52, % oZoom.Mark
-	Gui, ZoomTB: Add, Button, hwndhZoomHideBut gZoomHide x+10 yp, X
+	h := 32
+	Gui, ZoomTB: Add, Slider, % "hwndhSliderZoom gSliderZoom x8 Range1-50 w152 y" (44-h)/2 " h" h " Center AltSubmit NoTicks", % oZoom.Zoom
+	Gui, ZoomTB: Font, % "s" FontSize + 2
+	Gui, ZoomTB: Add, Text, hwndhTextZoom +0x201 x+10 yp w36 hp, % oZoom.Zoom
+	Gui, ZoomTB: Font, % "s" FontSize - 2
+	Gui, ZoomTB: Add, Button, hwndhChangeMark gChangeMark x+10 yp hp w52, % oZoom.Mark
+	Gui, ZoomTB: Add, Button, hwndhZoomHideBut gZoomHide x+10 yp hp w22, X
 	Gui, ZoomTB: Show, NA x0 y0
 
 	Gui, Zoom: Show, % "NA Hide w" GuiW " h" GuiH, AhkSpyZoom
@@ -6260,7 +6268,7 @@ class UIA_ScrollPattern extends UIA_Base {
 		static err:={0x8000FFFF:"Catastrophic failure.",0x80004001:"Not implemented.",0x8007000E:"Out of memory.",0x80070057:"One or more arguments are not valid.",0x80004002:"Interface not supported.",0x80004003:"Pointer not valid.",0x80070006:"Handle not valid.",0x80004004:"Operation aborted.",0x80004005:"Unspecified error.",0x80070005:"General access denied.",0x800401E5:"The object identified by this moniker could not be found.",0x80040201:"UIA_E_ELEMENTNOTAVAILABLE",0x80040200:"UIA_E_ELEMENTNOTENABLED",0x80131509:"UIA_E_INVALIDOPERATION",0x80040202:"UIA_E_NOCLICKABLEPOINT",0x80040204:"UIA_E_NOTSUPPORTED",0x80040203:"UIA_E_PROXYASSEMBLYNOTLOADED"} ; //not completed
 		if hr&&(hr&=0xFFFFFFFF) {
 			RegExMatch(Exception("",-2).what,"(\w+).(\w+)",i)
-			throw Exception(UIA_Hex(hr) " - " err[hr], -2, i2 "  (" i1 ")")
+			; throw Exception(UIA_Hex(hr) " - " err[hr], -2, i2 "  (" i1 ")")
 		}
 		return !hr
 	}
