@@ -26,7 +26,7 @@
     Актуальный исходник - https://raw.githubusercontent.com/serzh82saratov/AhkSpy/master/AhkSpy.ahk
 */
 
-Global AhkSpyVersion := 3.89
+Global AhkSpyVersion := 3.90
 
 	; _________________________________________________ Header _________________________________________________
 
@@ -1679,8 +1679,8 @@ Write_HotkeyHTML(K) {
 		(VKCode_ += 0), SCCode_ += 0
 	s_DecimalCode := DecimalCode ? "dec" : "hex"
 
-	If (DUMods != "")
-		LRSend := "  " _DP "  <span><span name='MS:'>" SendMode  " " DUMods "</span>" Comment "</span>"
+	If (DUMods != "") 
+		LRSend := "  " _DP "  <span><span name='MS:'>" SendMode  " <span name='MS:'>" DUMods "</span></span>" Comment "</span>"
 	If SCCode !=
 		ThisKeySC := "   " _DP "   <span name='MS:'>" VKCode "</span>   " _DP "   <span name='MS:'>" SCCode "</span>   "
 		. _DP "   <span name='MS:' id='v_VKDHCode'>" VKCode_ "</span>   " _DP "   <span name='MS:' id='v_SCDHCode'>" SCCode_ "</span>"
@@ -1697,9 +1697,9 @@ Write_HotkeyHTML(K) {
 	%_T1%> ( Command syntax ) </span>%_BT1% id='SendCode'> %SendCode% %_BT2%%_DB%%_BT1% id='SendMode'> %SendModeStr% %_BT2%%_T2%
 	%_PRE1%<br><span><span name='MS:'>%Prefix%%Hotkey%::</span>%FComment%</span>%LRPStr%
 	<span name='MS:P'>        </span>
-	<span><span name='MS:'>%SendMode% %Prefix%{%SendHotkey%}</span>%Comment%</span>  %_DP%  <span><span name='MS:'>ControlSend, ahk_parent, %ControlSend%, WinTitle</span>%Comment%</span>
+	<span><span name='MS:'>%SendMode% <span name='MS:'>%Prefix%{%SendHotkey%}</span></span>%Comment%</span>%LRSend%
 	<span name='MS:P'>        </span>
-	<span><span name='MS:'>%Prefix%{%SendHotkey%}</span>%Comment%</span>%LRSend%
+	<span><span name='MS:'>ControlSend, ahk_parent, <span name='MS:'>%ControlSend%</span>, WinTitle</span>%Comment%</span>
 	<span name='MS:P'>        </span>
 	<span><span name='MS:'>GetKeyState("%SendHotkey%", "P")</span>%Comment%</span>   %_DP%   <span><span name='MS:'>KeyWait, %SendHotkey%, D T0.5</span>%Comment%</span>
 	<span name='MS:P'>        </span>
