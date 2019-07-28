@@ -26,7 +26,7 @@
     Актуальный исходник - https://raw.githubusercontent.com/serzh82saratov/AhkSpy/master/AhkSpy.ahk
 */
 
-Global AhkSpyVersion := 3.91
+Global AhkSpyVersion := 3.92
 
 	; _________________________________________________ Header _________________________________________________
 
@@ -104,7 +104,7 @@ Global _S1 := "<span>", _S2 := "</span>", _DB := "<span style='position: relativ
 , _BB1 := "<span contenteditable='false' oncontextmenu='return false' class='BB' style='height: 0px;'>" _BT1 " ", _BB2 := "</span></span>"
 , _T1 := "<span class='box'><span class='line'><span class='hr'></span><span class='con'><span class='title' ", _T2 := "</span></span></span><br>"
 , _T1P := " style='color: #" ColorParam "' "
-, _T0 := "<span class='box'><span class='hr'></span></span>"
+, _T0 := "<span class='box'><span class='hr'></span></span><span id='id_T0' style='position: absolute'></span>"
 , _PRE1 := "<pre contenteditable='true'>", _PRE2 := "</pre>"
 , _LPRE := "<pre contenteditable='true' class='lpre'"
 , _DP := "  <span style='color: #" ColorDelimiter "'>&#9642</span>  "
@@ -1003,7 +1003,7 @@ HTML_Control:
 	}
 	.br {
 		height:0.1em;
-	}
+	} 
 	.box {
 		position: absolute;
 		overflow: hidden;
@@ -3161,7 +3161,18 @@ AnchorScroll() {
 	If !EL
 		Return
 	oDocEl.scrollTop := oDocEl.scrollTop + EL.getBoundingClientRect().top - 6
+	AnchorCheckTop(EL)
 }
+
+AnchorCheckTop(EL) { 
+	If EL.getBoundingClientRect().top > 6
+	{  
+		oDoc.getElementById("id_T0").style.height := EL.getBoundingClientRect().top + FontSize * 1.5 "px"
+		oDocEl.scrollTop := oDocEl.scrollTop + EL.getBoundingClientRect().top - 6
+		Return 1
+	}
+}
+
 
 TaskbarProgress(state, hwnd, pct = "") {
 	static tbl
@@ -4653,6 +4664,8 @@ Class Events {  ;	http://forum.script-coding.com/viewtopic.php?pid=82283#p82283
 			EL.style.backgroundColor := "#" ColorSelAnchor
 			oDocEl.scrollTop := oDocEl.scrollTop + EL.getBoundingClientRect().top - 6
 			HTML_%ThisMode% := oBody.innerHTML
+			If !AnchorCheckTop(EL)
+				oDoc.getElementById("id_T0").style.height := 0
 			If MemoryAnchor
 				IniWrite(oOther.anchor[ThisMode "_text"], ThisMode "_Anchor")
 		}
