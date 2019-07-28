@@ -26,7 +26,7 @@
     Актуальный исходник - https://raw.githubusercontent.com/serzh82saratov/AhkSpy/master/AhkSpy.ahk
 */
 
-Global AhkSpyVersion := 3.90
+Global AhkSpyVersion := 3.91
 
 	; _________________________________________________ Header _________________________________________________
 
@@ -1309,19 +1309,19 @@ GetInfo_InternetExplorer_Server(hwnd, ByRef ClassNN) {
 			iFrame := ComObj(9, ComObjQuery(pelt.contentWindow, IID_IHTMLWindow2, IID_IHTMLWindow2), 1)
 		WB2 := ComObject(9, ComObjQuery(pelt.contentWindow, IID_IWebBrowserApp, IID_IWebBrowserApp), 1)
 		If ((Var := WB2.LocationName) != "")
-			Frame .= "`n<span class='param' name='MS:N'>Title:  </span><span name='MS:'>" Var "</span>"
+			Frame .= "`n<span class='param' name='MS:N'>Title:  </span><span name='MS:'>" TransformHTML(Var) "</span>"
 		If ((Var := WB2.LocationURL) != "")
-			Frame .= "`n<span class='param' name='MS:N'>URL:  </span><span name='MS:'>" Var "</span>"
+			Frame .= "`n<span class='param' name='MS:N'>URL:  </span><span name='MS:'>" TransformHTML(Var) "</span>"
 		If (iFrame.length)
-			Frame .= "`n<span class='param' name='MS:N'>Count frames:  </span><span name='MS:'>" iFrame.length "</span>"
+			Frame .= "`n<span class='param' name='MS:N'>Count frames:  </span><span name='MS:'>" TransformHTML(iFrame.length) "</span>"
 		If (Tag != "")
-			Frame .= "`n<span class='param' name='MS:N'>TagName:  </span><span name='MS:'>" Tag "</span>"
+			Frame .= "`n<span class='param' name='MS:N'>TagName:  </span><span name='MS:'>" TransformHTML(Tag) "</span>"
 		If ((Var := pelt.id) != "")
-			Frame .= "`n<span class='param' name='MS:N'>ID:  </span><span name='MS:'>" Var "</span>"
+			Frame .= "`n<span class='param' name='MS:N'>ID:  </span><span name='MS:'>" TransformHTML(Var) "</span>"
 		If ((Var := pelt.ClassName) != "")
-			Frame .= "`n<span class='param' name='MS:N'>Class:  </span><span name='MS:'>" Var "</span>"
+			Frame .= "`n<span class='param' name='MS:N'>Class:  </span><span name='MS:'>" TransformHTML(Var) "</span>"
 		If ((Var := pelt.sourceIndex) != "")
-			Frame .= "`n<span class='param' name='MS:N'>Index:  </span><span name='MS:'>" Var "</span>"
+			Frame .= "`n<span class='param' name='MS:N'>Index:  </span><span name='MS:'>" TransformHTML(Var) "</span>"
 		If ((Var := pelt.name) != "")
 			Frame .= "`n<span class='param' name='MS:N'>Name:  </span><span name='MS:'>" TransformHTML(Var) "</span>"
 
@@ -1344,9 +1344,9 @@ GetInfo_InternetExplorer_Server(hwnd, ByRef ClassNN) {
 	WB2 := ComObject(9, ComObjQuery(pwin, IID_IWebBrowserApp, IID_IWebBrowserApp), 1)
 
 	If ((Location := WB2.LocationName) != "")
-		Topic .= "<span class='param' name='MS:N'>Title:  </span><span name='MS:'>" Location "</span>`n"
+		Topic .= "<span class='param' name='MS:N'>Title:  </span><span name='MS:'>"  TransformHTML(Location) "</span>`n"
 	If ((URL := WB2.LocationURL) != "")
-		Topic .= "<span class='param' name='MS:N'>URL:  </span><span name='MS:'>" URL "</span>"
+		Topic .= "<span class='param' name='MS:N'>URL:  </span><span name='MS:'>"  TransformHTML(URL) "</span>"
 	If Topic !=
 		Topic := _PRE1 Topic _PRE2
 
@@ -1382,7 +1382,8 @@ GetInfo_InternetExplorer_Server(hwnd, ByRef ClassNN) {
 		. _DP "<span class='param'>Size: </span><span name='MS:'>w" Round(x2 - x1) " h" Round(y2 - y1) "</span>" Info _PRE2
 
 	oPubObj.IEElement := {Pos:[sX + x1, sY + y1, x2 - x1, y2 - y1], hwnd:hwnd}
-	Return Topic Info HTML Text Frame
+	
+	Return Topic Info HTML Text Frame 
 }
 
 WBGet(hwnd) {
