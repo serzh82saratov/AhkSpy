@@ -26,7 +26,7 @@
     Актуальный исходник - https://raw.githubusercontent.com/serzh82saratov/AhkSpy/master/AhkSpy.ahk
 */
 
-Global AhkSpyVersion := 3.92
+Global AhkSpyVersion := 3.93
 
 	; _________________________________________________ Header _________________________________________________
 
@@ -3161,7 +3161,7 @@ AnchorScroll() {
 	If !EL
 		Return
 	oDocEl.scrollTop := oDocEl.scrollTop + EL.getBoundingClientRect().top - 6
-	AnchorCheckTop(EL)
+	; AnchorCheckTop(EL)
 }
 
 AnchorCheckTop(EL) { 
@@ -4664,8 +4664,8 @@ Class Events {  ;	http://forum.script-coding.com/viewtopic.php?pid=82283#p82283
 			EL.style.backgroundColor := "#" ColorSelAnchor
 			oDocEl.scrollTop := oDocEl.scrollTop + EL.getBoundingClientRect().top - 6
 			HTML_%ThisMode% := oBody.innerHTML
-			If !AnchorCheckTop(EL)
-				oDoc.getElementById("id_T0").style.height := 0
+			; If !AnchorCheckTop(EL)
+				; oDoc.getElementById("id_T0").style.height := 0
 			If MemoryAnchor
 				IniWrite(oOther.anchor[ThisMode "_text"], ThisMode "_Anchor")
 		}
