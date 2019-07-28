@@ -26,7 +26,7 @@
     Актуальный исходник - https://raw.githubusercontent.com/serzh82saratov/AhkSpy/master/AhkSpy.ahk
 */
 
-Global AhkSpyVersion := 3.93
+Global AhkSpyVersion := 3.94
 
 	; _________________________________________________ Header _________________________________________________
 
@@ -75,7 +75,8 @@ Global ThisMode := IniRead("StartMode", "Control"), LastModeSave := (ThisMode = 
 , ActiveNoPause := IniRead("ActiveNoPause", 0), MemoryPos := IniRead("MemoryPos", 0), MemorySize := IniRead("MemorySize", 0)
 , MemoryZoomSize := IniRead("MemoryZoomSize", 0), MemoryStateZoom := IniRead("MemoryStateZoom", 0), StateLight := IniRead("StateLight", 1)
 , StateLightAcc := IniRead("StateLightAcc", 1), SendCode := IniRead("SendCode", "vk"), StateLightMarker := IniRead("StateLightMarker", 1)
-, StateUpdate := IniRead("StateUpdate", 0), SendMode := IniRead("SendMode", "send"), SendModeStr := Format("{:L}", SendMode), MemoryAnchor := IniRead("MemoryAnchor", 1)
+, StateUpdate := IniRead("StateUpdate", 0), SendMode := IniRead("SendMode", "send"), SendModeStr := Format("{:L}", SendMode)
+, AnchorFullScroll := IniRead("AnchorFullScroll", 0), MemoryAnchor := IniRead("MemoryAnchor", 1)
 , StateAllwaysSpot := IniRead("AllwaysSpot", 0), w_ShowStyles := IniRead("w_ShowStyles", 0), c_ShowStyles := IniRead("c_ShowStyles", 0), ViewStrPos := IniRead("ViewStrPos", 0)
 , WordWrap := IniRead("WordWrap", 0), PreMaxHeightStr := IniRead("MaxHeightOverFlow", "1 / 3"), UseUIA := IniRead("UseUIA", 0), UIAAlienDetect := IniRead("UIAAlienDetect", 0)
 , OnlyShiftTab := IniRead("OnlyShiftTab", 0), MoveTitles := IniRead("MoveTitles", 1), DetectHiddenText := IniRead("DetectHiddenText", "on")
@@ -232,6 +233,8 @@ Menu, View, Add, % name := "Remember zoom size", % oMenu.View[name] := "_MemoryZ
 Menu, View, % MemoryZoomSize ? "Check" : "UnCheck", % name
 Menu, View, Add, % name := "Remember anchor", % oMenu.View[name] := "_MemoryAnchor"
 Menu, View, % MemoryAnchor ? "Check" : "UnCheck", % name
+Menu, View, Add, % name := "Full scroll with existing anchor", % oMenu.View[name] := "_AnchorFullScroll"
+Menu, View, % AnchorFullScroll ? "Check" : "UnCheck", % name  
 Menu, View, Add
 Menu, View, Add, % name := "Dynamic control path (low speed)", % oMenu.View[name] := "_DynamicControlPath"
 Menu, View, % DynamicControlPath ? "Check" : "UnCheck", % name
@@ -645,6 +648,9 @@ HTML_Win:
 		WinStyles := GetStyles(WinClass, WinStyle, WinExStyle, WinID)
 	ButtonStyle_ := _DP _BB1 " id='get_styles_w'> " (!w_ShowStyles ? "show styles" : "hide styles") " " _BB2
 
+	If AnchorFullScroll && oOther.anchor["Win"]
+		codeid_T0 := "height: 100`%;"
+		
 	HTML_Win =
 	( Ltrim
 	<body id='body'>
@@ -674,6 +680,9 @@ HTML_Win:
 		background: none;
 		font-family: %FontFamily%;
 		font-weight: 500;
+	}
+	#id_T0 {
+		%codeid_T0%
 	}
 	body {
 		margin: 0.3em;
@@ -750,9 +759,8 @@ Write_Win() {
 		Return 0
 	If oOther.anchor[ThisMode]
 		HTML_Win := AnchorBefore(HTML_Win)
-	oBody.innerHTML := HTML_Win
-	If oOther.anchor[ThisMode]
-		AnchorScroll()
+	oBody.innerHTML := HTML_Win 
+	AnchorScroll()
 	If oDocEl.scrollLeft
 		oDocEl.scrollLeft := 0
 	Return 1
@@ -971,9 +979,15 @@ HTML_Control:
 		<span id=ControlStyles>%ControlStyles%</span>
 		)
 	}
+	If AnchorFullScroll && oOther.anchor["Control"]
+		codeid_T0 := "height: 100`%;"
+	
 	HTML_Control =
 	( Ltrim
+	 <html>
+  
 	<body id='body'>
+
 	%_T1% id='__Mouse'> ( Mouse ) </span>%_BT1% id='pause_button'> pause %_BT2%%_DB%%_DB%%_BT1% id='run_zoom'> zoom %_BT2%%_T2%%_BR%
 	%_PRE1%%_BP1% id='set_pos'>Screen:%_BP2%  <span name='MS:'>x%MXS% y%MYS%</span>%_DP%%_BP1% id='set_pos'>Window:%_BP2%  <span name='MS:'>x%RWinX% y%RWinY%</span>%_DP%%_BP1% id='set_pos'>Client:%_BP2%  <span name='MS:'>x%MXC% y%MYC%</span>%WithRespectWin%%WithRespectClient%
 	<span class='param'>Relative active window:</span>  <span name='MS:'>x%MXWA% y%MYWA%</span>%_DP%<span class='param'>class</span> <span name='MS:'>%WinClass_A%</span> <span class='param'>exe</span> <span name='MS:'>%ProcessName_A%</span> <span class='param'>hwnd</span> <span name='MS:'>%HWND_A%</span>%_PRE2%
@@ -985,10 +999,13 @@ HTML_Control:
 	%_BP1% id='set_button_focus_ctrl'>Focus control:%_BP2%  <span name='MS:'>%CtrlFocus%</span>%_PRE2%
 	%HTML_ControlExist%
 	%CtrlInfo%%CtrlText%%UseUIAStr%%AccText%
-	<a></a>%_T0%
+	<a></a>%_T0% 
 	</body>
 
 	<style>
+	#id_T0 {
+		%codeid_T0%
+	}
 	* {
 		margin: 0;
 		background: none;
@@ -1057,6 +1074,7 @@ HTML_Control:
 		background-color: #%ColorSelAnchor%;
 	}
 	</style>
+	</html>
 	)
 	oOther.ControlID := ControlID
 	oOther.MouseWinID := WinID
@@ -1068,10 +1086,10 @@ Write_Control() {
 	If (ThisMode != "Control")
 		Return 0
 	If oOther.anchor[ThisMode]
-		HTML_Control := AnchorBefore(HTML_Control)
+		HTML_Control := AnchorBefore(HTML_Control) 
 	oBody.innerHTML := HTML_Control
-	If oOther.anchor[ThisMode]
-		AnchorScroll()
+	
+	AnchorScroll()
 	If oDocEl.scrollLeft
 		oDocEl.scrollLeft := 0
 	Return 1
@@ -2169,6 +2187,15 @@ _MemoryAnchor:
 	Menu, View, % MemoryAnchor ? "Check" : "UnCheck", Remember anchor
 	Return
 
+_AnchorFullScroll:
+	ThisMenuItem := oOther.MenuItemExist ? oOther.ThisMenuItem : A_ThisMenuItem
+	IniWrite(AnchorFullScroll := !AnchorFullScroll, "AnchorFullScroll") 
+	Menu, View, % AnchorFullScroll ? "Check" : "UnCheck", % ThisMenuItem 
+	
+	oDoc.getElementById("id_T0").style.height := AnchorFullScroll ? "100`%" : 0
+	oDocEl.scrollTop := oDocEl.scrollTop + oDoc.getElementById("anchor").getBoundingClientRect().top - 6 
+	Return
+
 _DynamicControlPath:
 	ThisMenuItem := oOther.MenuItemExist ? oOther.ThisMenuItem : A_ThisMenuItem
 	IniWrite(DynamicControlPath := !DynamicControlPath, "DynamicControlPath")
@@ -3156,13 +3183,15 @@ AnchorBefore(HTML) {
 	Return StrReplace(HTML, T1 N, " id = 'anchor' " T1 N, , 1)
 }
 
-AnchorScroll() {
+AnchorScroll() { 
+	If !oOther.anchor[ThisMode]
+		Return
 	EL := oDoc.getElementById("anchor")
 	If !EL
 		Return
 	oDocEl.scrollTop := oDocEl.scrollTop + EL.getBoundingClientRect().top - 6
 	; AnchorCheckTop(EL)
-}
+} 
 
 AnchorCheckTop(EL) { 
 	If EL.getBoundingClientRect().top > 6
@@ -3171,8 +3200,8 @@ AnchorCheckTop(EL) {
 		oDocEl.scrollTop := oDocEl.scrollTop + EL.getBoundingClientRect().top - 6
 		Return 1
 	}
+	oDoc.getElementById("id_T0").style.height := 333 "px"
 }
-
 
 TaskbarProgress(state, hwnd, pct = "") {
 	static tbl
@@ -4482,7 +4511,7 @@ html =
 </head>
 
 <script type="text/javascript">
-	var prWidth, WordWrap, MoveTitles, key1, key2, ButtonOver, ButtonOverColor;
+	var prWidth, WordWrap, MoveTitles, key1, key2, ButtonOver, ButtonOverColor; 
 	function shift(scroll) {
 		var col, Width, clientWidth, scrollLeft, Offset;
 		clientWidth = document.documentElement.clientWidth;
@@ -4525,7 +4554,7 @@ html =
 	}
 	onresize = function() {
 		shift(0);
-	}
+	} 
 	onscroll = function() {
 		if (WordWrap == 1)
 			return
@@ -4654,6 +4683,8 @@ Class Events {  ;	http://forum.script-coding.com/viewtopic.php?pid=82283#p82283
 				pEL.Id := ""
 				If (_text = oOther.anchor[ThisMode "_text"])
 				{
+					If AnchorFullScroll
+						oDoc.getElementById("id_T0").style.height := 0
 					If MemoryAnchor
 						IniWrite("", ThisMode "_Anchor")
 					Return oOther.anchor[ThisMode] := 0, oOther.anchor[ThisMode "_text"] := "", HTML_%ThisMode% := oBody.innerHTML
@@ -4662,7 +4693,11 @@ Class Events {  ;	http://forum.script-coding.com/viewtopic.php?pid=82283#p82283
 			oOther.anchor[ThisMode] := 1, oOther.anchor[ThisMode "_text"] := _text
 			EL.Id := "anchor"
 			EL.style.backgroundColor := "#" ColorSelAnchor
+			
+			If AnchorFullScroll
+				oDoc.getElementById("id_T0").style.height := "100`%"
 			oDocEl.scrollTop := oDocEl.scrollTop + EL.getBoundingClientRect().top - 6
+			
 			HTML_%ThisMode% := oBody.innerHTML
 			; If !AnchorCheckTop(EL)
 				; oDoc.getElementById("id_T0").style.height := 0
