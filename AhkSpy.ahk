@@ -76,7 +76,7 @@ Global ThisMode := IniRead("StartMode", "Control"), LastModeSave := (ThisMode = 
 , MemoryZoomSize := IniRead("MemoryZoomSize", 0), MemoryStateZoom := IniRead("MemoryStateZoom", 0), StateLight := IniRead("StateLight", 1)
 , StateLightAcc := IniRead("StateLightAcc", 1), SendCode := IniRead("SendCode", "vk"), StateLightMarker := IniRead("StateLightMarker", 1)
 , StateUpdate := IniRead("StateUpdate", 0), SendMode := IniRead("SendMode", "send"), SendModeStr := Format("{:L}", SendMode)
-, AnchorFullScroll := IniRead("AnchorFullScroll", 1), MemoryAnchor := IniRead("MemoryAnchor", 1)
+, AnchorFullScroll := IniRead("AnchorFullScroll", 0), MemoryAnchor := IniRead("MemoryAnchor", 1)
 , StateAllwaysSpot := IniRead("AllwaysSpot", 0), w_ShowStyles := IniRead("w_ShowStyles", 0), c_ShowStyles := IniRead("c_ShowStyles", 0), ViewStrPos := IniRead("ViewStrPos", 0)
 , WordWrap := IniRead("WordWrap", 0), PreMaxHeightStr := IniRead("MaxHeightOverFlow", "1 / 3"), UseUIA := IniRead("UseUIA", 0), UIAAlienDetect := IniRead("UIAAlienDetect", 0)
 , OnlyShiftTab := IniRead("OnlyShiftTab", 0), MoveTitles := IniRead("MoveTitles", 1), DetectHiddenText := IniRead("DetectHiddenText", "on")
