@@ -26,7 +26,7 @@
     Актуальный исходник - https://raw.githubusercontent.com/serzh82saratov/AhkSpy/master/AhkSpy.ahk
 */
 
-Global AhkSpyVersion := 3.94
+Global AhkSpyVersion := 3.95
 
 	; _________________________________________________ Header _________________________________________________
 
@@ -76,7 +76,7 @@ Global ThisMode := IniRead("StartMode", "Control"), LastModeSave := (ThisMode = 
 , MemoryZoomSize := IniRead("MemoryZoomSize", 0), MemoryStateZoom := IniRead("MemoryStateZoom", 0), StateLight := IniRead("StateLight", 1)
 , StateLightAcc := IniRead("StateLightAcc", 1), SendCode := IniRead("SendCode", "vk"), StateLightMarker := IniRead("StateLightMarker", 1)
 , StateUpdate := IniRead("StateUpdate", 0), SendMode := IniRead("SendMode", "send"), SendModeStr := Format("{:L}", SendMode)
-, AnchorFullScroll := IniRead("AnchorFullScroll", 0), MemoryAnchor := IniRead("MemoryAnchor", 1)
+, AnchorFullScroll := IniRead("AnchorFullScroll", 1), MemoryAnchor := IniRead("MemoryAnchor", 1)
 , StateAllwaysSpot := IniRead("AllwaysSpot", 0), w_ShowStyles := IniRead("w_ShowStyles", 0), c_ShowStyles := IniRead("c_ShowStyles", 0), ViewStrPos := IniRead("ViewStrPos", 0)
 , WordWrap := IniRead("WordWrap", 0), PreMaxHeightStr := IniRead("MaxHeightOverFlow", "1 / 3"), UseUIA := IniRead("UseUIA", 0), UIAAlienDetect := IniRead("UIAAlienDetect", 0)
 , OnlyShiftTab := IniRead("OnlyShiftTab", 0), MoveTitles := IniRead("MoveTitles", 1), DetectHiddenText := IniRead("DetectHiddenText", "on")
@@ -302,6 +302,10 @@ IncludeLabel:
 Gui, Show, % "NA " (MemoryPos ? " x" IniRead("MemoryPosX", "Center") " y" IniRead("MemoryPosY", "Center") : "")
 . (MemorySize ? " h" IniRead("MemorySizeH", HeightStart) " w" IniRead("MemorySizeW", widthTB) : " h" HeightStart " w" widthTB)
 Gui, % "+MinSize" widthTB "x" 313
+
+ShowMarkersCreate("oShowMarkers", "E14B30")
+ShowMarkersCreate("oShowAccMarkers", "26419F")
+ShowMarkersCreate("oShowMarkersEx", "5DCC3B")
 
 If ThisMode = Hotkey
 	Gui, Show
@@ -647,9 +651,6 @@ HTML_Win:
 	If w_ShowStyles
 		WinStyles := GetStyles(WinClass, WinStyle, WinExStyle, WinID)
 	ButtonStyle_ := _DP _BB1 " id='get_styles_w'> " (!w_ShowStyles ? "show styles" : "hide styles") " " _BB2
-
-	If AnchorFullScroll && oOther.anchor["Win"]
-		codeid_T0 := "height: 100`%;"
 		
 	HTML_Win =
 	( Ltrim
@@ -680,10 +681,7 @@ HTML_Win:
 		background: none;
 		font-family: %FontFamily%;
 		font-weight: 500;
-	}
-	#id_T0 {
-		%codeid_T0%
-	}
+	} 
 	body {
 		margin: 0.3em;
 		background-color: #%ColorBg%;
@@ -978,9 +976,7 @@ HTML_Control:
 		<span class='param'>Style:</span>  <span id='c_Style' name='MS:'>%CtrlStyle%</span>%_DP%<span class='param'>ExStyle:</span>  <span id='c_ExStyle' name='MS:'>%CtrlExStyle%</span>%ButtonStyle_%%_PRE2%
 		<span id=ControlStyles>%ControlStyles%</span>
 		)
-	}
-	If AnchorFullScroll && oOther.anchor["Control"]
-		codeid_T0 := "height: 100`%;"
+	} 
 	
 	HTML_Control =
 	( Ltrim
@@ -1002,10 +998,7 @@ HTML_Control:
 	<a></a>%_T0% 
 	</body>
 
-	<style>
-	#id_T0 {
-		%codeid_T0%
-	}
+	<style> 
 	* {
 		margin: 0;
 		background: none;
@@ -2192,8 +2185,11 @@ _AnchorFullScroll:
 	IniWrite(AnchorFullScroll := !AnchorFullScroll, "AnchorFullScroll") 
 	Menu, View, % AnchorFullScroll ? "Check" : "UnCheck", % ThisMenuItem 
 	
-	oDoc.getElementById("id_T0").style.height := AnchorFullScroll ? "100`%" : 0
-	oDocEl.scrollTop := oDocEl.scrollTop + oDoc.getElementById("anchor").getBoundingClientRect().top - 6 
+	If AnchorFullScroll
+		AnchorScroll()
+	Else 
+		oDoc.getElementById("id_T0").style.height := 0 "px"
+	oDocEl.scrollTop := oDocEl.scrollTop + oDoc.getElementById("anchor").getBoundingClientRect().top - 6
 	Return
 
 _DynamicControlPath:
@@ -2732,22 +2728,16 @@ ExtraFile(Name, GetNoCompile = 0) {
 		Return Path_User "\" Name ".ahk"
 }
 
-ShowMarker(x, y, w, h, b := 4) {
-	If !oShowMarkers
-		ShowMarkersCreate("oShowMarkers", "E14B30")
+ShowMarker(x, y, w, h, b := 4) { 
 	(w < 8 || h < 8) && (b := 2)
 	ShowMarkers(oShowMarkers, x, y, w, h, b)
 }
 
-ShowAccMarker(x, y, w, h, b := 2) {
-	If !oShowAccMarkers
-		ShowMarkersCreate("oShowAccMarkers", "26419F")
+ShowAccMarker(x, y, w, h, b := 2) { 
 	ShowMarkers(oShowAccMarkers, x, y, w, h, b)
 }
 
-ShowMarkerEx(x, y, w, h, b := 4) {
-	If !oShowMarkersEx
-		ShowMarkersCreate("oShowMarkersEx", "5DCC3B")
+ShowMarkerEx(x, y, w, h, b := 4) { 
 	(w < 8 || h < 8) && (b := 2)
 	ShowMarkers(oShowMarkersEx, x, y, w, h, b)
 }
@@ -3189,18 +3179,35 @@ AnchorScroll() {
 	EL := oDoc.getElementById("anchor")
 	If !EL
 		Return
-	oDocEl.scrollTop := oDocEl.scrollTop + EL.getBoundingClientRect().top - 6
-	; AnchorCheckTop(EL)
-} 
-
-AnchorCheckTop(EL) { 
-	If EL.getBoundingClientRect().top > 6
-	{  
-		oDoc.getElementById("id_T0").style.height := EL.getBoundingClientRect().top + FontSize * 1.5 "px"
+	If AnchorFullScroll
+		AnchorCheckTop(EL) 
+	Else 
 		oDocEl.scrollTop := oDocEl.scrollTop + EL.getBoundingClientRect().top - 6
-		Return 1
-	}
-	oDoc.getElementById("id_T0").style.height := 333 "px"
+}  
+
+AnchorCheckTop(EL, off = 0) { 
+	ta := EL.getBoundingClientRect().top
+	If !ta
+		Return 0
+	tb := oBody.getBoundingClientRect().top
+	bb := oBody.getBoundingClientRect().bottom
+	cl := oDocEl.clientHeight 
+	tha := ta - tb - 1 
+	hb :=  bb - tb 
+ 
+	If (hb < cl) 
+		off := cl - hb, hb := cl
+		
+	res := (cl  - (hb - tha)) + off
+
+	If (res > 0 && tha > 0)
+			res := res - 6
+		Else 
+			res := 0 
+
+	oDoc.getElementById("id_T0").style.height := res "px"
+	oDocEl.scrollTop := oDocEl.scrollTop + EL.getBoundingClientRect().top - 6
+	Return 1
 }
 
 TaskbarProgress(state, hwnd, pct = "") {
@@ -4695,12 +4702,10 @@ Class Events {  ;	http://forum.script-coding.com/viewtopic.php?pid=82283#p82283
 			EL.style.backgroundColor := "#" ColorSelAnchor
 			
 			If AnchorFullScroll
-				oDoc.getElementById("id_T0").style.height := "100`%"
-			oDocEl.scrollTop := oDocEl.scrollTop + EL.getBoundingClientRect().top - 6
+				AnchorCheckTop(EL) 
 			
 			HTML_%ThisMode% := oBody.innerHTML
-			; If !AnchorCheckTop(EL)
-				; oDoc.getElementById("id_T0").style.height := 0
+			
 			If MemoryAnchor
 				IniWrite(oOther.anchor[ThisMode "_text"], ThisMode "_Anchor")
 		}
