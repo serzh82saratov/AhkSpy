@@ -1,1 +1,1 @@
-version 3.95
+version 3.96
