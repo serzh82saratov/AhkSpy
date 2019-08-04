@@ -26,7 +26,7 @@
     Актуальный исходник - https://raw.githubusercontent.com/serzh82saratov/AhkSpy/master/AhkSpy.ahk
 */
 
-Global AhkSpyVersion := 3.95
+Global AhkSpyVersion := 3.96
 
 	; _________________________________________________ Header _________________________________________________
 
@@ -397,7 +397,8 @@ _PausedScript:
 	oBody.Style.fontSize := FontSize "px"
 	TitleText("FontSize: " FontSize)
 	If MemoryFontSize
-		IniWrite(FontSize, "FontSize")
+		IniWrite(FontSize, "FontSize") 
+	SetTimer, AnchorScroll, -500
 	Return
 
 F1::
@@ -2162,7 +2163,7 @@ _MenuOverflowLabel:
 	PreMaxHeight := MaxHeightStrToNum()
 	_PreOverflowHideCSS := ".lpre {max-width: 99`%; max-height: " PreMaxHeight "px; overflow: auto; border: 1px solid #E2E2E2;}"
 	ChangeCSS("css_PreOverflowHide", PreOverflowHide ? _PreOverflowHideCSS : "")
-	AnchorScroll()
+	AnchorFitScroll()
 	Return
 
 _Sys_Backlight:
@@ -2592,6 +2593,8 @@ ControlsMove(Width, Height) {
 		, "Int", 0, "Int", 0
 		, "UInt", 0x0011)    ; 0x0010 := SWP_NOACTIVATE | 0x0001 := SWP_NOSIZE
 	DllCall("EndDeferWindowPos", "Ptr", hDWP)
+	
+	SetTimer, AnchorFitScroll, -500 
 }
 
 ZoomSpot() {
@@ -3178,19 +3181,20 @@ AnchorScroll() {
 		Return
 	EL := oDoc.getElementById("anchor")
 	If !EL
-		Return
-	If AnchorFullScroll
-		AnchorCheckTop(EL) 
-	Else 
-		oDocEl.scrollTop := oDocEl.scrollTop + EL.getBoundingClientRect().top - 6
+		Return 
+	_AnchorFitScroll(EL)  
+	oDocEl.scrollTop := oDocEl.scrollTop + EL.getBoundingClientRect().top - 6
 }  
 
-AnchorCheckTop(EL, off = 0) { 
+_AnchorFitScroll(EL, off = 0) { 
+	If !AnchorFullScroll
+		Return
 	ta := EL.getBoundingClientRect().top
 	If !ta
 		Return 0
-	tb := oBody.getBoundingClientRect().top
-	bb := oBody.getBoundingClientRect().bottom
+	BodyRect := oBody.getBoundingClientRect()
+	tb := BodyRect.top
+	bb := BodyRect.bottom
 	cl := oDocEl.clientHeight 
 	tha := ta - tb - 1 
 	hb :=  bb - tb 
@@ -3201,13 +3205,16 @@ AnchorCheckTop(EL, off = 0) {
 	res := (cl  - (hb - tha)) + off
 
 	If (res > 0 && tha > 0)
-			res := res - 6
+			res := res - 7
 		Else 
 			res := 0 
 
 	oDoc.getElementById("id_T0").style.height := res "px"
-	oDocEl.scrollTop := oDocEl.scrollTop + EL.getBoundingClientRect().top - 6
 	Return 1
+}
+
+AnchorFitScroll() {
+	_AnchorFitScroll(oDoc.getElementById("anchor")) 
 }
 
 TaskbarProgress(state, hwnd, pct = "") {
@@ -4327,14 +4334,15 @@ WinSetNormalPos(hwnd, x, y, w, h) {
 
 _FindView() {
 	If isFindView
-		Return FindHide()
+		Return FindHide(), AnchorFitScroll()
 	GuiControlGet, p, 1:Pos, %hActiveX%
 	GuiControl, 1:Move, %hActiveX%, % "x" pX " y" pY " w" pW " h" pH - 28
 	Gui, F: Show, % "NA x" (pW - widthTB) // 2.2 " h26 y" (pY + pH - 27)
 	isFindView := 1
 	GuiControl, F:Focus, Edit1
 	Menu, Sys, Check, Find to page
-	FindSearch(1)
+	FindSearch(1) 
+	AnchorFitScroll()
 }
 
 FindHide() {
@@ -4700,10 +4708,9 @@ Class Events {  ;	http://forum.script-coding.com/viewtopic.php?pid=82283#p82283
 			oOther.anchor[ThisMode] := 1, oOther.anchor[ThisMode "_text"] := _text
 			EL.Id := "anchor"
 			EL.style.backgroundColor := "#" ColorSelAnchor
-			
-			If AnchorFullScroll
-				AnchorCheckTop(EL) 
-			
+			_AnchorFitScroll(EL)
+			oDocEl.scrollTop := oDocEl.scrollTop + EL.getBoundingClientRect().top - 6
+				
 			HTML_%ThisMode% := oBody.innerHTML
 			
 			If MemoryAnchor
