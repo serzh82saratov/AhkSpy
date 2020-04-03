@@ -26,7 +26,7 @@
     Актуальный исходник - https://raw.githubusercontent.com/serzh82saratov/AhkSpy/master/AhkSpy.ahk
 */
 
-Global AhkSpyVersion := 3.96
+Global AhkSpyVersion := 3.97
 
 	; _________________________________________________ Header _________________________________________________
 
@@ -137,11 +137,15 @@ ObjRegisterActive(oPubObj, oPubObjGUID := CreateGUID())
 
 FixIE()
 SeDebugPrivilege()
-OnExit, Exit
 
+OnExit, Exit
+ 
+ 
 Gui, +AlwaysOnTop +HWNDhGui +ReSize -DPIScale
 Gui, Color, %ColorBgPaused%
 Gui, Add, ActiveX, Border voDoc HWNDhActiveX x0 y+0, HTMLFile
+  ;	https://docs.microsoft.com/en-us/dotnet/api/system.windows.forms.htmlwindow?view=netframework-4.8
+  ;	https://developer.mozilla.org/en-US/docs/Web/API/Document_Object_Model
 
 ComObjError(false)
 LoadJScript()
@@ -1010,7 +1014,6 @@ HTML_Control:
 		margin: 0.3em;
 		background-color: #%ColorBg%;
 		font-size: %FontSize%px;
-		scrollbar-y-position: 111px;
 	}
 	.br {
 		height:0.1em;
@@ -1548,7 +1551,7 @@ AccGetLocation(Acc, Child=0) {
 GetAccPath(Acc, child) {
 	path := Acc_GetPath(Acc)
 	if path !=
-		Return child ? path "," child : path
+		Return child ? path "." child : path
 	Else
 		Return "object not found"
 }
@@ -1558,7 +1561,7 @@ Acc_GetPath(Acc) {
 	WinObj := Acc_ObjectFromWindow(hwnd)
 	WinObjPos := Acc_Location(WinObj)
 	While Acc_WindowFromObject(Parent := Acc_Parent(Acc)) = hwnd {
-		t2 := GetEnumIndex(Acc) "," t2
+		t2 := GetEnumIndex(Acc) "." t2
 		if Acc_Location(Parent) = WinObjPos
 			return SubStr(t2, 1, -1)
 		Acc := Parent
@@ -2406,7 +2409,7 @@ WM_WINDOWPOSCHANGED(Wp, Lp) {
 	Static PtrAdd := A_PtrSize = 8 ? 8 : 0
 	Critical
 	If (NumGet(Lp + 0, 0, "UInt") != hGui) || Sleep = 1
-		Return
+		Return 
 	If oOther.ZoomShow
 	{
 		x := NumGet(Lp + 0, 8 + PtrAdd, "UInt")
@@ -5211,7 +5214,7 @@ SetSize() {
 
 	oZoom.conX := (((conW - Width) // 2)) * -1
 	oZoom.conY :=  (((conH - Height) // 2)) * -1
-
+	
 	hDWP := DllCall("BeginDeferWindowPos", "Int", 2)
 	hDWP := DllCall("DeferWindowPos"
 	, "Ptr", hDWP, "Ptr", oZoom.hStatic, "UInt", 0
@@ -5478,6 +5481,7 @@ EVENT_SYSTEM_MOVESIZEEND(hWinEventHook, event, hwnd) {
 
 	; _________________________________________________ Zoom Sizing _________________________________________________
 
+  ;	https://docs.microsoft.com/en-us/windows/win32/api/winuser/nf-winuser-loadcursora
 WM_SETCURSOR(W, L, M, H) {
 	Static SIZENWSE := DllCall("User32.dll\LoadCursor", "Ptr", NULL, "Int", 32642, "UPtr")
 			, SIZENS := DllCall("User32.dll\LoadCursor", "Ptr", NULL, "Int", 32645, "UPtr")
