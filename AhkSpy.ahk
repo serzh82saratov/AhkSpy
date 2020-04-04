@@ -26,7 +26,7 @@
     Актуальный исходник - https://raw.githubusercontent.com/serzh82saratov/AhkSpy/master/AhkSpy.ahk
 */
 
-Global AhkSpyVersion := 3.97
+Global AhkSpyVersion := 3.98
 
 	; _________________________________________________ Header _________________________________________________
 
@@ -1551,25 +1551,23 @@ AccGetLocation(Acc, Child=0) {
 GetAccPath(Acc, child) {
 	path := Acc_GetPath(Acc)
 	if path !=
-		Return child ? path "." child : path
+		Return path
 	Else
 		Return "object not found"
 }
 
 Acc_GetPath(Acc) {
-	hwnd := Acc_WindowFromObject(Acc)
-	WinObj := Acc_ObjectFromWindow(hwnd)
-	WinObjPos := Acc_Location(WinObj)
-	While Acc_WindowFromObject(Parent := Acc_Parent(Acc)) = hwnd {
-		t2 := GetEnumIndex(Acc) "." t2
-		if Acc_Location(Parent) = WinObjPos
-			return SubStr(t2, 1, -1)
+    static DesktopHwnd := DllCall("User32.dll\GetDesktopWindow", "ptr")
+	While Acc_WindowFromObject(Parent := Acc_Parent(Acc)) != DesktopHwnd {
+	    t1 := GetEnumIndex(Acc)
+		if (t1 = "")
+		   break 
+		t2 := t1 "." t2
 		Acc := Parent
 	}
-	While Acc_WindowFromObject(Parent := Acc_Parent(WinObj)) = hwnd
-		t1 .= "P.", WinObj := Parent
-	return t1 SubStr(t2, 1, -1)
+	return SubStr(t2, 1, -1)
 }
+
 GetEnumIndex(Acc, ChildId=0) {
 	if Not ChildId {
 		ChildPos := Acc_Location(Acc)
