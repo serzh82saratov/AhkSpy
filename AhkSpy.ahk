@@ -26,7 +26,7 @@
     Актуальный исходник - https://raw.githubusercontent.com/serzh82saratov/AhkSpy/master/AhkSpy.ahk
 */
 
-Global AhkSpyVersion := 4.01
+Global AhkSpyVersion := 4.02
 
 	; _________________________________________________ Header _________________________________________________
 
@@ -1437,7 +1437,7 @@ AccInfoUnderMouse(mx, my, wx, wy, cx, cy, caX, caY, WinID, ControlID) {
 	If child
 		Var := "<span name='MS:'>Simple Element</span>" _DP "<span class='param' name='MS:N'>Id:  </span>" child
 	Else If ChildCount
-		Var := "<span name='MS:'>Container</span>" _DP "<span class='param' name='MS:N'>ChildCount:  </span>" ChildCount
+		Var := "<span name='MS:'>Container</span>" _DP "<span class='param' name='MS:N'>ChildCount:  </span>" ChildCount _DP "<span class='param' name='MS:N'>Id:  </span>" child 
 	Else
 		Var := "<span name='MS:'>Real Object</span>" _DP "<span class='param' name='MS:N'>Id:  </span>" child    ;  _DP "<span class='param' name='MS:N'>Container child count:  </span>" ChildCount
 		
@@ -1558,11 +1558,6 @@ AccGetStateText(nState) {
 	Return sState
 }
 
-AccGetLocation(Acc, Child=0) {
-	Acc.accLocation(ComObj(0x4003,&x:=0), ComObj(0x4003,&y:=0), ComObj(0x4003,&w:=0), ComObj(0x4003,&h:=0), Child)
-	AccCoord[1]:=NumGet(x,0,"int"), AccCoord[2]:=NumGet(y,0,"int"), AccCoord[3]:=NumGet(w,0,"int"), AccCoord[4]:=NumGet(h,0,"int")
-}
-
 GetAccPath(Acc) {
 	path := Acc_GetPath(Acc, arr)
 	if path =
@@ -1593,7 +1588,7 @@ AddSpace(c) {
 Acc_GetPath(Acc, byref arr) {
     static DesktopHwnd := DllCall("User32.dll\GetDesktopWindow", "ptr")
 	Local
-	arr := []
+	arr := [] 
 	While Hwnd := Acc_WindowFromObject(Parent := Acc_Parent(Acc)) {
 		t1 := GetEnumIndex(Acc)
 		If (PrHwnd != "" && Hwnd != PrHwnd)
@@ -1605,14 +1600,20 @@ Acc_GetPath(Acc, byref arr) {
 		}
 		if (t1 = "" || Hwnd = DesktopHwnd)
 		   break
-		t2 := t1 "." t2
-		PrHwnd := Hwnd 
+		t2 := t1 "." t2 
+		PrHwnd := Hwnd
 		Acc := Parent 
 	}
 	return SubStr(t2, 1, -1)
 }
 
-GetEnumIndex(Acc, ChildId=0) {
+GetEnumIndex(Acc)
+{
+   For Each, child in Acc_Children(Acc_Parent(Acc))
+      if IsObject(child) and (Acc_Location(child) = Acc_Location(Acc)) and (child.accChildCount = Acc.accChildCount) and (child.accDefaultAction(0) = Acc.accDefaultAction(0)) and (child.accDescription(0) = Acc.accDescription(0)) and (child.accHelp(0) = Acc.accHelp(0)) and (child.accKeyboardShortcut(0) = Acc.accKeyboardShortcut(0)) and (child.accName(0) = Acc.accName(0)) and (child.accRole(0) = Acc.accRole(0)) and (child.accState(0) = Acc.accState(0)) and (child.accValue(0) = Acc.accValue(0))
+         return A_Index
+}
+GetEnumIndex2(Acc, ChildId=0) {
 	if Not ChildId {
 		ChildPos := Acc_Location(Acc)
 		For Each, child in Acc_Children(Acc_Parent(Acc))
@@ -1626,6 +1627,20 @@ GetEnumIndex(Acc, ChildId=0) {
 				return A_Index
 	}
 }
+AccGetLocation(Acc, ChildId=0) {
+	Static x := 0, y := 0, w := 0, h := 0
+	try Acc.accLocation(ComObj(0x4003,&x), ComObj(0x4003,&y), ComObj(0x4003,&w), ComObj(0x4003,&h), ChildId)
+	AccCoord[1]:=NumGet(x,0,"int"), AccCoord[2]:=NumGet(y,0,"int"), AccCoord[3]:=NumGet(w,0,"int"), AccCoord[4]:=NumGet(h,0,"int")
+}
+Acc_Location(Acc, ChildId=0) {
+	Static x := 0, y := 0, w := 0, h := 0
+	try Acc.accLocation(ComObj(0x4003,&x), ComObj(0x4003,&y), ComObj(0x4003,&w), ComObj(0x4003,&h), ChildId)
+	return "x" NumGet(x,0,"int") " y" NumGet(y,0,"int") " w" NumGet(w,0,"int") " h" NumGet(h,0,"int")
+}
+Acc_Location2(Acc, ChildId=0) {
+	try Acc.accLocation(ComObj(0x4003,&x:=0), ComObj(0x4003,&y:=0), ComObj(0x4003,&w:=0), ComObj(0x4003,&h:=0), ChildId)
+	return "x" (x:=NumGet(x,0,"int")) " y" (y:=NumGet(y,0,"int")) " w" (w:=NumGet(w,0,"int")) " h" (h:=NumGet(h,0,"int"))
+}
 Acc_ObjectFromPoint(ByRef _idChild_ = "", x = "", y = "") {
 	If DllCall("oleacc\AccessibleObjectFromPoint", "Int64", x==""||y==""?0*DllCall("GetCursorPos","Int64*",pt)+pt:x&0xFFFFFFFF|y<<32, "Ptr*", pacc, "Ptr", VarSetCapacity(varChild,8+2*A_PtrSize,0)*0+&varChild)=0
 		Return ComObjEnwrap(9,pacc,1), _idChild_:=NumGet(varChild,8,"UInt")
@@ -1638,11 +1653,7 @@ Acc_ObjectFromWindow(hWnd, idObject = 0) {
 Acc_WindowFromObject(pacc) {
 	If DllCall("oleacc\WindowFromAccessibleObject", "Ptr", IsObject(pacc)?ComObjValue(pacc):pacc, "Ptr*", hWnd)=0
 		Return	hWnd
-}
-Acc_Location(Acc, ChildId=0) {
-	try Acc.accLocation(ComObj(0x4003,&x:=0), ComObj(0x4003,&y:=0), ComObj(0x4003,&w:=0), ComObj(0x4003,&h:=0), ChildId)
-	return "x" (x:=NumGet(x,0,"int")) " y" (y:=NumGet(y,0,"int")) " w" (w:=NumGet(w,0,"int")) " h" (h:=NumGet(h,0,"int"))
-}
+} 
 Acc_Parent(Acc) {
 	try parent:=Acc.accParent
 	return parent?Acc_Query(parent):
@@ -5091,7 +5102,7 @@ acc_path_func(key) {
 		<marquee behavior='scroll' direction='right' bgcolor='#ffcc00' width="%w%px"> &#8226; &#8226; &#8226; 
 		</marquee>
 	)
-	oDoc.getElementById("acc_path").innerHTML :=  marquee  
+	oDoc.getElementById("acc_path").innerHTML := marquee   
 	b := GetAccPath(oPubObj.AccObj.AccObj)
 	If b && key
 		oDoc.getElementById("acc_path_value").innerHTML := SaveAccPath()
@@ -5100,8 +5111,9 @@ acc_path_func(key) {
 	Else 
 		oDoc.getElementById("acc_path_value").disabled := 0
 		
-	oDoc.getElementById("acc_path").disabled := 0
+	oDoc.getElementById("acc_path").innerHTML := ""
 	oDoc.getElementById("acc_path").innerText := " Get path "
+	oDoc.getElementById("acc_path").disabled := 0
 	HTML_Control := oBody.innerHTML
 }
 
