@@ -26,7 +26,7 @@
     Актуальный исходник - https://raw.githubusercontent.com/serzh82saratov/AhkSpy/master/AhkSpy.ahk
 */
 
-Global AhkSpyVersion := 4.00
+Global AhkSpyVersion := 4.01
 
 	; _________________________________________________ Header _________________________________________________
 
@@ -1445,7 +1445,7 @@ AccInfoUnderMouse(mx, my, wx, wy, cx, cy, caX, caY, WinID, ControlID) {
 		acc_path_func(0), acc_path_value := SaveAccPath()
 		
 	; Else 
-		pathbutton := _DP _BP1 " id='acc_path'> Get path " _BP2 "</span>"
+		pathbutton := _DP _BP1 " id='acc_path'> Get path " _BP2 "</span><span id='acc_path_error'></span>"
 
 	code := _PRE1 "<span class='param'>Type:</span>  " Var pathbutton _PRE2 "<span id='acc_path_value'>" acc_path_value "</span>"
 
@@ -1566,7 +1566,7 @@ AccGetLocation(Acc, Child=0) {
 GetAccPath(Acc) {
 	path := Acc_GetPath(Acc, arr)
 	if path =
-		Return "object not found" 
+		Return 0
 	for k, v in arr
 	{ 
 		tree .= AddSpace(k-1) "<span><span name='MS:'>" v.Path "</span>" _DP  "<span name='MS:'>" v.Hwnd "</span>" 
@@ -1574,7 +1574,7 @@ GetAccPath(Acc) {
 	}
 	tree :=  _T1 " id='P__Tree_Acc_Path'" _T1P "> ( Path ) </span>" _T2 _PRE1 "<span>" tree "</span>" _PRE2
 	SaveAccPath(tree)
-	Return path
+	Return 1
 } 
 
 SaveAccPath(Path = "") {
@@ -5092,11 +5092,15 @@ acc_path_func(key) {
 		</marquee>
 	)
 	oDoc.getElementById("acc_path").innerHTML :=  marquee  
-	GetAccPath(oPubObj.AccObj.AccObj)
-	If key
+	b := GetAccPath(oPubObj.AccObj.AccObj)
+	If b && key
 		oDoc.getElementById("acc_path_value").innerHTML := SaveAccPath()
+	If !b
+		oDoc.getElementById("acc_path_error").outerHTML := "<span style='color:#ff0000'>    object not found</span>" 
+	Else 
+		oDoc.getElementById("acc_path_value").disabled := 0
+		
 	oDoc.getElementById("acc_path").disabled := 0
-	oDoc.getElementById("acc_path_value").disabled := 0
 	oDoc.getElementById("acc_path").innerText := " Get path "
 	HTML_Control := oBody.innerHTML
 }
