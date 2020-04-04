@@ -26,7 +26,7 @@
     Актуальный исходник - https://raw.githubusercontent.com/serzh82saratov/AhkSpy/master/AhkSpy.ahk
 */
 
-Global AhkSpyVersion := 3.98
+Global AhkSpyVersion := 4.00
 
 	; _________________________________________________ Header _________________________________________________
 
@@ -648,7 +648,14 @@ Spot_Win(NotHTML = 0) {
 	PixelGetColor, ColorRGB, %WinXS%, %WinYS%, RGB
 	GuiControl, TB: -Redraw, ColorProgress
 	GuiControl, % "TB: +c" SubStr(ColorRGB, 3), ColorProgress
-	GuiControl, TB: +Redraw, ColorProgress
+	GuiControl, TB: +Redraw, ColorProgress 
+	
+	If (hParent := DllCall("GetAncestor", "Ptr", WinID, Uint, 1)) && (hParent != WinID)
+	{
+		WinGet, ParentProcessName, ProcessName, ahk_id %hParent% 
+		WinGetClass, ParentClass, ahk_id %hParent%
+		_ParentWindow := "`n<span class='param'>Parent window:</span>  <span name='MS:'>" ParentClass "</span>" _DP " <span name='MS:'>" ParentProcessName "</span>" _DP "<span name='MS:'>" Format("0x{:x}", hParent) "</span>"
+	}
 
 	; _________________________________________________ HTML_Win _________________________________________________
 
@@ -675,7 +682,7 @@ HTML_Win:
 	<span class='param'>Client area size:</span>  <span name='MS:'>w%caW% h%caH%</span>%_DP%<span class='param'>left</span> %caX% <span class='param'>top</span> %caY% <span class='param'>right</span> %caWinRight% <span class='param'>bottom</span> %caWinBottom%%_PRE2%
 	%_T1% id='__Other'> ( Other ) </span>%_BT1% id='flash_window'> flash %_BT2%%_ButWindow_Detective%%_T2%
 	%_PRE1%<span class='param' name='MS:N'>PID:</span>  <span name='MS:'>%WinPID%</span>%_DP%%ProcessBitSize%%IsAdmin%<span class='param'>Window count:</span> %WinCountProcess%%_DP%%_BB1% id='process_close'> process close %_BB2%
-	<span class='param' name='MS:N'>HWND:</span>  <span name='MS:'>%WinID%</span>%_DP%%_BB1% id='win_close'> win close %_BB2%%_DP%<span class='param'>Control count:</span>  %CountControl%%IsWindowUnicodeStr%%EX1Str%%CLSID%
+	<span class='param' name='MS:N'>HWND:</span>  <span name='MS:'>%WinID%</span>%_DP%%_BB1% id='win_close'> win close %_BB2%%_DP%<span class='param'>Control count:</span>  %CountControl%%IsWindowUnicodeStr%%_ParentWindow%%EX1Str%%CLSID%
 	<span class='param'>Style:  </span><span id='w_Style' name='MS:'>%WinStyle%</span>%_DP%<span class='param'>ExStyle:  </span><span id='w_ExStyle' name='MS:'>%WinExStyle%</span>%ButtonStyle_%%_PRE2%
 	<span id=WinStyles>%WinStyles%</span>%SBText%%WinText%%MenuText%<a></a>%_T0%
 	</body>
@@ -1423,15 +1430,24 @@ AccInfoUnderMouse(mx, my, wx, wy, cx, cy, caX, caY, WinID, ControlID) {
 	Acc := ComObjEnwrap(9,pacc,1), child := NumGet(varChild,8,"UInt")
 	If !IsObject(Acc)
 		Return
-	Count := (Var := Acc.accChildCount) != "" ? "<span name='MS:'>" Var "</span>" : "N/A"
-	Var := child ? "Child" _DP "<span class='param' name='MS:N'>Id:  </span><span name='MS:'>" child "</span>"
-		. _DP "<span class='param' name='MS:N'>Parent child count:  </span>" Count
-		: "Parent" _DP "<span class='param' name='MS:N'>ChildCount:  </span>" Count
-
+	
+	oPubObj.AccObj := {AccObj:Acc, child:child, WinID:WinID, ControlID:ControlID}
+	
+	ChildCount := Acc.accChildCount	
+	If child
+		Var := "<span name='MS:'>Simple Element</span>" _DP "<span class='param' name='MS:N'>Id:  </span>" child
+	Else If ChildCount
+		Var := "<span name='MS:'>Container</span>" _DP "<span class='param' name='MS:N'>ChildCount:  </span>" ChildCount
+	Else
+		Var := "<span name='MS:'>Real Object</span>" _DP "<span class='param' name='MS:N'>Id:  </span>" child    ;  _DP "<span class='param' name='MS:N'>Container child count:  </span>" ChildCount
+		
 	If DynamicAccPath
-		acc_path_value := GetAccPath(Acc, child)
+		acc_path_func(0), acc_path_value := SaveAccPath()
+		
+	; Else 
+		pathbutton := _DP _BP1 " id='acc_path'> Get path " _BP2 "</span>"
 
-	code := _PRE1 "<span class='param'>Type:</span>  " Var _DP _BP1 " id='acc_path'> Get path: " _BP2 "  <span id='acc_path_value' name='MS:'>" acc_path_value "</span>" _PRE2
+	code := _PRE1 "<span class='param'>Type:</span>  " Var pathbutton _PRE2 "<span id='acc_path_value'>" acc_path_value "</span>"
 
 	AccGetLocation(Acc, child)
 	x := AccCoord[1], y := AccCoord[2], w := AccCoord[3], h := AccCoord[4]
@@ -1492,7 +1508,6 @@ AccInfoUnderMouse(mx, my, wx, wy, cx, cy, caX, caY, WinID, ControlID) {
 	If ((Var := Acc.AccHelpTopic(child)))
 		code .= _T1 " id='P__HelpTopic_Acc'" _T1P "> ( HelpTopic ) </span>" _T2 _PRE1 "<span name='MS:'>" TransformHTML(Var) "</span>" _PRE2
 
-	oPubObj.AccObj := {AccObj:Acc, child:child, WinID:WinID, ControlID:ControlID}
 	Return code
 }
 
@@ -1548,22 +1563,51 @@ AccGetLocation(Acc, Child=0) {
 	AccCoord[1]:=NumGet(x,0,"int"), AccCoord[2]:=NumGet(y,0,"int"), AccCoord[3]:=NumGet(w,0,"int"), AccCoord[4]:=NumGet(h,0,"int")
 }
 
-GetAccPath(Acc, child) {
-	path := Acc_GetPath(Acc)
-	if path !=
-		Return path
-	Else
-		Return "object not found"
+GetAccPath(Acc) {
+	path := Acc_GetPath(Acc, arr)
+	if path =
+		Return "object not found" 
+	for k, v in arr
+	{ 
+		tree .= AddSpace(k-1) "<span><span name='MS:'>" v.Path "</span>" _DP  "<span name='MS:'>" v.Hwnd "</span>" 
+			. _DP  "<span name='MS:'>" v.WinClass "</span>" _DP  "<span name='MS:'>" v.ProcessName "</span></span> <span name='MS:P'>        </span>`n" 
+	}
+	tree :=  _T1 " id='P__Tree_Acc_Path'" _T1P "> ( Path ) </span>" _T2 _PRE1 "<span>" tree "</span>" _PRE2
+	SaveAccPath(tree)
+	Return path
+} 
+
+SaveAccPath(Path = "") {
+	Static p
+	If Path =
+		Return p
+	p := Path
 }
 
-Acc_GetPath(Acc) {
+AddSpace(c) {
+	loop % c
+		Tab .= "<span class='param';'>&#8595;    </span>"
+	Return Tab
+}
+
+Acc_GetPath(Acc, byref arr) {
     static DesktopHwnd := DllCall("User32.dll\GetDesktopWindow", "ptr")
-	While Acc_WindowFromObject(Parent := Acc_Parent(Acc)) != DesktopHwnd {
-	    t1 := GetEnumIndex(Acc)
-		if (t1 = "")
-		   break 
+	Local
+	arr := []
+	While Hwnd := Acc_WindowFromObject(Parent := Acc_Parent(Acc)) {
+		t1 := GetEnumIndex(Acc)
+		If (PrHwnd != "" && Hwnd != PrHwnd)
+		{
+			PrHwnd := Format("0x{:06X}", PrHwnd)
+			WinGetClass, WinClass, ahk_id %PrHwnd%
+			WinGet, ProcessName, ProcessName, ahk_id %PrHwnd%
+			arr.InsertAt(1, {Hwnd:PrHwnd,Path:SubStr(t2, 1, -1), WinClass:WinClass, ProcessName:ProcessName})
+		}
+		if (t1 = "" || Hwnd = DesktopHwnd)
+		   break
 		t2 := t1 "." t2
-		Acc := Parent
+		PrHwnd := Hwnd 
+		Acc := Parent 
 	}
 	return SubStr(t2, 1, -1)
 }
@@ -5014,13 +5058,7 @@ ButtonClick(oevent) {
 		AhkSpyZoomShow()
 	Else If thisid = acc_path
 	{
-		oDoc.getElementById("acc_path_value").innerText := ""
-		oDoc.getElementById("acc_path").innerText := "   Wait...  "
-		oDoc.getElementById("acc_path").disabled := 1
-		oDoc.getElementById("acc_path_value").innerText := GetAccPath(oPubObj.AccObj.AccObj, oPubObj.AccObj.child)
-		oDoc.getElementById("acc_path").disabled := 0
-		oDoc.getElementById("acc_path").innerText := " Get path: "
-		HTML_Control := oBody.innerHTML
+		acc_path_func(1)
 	}
 	Else If thisid = control_path
 	{
@@ -5040,6 +5078,27 @@ ButtonClick(oevent) {
 		str := oDoc.getElementById("v_VKDHCode").innerText
 		oDoc.getElementById("v_VKDHCode").innerText := (DecimalCode) ? Format("{:d}", str) : Format("0x{:X}", str)
 	}
+}
+
+acc_path_func(key) {
+	; If (key && oOther.anchor[ThisMode "_text"] = "P__Tree_Acc_Path")
+		; MsgBox %  oDoc.getElementById("P__Tree_Acc_Path").innerHTML 
+	oDoc.getElementById("acc_path").disabled := 1
+	oDoc.getElementById("acc_path_value").disabled := 1 
+	w := oDoc.getElementById("acc_path").offsetWidth
+	marquee = 
+	( 
+		<marquee behavior='scroll' direction='right' bgcolor='#ffcc00' width="%w%px"> &#8226; &#8226; &#8226; 
+		</marquee>
+	)
+	oDoc.getElementById("acc_path").innerHTML :=  marquee  
+	GetAccPath(oPubObj.AccObj.AccObj)
+	If key
+		oDoc.getElementById("acc_path_value").innerHTML := SaveAccPath()
+	oDoc.getElementById("acc_path").disabled := 0
+	oDoc.getElementById("acc_path_value").disabled := 0
+	oDoc.getElementById("acc_path").innerText := " Get path "
+	HTML_Control := oBody.innerHTML
 }
 
 	; _________________________________________________ SingleInstance _________________________________________________
