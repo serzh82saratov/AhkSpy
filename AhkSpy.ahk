@@ -26,7 +26,7 @@
     Актуальный исходник - https://raw.githubusercontent.com/serzh82saratov/AhkSpy/master/AhkSpy.ahk
 */
 
-Global AhkSpyVersion := 4.05
+Global AhkSpyVersion := 4.06
 
 	; _________________________________________________ Header _________________________________________________
 
@@ -5127,15 +5127,17 @@ ButtonClick(oevent) {
 acc_path_func(key) {
 	; If (key && oOther.anchor[ThisMode "_text"] = "P__Tree_Acc_Path")
 		; MsgBox %  oDoc.getElementById("P__Tree_Acc_Path").innerHTML 
-	oDoc.getElementById("acc_path").disabled := 1
-	oDoc.getElementById("acc_path_value").disabled := 1 
+	If !Malcev_AccPanhNotBlink
+		oDoc.getElementById("acc_path").disabled := 1
+		, oDoc.getElementById("acc_path_value").disabled := 1 
 	w := oDoc.getElementById("acc_path").offsetWidth
 	marquee = 
 	( 
 		<marquee behavior='scroll' direction='right' bgcolor='#ffcc00' width="%w%px"> &#8226; &#8226; &#8226; 
 		</marquee>
 	)
-	oDoc.getElementById("acc_path").innerHTML := marquee   
+	If !Malcev_AccPanhNotBlink
+		oDoc.getElementById("acc_path").innerHTML := marquee   
 	b := GetAccPath(oPubObj.Acc.AccObj) 
 	If b && key
 		oDoc.getElementById("acc_path_value").innerHTML := SaveAccPath()
