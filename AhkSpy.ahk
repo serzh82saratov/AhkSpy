@@ -26,7 +26,7 @@
     Актуальный исходник - https://raw.githubusercontent.com/serzh82saratov/AhkSpy/master/AhkSpy.ahk
 */
 
-Global AhkSpyVersion := 4.04
+Global AhkSpyVersion := 4.05
 
 	; _________________________________________________ Header _________________________________________________
 
@@ -1481,46 +1481,59 @@ AccInfoUnderMouse(mx, my, wx, wy, cx, cy, caX, caY, WinID, ControlID) {
 	}
 	If ((Var := Acc.accName(child)) != "")
 		code .= _T1 " id='P__Name_Acc'" _T1P "> ( Name ) </span><a></a>" _BT1 " id='copy_button'> copy " _BT2 _T2 _LPRE ">" TransformHTML(Var) _PRE2
+		
 	If ((Var := Acc.accValue(child)) != "")
 		code .= _T1 " id='P__Value_Acc'" _T1P "> ( Value ) </span><a></a>" _BT1 " id='copy_button'> copy " _BT2 _T2 _LPRE ">" TransformHTML(Var) _PRE2
+		
 	AccState(Acc, child, style, strstyles)
 	If (strstyles != "")
 		code .= _T1 " id='P__State_Acc'" _T1P "> ( State: <span name='MS:' style='color: #" ColorFont ";'>" style "</span> ) </span>" _T2 _PRE1 strstyles _PRE2
+		
 	If ((Var := AccRole(Acc, child)) != "")
 		code .= _T1 " id='P__Role_Acc'" _T1P "> ( Role ) </span>" _T2 _PRE1 "<span name='MS:'>" TransformHTML(Var) "</span>"
 		. _DP "<span class='param' name='MS:N'>code: </span><span name='MS:'>" Acc.accRole(child) "</span>" _PRE2
+		
 	If (child &&(Var := AccRole(Acc)) != "")
 		code .= _T1 " id='P__Role_parent_Acc'" _T1P "> ( Role - parent ) </span>" _T2 _PRE1 "<span name='MS:'>" TransformHTML(Var) "</span>"
 		. _DP "<span class='param' name='MS:N'>code: </span><span name='MS:'>" Acc.accRole(0) "</span>" _PRE2
+		
 	If ((Var := Acc.accDefaultAction(child)) != "")
 		code .= _T1 " id='P__Action_Acc'" _T1P "> ( Action ) </span>" _T2 _PRE1 "<span name='MS:'>" TransformHTML(Var) "</span>" 
 		. _DP _BP1 " id='acc_DoDefaultAction'> Execute " _BP2 _PRE2
+		
 	If ((Var := Acc.accSelection) > 0)
 		code .= _T1 " id='P__Selection_parent_Acc'" _T1P "> ( Selection - parent ) </span>" _T2 _PRE1 "<span name='MS:'>" TransformHTML(Var) "</span>" _PRE2
+		
 	AccAccFocus(WinID, accFocusName, accFocusValue)
 	If (accFocusName != "")
 		code .= _T1 " id='P__Focus_name_Acc'" _T1P "> ( Focus - name ) </span><a></a>" _BT1 " id='copy_button'> copy " _BT2 _T2 _LPRE ">" TransformHTML(accFocusName) _PRE2
+		
 	If (accFocusValue != "")
 		code .= _T1 " id='P__Focus_value_Acc'" _T1P "> ( Focus - value ) </span><a></a>" _BT1 " id='copy_button'> copy " _BT2 _T2 _LPRE ">" TransformHTML(accFocusValue) _PRE2
+	
 	If ((Var := Acc.accDescription(child)) != "")
 		code .= _T1 " id='P__Description_Acc'" _T1P "> ( Description ) </span>" _T2 _PRE1 "<span name='MS:'>" TransformHTML(Var) "</span>" _PRE2
+	
 	If ((Var := Acc.accKeyboardShortCut(child)) != "")
 		code .= _T1 " id='P__ShortCut_Acc'" _T1P "> ( ShortCut ) </span>" _T2 _PRE1 "<span name='MS:'>" TransformHTML(Var) "</span>" _PRE2
+	
 	If ((Var := Acc.accHelp(child)) != "")
 		code .= _T1 " id='P__Help_Acc'" _T1P "> ( Help ) </span>" _T2 _PRE1 "<span name='MS:'>" TransformHTML(Var) "</span>" _PRE2
+	
 	If ((Var := Acc.AccHelpTopic(child)))
 		code .= _T1 " id='P__HelpTopic_Acc'" _T1P "> ( HelpTopic ) </span>" _T2 _PRE1 "<span name='MS:'>" TransformHTML(Var) "</span>" _PRE2
 
 	Return code
 }
 
-	;	https://docs.microsoft.com/ru-ru/windows/desktop/WinAuto/object-state-constants
-	;	http://forum.script-coding.com/viewtopic.php?pid=130762#p130762
+
 
 accDoDefaultAction() {
 	oPubObj.Acc.AccObj.accDoDefaultAction(oPubObj.Acc.child)
 }
 
+	;	https://docs.microsoft.com/ru-ru/windows/desktop/WinAuto/object-state-constants
+	;	http://forum.script-coding.com/viewtopic.php?pid=130762#p130762
 AccState(Acc, child, byref style, byref str, i := 1) {
 	style := Format("0x{1:08X}", Acc.accState(child))
 	If (style = 0)
@@ -1584,7 +1597,8 @@ GetAccPath(Acc) {
 	for k, v in arr
 	{ 
 		tree .= AddSpace(k - 1) "<span><span name='MS:'>" v.Path "</span>" _DP  "<span name='MS:'>" v.Hwnd "</span>" 
-			. _DP "<span name='MS:'>" v.WinClass "</span>" _DP  "<span name='MS:'>" v.ProcessName "</span></span><span name='MS:P'>     </span>`n" 
+			. _DP "<span name='MS:'>" v.WinClass "</span>" _DP  "<span name='MS:'>" v.ProcessName "</span></span><span name='MS:P'>     </span>"
+			. _DP _BP1 " id='acc_row_flash' value='" v.Hwnd "'> flash " _BP2 "`n" 
 	}
 	tree := _T1 " id='P__Tree_Acc_Path'" _T1P "> ( Path ) </span>" _T2 _PRE1 "<span>" tree "</span>" _PRE2
 	SaveAccPath(tree)
@@ -5102,7 +5116,12 @@ ButtonClick(oevent) {
 		oDoc.getElementById("v_VKDHCode").innerText := (DecimalCode) ? Format("{:d}", str) : Format("0x{:X}", str)
 	}
 	Else If thisid = acc_DoDefaultAction
-		accDoDefaultAction() 
+		accDoDefaultAction()  
+	Else If thisid = acc_row_flash
+	{ 
+		WinGetPos, X, Y, W, H, % "ahk_id" oevent.value
+		FlashArea(x, y, w, h)
+	}
 }
 
 acc_path_func(key) {
