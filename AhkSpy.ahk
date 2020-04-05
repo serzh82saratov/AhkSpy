@@ -26,14 +26,14 @@
     Актуальный исходник - https://raw.githubusercontent.com/serzh82saratov/AhkSpy/master/AhkSpy.ahk
 */
 
-Global AhkSpyVersion := 4.02
+Global AhkSpyVersion := 4.03
 
 	; _________________________________________________ Header _________________________________________________
 
 p1 = %1%
 If (p1 = "Zoom")
 	GoTo ShowZoom
-
+	
 SingleInstance()
 #NoEnv
 #UseHook
@@ -1421,7 +1421,7 @@ WBGet(hwnd) {
 	;  http://www.autohotkey.com/board/topic/77888-accessible-info-viewer-alpha-release-2012-09-20/
 
 AccInfoUnderMouse(mx, my, wx, wy, cx, cy, caX, caY, WinID, ControlID) {
-	Static h
+	Static h, WM_GETOBJECT := 0x003D
 	If Not h
 		h := DllCall("LoadLibrary", "Str", "oleacc", "Ptr")
 	If DllCall("oleacc\AccessibleObjectFromPoint"
@@ -1430,6 +1430,8 @@ AccInfoUnderMouse(mx, my, wx, wy, cx, cy, caX, caY, WinID, ControlID) {
 	Acc := ComObjEnwrap(9,pacc,1), child := NumGet(varChild,8,"UInt")
 	If !IsObject(Acc)
 		Return
+	
+	SendMessage, WM_GETOBJECT, 0, 1, , ahk_id %ControlID%
 	
 	oPubObj.AccObj := {AccObj:Acc, child:child, WinID:WinID, ControlID:ControlID}
 	
@@ -1558,20 +1560,6 @@ AccGetStateText(nState) {
 	Return sState
 }
 
-GetAccPath(Acc) {
-	path := Acc_GetPath(Acc, arr)
-	if path =
-		Return 0
-	for k, v in arr
-	{ 
-		tree .= AddSpace(k-1) "<span><span name='MS:'>" v.Path "</span>" _DP  "<span name='MS:'>" v.Hwnd "</span>" 
-			. _DP  "<span name='MS:'>" v.WinClass "</span>" _DP  "<span name='MS:'>" v.ProcessName "</span></span> <span name='MS:P'>        </span>`n" 
-	}
-	tree :=  _T1 " id='P__Tree_Acc_Path'" _T1P "> ( Path ) </span>" _T2 _PRE1 "<span>" tree "</span>" _PRE2
-	SaveAccPath(tree)
-	Return 1
-} 
-
 SaveAccPath(Path = "") {
 	Static p
 	If Path =
@@ -1585,10 +1573,23 @@ AddSpace(c) {
 	Return Tab
 }
 
+GetAccPath(Acc) { 
+	if !Acc_GetPath(Acc, arr)
+		Return 0 
+	for k, v in arr
+	{ 
+		tree .= AddSpace(k - 1) "<span><span name='MS:'>" v.Path "</span>" _DP  "<span name='MS:'>" v.Hwnd "</span>" 
+			. _DP "<span name='MS:'>" v.WinClass "</span>" _DP  "<span name='MS:'>" v.ProcessName "</span></span><span name='MS:P'>     </span>`n" 
+	}
+	tree := _T1 " id='P__Tree_Acc_Path'" _T1P "> ( Path ) </span>" _T2 _PRE1 "<span>" tree "</span>" _PRE2
+	SaveAccPath(tree)
+	Return 1
+}
+
 Acc_GetPath(Acc, byref arr) {
     static DesktopHwnd := DllCall("User32.dll\GetDesktopWindow", "ptr")
 	Local
-	arr := [] 
+	arr := []
 	While Hwnd := Acc_WindowFromObject(Parent := Acc_Parent(Acc)) {
 		t1 := GetEnumIndex(Acc)
 		If (PrHwnd != "" && Hwnd != PrHwnd)
@@ -1600,31 +1601,53 @@ Acc_GetPath(Acc, byref arr) {
 		}
 		if (t1 = "" || Hwnd = DesktopHwnd)
 		   break
-		t2 := t1 "." t2 
+		t2 := t1 "." t2
 		PrHwnd := Hwnd
 		Acc := Parent 
 	}
-	return SubStr(t2, 1, -1)
+	return arr.Count()
 }
-
+ 
 GetEnumIndex(Acc)
 {
-   For Each, child in Acc_Children(Acc_Parent(Acc))
-      if IsObject(child) and (Acc_Location(child) = Acc_Location(Acc)) and (child.accChildCount = Acc.accChildCount) and (child.accDefaultAction(0) = Acc.accDefaultAction(0)) and (child.accDescription(0) = Acc.accDescription(0)) and (child.accHelp(0) = Acc.accHelp(0)) and (child.accKeyboardShortcut(0) = Acc.accKeyboardShortcut(0)) and (child.accName(0) = Acc.accName(0)) and (child.accRole(0) = Acc.accRole(0)) and (child.accState(0) = Acc.accState(0)) and (child.accValue(0) = Acc.accValue(0))
-         return A_Index
-}
-GetEnumIndex2(Acc, ChildId=0) {
-	if Not ChildId {
-		ChildPos := Acc_Location(Acc)
-		For Each, child in Acc_Children(Acc_Parent(Acc))
-			if IsObject(child) and Acc_Location(child) = ChildPos
-				return A_Index
+	For Each, child in Acc_Children(Acc_Parent(Acc))
+	{
+		; MsgBox % (ComObjValue(Acc)  = ComObjValue(child)) "`n" oPubObj.AccObj.child
+		if IsObject(child) 
+		and (child.accDefaultAction(0) = Acc.accDefaultAction(0)) 	
+		and (child.accDescription(0) = Acc.accDescription(0)) 	
+		and (child.accHelp(0) = Acc.accHelp(0)) 	
+		and (child.accKeyboardShortcut(0) = Acc.accKeyboardShortcut(0)) 
+		   ;  
+		and (Acc_Location(child) = Acc_Location(Acc))
+		and (child.accChildCount = Acc.accChildCount) 
+		and (child.accName(0) = Acc.accName(0)) 	
+		and (child.accRole(0) = Acc.accRole(0)) 	
+		and (child.accState(0) = Acc.accState(0)) 
+		and (child.accValue(0) = Acc.accValue(0))
+			return A_Index
 	}
-	else {
-		ChildPos := Acc_Location(Acc,ChildId)
-		For Each, child in Acc_Children(Acc)
-			if Not IsObject(child) and Acc_Location(Acc,child) = ChildPos
-				return A_Index
+}
+
+Acc_Children(Acc) {
+	if ComObjType(Acc, "Name") != "IAccessible"
+		return
+	else
+	{
+		cChildren := Acc.accChildCount, Children := [] 
+		if DllCall("oleacc\AccessibleChildren"
+		, "Ptr", ComObjValue(Acc)
+		, "Int", 0, "Int", cChildren
+		, "Ptr", VarSetCapacity(varChildren, cChildren * (8 + 2 * A_PtrSize), 0) * 0 + &varChildren
+		, "Int*", cChildren) = 0 
+		{
+			Loop %cChildren%
+				i := (A_Index - 1) * (A_PtrSize * 2 + 8) + 8
+				, child := NumGet(varChildren, i)
+				, Children.Insert(NumGet(varChildren, i - 8) = 9 ? Acc_Query(child) : child)
+				, NumGet(varChildren, i - 8) = 9 ? ObjRelease(child) : ""
+			return Children.MaxIndex() ? Children : ""
+		}
 	}
 }
 AccGetLocation(Acc, ChildId=0) {
@@ -1635,11 +1658,7 @@ AccGetLocation(Acc, ChildId=0) {
 Acc_Location(Acc, ChildId=0) {
 	Static x := 0, y := 0, w := 0, h := 0
 	try Acc.accLocation(ComObj(0x4003,&x), ComObj(0x4003,&y), ComObj(0x4003,&w), ComObj(0x4003,&h), ChildId)
-	return "x" NumGet(x,0,"int") " y" NumGet(y,0,"int") " w" NumGet(w,0,"int") " h" NumGet(h,0,"int")
-}
-Acc_Location2(Acc, ChildId=0) {
-	try Acc.accLocation(ComObj(0x4003,&x:=0), ComObj(0x4003,&y:=0), ComObj(0x4003,&w:=0), ComObj(0x4003,&h:=0), ChildId)
-	return "x" (x:=NumGet(x,0,"int")) " y" (y:=NumGet(y,0,"int")) " w" (w:=NumGet(w,0,"int")) " h" (h:=NumGet(h,0,"int"))
+	return "x" NumGet(x, 0, "int") " y" NumGet(y, 0, "int") " w" NumGet(w, 0, "int") " h" NumGet(h, 0, "int")
 }
 Acc_ObjectFromPoint(ByRef _idChild_ = "", x = "", y = "") {
 	If DllCall("oleacc\AccessibleObjectFromPoint", "Int64", x==""||y==""?0*DllCall("GetCursorPos","Int64*",pt)+pt:x&0xFFFFFFFF|y<<32, "Ptr*", pacc, "Ptr", VarSetCapacity(varChild,8+2*A_PtrSize,0)*0+&varChild)=0
@@ -1654,21 +1673,9 @@ Acc_WindowFromObject(pacc) {
 	If DllCall("oleacc\WindowFromAccessibleObject", "Ptr", IsObject(pacc)?ComObjValue(pacc):pacc, "Ptr*", hWnd)=0
 		Return	hWnd
 } 
-Acc_Parent(Acc) {
+Acc_Parent(Acc) { 
 	try parent:=Acc.accParent
-	return parent?Acc_Query(parent):
-}
-Acc_Children(Acc) {
-	if ComObjType(Acc,"Name")!="IAccessible"
-		return
-	else {
-		cChildren:=Acc.accChildCount, Children:=[]
-	if DllCall("oleacc\AccessibleChildren", "Ptr", ComObjValue(Acc), "Int", 0, "Int", cChildren, "Ptr", VarSetCapacity(varChildren,cChildren*(8+2*A_PtrSize),0)*0+&varChildren, "Int*", cChildren)=0 {
-		Loop %cChildren%
-			i:=(A_Index-1)*(A_PtrSize*2+8)+8, child:=NumGet(varChildren,i), Children.Insert(NumGet(varChildren,i-8)=3?child:Acc_Query(child)), ObjRelease(child)
-		return Children
-		}
-	}
+	return parent ? Acc_Query(parent) : ""
 }
 Acc_Query(Acc) {
 	try return ComObj(9, ComObjQuery(Acc,"{618736e0-3c3d-11cf-810c-00aa00389b71}"), 1)
@@ -5103,7 +5110,7 @@ acc_path_func(key) {
 		</marquee>
 	)
 	oDoc.getElementById("acc_path").innerHTML := marquee   
-	b := GetAccPath(oPubObj.AccObj.AccObj)
+	b := GetAccPath(oPubObj.AccObj.AccObj) 
 	If b && key
 		oDoc.getElementById("acc_path_value").innerHTML := SaveAccPath()
 	If !b
