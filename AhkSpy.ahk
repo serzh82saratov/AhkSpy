@@ -26,7 +26,7 @@
     Актуальный исходник - https://raw.githubusercontent.com/serzh82saratov/AhkSpy/master/AhkSpy.ahk
 */
 
-Global AhkSpyVersion := 4.03
+Global AhkSpyVersion := 4.04
 
 	; _________________________________________________ Header _________________________________________________
 
@@ -1433,7 +1433,7 @@ AccInfoUnderMouse(mx, my, wx, wy, cx, cy, caX, caY, WinID, ControlID) {
 	
 	SendMessage, WM_GETOBJECT, 0, 1, , ahk_id %ControlID%
 	
-	oPubObj.AccObj := {AccObj:Acc, child:child, WinID:WinID, ControlID:ControlID}
+	oPubObj.Acc := {AccObj:Acc, child:child, WinID:WinID, ControlID:ControlID}
 	
 	ChildCount := Acc.accChildCount	
 	If child
@@ -1493,7 +1493,8 @@ AccInfoUnderMouse(mx, my, wx, wy, cx, cy, caX, caY, WinID, ControlID) {
 		code .= _T1 " id='P__Role_parent_Acc'" _T1P "> ( Role - parent ) </span>" _T2 _PRE1 "<span name='MS:'>" TransformHTML(Var) "</span>"
 		. _DP "<span class='param' name='MS:N'>code: </span><span name='MS:'>" Acc.accRole(0) "</span>" _PRE2
 	If ((Var := Acc.accDefaultAction(child)) != "")
-		code .= _T1 " id='P__Action_Acc'" _T1P "> ( Action ) </span>" _T2 _PRE1 "<span name='MS:'>" TransformHTML(Var) "</span>" _PRE2
+		code .= _T1 " id='P__Action_Acc'" _T1P "> ( Action ) </span>" _T2 _PRE1 "<span name='MS:'>" TransformHTML(Var) "</span>" 
+		. _DP _BP1 " id='acc_DoDefaultAction'> Execute " _BP2 _PRE2
 	If ((Var := Acc.accSelection) > 0)
 		code .= _T1 " id='P__Selection_parent_Acc'" _T1P "> ( Selection - parent ) </span>" _T2 _PRE1 "<span name='MS:'>" TransformHTML(Var) "</span>" _PRE2
 	AccAccFocus(WinID, accFocusName, accFocusValue)
@@ -1515,6 +1516,10 @@ AccInfoUnderMouse(mx, my, wx, wy, cx, cy, caX, caY, WinID, ControlID) {
 
 	;	https://docs.microsoft.com/ru-ru/windows/desktop/WinAuto/object-state-constants
 	;	http://forum.script-coding.com/viewtopic.php?pid=130762#p130762
+
+accDoDefaultAction() {
+	oPubObj.Acc.AccObj.accDoDefaultAction(oPubObj.Acc.child)
+}
 
 AccState(Acc, child, byref style, byref str, i := 1) {
 	style := Format("0x{1:08X}", Acc.accState(child))
@@ -1612,7 +1617,7 @@ GetEnumIndex(Acc)
 {
 	For Each, child in Acc_Children(Acc_Parent(Acc))
 	{
-		; MsgBox % (ComObjValue(Acc)  = ComObjValue(child)) "`n" oPubObj.AccObj.child
+		; MsgBox % (ComObjValue(Acc) "`n"  ComObjValue(child)) "`n" oPubObj.Acc.child "`n" A_Index
 		if IsObject(child) 
 		and (child.accDefaultAction(0) = Acc.accDefaultAction(0)) 	
 		and (child.accDescription(0) = Acc.accDescription(0)) 	
@@ -4931,7 +4936,7 @@ ButtonClick(oevent) {
 	}
 	Else If (thisid = "flash_acc")
 	{
-		AccGetLocation(oPubObj.AccObj.AccObj, oPubObj.AccObj.child)
+		AccGetLocation(oPubObj.Acc.AccObj, oPubObj.Acc.child)
 		FlashArea(AccCoord[1], AccCoord[2], AccCoord[3], AccCoord[4])
 	}
 	Else If (thisid = "flash_IE")
@@ -5096,6 +5101,8 @@ ButtonClick(oevent) {
 		str := oDoc.getElementById("v_VKDHCode").innerText
 		oDoc.getElementById("v_VKDHCode").innerText := (DecimalCode) ? Format("{:d}", str) : Format("0x{:X}", str)
 	}
+	Else If thisid = acc_DoDefaultAction
+		accDoDefaultAction() 
 }
 
 acc_path_func(key) {
@@ -5110,7 +5117,7 @@ acc_path_func(key) {
 		</marquee>
 	)
 	oDoc.getElementById("acc_path").innerHTML := marquee   
-	b := GetAccPath(oPubObj.AccObj.AccObj) 
+	b := GetAccPath(oPubObj.Acc.AccObj) 
 	If b && key
 		oDoc.getElementById("acc_path_value").innerHTML := SaveAccPath()
 	If !b
