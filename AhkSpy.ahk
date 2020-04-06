@@ -26,7 +26,7 @@
     Актуальный исходник - https://raw.githubusercontent.com/serzh82saratov/AhkSpy/master/AhkSpy.ahk
 */
 
-Global AhkSpyVersion := 4.07
+Global AhkSpyVersion := 4.08
 
 	; _________________________________________________ Header _________________________________________________
 
@@ -81,7 +81,7 @@ Global ThisMode := IniRead("StartMode", "Control"), LastModeSave := (ThisMode = 
 , WordWrap := IniRead("WordWrap", 0), PreMaxHeightStr := IniRead("MaxHeightOverFlow", "1 / 3"), UseUIA := IniRead("UseUIA", 0), UIAAlienDetect := IniRead("UIAAlienDetect", 0)
 , OnlyShiftTab := IniRead("OnlyShiftTab", 0), MoveTitles := IniRead("MoveTitles", 1), DetectHiddenText := IniRead("DetectHiddenText", "on")
 , DynamicControlPath := IniRead("DynamicControlPath", 0), DynamicAccPath := IniRead("DynamicAccPath", 0), MenuIdView := IniRead("MenuIdView", 0)
-, UpdRegister := IniRead("UpdRegister2", 0), UpdRegisterLink := "https://u.to/zeONFA"
+, UpdRegister := IniRead("UpdRegister2", 0), UpdRegisterLink := "https://u.to/zeONFA", testvar
 
 , FontDPI := {96:12,120:10,144:8,168:6}[A_ScreenDPI], ScrollPos := {}, AccCoord := [], oOther := {}, oFind := {}, Edits := [], oMS := {}, oMenu := {}, oPubObj := {}
 
@@ -1445,10 +1445,14 @@ AccInfoUnderMouse(mx, my, wx, wy, cx, cy, caX, caY, WinID, ControlID) {
 		Var := "<span name='MS:'>Real Object</span>" _DP "<span class='param' name='MS:N'>Id:  </span>" child    ;  _DP "<span class='param' name='MS:N'>Container child count:  </span>" ChildCount
 		
 	If DynamicAccPath
-		acc_path_func(0), acc_path_value := SaveAccPath()
-		
-	; Else 
-		pathbutton := _DP _BP1 " id='acc_path'> Get path " _BP2 "</span><span id='acc_path_error'></span>"
+	{
+		b := acc_path_func(0, Acc)
+		If b
+			acc_path_value := SaveAccPath()
+		Else 
+			error := "<span style='color:#ff0000'>  path not found</span>"
+	}
+	pathbutton := _DP _BP1 " id='acc_path'> Get path " _BP2 "</span><span id='acc_path_error'>" error "</span>"
 
 	code := _PRE1 "<span class='param'>Type:</span>  " Var pathbutton _PRE2 "<span id='acc_path_value'>" acc_path_value "</span>"
 
@@ -1594,7 +1598,7 @@ AddSpace(c) {
 
 GetAccPath(Acc) { 
 	if !Acc_GetPath(Acc, arr)
-		Return 0 
+		Return 0
 	for k, v in arr
 	{ 
 		tree .= AddSpace(k - 1) "<span><span name='MS:'>" v.Path "</span>" _DP  "<span name='MS:'>" v.Hwnd "</span>" 
@@ -5164,7 +5168,7 @@ ButtonClick(oevent) {
 		FlashArea(x, y, w, h)
 	}
 	Else If thisid = acc_path 
-		acc_path_func(1)
+		acc_path_func(1, oPubObj.Acc.AccObj)
 	Else If thisid = control_path 
 		control_path_func()
 }
@@ -5176,8 +5180,8 @@ control_path_func() {
 	HTML_Control := oBody.innerHTML
 }
 
-acc_path_func(key) {
-	; If (key && oOther.anchor[ThisMode "_text"] = "P__Tree_Acc_Path")
+acc_path_func(manual, Acc) {
+	; If (manual && oOther.anchor[ThisMode "_text"] = "P__Tree_Acc_Path")
 		; MsgBox %  oDoc.getElementById("P__Tree_Acc_Path").innerHTML
 	If 0   ;  !Malcev_AccPathNotBlink
 	{
@@ -5191,11 +5195,13 @@ acc_path_func(key) {
 		)
 		oDoc.getElementById("acc_path").innerHTML := marquee   
 	}
-	b := GetAccPath(oPubObj.Acc.AccObj) 
-	If b && key
+	b := GetAccPath(Acc) 
+	If !manual
+		Return b
+	If b
 		oDoc.getElementById("acc_path_value").innerHTML := SaveAccPath()
 	If !b
-		oDoc.getElementById("acc_path_error").outerHTML := "<span style='color:#ff0000'>  object not found</span>" 
+		oDoc.getElementById("acc_path_error").outerHTML := "<span style='color:#ff0000'>  path not found</span>" 
 		; , oDoc.getElementById("acc_path_value").innerHTML := ""
 	; Else 
 		; oDoc.getElementById("acc_path_value").disabled := 0
