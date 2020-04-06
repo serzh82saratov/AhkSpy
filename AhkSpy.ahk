@@ -876,7 +876,7 @@ Spot_Control(NotHTML = 0) {
 			. _DP "<span name='MS:'>" CtrlSCX ", " CtrlSCY ", " CtrlSCX2 ", " CtrlSCY2 "</span>" _DP "<span name='MS:'>" CtrlSCX ", " CtrlSCY ", " CtrlW ", " CtrlH "</span>" 	
 		
 		If DynamicControlPath
-			control_path_value := ChildToPath(ControlID)
+			ChildToPath(ControlID), control_path_value := SaveChildPath()
 	} 
 	If ControlNN !=
 	{
@@ -983,9 +983,10 @@ HTML_Control:
 		%_PRE1%<span class='param'>ClassNN:</span>  <span name='MS:'>%ControlNN%</span>%_DP%<span class='param'>Class:</span>  <span name='MS:'>%CtrlClass%</span>
 		%_BP1% id='set_button_pos'>Pos:%_BP2%  <span name='MS:'>x%CtrlX% y%CtrlY%</span>%_DP%<span name='MS:'>x&sup2;%CtrlX2% y&sup2;%CtrlY2%</span>%_DP%%_BP1% id='set_button_pos'>Size:%_BP2%  <span name='MS:'>w%CtrlW% h%CtrlH%</span>%ViewStrPos1%
 		<span class='param'>Relative client area:</span>  <span name='MS:'>x%CtrlCAX% y%CtrlCAY%</span>%_DP%<span name='MS:'>x&sup2;%CtrlCAX2% y&sup2;%CtrlCAY2%</span>%_DP%%Relativescreen%%ViewStrPos2%
-		%_BP1% id='set_pos'>Mouse relative control:%_BP2%  <span name='MS:'>x%rmCtrlX% y%rmCtrlY%</span>%WithRespectControl%%_DP%%_BP1% id='control_path'> Get path: %_BP2%  <span id='control_path_value' name='MS:'>%control_path_value%</span>
-		<span class='param'>HWND:</span>  <span name='MS:'>%ControlID%</span>%_ParentControl%
+		%_BP1% id='set_pos'>Mouse relative control:%_BP2%  <span name='MS:'>x%rmCtrlX% y%rmCtrlY%</span>%WithRespectControl%
+		<span class='param'>HWND:</span>  <span name='MS:'>%ControlID%</span>%_DP%%_BP1% id='control_path'> Get path %_BP2%<span id='control_path_error'></span>%_ParentControl%
 		<span class='param'>Style:</span>  <span id='c_Style' name='MS:'>%CtrlStyle%</span>%_DP%<span class='param'>ExStyle:</span>  <span id='c_ExStyle' name='MS:'>%CtrlExStyle%</span>%ButtonStyle_%%_PRE2%
+		<span id='control_path_value'>%control_path_value%</span>
 		<span id=ControlStyles>%ControlStyles%</span>
 		)
 	} 
@@ -1598,9 +1599,9 @@ GetAccPath(Acc) {
 	{ 
 		tree .= AddSpace(k - 1) "<span><span name='MS:'>" v.Path "</span>" _DP  "<span name='MS:'>" v.Hwnd "</span>" 
 			. _DP "<span name='MS:'>" v.WinClass "</span>" _DP  "<span name='MS:'>" v.ProcessName "</span></span><span name='MS:P'>     </span>"
-			. _DP _BP1 " id='acc_row_flash' value='" v.Hwnd "'> flash " _BP2 "`n" 
+			. _DP _BP1 " id='b_hwnd_flash' value='" v.Hwnd "'> flash " _BP2 "`n" 
 	}
-	tree := _T1 " id='P__Tree_Acc_Path'" _T1P "> ( Path ) </span>" _T2 _PRE1 "<span>" tree "</span>" _PRE2
+	tree := _T1 " id='P__Tree_Acc_Path'" _T1P "> ( Accessible path ) </span>" _T2 _PRE1 "<span>" tree "</span>" _PRE2
 	SaveAccPath(tree)
 	Return 1
 }
@@ -2606,18 +2607,69 @@ OnlyShiftTab_LButton_Up_Wait:
 	SetTimer, Loop_%ThisMode%, Off
 	SetTimer, ShiftUpHide, -300
 	return
-	
-ChildToPath(hwnd, str = "", WinID = 0, i = "")
+
+   ;  http://forum.script-coding.com/viewtopic.php?pid=131490#p131490
+/*
+ChildFromPath(str, hwnd) 
 {
-	Static GA_ROOT := 2, GW_HWNDPREV := 3
-	If !WinID && hwnd
-		WinID := DllCall("GetAncestor", "Ptr", hwnd, Uint, GA_ROOT), i := 1
-	While prhwnd := DllCall("GetWindow", "Ptr", hwnd, UInt, GW_HWNDPREV, "Ptr")
-		++i, hwnd := prhwnd
-	thwnd := DllCall("GetParent", "Ptr", hwnd)
-	if !thwnd || (thwnd = WinID)
-		return Rtrim(i "," str, ",")
-	return ChildToPath(thwnd, i "," str, WinID, 1)
+	Static GW_HWNDNEXT := 2, GW_CHILD := 5
+	hwnd := DllCall("GetWindow", "Ptr", hwnd, UInt, GW_CHILD, "Ptr")
+	arr := StrSplit(str, "."), off := 1, i := 1
+	Loop 
+	{
+		If (i = arr[off])
+		{
+			If (off = arr.Count())
+				return hwnd
+			hwnd := DllCall("GetWindow", "Ptr", hwnd, UInt, GW_CHILD, "Ptr"), ++off, i := 1 
+		}
+		Else If (++i) && !(hwnd := DllCall("GetWindow", "Ptr", hwnd, UInt, GW_HWNDNEXT, "Ptr"))
+			return   
+	}
+} 
+*/
+ChildToPath(hwnd) {
+	If !WinExist("ahk_id" hwnd)
+		Return 0
+	arr := []
+ 	_ChildToPath(hwnd, arr) 
+	for k, v in arr
+	{  
+		Hwnd := Format("0x{:06X}", v.Hwnd)
+		WinGetClass, WinClass, ahk_id %Hwnd%
+		WinGet, ProcessName, ProcessName, ahk_id %Hwnd%
+		tree .= AddSpace2(k - 1) "<span><span name='MS:'>" v.Path "</span>" _DP  "<span name='MS:'>" Hwnd "</span>" 
+			. _DP "<span name='MS:'>" WinClass "</span>" _DP  "<span name='MS:'>" ProcessName "</span></span><span name='MS:P'>     </span>"
+			. _DP _BP1 " id='b_hwnd_flash' value='" Hwnd "'> flash " _BP2 "`n"
+	} 
+	tree := _T1 " id='P__Tree_Control_Path'" _T1P "> ( Control path ) </span>" _T2 _PRE1 "<span>" tree "</span>" _PRE2 
+	SaveChildPath(tree)
+	Return 1
+}
+
+_ChildToPath(hwnd, arr, i = 1) {
+	Static GA_PARENT := 1, GA_ROOT := 2, GW_HWNDPREV := 3
+	Static DesktopHwnd := DllCall("User32.dll\GetDesktopWindow", "ptr") 
+	While hPrev := DllCall("GetWindow", "Ptr", hwnd, UInt, GW_HWNDPREV, "Ptr")
+		++i, hwnd := hPrev
+	   ;  DllCall("GetParent", "Ptr", hwnd)
+	hParent := DllCall("GetAncestor", "Ptr", hwnd, Uint, GA_PARENT)
+	if !hParent || (hParent = DesktopHwnd)
+		return
+	arr.InsertAt(1, {Hwnd:hParent,Path: RTrim(i "." arr[1].Path, ".")})
+	return _ChildToPath(hParent, arr, 1)
+}
+
+AddSpace2(c) {
+	loop % c
+		Tab .= "<span class='param';'>&#8595;  </span>"
+	Return Tab
+}
+SaveChildPath(Path = "") {
+	Static p
+	If Path =
+		Return p
+	p := Path
 }
 
 ActivateUnderMouse() {
@@ -4761,7 +4813,7 @@ Class Events {  ;	http://forum.script-coding.com/viewtopic.php?pid=82283#p82283
 					: (rng.moveStart("character", 1), t := 0))
 			sel := rng.text, rng.moveEnd("character", StrLen(RTrim(sel)) - StrLen(sel)), rng.select()  
 		}
-		Else If ((oevent.ClassName = "title" || oevent.ClassName = "con" || oevent.ClassName = "hr" || oevent.ClassName = "box") && ThisMode != "Hotkey")  ;	anchor
+		Else If (ThisMode != "Hotkey" && (oevent.ClassName = "title" || oevent.ClassName = "con" || oevent.ClassName = "hr" || oevent.ClassName = "box"))  ;	anchor
 		{
 			R := oDoc.selection.createRange(), R.collapse(1), R.select()
 			  ;	EL = [class 'hr'], _text = [class 'title'].id
@@ -4773,6 +4825,9 @@ Class Events {  ;	http://forum.script-coding.com/viewtopic.php?pid=82283#p82283
 				_text := oevent.firstChild.childNodes[1].firstChild.id, EL := oevent.firstChild.firstChild
 			Else If oevent.ClassName = "title"
 				_text := oevent.id, EL := oevent.parentElement.parentElement.firstChild
+				
+			If (_text = "P__Tree_Acc_Path")
+				Return
 			If oOther.anchor[ThisMode]
 			{
 				pEL := oDoc.getElementById("anchor")
@@ -5093,20 +5148,6 @@ ButtonClick(oevent) {
 	}
 	Else If thisid = run_zoom
 		AhkSpyZoomShow()
-	Else If thisid = acc_path
-	{
-		acc_path_func(1)
-	}
-	Else If thisid = control_path
-	{
-		oDoc.getElementById("control_path").innerText := ""
-		oDoc.getElementById("control_path").innerText := "   Wait...  "
-		oDoc.getElementById("control_path").disabled := 1
-		oDoc.getElementById("control_path_value").innerText := ChildToPath(oOther.ControlID)
-		oDoc.getElementById("control_path").disabled := 0
-		oDoc.getElementById("control_path").innerText := " Get path: "
-		HTML_Control := oBody.innerHTML
-	}
 	Else If thisid = b_DecimalCode
 	{
 		oDoc.getElementById("b_DecimalCode").innerText := (DecimalCode := !DecimalCode) ? " dec " : " hex "
@@ -5117,38 +5158,51 @@ ButtonClick(oevent) {
 	}
 	Else If thisid = acc_DoDefaultAction
 		accDoDefaultAction()  
-	Else If thisid = acc_row_flash
+	Else If thisid = b_hwnd_flash
 	{ 
 		WinGetPos, X, Y, W, H, % "ahk_id" oevent.value
 		FlashArea(x, y, w, h)
 	}
+	Else If thisid = acc_path 
+		acc_path_func(1)
+	Else If thisid = control_path 
+		control_path_func()
+}
+
+control_path_func() {
+	If !ChildToPath(oOther.ControlID)
+		oDoc.getElementById("control_path_error").outerHTML := "<span style='color:#ff0000'>  control not found</span>" 
+	oDoc.getElementById("control_path_value").innerHTML := SaveChildPath()
+	HTML_Control := oBody.innerHTML
 }
 
 acc_path_func(key) {
 	; If (key && oOther.anchor[ThisMode "_text"] = "P__Tree_Acc_Path")
-		; MsgBox %  oDoc.getElementById("P__Tree_Acc_Path").innerHTML 
-	If !Malcev_AccPanhNotBlink
+		; MsgBox %  oDoc.getElementById("P__Tree_Acc_Path").innerHTML
+	If 0   ;  !Malcev_AccPathNotBlink
+	{
 		oDoc.getElementById("acc_path").disabled := 1
 		, oDoc.getElementById("acc_path_value").disabled := 1 
-	w := oDoc.getElementById("acc_path").offsetWidth
-	marquee = 
-	( 
-		<marquee behavior='scroll' direction='right' bgcolor='#ffcc00' width="%w%px"> &#8226; &#8226; &#8226; 
-		</marquee>
-	)
-	If !Malcev_AccPanhNotBlink
+		w := oDoc.getElementById("acc_path").offsetWidth
+		marquee = 
+		( 
+			<marquee behavior='scroll' direction='right' bgcolor='#ffcc00' width="%w%px"> &#8226; &#8226; &#8226; 
+			</marquee>
+		)
 		oDoc.getElementById("acc_path").innerHTML := marquee   
+	}
 	b := GetAccPath(oPubObj.Acc.AccObj) 
 	If b && key
 		oDoc.getElementById("acc_path_value").innerHTML := SaveAccPath()
 	If !b
-		oDoc.getElementById("acc_path_error").outerHTML := "<span style='color:#ff0000'>    object not found</span>" 
-	Else 
-		oDoc.getElementById("acc_path_value").disabled := 0
+		oDoc.getElementById("acc_path_error").outerHTML := "<span style='color:#ff0000'>  object not found</span>" 
+		; , oDoc.getElementById("acc_path_value").innerHTML := ""
+	; Else 
+		; oDoc.getElementById("acc_path_value").disabled := 0
 		
 	oDoc.getElementById("acc_path").innerHTML := ""
 	oDoc.getElementById("acc_path").innerText := " Get path "
-	oDoc.getElementById("acc_path").disabled := 0
+	; oDoc.getElementById("acc_path").disabled := 0
 	HTML_Control := oBody.innerHTML
 }
 
