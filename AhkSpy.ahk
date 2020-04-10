@@ -26,7 +26,7 @@
     Актуальный исходник - https://raw.githubusercontent.com/serzh82saratov/AhkSpy/master/AhkSpy.ahk
 */
 
-Global AhkSpyVersion := 4.08
+Global AhkSpyVersion := 4.09
 
 	; _________________________________________________ Header _________________________________________________
 
@@ -338,12 +338,19 @@ Return
 
 #If (isAhkSpy && Sleep != 1 && !isPaused && ThisMode != "Hotkey")
 
+; 1::
+	; Spot_Control(), (StateAllwaysSpot ? Spot_Win() : 0), Write_Control()
+	; Return
+
 +Tab::
 SpotProc:
-SpotProc2:
+SpotProc2: 
 	If (A_ThisHotkey != "")
-		Shift_Tab_Down := 1
-	(ThisMode = "Control" ? (Spot_Control() (StateAllwaysSpot ? Spot_Win() : 0) Write_Control()) : (Spot_Win() (StateAllwaysSpot ? Spot_Control() : 0) Write_Win()))
+		Shift_Tab_Down := 1 
+	If (ThisMode = "Control")
+		Spot_Control(), (StateAllwaysSpot ? Spot_Win() : 0), Write_Control()
+	Else 
+		Spot_Win(), (StateAllwaysSpot ? Spot_Control() : 0), Write_Win()
 	If (!WinActive("ahk_id" hGui) && A_ThisLabel != "SpotProc2" && !OnlyShiftTab)
 	{
 		WinActivate ahk_id %hGui%
@@ -766,13 +773,14 @@ HTML_Win:
 
 Write_Win() {
 	If (ThisMode != "Win")
-		Return 0
+		Return 0 
 	If oOther.anchor[ThisMode]
-		HTML_Win := AnchorBefore(HTML_Win)
+		GuiNoRedraw(), HTML_Win := AnchorBefore(HTML_Win)  
 	oBody.innerHTML := HTML_Win 
 	AnchorScroll()
 	If oDocEl.scrollLeft
 		oDocEl.scrollLeft := 0
+	GuiRedraw()
 	Return 1
 }
 
@@ -845,7 +853,7 @@ Spot_Control(NotHTML = 0) {
 	AccText := AccInfoUnderMouse(MXS, MYS, WinX, WinY, CtrlX, CtrlY, caX, caY, WinID, ControlID)
 	If AccText !=
 		AccText := _T1 " id='__AccInfo'> ( Accessible ) </span><a></a>" _BT1 " id='flash_acc'> flash " _BT2 _ButAccViewer _T2 AccText
-	
+		
 	If ControlID
 	{
 		CtrlCAX := CtrlX - caX, CtrlCAY := CtrlY - caY
@@ -858,8 +866,8 @@ Spot_Control(NotHTML = 0) {
 		
 		ControlGetText, CtrlText, , ahk_id %ControlID%
 		If CtrlText !=
-			CtrlText := _T1 " id='__Control_Text'> ( Control Text ) </span><a></a>" _BT1 " id='copy_button'> copy " _BT2 _T2 _LPRE ">" TransformHTML(CtrlText) _PRE2
-			
+			CtrlText := _T1 " id='__Control_Text'> ( Control Text ) </span><a></a>" _BT1 " id='copy_button'> copy " _BT2 _DB _BT1 " id='settext_button' value=`" ControlID "`> set " _BT2 _T2 _LPRE ">" TransformHTML(CtrlText) _PRE2
+		
 		ControlGet, CtrlStyle, Style,,, ahk_id %ControlID%
 		ControlGet, CtrlExStyle, ExStyle,,, ahk_id %ControlID%
 		WinGetClass, CtrlClass, ahk_id %ControlID%
@@ -1089,14 +1097,14 @@ HTML_Control:
 
 Write_Control() {
 	If (ThisMode != "Control")
-		Return 0
+		Return 0 
 	If oOther.anchor[ThisMode]
-		HTML_Control := AnchorBefore(HTML_Control) 
+		GuiNoRedraw(), HTML_Control := AnchorBefore(HTML_Control) 
 	oBody.innerHTML := HTML_Control
-	
 	AnchorScroll()
 	If oDocEl.scrollLeft
 		oDocEl.scrollLeft := 0
+	GuiRedraw()
 	Return 1
 }
 
@@ -1445,9 +1453,8 @@ AccInfoUnderMouse(mx, my, wx, wy, cx, cy, caX, caY, WinID, ControlID) {
 		Var := "<span name='MS:'>Real Object</span>" _DP "<span class='param' name='MS:N'>Id:  </span>" child    ;  _DP "<span class='param' name='MS:N'>Container child count:  </span>" ChildCount
 		
 	If DynamicAccPath
-	{
-		b := acc_path_func(0, Acc)
-		If b
+	{ 
+		If acc_path_func(0, Acc)
 			acc_path_value := SaveAccPath()
 		Else 
 			error := "<span style='color:#ff0000'>  path not found</span>"
@@ -1508,13 +1515,6 @@ AccInfoUnderMouse(mx, my, wx, wy, cx, cy, caX, caY, WinID, ControlID) {
 		
 	If ((Var := Acc.accSelection) > 0)
 		code .= _T1 " id='P__Selection_parent_Acc'" _T1P "> ( Selection - parent ) </span>" _T2 _PRE1 "<span name='MS:'>" TransformHTML(Var) "</span>" _PRE2
-		
-	AccAccFocus(WinID, accFocusName, accFocusValue)
-	If (accFocusName != "")
-		code .= _T1 " id='P__Focus_name_Acc'" _T1P "> ( Focus - name ) </span><a></a>" _BT1 " id='copy_button'> copy " _BT2 _T2 _LPRE ">" TransformHTML(accFocusName) _PRE2
-		
-	If (accFocusValue != "")
-		code .= _T1 " id='P__Focus_value_Acc'" _T1P "> ( Focus - value ) </span><a></a>" _BT1 " id='copy_button'> copy " _BT2 _T2 _LPRE ">" TransformHTML(accFocusValue) _PRE2
 	
 	If ((Var := Acc.accDescription(child)) != "")
 		code .= _T1 " id='P__Description_Acc'" _T1P "> ( Description ) </span>" _T2 _PRE1 "<span name='MS:'>" TransformHTML(Var) "</span>" _PRE2
@@ -1527,7 +1527,18 @@ AccInfoUnderMouse(mx, my, wx, wy, cx, cy, caX, caY, WinID, ControlID) {
 	
 	If ((Var := Acc.AccHelpTopic(child)))
 		code .= _T1 " id='P__HelpTopic_Acc'" _T1P "> ( HelpTopic ) </span>" _T2 _PRE1 "<span name='MS:'>" TransformHTML(Var) "</span>" _PRE2
-
+		
+	AccAccFocus(WinID, accFocusName, accFocusValue, role, irole)
+	If (accFocusName != "")
+		code .= _T1 " id='P__Focus_name_Acc'" _T1P "> ( Focus - name ) </span><a></a>" 
+		. _BT1 " id='copy_button'> copy " _BT2 _T2 _LPRE ">" TransformHTML(accFocusName) _PRE2
+	If (accFocusValue != "")
+		code .= _T1 " id='P__Focus_value_Acc'" _T1P "> ( Focus - value ) </span><a></a>"
+		. _BT1 " id='copy_button'> copy " _BT2 _T2 _LPRE ">" TransformHTML(accFocusValue) _PRE2
+	If (role != "" && irole != "")
+		, code .= _T1 " id='P__Role_Acc'" _T1P "> ( Focus - Role ) </span>" _T2 _PRE1 "<span name='MS:'>" TransformHTML(role) "</span>"
+		. _DP "<span class='param' name='MS:N'>code: </span><span name='MS:'>" irole "</span>" _PRE2
+		
 	Return code
 }
 
@@ -1556,13 +1567,18 @@ AccWindowFromObject(pacc) {
 }
 	;	http://forum.script-coding.com/viewtopic.php?pid=130762#p130762
 
-AccAccFocus(hWnd, byref name, byref value) {
+AccAccFocus(hWnd, byref name, byref value, byref role, byref irole) {
 	Acc := Acc_ObjectFromWindow(hWnd)
 	While IsObject(Acc.accFocus)
 		Acc := Acc.accFocus
-	Child := Acc.accFocus
-	try name := Acc.accName(child)
-	try value := Acc.accValue(child)
+	try 
+	{
+		child := Acc.accFocus
+		name := Acc.accName(child)
+		value := Acc.accValue(child)
+		role := AccRole(Acc, child) 
+		irole := Acc.accRole(0) 
+	}
 }
 
 AccRole(Acc, ChildId=0) {
@@ -1631,7 +1647,7 @@ Acc_GetPath(Acc, byref arr) {
 	}
 	return arr.Count()
 }
- 
+
 GetEnumIndex(Acc)
 {
 	For Each, child in Acc_Children(Acc_Parent(Acc))
@@ -1915,7 +1931,7 @@ Write_HotkeyHTML(K) {
 	Write_Hotkey()
 }
 
-Write_Hotkey() {
+Write_Hotkey() {  
 	oBody.innerHTML := HTML_Hotkey
 	If oDocEl.scrollLeft
 		oDocEl.scrollLeft := 0
@@ -2566,7 +2582,7 @@ ChangeMode() {
 	HideAllMarkers(), MS_Cancel()
 	GoSub % "Mode_" (ThisMode = "Control" ? "Win" : "Control")
 }
-
+	
 WM_NCLBUTTONDOWN(wp) {
 	Static HTMINBUTTON := 8
 	If (wp = HTMINBUTTON)
@@ -3304,6 +3320,33 @@ NextLink(s = "") {
 	Loop % co
 		oDocEl.scrollTop := curpos + (st*(A_Index/co))
 	oDocEl.scrollTop := curpos + res
+}
+
+GuiNoRedraw() { 
+	Return 
+	GuiControl, -Redraw, %hActiveX%   
+	Return 
+}
+
+GuiRedraw(att = 1) {
+	Static oFunc   
+	Return 
+	If !oOther.anchor[ThisMode]
+		Return
+	
+		; ToolTip %  oDocEl.scrollTop "`n" 444
+	; While !oDocEl.scrollTop
+	; {
+		; ToolTip %  oDocEl.scrollTop
+		; Sleep 2
+	; }	 
+	GuiControl, +Redraw, %hActiveX%   
+	Return
+	
+	If att >= 2
+		Return 
+	oFunc := Func("GuiRedraw").Bind(++att)
+	SetTimer, % oFunc, -50
 }
 
 AnchorBefore(HTML) {
@@ -4938,8 +4981,10 @@ ButtonClick(oevent) {
 		HighLight(pre_menutext, 500), preclone := ""
 	}
 	Else If (thisid = "copy_button")
-		o := oDoc.all.item(oevent.sourceIndex + 2)
+		o := oDoc.all.item(oevent.sourceIndex + 4)
 		, GetKeyState("Shift", "P") ? ClipAdd(o.OuterText, 1) : (Clipboard := o.OuterText), HighLight(o, 500)
+	Else If (thisid = "settext_button")
+		ControlSetText, , % oDoc.all.item(oevent.sourceIndex + 2).OuterText, % "ahk_id" oevent.value 
 	Else If thisid = copy_alltitle
 	{
 		Text := (t:=oDoc.getElementById("wintitle1").OuterText) . (t = "" ? "" : " ")
