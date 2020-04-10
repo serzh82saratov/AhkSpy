@@ -26,7 +26,7 @@
     Актуальный исходник - https://raw.githubusercontent.com/serzh82saratov/AhkSpy/master/AhkSpy.ahk
 */
 
-Global AhkSpyVersion := 4.09
+Global AhkSpyVersion := 4.10
 
 	; _________________________________________________ Header _________________________________________________
 
@@ -866,7 +866,7 @@ Spot_Control(NotHTML = 0) {
 		
 		ControlGetText, CtrlText, , ahk_id %ControlID%
 		If CtrlText !=
-			CtrlText := _T1 " id='__Control_Text'> ( Control Text ) </span><a></a>" _BT1 " id='copy_button'> copy " _BT2 _DB _BT1 " id='settext_button' value=`" ControlID "`> set " _BT2 _T2 _LPRE ">" TransformHTML(CtrlText) _PRE2
+			CtrlText := _T1 " id='__Control_Text'> ( Control Text ) </span><a></a>" _BT1 " id='settext_button' value=`" ControlID "`> set " _BT2 _DB _BT1 " id='copy_button'> copy " _BT2  _T2 _LPRE ">" TransformHTML(CtrlText) _PRE2
 		
 		ControlGet, CtrlStyle, Style,,, ahk_id %ControlID%
 		ControlGet, CtrlExStyle, ExStyle,,, ahk_id %ControlID%
@@ -4981,10 +4981,10 @@ ButtonClick(oevent) {
 		HighLight(pre_menutext, 500), preclone := ""
 	}
 	Else If (thisid = "copy_button")
-		o := oDoc.all.item(oevent.sourceIndex + 4)
+		o := oDoc.all.item(oevent.sourceIndex + 2)
 		, GetKeyState("Shift", "P") ? ClipAdd(o.OuterText, 1) : (Clipboard := o.OuterText), HighLight(o, 500)
 	Else If (thisid = "settext_button")
-		ControlSetText, , % oDoc.all.item(oevent.sourceIndex + 2).OuterText, % "ahk_id" oevent.value 
+		ControlSetText, , % oDoc.all.item(oevent.sourceIndex + 4).OuterText, % "ahk_id" oevent.value 
 	Else If thisid = copy_alltitle
 	{
 		Text := (t:=oDoc.getElementById("wintitle1").OuterText) . (t = "" ? "" : " ")
