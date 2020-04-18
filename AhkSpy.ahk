@@ -26,7 +26,7 @@
     Актуальный исходник - https://raw.githubusercontent.com/serzh82saratov/AhkSpy/master/AhkSpy.ahk
 */
 
-Global AhkSpyVersion := 4.10
+Global AhkSpyVersion := 4.11
 
 	; _________________________________________________ Header _________________________________________________
 
@@ -80,6 +80,7 @@ Global ThisMode := IniRead("StartMode", "Control"), LastModeSave := (ThisMode = 
 , StateAllwaysSpot := IniRead("AllwaysSpot", 0), w_ShowStyles := IniRead("w_ShowStyles", 0), c_ShowStyles := IniRead("c_ShowStyles", 0), ViewStrPos := IniRead("ViewStrPos", 0)
 , WordWrap := IniRead("WordWrap", 0), PreMaxHeightStr := IniRead("MaxHeightOverFlow", "1 / 3"), UseUIA := IniRead("UseUIA", 0), UIAAlienDetect := IniRead("UIAAlienDetect", 0)
 , OnlyShiftTab := IniRead("OnlyShiftTab", 0), MoveTitles := IniRead("MoveTitles", 1), DetectHiddenText := IniRead("DetectHiddenText", "on")
+, MinimizeEscape := IniRead("MinimizeEscape", 0)
 , DynamicControlPath := IniRead("DynamicControlPath", 0), DynamicAccPath := IniRead("DynamicAccPath", 0), MenuIdView := IniRead("MenuIdView", 0)
 , UpdRegister := IniRead("UpdRegister2", 0), UpdRegisterLink := "https://u.to/zeONFA", testvar
 
@@ -138,10 +139,9 @@ ObjRegisterActive(oPubObj, oPubObjGUID := CreateGUID())
 FixIE()
 SeDebugPrivilege()
 
-OnExit, Exit
- 
- 
-Gui, +AlwaysOnTop +HWNDhGui +ReSize -DPIScale
+OnExit("GuiClose")
+
+Gui, +AlwaysOnTop +HWNDhGui +ReSize -DPIScale   
 Gui, Color, %ColorBgPaused%
 Gui, Add, ActiveX, Border voDoc HWNDhActiveX x0 y+0, HTMLFile
   ;	https://docs.microsoft.com/en-us/dotnet/api/system.windows.forms.htmlwindow?view=netframework-4.8
@@ -163,6 +163,12 @@ OnMessage(0xA1, "WM_NCLBUTTONDOWN")
 OnMessage(0x7B, "WM_CONTEXTMENU")
 OnMessage(0x6, "WM_ACTIVATE")
 OnMessage(0x47, "WM_WINDOWPOSCHANGED")
+
+; OnMessage(WM_WINDOWPOSCHANGING := 0x46, "WM_WINDOWPOSCHANGED") 
+; OnMessage(WM_MOVING := 0x216, "WM_WINDOWPOSCHANGED")
+; OnMessage(WM_MOVE := 0x03, "WM_WINDOWPOSCHANGED")
+
+
 
 OnMessage(MsgAhkSpyZoom := DllCall("RegisterWindowMessage", "Str", "MsgAhkSpyZoom"), "MsgZoom")
 DllCall("PostMessage", "Ptr", A_ScriptHWND, "UInt", 0x50, "UInt", 0, "UInt", 0x409) ; eng layout
@@ -284,8 +290,11 @@ Menu, Help, Add, % name := "About", % oMenu.Help[name] := "Sys_Help"
 Menu, Help, Add, % name := "About english", % oMenu.Help[name] := "Sys_Help"
 Menu, Sys, Add, Help, :Help
 
+Menu, Script, Add, % name := "Escape button to minimize", % oMenu.Script[name] := "_MinimizeEscape"
+Menu, Script, % MinimizeEscape ? "Check" : "UnCheck", % name 
+Menu, Script, Add
 Menu, Script, Add, Reload, Reload
-Menu, Script, Add, Exit, Exit
+Menu, Script, Add, Exit, GuiClose
 Menu, Sys, Add, Script, :Script
 
 Menu, Sys, Add
@@ -327,7 +336,9 @@ If !DllCall("WindowFromPoint", "Int64", WinX & 0xFFFFFFFF | WinY << 32)
 && !DllCall("WindowFromPoint", "Int64", (WinX) & 0xFFFFFFFF | (WinY + WinHeight) << 32)
 	Gui, Show, NA xCenter yCenter
 If !UpdRegister
-	SetTimer, UpdRegister, -1000
+	SetTimer, UpdRegister, -1000 
+	
+WinSet, TransParent, 255, ahk_id %hGui%
 Return
 
 	; _________________________________________________ Hotkey`s _________________________________________________
@@ -443,7 +454,7 @@ Esc::
 	Else If FullScreenMode
 		FullScreenMode()
 	Else
-		GoSub, Exit
+		GuiClose()
 	Return
 
 +#Tab:: AhkSpyZoomShow()
@@ -2406,6 +2417,12 @@ _MemoryZoomSize:
 	Menu, View, % MemoryZoomSize ? "Check" : "UnCheck", Remember zoom size
 	ZoomMsg(4, MemoryZoomSize)
 	Return
+	
+_MinimizeEscape:
+	ThisMenuItem := oOther.MenuItemExist ? oOther.ThisMenuItem : A_ThisMenuItem
+	IniWrite(MinimizeEscape := !MinimizeEscape, "MinimizeEscape")
+	Menu, Script, % MinimizeEscape ? "Check" : "UnCheck", %ThisMenuItem%
+	Return
 
 _MoveTitles:
 	IniWrite(MoveTitles := !MoveTitles, "MoveTitles")
@@ -2508,7 +2525,7 @@ WM_ACTIVATE(wp, lp) {
 WM_WINDOWPOSCHANGED(Wp, Lp) {
 	Static PtrAdd := A_PtrSize = 8 ? 8 : 0
 	Critical
-	If (NumGet(Lp + 0, 0, "UInt") != hGui) || Sleep = 1
+	If (NumGet(Lp + 0, 0, "Ptr") != hGui) || Sleep = 1
 		Return 
 	If oOther.ZoomShow
 	{
@@ -2561,12 +2578,14 @@ TimerFunc(hFunc, Time) {
 	Try SetTimer, % hFunc, % Time
 }
 
-Exit:
-GuiClose:
+GuiClose() { 
+	If MinimizeEscape && GetKeyState("Escape", "P")
+		Return 1, Minimize()  
 	oDoc := ""
 	If LastModeSave
 		IniWrite(ThisMode, "LastMode")
 	ExitApp
+}
 
 CheckAhkVersion:
 	If A_AhkVersion < 1.1.23.00
@@ -3582,6 +3601,7 @@ GetStyles(Class, Style, ExStyle, hWnd, IsChild = 0, IsChildInfoExist = 0) {
 	If !hWnd
 		Return
 	If !Styles
+		   ;  В массивах стили без условий
 		Styles := {"WS_BORDER":"0x00800000", "WS_SYSMENU":"0x00080000"
 		, "WS_CLIPCHILDREN":"0x02000000", "WS_CLIPSIBLINGS":"0x04000000", "WS_DISABLED":"0x08000000"
 		, "WS_HSCROLL":"0x00100000", "WS_MAXIMIZE":"0x01000000"
@@ -3618,8 +3638,8 @@ GetStyles(Class, Style, ExStyle, hWnd, IsChild = 0, IsChildInfoExist = 0) {
 	IF (Style & 0x40000000) && (WS_CHILD := 1, Style -= 0x40000000)  ;	WS_CHILD := WS_CHILDWINDOW := 0x40000000
 		Ret .= QStyle("WS_CHILD := WS_CHILDWINDOW", "0x40000000") 
 		
-	IF (Style & 0x00010000) && WS_CHILD && (WS_TABSTOP := 1, Style -= 0x00010000)  ;	WS_TABSTOP
-		Ret .= QStyle("WS_TABSTOP", "0x00010000", "(WS_CHILD)") 
+	IF (Style & 0x00010000) && (WS_TABSTOP := 1, Style -= 0x00010000)  ;	WS_TABSTOP
+		Ret .= QStyle("WS_TABSTOP", "0x00010000")    ;  , "(WS_CHILD)"
 		
 	IF (Style & 0x00020000) && WS_CHILD && (WS_GROUP := 1, Style -= 0x00020000)  ;	WS_GROUP
 		Ret .= QStyle("WS_GROUP", "0x00020000", "(WS_CHILD)")  
@@ -4944,7 +4964,7 @@ Class Events {  ;	http://forum.script-coding.com/viewtopic.php?pid=82283#p82283
 	}
 }
 
-ButtonClick(oevent) {
+ButtonClick(oevent) { 
 	thisid := oevent.id
 	If (thisid = "copy_wintext")
 		o := oDoc.getElementById("wintextcon")
@@ -5319,6 +5339,7 @@ OnlyShiftTab = %7%
 
 ListLines Off
 SetBatchLines,-1
+DetectHiddenWindows On
 CoordMode, Mouse, Screen
 CoordMode, ToolTip, Screen
 
@@ -5396,7 +5417,9 @@ ZoomCreate() {
 
 	Gui, Zoom: Show, % "NA Hide w" GuiW " h" GuiH, AhkSpyZoom
 	Gui, Zoom: +MinSize
-
+	
+	WinSet, TransParent, 255, ahk_id %hGui%
+	
 	oZoom.hdcSrc := DllCall("GetDC", "UPtr", 0, "UPtr")
 	oZoom.hDCBuf := CreateCompatibleDC()
 	oZoom.hdcMemory := CreateCompatibleDC()
@@ -5654,12 +5677,16 @@ ZoomRules(Rule, value) {
 	; ToolTip % Rule "`n" Arr[Rule] "`n" value "`n`n`n"  (StrGet(&Rules, Len, "CP0")) "`n123456789" "`n" oZoom.Work,4,55,6
 }
 
-EVENT_OBJECT_DESTROY(hWinEventHook, event, hwnd) {
+EVENT_OBJECT_DESTROY(hWinEventHook, event, hwnd, idObject, idChild) {
+	If (idObject || idChild)
+		Return
 	If (hwnd = hAhkSpy)
 		ExitApp
 }
 
-EVENT_SYSTEM_MINIMIZESTART(hWinEventHook, event, hwnd) {
+EVENT_SYSTEM_MINIMIZESTART(hWinEventHook, event, hwnd, idObject, idChild) {
+	If (idObject || idChild)
+		Return
 	If (hwnd != hAhkSpy)
 		Return
 	ZoomRules("MIN", 1)
@@ -5667,7 +5694,9 @@ EVENT_SYSTEM_MINIMIZESTART(hWinEventHook, event, hwnd) {
 		oZoom.Minimize := 1, ShowZoom(0)
 }
 
-EVENT_SYSTEM_MINIMIZEEND(hWinEventHook, event, hwnd) {
+EVENT_SYSTEM_MINIMIZEEND(hWinEventHook, event, hwnd, idObject, idChild) {
+	If (idObject || idChild)
+		Return
 	If (hwnd != hAhkSpy)
 		Return
 	If oZoom.Minimize
@@ -5680,13 +5709,17 @@ EVENT_SYSTEM_MINIMIZEEND(hWinEventHook, event, hwnd) {
 	ZoomRules("MIN", 0)
 }
 
-EVENT_SYSTEM_MOVESIZESTART(hWinEventHook, event, hwnd) {
+EVENT_SYSTEM_MOVESIZESTART(hWinEventHook, event, hwnd, idObject, idChild) {
+	If (idObject || idChild)
+		Return
 	If (hwnd != hAhkSpy)
 		Return
 	ZoomRules("MOVE", 1)
 }
 
-EVENT_SYSTEM_MOVESIZEEND(hWinEventHook, event, hwnd) {
+EVENT_SYSTEM_MOVESIZEEND(hWinEventHook, event, hwnd, idObject, idChild) {
+	If (idObject || idChild)
+		Return
 	If (hwnd != hAhkSpy)
 		Return
 	ZoomRules("MOVE", 0)
