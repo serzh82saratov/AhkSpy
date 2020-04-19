@@ -26,7 +26,7 @@
     Актуальный исходник - https://raw.githubusercontent.com/serzh82saratov/AhkSpy/master/AhkSpy.ahk
 */
 
-Global AhkSpyVersion := 4.12
+Global AhkSpyVersion := 4.13
 
 	; _________________________________________________ Header _________________________________________________
 
@@ -88,10 +88,11 @@ Global ThisMode := IniRead("StartMode", "Control"), LastModeSave := (ThisMode = 
 
 , ClipAdd_Before := 0, ClipAdd_Delimiter := "`r`n"
 , HTML_Win, HTML_Control, HTML_Hotkey, rmCtrlX, rmCtrlY, widthTB, FullScreenMode, hColorProgress, hFindAllText, MsgAhkSpyZoom
-, Sleep, oShowMarkers, oShowAccMarkers, oShowMarkersEx, hDCMarkerInvert, hMarkerGui
 , hGui, hTBGui, hActiveX, hFindGui, oDoc, ShowMarker, isFindView, isIE, isPaused, PreMaxHeight := MaxHeightStrToNum(), PreOverflowHide := !!PreMaxHeight, DecimalCode, GetVKCodeNameStr, GetSCCodeNameStr
 , oDocEl, oPubObjGUID, oJScript, oBody, isConfirm, isAhkSpy := 1, TitleText, FreezeTitleText, TitleTextP1, oUIAInterface, Shift_Tab_Down, hButtonButton, hButtonControl, hButtonWindow
 , TitleTextP2 := TitleTextP2_Reserved := "     ( Shift+Tab - Freeze | RButton - CopySelected | Pause - Pause )     v" AhkSpyVersion
+, Sleep, oShowMarkers, oShowAccMarkers, oShowMarkersEx, hDCMarkerInvert, hMarkerGui, MarkerInvertFrame := IniRead("MarkerInvertFrame", 0)
+
 
 #Include *i %A_AppData%\AhkSpy\IncludeSettings.ahk
 
@@ -259,7 +260,9 @@ Menu, View, Add, % name := "Use UI Automation interface", % oMenu.View[name] := 
 Menu, View, % UseUIA ? "Check" : "UnCheck", % name
 Menu, View, Add, % name := "UIA change background for different hwnd", % oMenu.View[name] := "_UIAAlienDetect"
 Menu, View, % UIAAlienDetect ? "Check" : "UnCheck", % name  
-Menu, View, Add
+Menu, View, Add 
+Menu, View, Add, % name := "Flash edge", % oMenu.View[name] := "_MarkerInvertFrame"
+Menu, View, % MarkerInvertFrame ? "Check" : "UnCheck", % name
 Menu, View, Add, % name := "Moving titles", % oMenu.View[name] := "_MoveTitles"
 Menu, View, % MoveTitles ? "Check" : "UnCheck", % name
 Menu, View, Add, % name := "View position string for command", % oMenu.View[name] := "_ViewStrPos"
@@ -2437,6 +2440,11 @@ _MoveTitles:
 	else
 		oDocEl.scrollLeft := 0, oJScript.conleft30()
 	Return
+	
+_MarkerInvertFrame:
+	IniWrite(MarkerInvertFrame := !MarkerInvertFrame, "MarkerInvertFrame")
+	Menu, View, % MarkerInvertFrame ? "Check" : "UnCheck", Flash edge
+	Return
 
 _ViewStrPos:
 	IniWrite(ViewStrPos := !ViewStrPos, "ViewStrPos")
@@ -3475,11 +3483,14 @@ HideMarkerInvert() {
  	Gui, MI: Show, Hide
 }
 
-ShowMarkerInvert(x, y, w, h, b := 4) {
+ShowMarkerInvert(x, y, w, h, b := 6) {
 	WinSet, TransParent, 0, ahk_id %hMarkerGui%
-	; w < 8 || h < 8 ? b := 2 : 0
-	; WinSet, Region, % "0-0 " w "-0 " w "-" h " 0-" h " 0-0 " b "-" b
-		; . " " w-b "-" b " " w-b "-" h-b " " b "-" h-b " " b "-" b, ahk_id %hMarkerGui%
+	If MarkerInvertFrame
+	{
+		w < 8 || h < 8 ? b := 2 : 0
+		WinSet, Region, % "0-0 " w "-0 " w "-" h " 0-" h " 0-0 " b "-" b
+			. " " w-b "-" b " " w-b "-" h-b " " b "-" h-b " " b "-" b, ahk_id %hMarkerGui%
+	}
 	Try Gui, MI: Show, NA x%x% y%y% w%w% h%h% 
 	hDC := DllCall("GetDC", "Ptr", 0, "Ptr") 
 	
@@ -5106,8 +5117,8 @@ ButtonClick(oevent) {
 	}
 	Else If (thisid = "flash_acc")
 	{
-		Acc := Object(oPubObj.Acc.AccObj)
-		AccGetLocation(Acc, oPubObj.Acc.child)
+		; Acc := Object(oPubObj.Acc.AccObj)
+		; AccGetLocation(Acc, oPubObj.Acc.child) 
 		FlashArea(AccCoord[1], AccCoord[2], AccCoord[3], AccCoord[4])
 	}
 	Else If (thisid = "flash_IE")
@@ -5281,7 +5292,7 @@ control_path_func() {
 acc_path_func(manual, Acc) {
 	; If (manual && oOther.anchor[ThisMode "_text"] = "P__Tree_Acc_Path")
 		; MsgBox %  oDoc.getElementById("P__Tree_Acc_Path").innerHTML
-	If 0   ;  !Malcev_AccPathNotBlink
+	If !Malcev_AccPathNotBlink
 	{
 		oDoc.getElementById("acc_path").disabled := 1
 		, oDoc.getElementById("acc_path_value").disabled := 1 
@@ -5300,13 +5311,13 @@ acc_path_func(manual, Acc) {
 		oDoc.getElementById("acc_path_value").innerHTML := SaveAccPath()
 	If !b
 		oDoc.getElementById("acc_path_error").outerHTML := "<span style='color:#ff0000'>  path not found</span>" 
-		; , oDoc.getElementById("acc_path_value").innerHTML := ""
-	; Else 
-		; oDoc.getElementById("acc_path_value").disabled := 0
+		, oDoc.getElementById("acc_path_value").innerHTML := ""
+	Else 
+		oDoc.getElementById("acc_path_value").disabled := 0
 		
 	oDoc.getElementById("acc_path").innerHTML := ""
 	oDoc.getElementById("acc_path").innerText := " Get path "
-	; oDoc.getElementById("acc_path").disabled := 0
+	oDoc.getElementById("acc_path").disabled := 0
 	HTML_Control := oBody.innerHTML
 }
 
