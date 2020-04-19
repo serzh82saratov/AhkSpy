@@ -26,7 +26,7 @@
     Актуальный исходник - https://raw.githubusercontent.com/serzh82saratov/AhkSpy/master/AhkSpy.ahk
 */
 
-Global AhkSpyVersion := 4.11
+Global AhkSpyVersion := 4.12
 
 	; _________________________________________________ Header _________________________________________________
 
@@ -80,14 +80,15 @@ Global ThisMode := IniRead("StartMode", "Control"), LastModeSave := (ThisMode = 
 , StateAllwaysSpot := IniRead("AllwaysSpot", 0), w_ShowStyles := IniRead("w_ShowStyles", 0), c_ShowStyles := IniRead("c_ShowStyles", 0), ViewStrPos := IniRead("ViewStrPos", 0)
 , WordWrap := IniRead("WordWrap", 0), PreMaxHeightStr := IniRead("MaxHeightOverFlow", "1 / 3"), UseUIA := IniRead("UseUIA", 0), UIAAlienDetect := IniRead("UIAAlienDetect", 0)
 , OnlyShiftTab := IniRead("OnlyShiftTab", 0), MoveTitles := IniRead("MoveTitles", 1), DetectHiddenText := IniRead("DetectHiddenText", "on")
-, MinimizeEscape := IniRead("MinimizeEscape", 0)
+, MinimizeEscape := IniRead("MinimizeEscape", 0), WS_EX_APPWINDOW := 0x40000
 , DynamicControlPath := IniRead("DynamicControlPath", 0), DynamicAccPath := IniRead("DynamicAccPath", 0), MenuIdView := IniRead("MenuIdView", 0)
 , UpdRegister := IniRead("UpdRegister2", 0), UpdRegisterLink := "https://u.to/zeONFA", testvar
 
 , FontDPI := {96:12,120:10,144:8,168:6}[A_ScreenDPI], ScrollPos := {}, AccCoord := [], oOther := {}, oFind := {}, Edits := [], oMS := {}, oMenu := {}, oPubObj := {}
 
 , ClipAdd_Before := 0, ClipAdd_Delimiter := "`r`n"
-, HTML_Win, HTML_Control, HTML_Hotkey, rmCtrlX, rmCtrlY, widthTB, FullScreenMode, hColorProgress, hFindAllText, MsgAhkSpyZoom, Sleep, oShowMarkers, oShowAccMarkers, oShowMarkersEx
+, HTML_Win, HTML_Control, HTML_Hotkey, rmCtrlX, rmCtrlY, widthTB, FullScreenMode, hColorProgress, hFindAllText, MsgAhkSpyZoom
+, Sleep, oShowMarkers, oShowAccMarkers, oShowMarkersEx, hDCMarkerInvert, hMarkerGui
 , hGui, hTBGui, hActiveX, hFindGui, oDoc, ShowMarker, isFindView, isIE, isPaused, PreMaxHeight := MaxHeightStrToNum(), PreOverflowHide := !!PreMaxHeight, DecimalCode, GetVKCodeNameStr, GetSCCodeNameStr
 , oDocEl, oPubObjGUID, oJScript, oBody, isConfirm, isAhkSpy := 1, TitleText, FreezeTitleText, TitleTextP1, oUIAInterface, Shift_Tab_Down, hButtonButton, hButtonControl, hButtonWindow
 , TitleTextP2 := TitleTextP2_Reserved := "     ( Shift+Tab - Freeze | RButton - CopySelected | Pause - Pause )     v" AhkSpyVersion
@@ -134,14 +135,18 @@ If MemoryAnchor
 	If oOther.anchor["Control_text"] := IniRead("Control_Anchor")
 		oOther.anchor["Control"] := 1
 }
-ObjRegisterActive(oPubObj, oPubObjGUID := CreateGUID())
+; ObjRegisterActive(oPubObj, oPubObjGUID := CreateGUID())
+oPubObj := {}
 
 FixIE()
 SeDebugPrivilege()
 
-OnExit("GuiClose")
+; OnExit("GuiClose")
 
-Gui, +AlwaysOnTop +HWNDhGui +ReSize -DPIScale   
+
+CreateMarkerInvert()
+
+Gui, +AlwaysOnTop +HWNDhGui +ReSize -DPIScale +Owner%hMarkerGui% +E%WS_EX_APPWINDOW% 
 Gui, Color, %ColorBgPaused%
 Gui, Add, ActiveX, Border voDoc HWNDhActiveX x0 y+0, HTMLFile
   ;	https://docs.microsoft.com/en-us/dotnet/api/system.windows.forms.htmlwindow?view=netframework-4.8
@@ -278,9 +283,6 @@ Menu, View, Add, Big text overflow hide, :Overflow
 Menu, Sys, Add, Start mode, :Startmode
 Menu, Startmode, Check, % {"Win":"Window","Control":"Control","Hotkey":"Button","LastMode":"Last Mode"}[IniRead("StartMode", "Control")]
 
-Menu, Help, Add, % name := "Open script dir", % oMenu.Help[name] := "Help_OpenScriptDir"
-Menu, Help, Add, % name := "Open user dir", % oMenu.Help[name] := "Help_OpenUserDir"
-Menu, Help, Add
 If FileExist(SubStr(A_AhkPath,1,InStr(A_AhkPath,"\",,0,1)) "AutoHotkey.chm")
 	Menu, Help, Add, % name := "AutoHotKey help file", % oMenu.Help[name] := "LaunchHelp"
 Menu, Help, Add, % name := "AutoHotKey official help online", % oMenu.Help[name] := "Sys_Help"
@@ -290,6 +292,9 @@ Menu, Help, Add, % name := "About", % oMenu.Help[name] := "Sys_Help"
 Menu, Help, Add, % name := "About english", % oMenu.Help[name] := "Sys_Help"
 Menu, Sys, Add, Help, :Help
 
+Menu, Script, Add, % name := "Open script dir", % oMenu.Script[name] := "Help_OpenScriptDir"
+Menu, Script, Add, % name := "Open user dir", % oMenu.Script[name] := "Help_OpenUserDir"
+Menu, Script, Add
 Menu, Script, Add, % name := "Escape button to minimize", % oMenu.Script[name] := "_MinimizeEscape"
 Menu, Script, % MinimizeEscape ? "Check" : "UnCheck", % name 
 Menu, Script, Add
@@ -317,8 +322,7 @@ Gui, Show, % "NA " (MemoryPos ? " x" IniRead("MemoryPosX", "Center") " y" IniRea
 Gui, % "+MinSize" widthTB "x" 313
 
 ShowMarkersCreate("oShowMarkers", "E14B30")
-ShowMarkersCreate("oShowAccMarkers", "26419F")
-ShowMarkersCreate("oShowMarkersEx", "5DCC3B")
+ShowMarkersCreate("oShowAccMarkers", "26419F")  
 
 If ThisMode = Hotkey
 	Gui, Show
@@ -1453,7 +1457,7 @@ AccInfoUnderMouse(mx, my, wx, wy, cx, cy, caX, caY, WinID, ControlID) {
 	
 	SendMessage, WM_GETOBJECT, 0, 1, , ahk_id %ControlID%
 	
-	oPubObj.Acc := {AccObj:Acc, child:child, WinID:WinID, ControlID:ControlID}
+	oPubObj.Acc := {AccObj:Object(Acc), child:child, WinID:WinID, ControlID:ControlID}
 	
 	ChildCount := Acc.accChildCount	
 	If child
@@ -1555,8 +1559,9 @@ AccInfoUnderMouse(mx, my, wx, wy, cx, cy, caX, caY, WinID, ControlID) {
 
 
 
-accDoDefaultAction() {
-	oPubObj.Acc.AccObj.accDoDefaultAction(oPubObj.Acc.child)
+accDoDefaultAction() { 
+	Acc := Object(oPubObj.Acc.AccObj) 
+	Acc.accDoDefaultAction(oPubObj.Acc.child)
 }
 
 	;	https://docs.microsoft.com/ru-ru/windows/desktop/WinAuto/object-state-constants
@@ -2578,12 +2583,13 @@ TimerFunc(hFunc, Time) {
 	Try SetTimer, % hFunc, % Time
 }
 
-GuiClose() { 
+GuiClose() {
 	If MinimizeEscape && GetKeyState("Escape", "P")
 		Return 1, Minimize()  
 	oDoc := ""
 	If LastModeSave
-		IniWrite(ThisMode, "LastMode")
+		IniWrite(ThisMode, "LastMode") 
+	DllCall("ReleaseDC", "UPtr", 0, "UPtr", hDCMarkerInvert)
 	ExitApp
 }
 
@@ -3452,11 +3458,37 @@ FlashArea(x, y, w, h, att = 1) {
 	Static hFunc, max := 6
 	If (att = 1)
 		Try SetTimer, % hFunc, Off
-	Mod(att, 2) ? ShowMarkerEx(x, y, w, h, 5) : HideMarkerEx()
+	Mod(att, 2) ? ShowMarkerInvert(x, y, w, h, 5) : HideMarkerInvert()
 	If (att = max)
 		Return
 	hFunc := Func("FlashArea").Bind(x, y, w, h, ++att)
 	SetTimer, % hFunc, -100
+}
+
+
+CreateMarkerInvert() {    
+	Gui, MI: -DPIScale +HWNDhMarkerGui -Caption +AlwaysOnTop +ToolWindow +E0x20 
+	hDCMarkerInvert := DllCall("GetDC", "Ptr", hMarkerGui)
+}
+
+HideMarkerInvert() {
+ 	Gui, MI: Show, Hide
+}
+
+ShowMarkerInvert(x, y, w, h, b := 4) {
+	WinSet, TransParent, 0, ahk_id %hMarkerGui%
+	; w < 8 || h < 8 ? b := 2 : 0
+	; WinSet, Region, % "0-0 " w "-0 " w "-" h " 0-" h " 0-0 " b "-" b
+		; . " " w-b "-" b " " w-b "-" h-b " " b "-" h-b " " b "-" b, ahk_id %hMarkerGui%
+	Try Gui, MI: Show, NA x%x% y%y% w%w% h%h% 
+	hDC := DllCall("GetDC", "Ptr", 0, "Ptr") 
+	
+	DllCall("BitBlt", "Ptr", hDCMarkerInvert, "int", 0, "int", 0, "int", w, "int", h
+			, "Ptr", hDC, "int", X, "int", Y, "Uint", 0x00330008)   ; NOTSRCCOPY
+	 
+	WinSet, TransParent, 255, ahk_id %hMarkerGui% 
+	Gui, MI: +AlwaysOnTop 
+	DllCall("ReleaseDC", "UPtr", 0, "UPtr", hDC)
 }
 
 	; _________________________________________________ Command as function _________________________________________________
@@ -5074,7 +5106,8 @@ ButtonClick(oevent) {
 	}
 	Else If (thisid = "flash_acc")
 	{
-		AccGetLocation(oPubObj.Acc.AccObj, oPubObj.Acc.child)
+		Acc := Object(oPubObj.Acc.AccObj)
+		AccGetLocation(Acc, oPubObj.Acc.child)
 		FlashArea(AccCoord[1], AccCoord[2], AccCoord[3], AccCoord[4])
 	}
 	Else If (thisid = "flash_IE")
@@ -5233,7 +5266,7 @@ ButtonClick(oevent) {
 		FlashArea(x, y, w, h)
 	}
 	Else If thisid = acc_path 
-		acc_path_func(1, oPubObj.Acc.AccObj)
+		acc_path_func(1, Object(oPubObj.Acc.AccObj))
 	Else If thisid = control_path 
 		control_path_func()
 }
