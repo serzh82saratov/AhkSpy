@@ -26,7 +26,7 @@
     Актуальный исходник - https://raw.githubusercontent.com/serzh82saratov/AhkSpy/master/AhkSpy.ahk
 */
 
-Global AhkSpyVersion := 4.13
+Global AhkSpyVersion := 4.14
 
 	; _________________________________________________ Header _________________________________________________
 
@@ -2444,6 +2444,7 @@ _MoveTitles:
 _MarkerInvertFrame:
 	IniWrite(MarkerInvertFrame := !MarkerInvertFrame, "MarkerInvertFrame")
 	Menu, View, % MarkerInvertFrame ? "Check" : "UnCheck", Flash edge
+	WinSet, Region, , ahk_id %hMarkerGui%
 	Return
 
 _ViewStrPos:
@@ -3484,10 +3485,10 @@ HideMarkerInvert() {
 }
 
 ShowMarkerInvert(x, y, w, h, b := 6) {
-	WinSet, TransParent, 0, ahk_id %hMarkerGui%
+	WinSet, TransParent, 0, ahk_id %hMarkerGui% 
 	If MarkerInvertFrame
 	{
-		w < 8 || h < 8 ? b := 2 : 0
+		w < 16 || h < 16 ? b := 2 : 0
 		WinSet, Region, % "0-0 " w "-0 " w "-" h " 0-" h " 0-0 " b "-" b
 			. " " w-b "-" b " " w-b "-" h-b " " b "-" h-b " " b "-" b, ahk_id %hMarkerGui%
 	}
@@ -3496,9 +3497,9 @@ ShowMarkerInvert(x, y, w, h, b := 6) {
 	
 	DllCall("BitBlt", "Ptr", hDCMarkerInvert, "int", 0, "int", 0, "int", w, "int", h
 			, "Ptr", hDC, "int", X, "int", Y, "Uint", 0x00330008)   ; NOTSRCCOPY
-	 
-	WinSet, TransParent, 255, ahk_id %hMarkerGui% 
-	Gui, MI: +AlwaysOnTop 
+	
+	WinSet, TransParent, 255, ahk_id %hMarkerGui%
+	Gui, MI: +AlwaysOnTop
 	DllCall("ReleaseDC", "UPtr", 0, "UPtr", hDC)
 }
 
@@ -5117,8 +5118,8 @@ ButtonClick(oevent) {
 	}
 	Else If (thisid = "flash_acc")
 	{
-		; Acc := Object(oPubObj.Acc.AccObj)
-		; AccGetLocation(Acc, oPubObj.Acc.child) 
+		Acc := Object(oPubObj.Acc.AccObj)
+		AccGetLocation(Acc, oPubObj.Acc.child)
 		FlashArea(AccCoord[1], AccCoord[2], AccCoord[3], AccCoord[4])
 	}
 	Else If (thisid = "flash_IE")
