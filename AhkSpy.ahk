@@ -26,7 +26,7 @@
     Актуальный исходник - https://raw.githubusercontent.com/serzh82saratov/AhkSpy/master/AhkSpy.ahk
 */
 
-Global AhkSpyVersion := 4.15
+Global AhkSpyVersion := 4.16
 
 	; _________________________________________________ Header _________________________________________________
 
@@ -914,12 +914,12 @@ Spot_Control(NotHTML = 0) {
 		rmCtrlX := MXS - WinX - CtrlX, rmCtrlY := MYS - WinY - CtrlY
 		ControlNN_Sub := RegExReplace(ControlNN, "S)\d+| ")
 		
-		; Edit,SysListView,SysTreeView,ListBox,ComboBox,CtrlNotfySink,msctls_progress,msctls_trackbar,msctls_updown,SysTabControl,ToolbarWindow,AtlAxWin,InternetExplorer_Server
+		; Scintilla,Edit,SysListView,SysTreeView,ListBox,ComboBox,CtrlNotfySink,msctls_progress,msctls_trackbar,msctls_updown,SysTabControl,ToolbarWindow,AtlAxWin,InternetExplorer_Server
 		If IsFunc("GetInfo_" ControlNN_Sub)
 			Func := ControlNN_Sub
-		Else If RegExMatch(ControlNN_Sub, "i)(TreeView|ListView|ListBox|ComboBox|NotfySink|Edit|Scintilla|progress|trackbar|updown|Tab|Toolbar)", Match) 
-			Func := Match
-		
+		Else If RegExMatch(ControlNN_Sub, "i)(TreeView|ListView|ListBox|ComboBox|NotfySink|Edit|Scintilla|progress|trackbar|updown|Tab|Toolbar|RichEd)", Match) 
+			Func := IsFunc("GetInfo_" Match) ? Match : {RichEd:"Scintilla",TreeView:"SysTreeView", ListView:"SysListView", NotfySink:"CtrlNotfySink", progress:"msctls_progress", trackbar:"msctls_trackbar", updown:"msctls_updown", Tab:"SysTabControl", Toolbar:"ToolbarWindow"}[Match]
+			
 		If Func
 		{
 			CtrlInfo := GetInfo_%Func%(ControlID, ClassName)
@@ -1044,7 +1044,7 @@ HTML_Control:
 	%_PRE1%%_BP1% id='set_pos'>Screen:%_BP2%  <span name='MS:'>x%MXS% y%MYS%</span>%_DP%%_BP1% id='set_pos'>Window:%_BP2%  <span name='MS:'>x%RWinX% y%RWinY%</span>%_DP%%_BP1% id='set_pos'>Client:%_BP2%  <span name='MS:'>x%MXC% y%MYC%</span>%WithRespectWin%%WithRespectClient%
 	<span class='param'>Relative active window:</span>  <span name='MS:'>x%MXWA% y%MYWA%</span>%_DP%<span class='param'>class</span> <span name='MS:'>%WinClass_A%</span> <span class='param'>exe</span> <span name='MS:'>%ProcessName_A%</span> <span class='param'>hwnd</span> <span name='MS:'>%HWND_A%</span>%_PRE2%
 	%_T1% id='__PixelColor'> ( PixelColor ) </span>%_T2%
-	%_PRE1%<span class='param'>RGB: </span> <span name='MS:'>%ColorRGB%</span>%_DP%<span name='MS:'>#%sColorRGB%</span>%_DP%<span class='param'>BGR: </span> <span name='MS:'>%ColorBGR%</span>%_DP%<span name='MS:'>#%sColorBGR%</span>%_DP%<span class='param'>Invert RGB: </span> <span name='MS:'>0x%sInvert_RGB%</span>    <span style='background-color: #%sInvert_RGB%'>          </span>%_PRE2%
+	%_PRE1%<span class='param'>RGB: </span> <span name='MS:'>%ColorRGB%</span>%_DP%#<span name='MS:'>%sColorRGB%</span>%_DP%<span class='param'>BGR: </span> <span name='MS:'>%ColorBGR%</span>%_DP%#<span name='MS:'>%sColorBGR%</span>%_DP%<span class='param'>Invert RGB: </span> <span name='MS:'>0x%sInvert_RGB%</span>%_DP%#<span name='MS:'>%sInvert_RGB%</span>%_DP%<span style='background-color: #%sInvert_RGB%'>          </span>%_PRE2%
 	%_T1% id='__Window'> ( Window ) </span>%_BT1% id='flash_ctrl_window'> flash %_BT2%%_T2%
 	%_PRE1%<span><span class='param' name='MS:S'>ahk_class</span> <span name='MS:'>%WinClass%</span></span> <span><span class='param' name='MS:S'>ahk_exe</span> <span name='MS:'>%ProcessName%</span></span> <span><span class='param' name='MS:S'>ahk_id</span> <span name='MS:'>%WinID%</span></span> <span><span class='param' name='MS:S'>ahk_pid</span> <span name='MS:'>%WinPID%</span></span>
 	<span class='param'>Cursor:</span>  <span name='MS:'>%A_Cursor%</span>%_DP%%CaretPosStr%%_DP%<span class='param'>Client area:</span>  <span name='MS:'>x%caX% y%caY% w%caW% h%caH%</span>
@@ -1068,7 +1068,7 @@ HTML_Control:
 	}
 	.br {
 		height:0.1em;
-	} 
+	}
 	.box {
 		position: absolute;
 		overflow: hidden;
@@ -1191,8 +1191,11 @@ AddTab(c) {
 
 	; _________________________________________________ Get Info Control _________________________________________________
 
+; Scintilla,Edit,SysListView,SysTreeView,ListBox,ComboBox,CtrlNotfySink,msctls_progress,msctls_trackbar,msctls_updown,SysTabControl,ToolbarWindow,AtlAxWin,InternetExplorer_Server
 
-; TreeView, ListView, ListBox, ComboBox, NotfySink, Edit, Scintilla, progress, trackbar, updown, Tab, Toolbar
+; TreeView, ListView, NotfySink, progress, trackbar, updown, Tab, Toolbar
+
+
 
 
 GetInfo_SysListView(hwnd) { 
