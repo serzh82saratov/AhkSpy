@@ -26,9 +26,11 @@
     Актуальный исходник - https://raw.githubusercontent.com/serzh82saratov/AhkSpy/master/AhkSpy.ahk
 */
 
-Global AhkSpyVersion := 4.14
+Global AhkSpyVersion := 4.15
 
 	; _________________________________________________ Header _________________________________________________
+
+ComObjError(false)
 
 p1 = %1%
 If (p1 = "Zoom")
@@ -69,7 +71,7 @@ Global MemoryFontSize := IniRead("MemoryFontSize", 0)
 , RangeTimer := 100														;  Период опроса данных, увеличьте на слабом ПК
   HeightStart := 530													;  Высота окна при старте
   wKey := 142															;  Ширина кнопок
-  wColor := wKey//2														;  Ширина цветного фрагмента
+  wColor := wKey // 2													;  Ширина цветного фрагмента
 
 Global ThisMode := IniRead("StartMode", "Control"), LastModeSave := (ThisMode = "LastMode"), ThisMode := ThisMode = "LastMode" ? IniRead("LastMode", "Control") : ThisMode
 , ActiveNoPause := IniRead("ActiveNoPause", 0), MemoryPos := IniRead("MemoryPos", 0), MemorySize := IniRead("MemorySize", 0)
@@ -80,8 +82,8 @@ Global ThisMode := IniRead("StartMode", "Control"), LastModeSave := (ThisMode = 
 , StateAllwaysSpot := IniRead("AllwaysSpot", 0), w_ShowStyles := IniRead("w_ShowStyles", 0), c_ShowStyles := IniRead("c_ShowStyles", 0), ViewStrPos := IniRead("ViewStrPos", 0)
 , WordWrap := IniRead("WordWrap", 0), PreMaxHeightStr := IniRead("MaxHeightOverFlow", "1 / 3"), UseUIA := IniRead("UseUIA", 0), UIAAlienDetect := IniRead("UIAAlienDetect", 0)
 , OnlyShiftTab := IniRead("OnlyShiftTab", 0), MoveTitles := IniRead("MoveTitles", 1), DetectHiddenText := IniRead("DetectHiddenText", "on")
-, MinimizeEscape := IniRead("MinimizeEscape", 0), WS_EX_APPWINDOW := 0x40000
-, DynamicControlPath := IniRead("DynamicControlPath", 0), DynamicAccPath := IniRead("DynamicAccPath", 0), MenuIdView := IniRead("MenuIdView", 0)
+, MinimizeEscape := IniRead("MinimizeEscape", 0), MarkerInvertFrame := IniRead("MarkerInvertFrame", 0), MenuIdView := IniRead("MenuIdView", 0)
+, DynamicControlPath := IniRead("DynamicControlPath", 0), DynamicAccPath := IniRead("DynamicAccPath", 0)
 , UpdRegister := IniRead("UpdRegister2", 0), UpdRegisterLink := "https://u.to/zeONFA", testvar
 
 , FontDPI := {96:12,120:10,144:8,168:6}[A_ScreenDPI], ScrollPos := {}, AccCoord := [], oOther := {}, oFind := {}, Edits := [], oMS := {}, oMenu := {}, oPubObj := {}
@@ -91,7 +93,7 @@ Global ThisMode := IniRead("StartMode", "Control"), LastModeSave := (ThisMode = 
 , hGui, hTBGui, hActiveX, hFindGui, oDoc, ShowMarker, isFindView, isIE, isPaused, PreMaxHeight := MaxHeightStrToNum(), PreOverflowHide := !!PreMaxHeight, DecimalCode, GetVKCodeNameStr, GetSCCodeNameStr
 , oDocEl, oPubObjGUID, oJScript, oBody, isConfirm, isAhkSpy := 1, TitleText, FreezeTitleText, TitleTextP1, oUIAInterface, Shift_Tab_Down, hButtonButton, hButtonControl, hButtonWindow
 , TitleTextP2 := TitleTextP2_Reserved := "     ( Shift+Tab - Freeze | RButton - CopySelected | Pause - Pause )     v" AhkSpyVersion
-, Sleep, oShowMarkers, oShowAccMarkers, oShowMarkersEx, hDCMarkerInvert, hMarkerGui, MarkerInvertFrame := IniRead("MarkerInvertFrame", 0)
+, Sleep, oShowMarkers, oShowAccMarkers, oShowMarkersEx, hDCMarkerInvert, hMarkerGui, WS_EX_APPWINDOW := 0x40000
 
 
 #Include *i %A_AppData%\AhkSpy\IncludeSettings.ahk
@@ -153,7 +155,6 @@ Gui, Add, ActiveX, Border voDoc HWNDhActiveX x0 y+0, HTMLFile
   ;	https://docs.microsoft.com/en-us/dotnet/api/system.windows.forms.htmlwindow?view=netframework-4.8
   ;	https://developer.mozilla.org/en-US/docs/Web/API/Document_Object_Model
 
-ComObjError(false)
 LoadJScript()
 oBody := oDoc.body
 oDocEl := oDoc.documentElement 
@@ -249,13 +250,12 @@ Menu, View, Add, % name := "Remember zoom size", % oMenu.View[name] := "_MemoryZ
 Menu, View, % MemoryZoomSize ? "Check" : "UnCheck", % name
 Menu, View, Add, % name := "Remember anchor", % oMenu.View[name] := "_MemoryAnchor"
 Menu, View, % MemoryAnchor ? "Check" : "UnCheck", % name
-Menu, View, Add, % name := "Full scroll with existing anchor", % oMenu.View[name] := "_AnchorFullScroll"
-Menu, View, % AnchorFullScroll ? "Check" : "UnCheck", % name  
 Menu, View, Add
 Menu, View, Add, % name := "Dynamic control path (low speed)", % oMenu.View[name] := "_DynamicControlPath"
 Menu, View, % DynamicControlPath ? "Check" : "UnCheck", % name
 Menu, View, Add, % name := "Dynamic accesible path (low speed)", % oMenu.View[name] := "_DynamicAccPath"
 Menu, View, % DynamicAccPath ? "Check" : "UnCheck", % name
+Menu, View, Add
 Menu, View, Add, % name := "Use UI Automation interface", % oMenu.View[name] := "_UseUIA"
 Menu, View, % UseUIA ? "Check" : "UnCheck", % name
 Menu, View, Add, % name := "UIA change background for different hwnd", % oMenu.View[name] := "_UIAAlienDetect"
@@ -263,6 +263,8 @@ Menu, View, % UIAAlienDetect ? "Check" : "UnCheck", % name
 Menu, View, Add 
 Menu, View, Add, % name := "Flash edge", % oMenu.View[name] := "_MarkerInvertFrame"
 Menu, View, % MarkerInvertFrame ? "Check" : "UnCheck", % name
+Menu, View, Add, % name := "Full scroll with existing anchor", % oMenu.View[name] := "_AnchorFullScroll"
+Menu, View, % AnchorFullScroll ? "Check" : "UnCheck", % name  
 Menu, View, Add, % name := "Moving titles", % oMenu.View[name] := "_MoveTitles"
 Menu, View, % MoveTitles ? "Check" : "UnCheck", % name
 Menu, View, Add, % name := "View position string for command", % oMenu.View[name] := "_ViewStrPos"
@@ -687,7 +689,8 @@ Spot_Win(NotHTML = 0) {
 HTML_Win:
 	If w_ShowStyles
 		WinStyles := GetStyles(WinClass, WinStyle, WinExStyle, WinID)
-	ButtonStyle_ := _DP _BB1 " id='get_styles_w'> " (!w_ShowStyles ? "show styles" : "hide styles") " " _BB2
+	ButtonStyle_ := _DP _BB1 " id='get_styles_w'> " (!w_ShowStyles ? "show" : "hide styles") " " _BB2
+		.  _DP _BB1 " id='update_styles_w'> update styles " _BB2
 		
 	HTML_Win =
 	( Ltrim
@@ -784,7 +787,7 @@ HTML_Win:
 	oOther.WinPID := WinPID
 	oOther.WinID := WinID
 	oOther.ChildID := hChild
-	If StateLightMarker && (ThisMode = "Win") && (StateLight = 1 || (StateLight = 3 && GetKeyState("Shift", "P")))
+	If StateLightMarker && (ThisMode = "Win") && (StateLight = 1 || (StateLight = 3 && GetKeyState("Shift")))
 		ShowMarker(WinX, WinY, WinWidth, WinHeight, 5)
 	Return 1
 }
@@ -842,16 +845,18 @@ Repeat_Loop_Control:
 Spot_Control(NotHTML = 0) {
 	If NotHTML
 		GoTo HTML_Control
-	WinGet, ProcessName_A, ProcessName, A
-	WinGet, HWND_A, ID, A
-	WinGetClass, WinClass_A, A
+		
 	CoordMode, Mouse, Screen
 	MouseGetPos, MXS, MYS, WinID, tControlNN
-	CoordMode, Mouse, Window
-	MouseGetPos, MXWA, MYWA, , tControlID, 2
 
 	If (WinID = hGui || WinID = oOther.hZoom || WinID = oOther.hZoomLW)
 		Return HideAllMarkers()
+		
+	CoordMode, Mouse, Window
+	MouseGetPos, MXWA, MYWA, , tControlID, 2
+	WinGet, ProcessName_A, ProcessName, A
+	WinGet, HWND_A, ID, A
+	WinGetClass, WinClass_A, A
 
 	CtrlInfo := "", isIE := 0
 	ControlNN := tControlNN, ControlID := tControlID
@@ -908,15 +913,22 @@ Spot_Control(NotHTML = 0) {
 	{
 		rmCtrlX := MXS - WinX - CtrlX, rmCtrlY := MYS - WinY - CtrlY
 		ControlNN_Sub := RegExReplace(ControlNN, "S)\d+| ")
+		
+		; Edit,SysListView,SysTreeView,ListBox,ComboBox,CtrlNotfySink,msctls_progress,msctls_trackbar,msctls_updown,SysTabControl,ToolbarWindow,AtlAxWin,InternetExplorer_Server
 		If IsFunc("GetInfo_" ControlNN_Sub)
+			Func := ControlNN_Sub
+		Else If RegExMatch(ControlNN_Sub, "i)(TreeView|ListView|ListBox|ComboBox|NotfySink|Edit|Scintilla|progress|trackbar|updown|Tab|Toolbar)", Match) 
+			Func := Match
+		
+		If Func
 		{
-			CtrlInfo := GetInfo_%ControlNN_Sub%(ControlID, ClassName)
+			CtrlInfo := GetInfo_%Func%(ControlID, ClassName)
 			If CtrlInfo !=
 			{
 				If isIE
-					CtrlInfo = %_T1% id='__Info_Class'> ( Info - %ClassName% ) </span><a></a>%_BT1% id='flash_IE'> flash %_BT2%%_ButiWB2Learner%%_T2%%CtrlInfo%
+					CtrlInfo = %_T1% id='__Info_Class'> ( Info - %CtrlClass% ) </span><a></a>%_BT1% id='flash_IE'> flash %_BT2%%_ButiWB2Learner%%_T2%%CtrlInfo%
 				Else
-					CtrlInfo = %_T1% id='__Info_Class'> ( Info - %ClassName% ) </span><a></a>%_T2%%_PRE1%%CtrlInfo%%_PRE2%
+					CtrlInfo = %_T1% id='__Info_Class'> ( Info - %CtrlClass% ) </span><a></a>%_T2%%_PRE1%%CtrlInfo%%_PRE2%
 			}
 		}
 		WithRespectControl := _DP "<span name='MS:'>" Round(rmCtrlX / CtrlW, 4) ", " Round(rmCtrlY / CtrlH, 4) "</span>"
@@ -972,13 +984,17 @@ Spot_Control(NotHTML = 0) {
 	}
 	PixelGetColor, ColorBGR, %MXS%, %MYS%
 	ColorRGB := Format("0x{:06X}", (ColorBGR & 0xFF) << 16 | (ColorBGR & 0xFF00) | (ColorBGR >> 16))
-	sColorBGR := SubStr(ColorBGR, 3)
+	
+	sInvert_RGB := Format("{:06X}", ColorRGB ^ 0xFFFFFF) 
+	
 	sColorRGB := SubStr(ColorRGB, 3)
+	sColorBGR := SubStr(ColorBGR, 3)
+	
 	GuiControl, TB: -Redraw, ColorProgress
 	GuiControl, % "TB: +c" sColorRGB, ColorProgress
 	GuiControl, TB: +Redraw, ColorProgress
 
-	If (!isIE && ThisMode = "Control" && (StateLight = 1 || (StateLight = 3 && GetKeyState("Shift", "P"))))
+	If (!isIE && ThisMode = "Control" && (StateLight = 1 || (StateLight = 3 && GetKeyState("Shift"))))
 	{
 		If ControlID && StateLightMarker 
 			ShowMarker(CtrlSCX, CtrlSCY, CtrlW, CtrlH)
@@ -993,14 +1009,15 @@ Spot_Control(NotHTML = 0) {
 		CaretPosStr = <span class='error'>Caret position undefined</span>
 	
 	; _________________________________________________ HTML_Control _________________________________________________
-
+ 
 HTML_Control:
 	If ControlID
 	{
 		If c_ShowStyles
 			ControlStyles := GetStyles(CtrlClass, CtrlStyle, CtrlExStyle, ControlID)
 		ButtonStyle_ := _DP _BB1 " id='get_styles_c'> " (!c_ShowStyles ? "show styles" : "hide styles") " " _BB2 
-		
+			. _DP _BB1 " id='update_styles_c'> update styles " _BB2 
+
 		Relativescreen = <span class='param'>Relative screen:</span>  <span name='MS:'>x%CtrlSCX% y%CtrlSCY%</span>%_DP%<span name='MS:'>x&sup2;%CtrlSCX2% y&sup2;%CtrlSCY2%</span>
 		
 		HTML_ControlExist =
@@ -1027,7 +1044,7 @@ HTML_Control:
 	%_PRE1%%_BP1% id='set_pos'>Screen:%_BP2%  <span name='MS:'>x%MXS% y%MYS%</span>%_DP%%_BP1% id='set_pos'>Window:%_BP2%  <span name='MS:'>x%RWinX% y%RWinY%</span>%_DP%%_BP1% id='set_pos'>Client:%_BP2%  <span name='MS:'>x%MXC% y%MYC%</span>%WithRespectWin%%WithRespectClient%
 	<span class='param'>Relative active window:</span>  <span name='MS:'>x%MXWA% y%MYWA%</span>%_DP%<span class='param'>class</span> <span name='MS:'>%WinClass_A%</span> <span class='param'>exe</span> <span name='MS:'>%ProcessName_A%</span> <span class='param'>hwnd</span> <span name='MS:'>%HWND_A%</span>%_PRE2%
 	%_T1% id='__PixelColor'> ( PixelColor ) </span>%_T2%
-	%_PRE1%<span class='param'>RGB: </span> <span name='MS:'>%ColorRGB%</span>%_DP%<span name='MS:'>#%sColorRGB%</span>%_DP%<span class='param'>BGR: </span> <span name='MS:'>%ColorBGR%</span>%_DP%<span name='MS:'>#%sColorBGR%</span>%_PRE2%
+	%_PRE1%<span class='param'>RGB: </span> <span name='MS:'>%ColorRGB%</span>%_DP%<span name='MS:'>#%sColorRGB%</span>%_DP%<span class='param'>BGR: </span> <span name='MS:'>%ColorBGR%</span>%_DP%<span name='MS:'>#%sColorBGR%</span>%_DP%<span class='param'>Invert RGB: </span> <span name='MS:'>0x%sInvert_RGB%</span>    <span style='background-color: #%sInvert_RGB%'>          </span>%_PRE2%
 	%_T1% id='__Window'> ( Window ) </span>%_BT1% id='flash_ctrl_window'> flash %_BT2%%_T2%
 	%_PRE1%<span><span class='param' name='MS:S'>ahk_class</span> <span name='MS:'>%WinClass%</span></span> <span><span class='param' name='MS:S'>ahk_exe</span> <span name='MS:'>%ProcessName%</span></span> <span><span class='param' name='MS:S'>ahk_id</span> <span name='MS:'>%WinID%</span></span> <span><span class='param' name='MS:S'>ahk_pid</span> <span name='MS:'>%WinPID%</span></span>
 	<span class='param'>Cursor:</span>  <span name='MS:'>%A_Cursor%</span>%_DP%%CaretPosStr%%_DP%<span class='param'>Client area:</span>  <span name='MS:'>x%caX% y%caY% w%caW% h%caH%</span>
@@ -1174,8 +1191,11 @@ AddTab(c) {
 
 	; _________________________________________________ Get Info Control _________________________________________________
 
-GetInfo_SysListView(hwnd, ByRef ClassNN) {
-	ClassNN := "SysListView32"
+
+; TreeView, ListView, ListBox, ComboBox, NotfySink, Edit, Scintilla, progress, trackbar, updown, Tab, Toolbar
+
+
+GetInfo_SysListView(hwnd) { 
 	ControlGet, ListText, List,,, ahk_id %hwnd%
 	ControlGet, RowCount, List, Count,, ahk_id %hwnd%
 	ControlGet, ColCount, List, Count Col,, ahk_id %hwnd%
@@ -1188,27 +1208,17 @@ GetInfo_SysListView(hwnd, ByRef ClassNN) {
 			. _T1 " id='__Content_SysListView'> ( Content ) </span>" _BT1 " id='copy_button'> copy " _BT2 _T2 _LPRE ">" TransformHTML(ListText)
 }
 
-GetInfo_SysTreeView(hwnd, ByRef ClassNN) {
-	ClassNN := "SysTreeView32"
+GetInfo_SysTreeView(hwnd) { 
 	SendMessage 0x1105, 0, 0, , ahk_id %hwnd%   ; TVM_GETCOUNT
 	ItemCount := ErrorLevel
 	Return	"<span class='param' name='MS:N'>Item count:</span> <span name='MS:'>" ItemCount "</span>"
 }
 
-GetInfo_ListBox(hwnd, ByRef ClassNN) {
-	ClassNN = ListBox
-	Return GetInfo_ComboBox(hwnd, "", 1)
+GetInfo_ListBox(hwnd) { 
+	Return GetInfo_ComboBox(hwnd, 1)
 }
-GetInfo_TListBox(hwnd, ByRef ClassNN) {
-	ClassNN = TListBox
-	Return GetInfo_ComboBox(hwnd, "", 1)
-}
-GetInfo_TComboBox(hwnd, ByRef ClassNN) {
-	ClassNN = TComboBox
-	Return GetInfo_ComboBox(hwnd, "")
-}
-GetInfo_ComboBox(hwnd, ByRef ClassNN, ListBox = 0) {
-	ClassNN = ComboBox
+
+GetInfo_ComboBox(hwnd, ListBox = 0) { 
 	ControlGet, ListText, List,,, ahk_id %hwnd%
 	SendMessage, (ListBox ? 0x188 : 0x147), 0, 0, , ahk_id %hwnd%   ; 0x188 - LB_GETCURSEL, 0x147 - CB_GETCURSEL
 	SelPos := ErrorLevel
@@ -1219,18 +1229,16 @@ GetInfo_ComboBox(hwnd, ByRef ClassNN, ListBox = 0) {
 			. _T1 " id='__Content_ComboBox'> ( Content ) </span>" _BT1 " id='copy_button'> copy " _BT2 _T2 _LPRE ">" TransformHTML(ListText)
 }
 
-GetInfo_CtrlNotifySink(hwnd, ByRef ClassNN) {
-	ClassNN = CtrlNotifySink
-	Return GetInfo_Scintilla(hwnd, "")
+GetInfo_CtrlNotifySink(hwnd) { 
+	Return GetInfo_Scintilla(hwnd)
 }
 
 	;  http://forum.script-coding.com/viewtopic.php?pid=117128#p117128
 	;  https://msdn.microsoft.com/en-us/library/windows/desktop/ms645478(v=vs.85).aspx
 
-GetInfo_Edit(hwnd, ByRef ClassNN) {
-	ClassNN = Edit
+GetInfo_Edit(hwnd) { 
 	Edit_GetFont(hwnd, FName, FSize)
-	Return GetInfo_Scintilla(hwnd, "") "`n<span class='param' name='MS:N'>FontSize:</span> <span name='MS:'>" FSize "</span>" _DP "<span class='param' name='MS:N'>FontName:</span> <span name='MS:'>" FName "</span>"
+	Return GetInfo_Scintilla(hwnd) "`n<span class='param' name='MS:N'>FontSize:</span> <span name='MS:'>" FSize "</span>" _DP "<span class='param' name='MS:N'>FontName:</span> <span name='MS:'>" FName "</span>"
 		. "`n<span class='param' name='MS:N'>DlgCtrlID:</span> <span name='MS:'>" DllCall("GetDlgCtrlID", Ptr, hwnd) "</span>"
 }
 
@@ -1245,8 +1253,7 @@ Edit_GetFont(hwnd, byref FontName, byref FontSize) {
 	FontName := DllCall("MulDiv", Int, &LF + 28, Int, 1, Int, 1, Str)
 }
 
-GetInfo_Scintilla(hwnd, ByRef ClassNN) {
-	ClassNN = Scintilla
+GetInfo_Scintilla(hwnd) { 
 	ControlGet, LineCount, LineCount,,, ahk_id %hwnd%
 	ControlGet, CurrentCol, CurrentCol,,, ahk_id %hwnd%
 	ControlGet, CurrentLine, CurrentLine,,, ahk_id %hwnd%
@@ -1263,8 +1270,7 @@ GetInfo_Scintilla(hwnd, ByRef ClassNN) {
 			. "<span class='param' name='MS:N'>First visible line:</span> <span name='MS:'>" EM_GETFIRSTVISIBLELINE "</span>"
 }
 
-GetInfo_msctls_progress(hwnd, ByRef ClassNN) {
-	ClassNN := "msctls_progress32"
+GetInfo_msctls_progress(hwnd) { 
 	SendMessage, 0x0400+7,"TRUE",,, ahk_id %hwnd%	;  PBM_GETRANGE
 	PBM_GETRANGEMIN := ErrorLevel
 	SendMessage, 0x0400+7,,,, ahk_id %hwnd%			;  PBM_GETRANGE
@@ -1276,8 +1282,7 @@ GetInfo_msctls_progress(hwnd, ByRef ClassNN) {
 			. "  <span class='param' name='MS:N'>Max:</span> <span name='MS:'>" PBM_GETRANGEMAX "</span>"
 }
 
-GetInfo_msctls_trackbar(hwnd, ByRef ClassNN) {
-	ClassNN := "msctls_trackbar32"
+GetInfo_msctls_trackbar(hwnd) { 
 	SendMessage, 0x0400+1,,,, ahk_id %hwnd%			;  TBM_GETRANGEMIN
 	TBM_GETRANGEMIN := ErrorLevel
 	SendMessage, 0x0400+2,,,, ahk_id %hwnd%			;  TBM_GETRANGEMAX
@@ -1293,8 +1298,7 @@ GetInfo_msctls_trackbar(hwnd, ByRef ClassNN) {
 			. "<span class='param' name='MS:N'>Max:</span> <span name='MS:'>" TBM_GETRANGEMAX "</span>"
 }
 
-GetInfo_msctls_updown(hwnd, ByRef ClassNN) {
-	ClassNN := "msctls_updown32"
+GetInfo_msctls_updown(hwnd) { 
 	SendMessage, 0x0400+102,,,, ahk_id %hwnd%		;  UDM_GETRANGE
 	UDM_GETRANGE := ErrorLevel
 	SendMessage, 0x400+114,,,, ahk_id %hwnd%		;  UDM_GETPOS32
@@ -1304,8 +1308,7 @@ GetInfo_msctls_updown(hwnd, ByRef ClassNN) {
 			. "  <span class='param' name='MS:N'>Max: </span><span name='MS:'>" UDM_GETRANGE & 0xFFFF "</span>"
 }
 
-GetInfo_SysTabControl(hwnd, ByRef ClassNN) {
-	ClassNN := "SysTabControl32"
+GetInfo_SysTabControl(hwnd) { 
 	ControlGet, SelTab, Tab,,, ahk_id %hwnd%
 	SendMessage, 0x1300+44,,,, ahk_id %hwnd%		;  TCM_GETROWCOUNT
 	TCM_GETROWCOUNT := ErrorLevel
@@ -1316,8 +1319,7 @@ GetInfo_SysTabControl(hwnd, ByRef ClassNN) {
 			. "<span class='param' name='MS:N'>Selected item:</span> <span name='MS:'>" SelTab "</span>"
 }
 
-GetInfo_ToolbarWindow(hwnd, ByRef ClassNN) {
-	ClassNN := "ToolbarWindow32"
+GetInfo_ToolbarWindow(hwnd) { 
 	SendMessage, 0x0418,,,, ahk_id %hwnd%		;  TB_BUTTONCOUNT
 	BUTTONCOUNT := ErrorLevel
 	Return	"<span class='param' name='MS:N'>Button count:</span> <span name='MS:'>" BUTTONCOUNT "</span>"
@@ -1327,16 +1329,15 @@ GetInfo_ToolbarWindow(hwnd, ByRef ClassNN) {
 
 	;  http://www.autohotkey.com/board/topic/84258-iwb2-learner-iwebbrowser2/
 
-GetInfo_AtlAxWin(hwnd, ByRef ClassNN) {
-	ClassNN = AtlAxWin
-	Return GetInfo_InternetExplorer_Server(hwnd, "")
+GetInfo_AtlAxWin(hwnd) { 
+	Return GetInfo_InternetExplorer_Server(hwnd)
 }
 
-GetInfo_InternetExplorer_Server(hwnd, ByRef ClassNN) {
+GetInfo_InternetExplorer_Server(hwnd) {
 	Static IID_IWebBrowserApp := "{0002DF05-0000-0000-C000-000000000046}"
 	, ratios := [], IID_IHTMLWindow2 := "{332C4427-26CB-11D0-B483-00C04FD90119}"
 
-	isIE := 1, ClassNN := "Internet Explorer_Server"
+	isIE := 1 
 	MouseGetPos, , , , hwnd, 3
 	If !(pwin := WBGet(hwnd))
 		Return
@@ -1417,7 +1418,7 @@ GetInfo_InternetExplorer_Server(hwnd, ByRef ClassNN) {
 	x2 := pbrt.right * ratio, y2 := pbrt.bottom * ratio
 	ObjRelease(pwin), ObjRelease(pelt), ObjRelease(WB2), ObjRelease(iFrame), ObjRelease(pbrt)
 
-	If (ThisMode = "Control") && (StateLight = 1 || (StateLight = 3 && GetKeyState("Shift", "P")))
+	If (ThisMode = "Control") && (StateLight = 1 || (StateLight = 3 && GetKeyState("Shift")))
 	{
 		WinGetPos, sX, sY, , , ahk_id %hwnd%
 		StateLightMarker ? ShowMarker(sX + x1, sY + y1, x2 - x1, y2 - y1) : 0
@@ -2233,7 +2234,7 @@ MenuCheck()  {
 	DllCall("KillTimer", "Ptr", A_ScriptHwnd, "Ptr", 1)
 	If !WinExist("ahk_class #32768 ahk_pid " oOther.CurrentProcessId)
 		Return
-	If GetKeyState("RButton", "P")
+	If GetKeyState("RButton")
 	{
 		MouseGetPos, , , WinID
 		Menu := MenuGetName(GetMenuForMenu(WinID))
@@ -2593,7 +2594,7 @@ TimerFunc(hFunc, Time) {
 }
 
 GuiClose() {
-	If MinimizeEscape && GetKeyState("Escape", "P")
+	If MinimizeEscape && GetKeyState("Escape")
 		Return 1, Minimize()  
 	oDoc := ""
 	If LastModeSave
@@ -3275,7 +3276,7 @@ GetLangName(hWnd) {
 }
 
 ConfirmAction(Action) {
-	If !WinActive("ahk_id" hGui) || GetKeyState("Shift", "P")
+	If !WinActive("ahk_id" hGui) || GetKeyState("Shift")
 		Return
 	If (!isPaused && bool := 1)
 		Gosub, PausedScript
@@ -3478,21 +3479,22 @@ FlashArea(x, y, w, h, att = 1) {
 CreateMarkerInvert() {    
 	Gui, MI: -DPIScale +HWNDhMarkerGui -Caption +AlwaysOnTop +ToolWindow +E0x20 
 	hDCMarkerInvert := DllCall("GetDC", "Ptr", hMarkerGui)
+	WinSet, TransParent, 0, ahk_id %hMarkerGui% 
 }
 
 HideMarkerInvert() {
+	WinSet, TransParent, 0, ahk_id %hMarkerGui% 
  	Gui, MI: Show, Hide
 }
 
 ShowMarkerInvert(x, y, w, h, b := 6) {
-	WinSet, TransParent, 0, ahk_id %hMarkerGui% 
+	Try Gui, MI: Show, NA x%x% y%y% w%w% h%h% 
 	If MarkerInvertFrame
 	{
 		w < 16 || h < 16 ? b := 2 : 0
 		WinSet, Region, % "0-0 " w "-0 " w "-" h " 0-" h " 0-0 " b "-" b
 			. " " w-b "-" b " " w-b "-" h-b " " b "-" h-b " " b "-" b, ahk_id %hMarkerGui%
 	}
-	Try Gui, MI: Show, NA x%x% y%y% w%w% h%h% 
 	hDC := DllCall("GetDC", "Ptr", 0, "Ptr") 
 	
 	DllCall("BitBlt", "Ptr", hDCMarkerInvert, "int", 0, "int", 0, "int", w, "int", h
@@ -3515,6 +3517,10 @@ IniRead(Key, Error := " ") {
 IniWrite(Value, Key) {
 	IniWrite, %Value%, %A_AppData%\AhkSpy\Settings.ini, AhkSpy, %Key%
 	Return Value
+}
+
+MsgBox(msg) {
+	MsgBox %msg%
 }
 
 WinClose(title) {
@@ -3603,11 +3609,22 @@ UpdRegister() {
 
 	; _________________________________________________ WindowStyles _________________________________________________
 
-ViewStylesWin(elem) {  ;
-	elem.innerText := !(w_ShowStyles := !w_ShowStyles) ? " show styles " : " hide styles "
-	IniWrite(w_ShowStyles, "w_ShowStyles")
-
-	If w_ShowStyles
+ViewStylesWin(elem, update = 0) {  ;
+	
+	If update
+	{
+		WinGet, WinStyle, Style, % "ahk_id" oOther.WinID
+		WinGet, WinExStyle, ExStyle, % "ahk_id" oOther.WinID
+		If (WinStyle WinExStyle = "")
+			Return ToolTip("Window not exist", 500)
+		oDoc.getElementById("w_Style").innerText := WinStyle
+		oDoc.getElementById("w_ExStyle").innerText := WinExStyle
+	}
+	If !update
+		elem.innerText := !(w_ShowStyles := !w_ShowStyles) ? " show styles " : " hide styles "
+		, IniWrite(w_ShowStyles, "w_ShowStyles")
+			
+	If w_ShowStyles || update
 		Styles := "<a></a>" GetStyles(oOther.WinClass
 			, oDoc.getElementById("w_Style").innerText
 			, oDoc.getElementById("w_ExStyle").innerText
@@ -3617,15 +3634,26 @@ ViewStylesWin(elem) {  ;
 	HTML_Win := oBody.innerHTML
 }
 
-ViewStylesControl(elem) {
-	elem.innerText := !(c_ShowStyles := !c_ShowStyles) ? " show styles " : " hide styles "
-	IniWrite(c_ShowStyles, "c_ShowStyles")
+ViewStylesControl(elem, update = 0) {  ;
+	
+	If update
+	{
+		ControlGet, CtrlStyle, Style,,, % "ahk_id" oOther.ControlID
+		ControlGet, CtrlExStyle, ExStyle,,, % "ahk_id" oOther.ControlID
+		If (CtrlStyle CtrlExStyle = "")
+			Return ToolTip("Window not exist", 500)
+		oDoc.getElementById("c_Style").innerText := CtrlStyle
+		oDoc.getElementById("c_ExStyle").innerText := CtrlExStyle
+	}
+	If !update  
+		elem.innerText := !(c_ShowStyles := !c_ShowStyles) ? " show styles " : " hide styles "
+		, IniWrite(c_ShowStyles, "c_ShowStyles")  
+
 	If c_ShowStyles
 		Styles := "<a></a>" GetStyles(oOther.CtrlClass
 			, oDoc.getElementById("c_Style").innerText
 			, oDoc.getElementById("c_ExStyle").innerText
 			, oOther.ControlID)
-			
 	oDoc.getElementById("ControlStyles").innerHTML := Styles
 	HTML_Control := oBody.innerHTML
 } 
@@ -5012,7 +5040,7 @@ ButtonClick(oevent) {
 	thisid := oevent.id
 	If (thisid = "copy_wintext")
 		o := oDoc.getElementById("wintextcon")
-		, GetKeyState("Shift", "P") ? ClipAdd(o.OuterText, 1) : (Clipboard := o.OuterText), HighLight(o, 500)
+		, GetKeyState("Shift") ? ClipAdd(o.OuterText, 1) : (Clipboard := o.OuterText), HighLight(o, 500)
 	Else If (thisid = "wintext_hidden")
 	{
 		R := oBody.createTextRange(), R.collapse(1), R.select()
@@ -5041,19 +5069,19 @@ ButtonClick(oevent) {
 		oJScript.removemenuitem(preclone, ".menuitemsub")
 		If !MenuIdView
 			oJScript.removemenuitem(preclone, ".menuitemid")
-		GetKeyState("Shift", "P") ? ClipAdd(preclone.OuterText, 1) : (Clipboard := preclone.OuterText)
+		GetKeyState("Shift") ? ClipAdd(preclone.OuterText, 1) : (Clipboard := preclone.OuterText)
 		HighLight(pre_menutext, 500), preclone := ""
 	}
 	Else If (thisid = "copy_button")
 		o := oDoc.all.item(oevent.sourceIndex + 2)
-		, GetKeyState("Shift", "P") ? ClipAdd(o.OuterText, 1) : (Clipboard := o.OuterText), HighLight(o, 500)
+		, GetKeyState("Shift") ? ClipAdd(o.OuterText, 1) : (Clipboard := o.OuterText), HighLight(o, 500)
 	Else If (thisid = "settext_button")
 		ControlSetText, , % oDoc.all.item(oevent.sourceIndex + 4).OuterText, % "ahk_id" oevent.value 
 	Else If thisid = copy_alltitle
 	{
 		Text := (t:=oDoc.getElementById("wintitle1").OuterText) . (t = "" ? "" : " ")
 		. oDoc.getElementById("wintitle2").OuterText " " oDoc.getElementById("wintitle3").OuterText
-		GetKeyState("Shift", "P") ? ClipAdd(Text, 1) : (Clipboard := Text)
+		GetKeyState("Shift") ? ClipAdd(Text, 1) : (Clipboard := Text)
 		HighLight(oDoc.getElementById("wintitle1"), 500)
 		HighLight(oDoc.getElementById("wintitle2"), 500, 0), HighLight(oDoc.getElementById("wintitle2_"), 500, 0)
 		HighLight(oDoc.getElementById("wintitle3"), 500, 0), HighLight(oDoc.getElementById("wintitle3_"), 500, 0)
@@ -5062,7 +5090,7 @@ ButtonClick(oevent) {
 	{
 		Loop % oDoc.getElementById("copy_sbtext").name
 			el := oDoc.getElementById("sb_field_" A_Index), HighLight(el, 500, (A_Index = 1)), Text .= el.OuterText "`r`n"
-		Text := RTrim(Text, "`r`n"), GetKeyState("Shift", "P") ? ClipAdd(Text, 1) : (Clipboard := Text)
+		Text := RTrim(Text, "`r`n"), GetKeyState("Shift") ? ClipAdd(Text, 1) : (Clipboard := Text)
 	}
 	Else If thisid = keyname
 	{ 
@@ -5153,8 +5181,12 @@ ButtonClick(oevent) {
 		, oDoc.execCommand("Paste"), oDoc.getElementById("keyname").click()
 	Else If thisid = get_styles_w
 		ViewStylesWin(oevent)
+	Else If thisid = update_styles_w
+		ViewStylesWin(oevent, 1) 
 	Else If thisid = get_styles_c
 		ViewStylesControl(oevent)
+	Else If thisid = update_styles_c
+		ViewStylesControl(oevent, 1) 
 	Else If thisid = run_AccViewer
 		RunAhkPath(ExtraFile("AccViewer Source"), oPubObjGUID)
 	Else If thisid = run_iWB2Learner
@@ -5191,7 +5223,7 @@ ButtonClick(oevent) {
 		ControlFocus, , ahk_id %hWnd%
 		WinGetPos, X, Y, W, H, ahk_id %hWnd%
 		FlashArea(x, y, w, h)
-		If GetKeyState("Shift", "P") && (X + Y != "")
+		If GetKeyState("Shift") && (X + Y != "")
 			DllCall("SetCursorPos", "Uint", X + W // 2, "Uint", Y + H // 2)
 	}
 	Else If thisid = set_pos
@@ -5253,8 +5285,8 @@ ButtonClick(oevent) {
 			BlockInput, MouseMoveOff
 			Return
 		}
-		If Shift := GetKeyState("Shift", "P")
-			ActivateUnderMouse()
+		If Shift := GetKeyState("Shift")
+			ActivateUnderMouse() 
 		GoSub, SpotProc2
 		BlockInput, MouseMoveOff
 		If !Shift
@@ -5293,7 +5325,7 @@ control_path_func() {
 acc_path_func(manual, Acc) {
 	; If (manual && oOther.anchor[ThisMode "_text"] = "P__Tree_Acc_Path")
 		; MsgBox %  oDoc.getElementById("P__Tree_Acc_Path").innerHTML
-	If !Malcev_AccPathNotBlink
+	If !Malcev_AccPathNotBlink && manual
 	{
 		oDoc.getElementById("acc_path").disabled := 1
 		, oDoc.getElementById("acc_path_value").disabled := 1 
@@ -6737,9 +6769,6 @@ class UIA_ScrollPattern extends UIA_Base {
 	UIA_VariantClear(pvar) { ; Written by Sean
 		DllCall("oleaut32\VariantClear", "ptr",pvar)
 	}
-}
-MsgBox(msg) {
-	MsgBox %msg%
 }
 
 /*
