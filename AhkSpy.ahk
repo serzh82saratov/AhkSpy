@@ -26,11 +26,15 @@
     Актуальный исходник - https://raw.githubusercontent.com/serzh82saratov/AhkSpy/master/AhkSpy.ahk
 */
 
-Global AhkSpyVersion := 4.16
+Global AhkSpyVersion := 4.17
 
-	; _________________________________________________ Header _________________________________________________
+	; _________________________________________________ Caption _________________________________________________
 
 ComObjError(false)
+
+
+Global WS_EX_APPWINDOW := 0x40000 , WS_CHILDWINDOW := 0x40000000, WS_EX_LAYERED := 0x80000
+		, WS_EX_TRANSPARENT := 0x20, WS_POPUP := 0x80000000, WS_EX_NOACTIVATE := 0x8000000
 
 p1 = %1%
 If (p1 = "Zoom")
@@ -82,7 +86,7 @@ Global ThisMode := IniRead("StartMode", "Control"), LastModeSave := (ThisMode = 
 , StateAllwaysSpot := IniRead("AllwaysSpot", 0), w_ShowStyles := IniRead("w_ShowStyles", 0), c_ShowStyles := IniRead("c_ShowStyles", 0), ViewStrPos := IniRead("ViewStrPos", 0)
 , WordWrap := IniRead("WordWrap", 0), PreMaxHeightStr := IniRead("MaxHeightOverFlow", "1 / 3"), UseUIA := IniRead("UseUIA", 0), UIAAlienDetect := IniRead("UIAAlienDetect", 0)
 , OnlyShiftTab := IniRead("OnlyShiftTab", 0), MoveTitles := IniRead("MoveTitles", 1), DetectHiddenText := IniRead("DetectHiddenText", "on")
-, MinimizeEscape := IniRead("MinimizeEscape", 0), MarkerInvertFrame := IniRead("MarkerInvertFrame", 0), MenuIdView := IniRead("MenuIdView", 0)
+, MinimizeEscape := IniRead("MinimizeEscape", 0), MarkerInvertFrame := IniRead("MarkerInvertFrame", 1), MenuIdView := IniRead("MenuIdView", 0)
 , DynamicControlPath := IniRead("DynamicControlPath", 0), DynamicAccPath := IniRead("DynamicAccPath", 0)
 , UpdRegister := IniRead("UpdRegister2", 0), UpdRegisterLink := "https://u.to/zeONFA", testvar
 
@@ -93,8 +97,7 @@ Global ThisMode := IniRead("StartMode", "Control"), LastModeSave := (ThisMode = 
 , hGui, hTBGui, hActiveX, hFindGui, oDoc, ShowMarker, isFindView, isIE, isPaused, PreMaxHeight := MaxHeightStrToNum(), PreOverflowHide := !!PreMaxHeight, DecimalCode, GetVKCodeNameStr, GetSCCodeNameStr
 , oDocEl, oPubObjGUID, oJScript, oBody, isConfirm, isAhkSpy := 1, TitleText, FreezeTitleText, TitleTextP1, oUIAInterface, Shift_Tab_Down, hButtonButton, hButtonControl, hButtonWindow
 , TitleTextP2 := TitleTextP2_Reserved := "     ( Shift+Tab - Freeze | RButton - CopySelected | Pause - Pause )     v" AhkSpyVersion
-, Sleep, oShowMarkers, oShowAccMarkers, oShowMarkersEx, hDCMarkerInvert, hMarkerGui, WS_EX_APPWINDOW := 0x40000
-
+, Sleep, oShowMarkers, oShowAccMarkers, oShowMarkersEx, hDCMarkerInvert, hMarkerGui
 
 #Include *i %A_AppData%\AhkSpy\IncludeSettings.ahk
 
@@ -144,10 +147,12 @@ oPubObj := {}
 FixIE()
 SeDebugPrivilege()
 
-; OnExit("GuiClose")
+OnExit("Exit")
 
 
 CreateMarkerInvert()
+ShowMarkersCreate("oShowAccMarkers", "26419F")  
+ShowMarkersCreate("oShowMarkers", "E14B30")
 
 Gui, +AlwaysOnTop +HWNDhGui +ReSize -DPIScale +Owner%hMarkerGui% +E%WS_EX_APPWINDOW% 
 Gui, Color, %ColorBgPaused%
@@ -180,7 +185,7 @@ OnMessage(0x47, "WM_WINDOWPOSCHANGED")
 OnMessage(MsgAhkSpyZoom := DllCall("RegisterWindowMessage", "Str", "MsgAhkSpyZoom"), "MsgZoom")
 DllCall("PostMessage", "Ptr", A_ScriptHWND, "UInt", 0x50, "UInt", 0, "UInt", 0x409) ; eng layout
 
-Gui, TB: +HWNDhTBGui -Caption -DPIScale +Parent%hGui% +E0x08000000 +0x40000000 -0x80000000
+Gui, TB: +HWNDhTBGui -Caption -DPIScale +Parent%hGui% +%WS_CHILDWINDOW% -%WS_POPUP% +E%WS_EX_NOACTIVATE%
 Gui, TB: Font, % " s" FontDPI, Verdana
 Gui, TB: Add, Button, x0 y0 h%HeigtButton% w%wKey% vBut1 gMode_Win hwndhButtonWindow, Window
 Gui, TB: Add, Button, x+0 yp hp wp vBut2 gMode_Control hwndhButtonControl, Control
@@ -188,7 +193,7 @@ Gui, TB: Add, Progress, x+0 yp hp w%wColor% vColorProgress HWNDhColorProgress cW
 Gui, TB: Add, Button, x+0 yp hp w%wKey% vBut3 gMode_Hotkey hwndhButtonButton, Button
 Gui, TB: Show, % "x0 y0 NA h" HeigtButton " w" widthTB := wKey*3+wColor
 
-Gui, F: +HWNDhFindGui -Caption -DPIScale +Parent%hGui% +0x40000000 -0x80000000
+Gui, F: +HWNDhFindGui -Caption -DPIScale +Parent%hGui% +%WS_CHILDWINDOW% -%WS_POPUP%
 Gui, F: Color, %ColorBgPaused%
 Gui, F: Font, % " s" FontDPI
 Gui, F: Add, Edit, x1 y0 w180 h26 gFindNew WantTab HWNDhFindEdit
@@ -304,7 +309,7 @@ Menu, Script, Add, % name := "Escape button to minimize", % oMenu.Script[name] :
 Menu, Script, % MinimizeEscape ? "Check" : "UnCheck", % name 
 Menu, Script, Add
 Menu, Script, Add, Reload, Reload
-Menu, Script, Add, Exit, GuiClose
+Menu, Script, Add, Exit, Exit
 Menu, Sys, Add, Script, :Script
 
 Menu, Sys, Add
@@ -325,9 +330,6 @@ IncludeLabel:
 Gui, Show, % "NA " (MemoryPos ? " x" IniRead("MemoryPosX", "Center") " y" IniRead("MemoryPosY", "Center") : "")
 . (MemorySize ? " h" IniRead("MemorySizeH", HeightStart) " w" IniRead("MemorySizeW", widthTB) : " h" HeightStart " w" widthTB)
 Gui, % "+MinSize" widthTB "x" 313
-
-ShowMarkersCreate("oShowMarkers", "E14B30")
-ShowMarkersCreate("oShowAccMarkers", "26419F")  
 
 If ThisMode = Hotkey
 	Gui, Show
@@ -1027,7 +1029,7 @@ HTML_Control:
 		%_BP1% id='set_button_pos'>Pos:%_BP2%  <span name='MS:'>x%CtrlX% y%CtrlY%</span>%_DP%<span name='MS:'>x&sup2;%CtrlX2% y&sup2;%CtrlY2%</span>%_DP%%_BP1% id='set_button_pos'>Size:%_BP2%  <span name='MS:'>w%CtrlW% h%CtrlH%</span>%ViewStrPos1%
 		<span class='param'>Relative client area:</span>  <span name='MS:'>x%CtrlCAX% y%CtrlCAY%</span>%_DP%<span name='MS:'>x&sup2;%CtrlCAX2% y&sup2;%CtrlCAY2%</span>%_DP%%Relativescreen%%ViewStrPos2%
 		%_BP1% id='set_pos'>Mouse relative control:%_BP2%  <span name='MS:'>x%rmCtrlX% y%rmCtrlY%</span>%WithRespectControl%
-		<span class='param'>HWND:</span>  <span name='MS:'>%ControlID%</span>%_DP%%_BP1% id='control_path'> Get path %_BP2%<span id='control_path_error'></span>%_ParentControl%
+		<span class='param'>HWND:</span>  <span name='MS:'>%ControlID%</span>%_DP%%_BB1% id='control_show_hide'> show / hide %_BB2%%_DP%%_BB1% id='control_destroy'> destroy %_BB2%%_DP%%_BP1% id='control_path'> Get path %_BP2%<span id='control_path_error'></span>%_ParentControl%
 		<span class='param'>Style:</span>  <span id='c_Style' name='MS:'>%CtrlStyle%</span>%_DP%<span class='param'>ExStyle:</span>  <span id='c_ExStyle' name='MS:'>%CtrlExStyle%</span>%ButtonStyle_%%_PRE2%
 		<span id='control_path_value'>%control_path_value%</span>
 		<span id=ControlStyles>%ControlStyles%</span>
@@ -1969,7 +1971,7 @@ Hotkey_Init(Func, Options = "") {
 	Hotkey_Arr("Func", Func)
 	Hotkey_Arr("Up", !!InStr(Options, "U"))
 	Hotkey_MouseAndJoyInit(Options)
-	OnExit("Hotkey_SetHook"), Hotkey_SetHook()
+	Hotkey_SetHook()
 	Hotkey_Arr("Hook") ? (Hotkey_Hook(0), Hotkey_Hook(1)) : 0
 }
 
@@ -2141,7 +2143,7 @@ Hotkey_SetHook(On = 1) {
 				, "Ptr", RegisterCallback("Hotkey_LowLevelKeyboardProc", "Fast")
 				, "Ptr", DllCall("GetModuleHandle", "UInt", 0, "Ptr")
 				, "UInt", 0, "Ptr")
-	Else If (On != 1)
+	Else If !On
 		DllCall("UnhookWindowsHookEx", "Ptr", hHook), hHook := "", Hotkey_Hook(0)
 }
 
@@ -2596,13 +2598,19 @@ TimerFunc(hFunc, Time) {
 	Try SetTimer, % hFunc, % Time
 }
 
-GuiClose() {
-	If MinimizeEscape && GetKeyState("Escape")
-		Return 1, Minimize()  
-	oDoc := ""
+Exit() {
+	Gui, %hGui%:, Hide
+	Hotkey_SetHook(0)
 	If LastModeSave
-		IniWrite(ThisMode, "LastMode") 
+		IniWrite(ThisMode, "LastMode")  
+	oDoc := ""
 	DllCall("ReleaseDC", "UPtr", 0, "UPtr", hDCMarkerInvert)
+	ExitApp
+}
+
+GuiClose() {
+	If MinimizeEscape && GetKeyState("Esc", "P")
+		Return 1, Minimize()  
 	ExitApp
 }
 
@@ -2981,12 +2989,13 @@ ShowMarkersCreate(arr, color) {
 	If !!%arr%
 		Return
 	S_DefaultGui := A_DefaultGui, %arr% := {}
+	
 	loop 4
 	{
 		Gui, New
 		Gui, Margin, 0, 0
-		Gui, -DPIScale +HWNDHWND -Caption +Owner +0x40000000 +E0x20 -0x80000000 +E0x08000000 +AlwaysOnTop +ToolWindow
-		Gui, Color, %color%
+		Gui, -DPIScale +Owner +HWNDHWND -Caption +%WS_CHILDWINDOW% +E%WS_EX_NOACTIVATE% +ToolWindow -%WS_POPUP% +AlwaysOnTop  +E%WS_EX_TRANSPARENT% 
+		Gui, Color, %color% 
 		WinSet, TransParent, 250, ahk_id %HWND%
 		%arr%[A_Index] := HWND
 		Gui, Show, NA Hide
@@ -3006,6 +3015,46 @@ CheckHideMarker() {
 		If (Try := ++Try > 2 ? 0 : Try)
 			SetTimer, __CheckHideMarker, -150
 		Return
+}
+
+FlashArea(x, y, w, h, att = 1) {
+	Static hFunc, max := 6
+	If (att = 1)
+		Try SetTimer, % hFunc, Off
+	Mod(att, 2) ? ShowMarkerInvert(x, y, w, h, 5) : HideMarkerInvert()
+	If (att = max)
+		Return
+	hFunc := Func("FlashArea").Bind(x, y, w, h, ++att)
+	SetTimer, % hFunc, -100
+}
+
+CreateMarkerInvert() {    
+	Gui, MI: -DPIScale +HWNDhMarkerGui -Caption +AlwaysOnTop +ToolWindow +E%WS_EX_TRANSPARENT% 
+	hDCMarkerInvert := DllCall("GetDC", "Ptr", hMarkerGui)
+	WinSet, TransParent, 0, ahk_id %hMarkerGui% 
+}
+
+HideMarkerInvert() {
+	WinSet, TransParent, 0, ahk_id %hMarkerGui% 
+ 	Gui, MI: Show, Hide
+}
+
+ShowMarkerInvert(x, y, w, h, b := 6) {
+	Try Gui, MI: Show, NA x%x% y%y% w%w% h%h% 
+	If MarkerInvertFrame
+	{
+		w < 16 || h < 16 ? b := 2 : 0
+		WinSet, Region, % "0-0 " w "-0 " w "-" h " 0-" h " 0-0 " b "-" b
+			. " " w-b "-" b " " w-b "-" h-b " " b "-" h-b " " b "-" b, ahk_id %hMarkerGui%
+	}
+	hDC := DllCall("GetDC", "Ptr", 0, "Ptr") 
+	
+	DllCall("BitBlt", "Ptr", hDCMarkerInvert, "int", 0, "int", 0, "int", w, "int", h
+			, "Ptr", hDC, "int", X, "int", Y, "Uint", 0x00330008)   ; NOTSRCCOPY
+	
+	WinSet, TransParent, 255, ahk_id %hMarkerGui%
+	Gui, MI: +AlwaysOnTop
+	DllCall("ReleaseDC", "UPtr", 0, "UPtr", hDC)
 }
 
 SetEditColor(hwnd, BG, FG) {
@@ -3465,47 +3514,6 @@ HighLight(elem, time = "", RemoveFormat = 1) {
 	UnHighLight:
 		oBody.createTextRange().execCommand("RemoveFormat")
 		Return
-}
-
-FlashArea(x, y, w, h, att = 1) {
-	Static hFunc, max := 6
-	If (att = 1)
-		Try SetTimer, % hFunc, Off
-	Mod(att, 2) ? ShowMarkerInvert(x, y, w, h, 5) : HideMarkerInvert()
-	If (att = max)
-		Return
-	hFunc := Func("FlashArea").Bind(x, y, w, h, ++att)
-	SetTimer, % hFunc, -100
-}
-
-
-CreateMarkerInvert() {    
-	Gui, MI: -DPIScale +HWNDhMarkerGui -Caption +AlwaysOnTop +ToolWindow +E0x20 
-	hDCMarkerInvert := DllCall("GetDC", "Ptr", hMarkerGui)
-	WinSet, TransParent, 0, ahk_id %hMarkerGui% 
-}
-
-HideMarkerInvert() {
-	WinSet, TransParent, 0, ahk_id %hMarkerGui% 
- 	Gui, MI: Show, Hide
-}
-
-ShowMarkerInvert(x, y, w, h, b := 6) {
-	Try Gui, MI: Show, NA x%x% y%y% w%w% h%h% 
-	If MarkerInvertFrame
-	{
-		w < 16 || h < 16 ? b := 2 : 0
-		WinSet, Region, % "0-0 " w "-0 " w "-" h " 0-" h " 0-0 " b "-" b
-			. " " w-b "-" b " " w-b "-" h-b " " b "-" h-b " " b "-" b, ahk_id %hMarkerGui%
-	}
-	hDC := DllCall("GetDC", "Ptr", 0, "Ptr") 
-	
-	DllCall("BitBlt", "Ptr", hDCMarkerInvert, "int", 0, "int", 0, "int", w, "int", h
-			, "Ptr", hDC, "int", X, "int", Y, "Uint", 0x00330008)   ; NOTSRCCOPY
-	
-	WinSet, TransParent, 255, ahk_id %hMarkerGui%
-	Gui, MI: +AlwaysOnTop
-	DllCall("ReleaseDC", "UPtr", 0, "UPtr", hDC)
 }
 
 	; _________________________________________________ Command as function _________________________________________________
@@ -5169,6 +5177,15 @@ ButtonClick(oevent) {
 		Process, Close, % oOther.WinPID
 	Else If (thisid = "win_close" && (oOther.WinPID || !ToolTip("Invalid parametrs", 500)) && ConfirmAction("Window close?"))
 		WinClose, % "ahk_id" oOther.WinID
+	Else If (thisid = "control_destroy" && (WinExist("ahk_id" oOther.ControlID) || !ToolTip("window not exist", 500)) && ConfirmAction("Destroy window?"))
+			WinClose, % "ahk_id" oOther.ControlID     ; DllCall("DestroyWindow", "Ptr", oOther.ControlID)   ;  не работает
+	Else If (thisid = "control_show_hide" && (WinExist("ahk_id" oOther.ControlID) || !ToolTip("window not exist", 500)))
+	{
+		If DllCall("IsWindowVisible", "Ptr", oOther.ControlID) 
+			WinHide, % "ahk_id" oOther.ControlID
+		Else 
+			WinShow, % "ahk_id" oOther.ControlID
+	}
 	Else If (thisid = "SendCode")
 		Events.SendCode()
 	Else If (thisid = "SendMode")
@@ -5346,7 +5363,7 @@ acc_path_func(manual, Acc) {
 	If b
 		oDoc.getElementById("acc_path_value").innerHTML := SaveAccPath()
 	If !b
-		oDoc.getElementById("acc_path_error").outerHTML := "<span style='color:#ff0000'>  path not found</span>" 
+		oDoc.getElementById("acc_path_error").outerHTML := "<span style='color:#ff0000'>  path not found  </span>" 
 		, oDoc.getElementById("acc_path_value").innerHTML := ""
 	Else 
 		oDoc.getElementById("acc_path_value").disabled := 0
@@ -5476,15 +5493,15 @@ ZoomCreate() {
 		GuiW := IniRead("MemoryZoomSizeW", oZoom.GuiMinW), GuiH := IniRead("MemoryZoomSizeH", oZoom.GuiMinH)
 	Else
 		GuiW := oZoom.GuiMinW, GuiH := oZoom.GuiMinH
-	Gui, Zoom: -Caption -DPIScale +Border +LabelZoomOn +HWNDhGui +AlwaysOnTop +E0x08000000    ;	+Owner%hAhkSpy%
+	Gui, Zoom: -Caption -DPIScale +Border +LabelZoomOn +HWNDhGui +AlwaysOnTop +E%WS_EX_NOACTIVATE%    ;	+Owner%hAhkSpy%
 	Gui, Zoom: Color, F5F5F5
 	Gui, Zoom: Add, Text, hwndhStatic +Border
 	DllCall("SetClassLong", "Ptr", hGui, "int", -26
 	, "int", DllCall("GetClassLong", "Ptr", hGui, "int", -26) | 0x20000)
 
-	Gui, LW: -Caption +E0x80000 +AlwaysOnTop +ToolWindow +HWNDhLW +E0x08000000 +Owner%hGui% ;	+E0x08000000 +E0x20
+	Gui, LW: -Caption +E%WS_EX_LAYERED% +AlwaysOnTop +ToolWindow +HWNDhLW +E%WS_EX_NOACTIVATE% +Owner%hGui% ;	++E%WS_EX_NOACTIVATE% +E%WS_EX_TRANSPARENT%
 
-	Gui, ZoomTB: +HWNDhTBGui -Caption -DPIScale +Parent%hGui% +E0x08000000 +0x40000000 -0x80000000
+	Gui, ZoomTB: +HWNDhTBGui -Caption -DPIScale +Parent%hGui% +E%WS_EX_NOACTIVATE% +%WS_CHILDWINDOW% -%WS_POPUP%
 	Gui, ZoomTB: Color, F5F5F5
 	h := 32
 	Gui, ZoomTB: Add, Slider, % "hwndhSliderZoom gSliderZoom x8 Range1-50 w152 y" (44-h)/2 " h" h " Center AltSubmit NoTicks", % oZoom.Zoom
