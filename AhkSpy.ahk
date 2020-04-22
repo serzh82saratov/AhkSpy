@@ -26,9 +26,9 @@
     Актуальный исходник - https://raw.githubusercontent.com/serzh82saratov/AhkSpy/master/AhkSpy.ahk
 */
 
-Global AhkSpyVersion := 4.17
+Global AhkSpyVersion := 4.18
 
-	; _________________________________________________ Caption _________________________________________________
+	;; _________________________________________________ Caption _________________________________________________
 
 ComObjError(false)
 
@@ -59,23 +59,23 @@ If !InStr(FileExist(Path_User), "D")
 	FileCreateDir, % Path_User
 
 Global MemoryFontSize := IniRead("MemoryFontSize", 0)
-, FontSize := MemoryFontSize ? IniRead("FontSize", "15") : 15			;  Размер шрифта
-, FontFamily :=  "Arial"												;  Шрифт - Times New Roman | Georgia | Myriad Pro | Arial
-, ColorFont := "000000"													;  Цвет шрифта
-, ColorBg := ColorBgOriginal := "FFFFFF"								;  Цвет фона          "F0F0F0" E4E4E4     F8F8F8
-, ColorBgPaused := "FAFAFA"												;  Цвет фона при паузе     F0F0F0
-, ColorSelMouseHover := "F9D886"										;  Цвет фона элемента при наведении мыши     96C3DC F9D886 8FC5FC AEC7E1
-, ColorSelButton := "96C3DC"											;  Цвет фона при нажатии на кнопки
-, ColorSelAnchor := "FFFF80"											;  Цвет фона заголовка для якоря
-, HighLightBckg := "FFE0E0"												;  Цвет фона некоторых абзацев
-, ColorDelimiter := "E14B30"											;  Цвет шрифта разделителя заголовков и параметров
-, ColorTitle := "27419B"												;  Цвет шрифта заголовка
-, ColorParam := "189200"												;  Цвет шрифта параметров
-, HeigtButton := 32														;  Высота кнопок
-, RangeTimer := 100														;  Период опроса данных, увеличьте на слабом ПК
-  HeightStart := 530													;  Высота окна при старте
-  wKey := 142															;  Ширина кнопок
-  wColor := wKey // 2													;  Ширина цветного фрагмента
+, FontSize := MemoryFontSize ? IniRead("FontSize", "15") : 15			;;  Размер шрифта
+, FontFamily :=  "Arial"												;;  Шрифт - Times New Roman | Georgia | Myriad Pro | Arial
+, ColorFont := "000000"													;;  Цвет шрифта
+, ColorBg := ColorBgOriginal := "FFFFFF"								;;  Цвет фона          "F0F0F0" E4E4E4     F8F8F8
+, ColorBgPaused := "FAFAFA"												;;  Цвет фона при паузе     F0F0F0
+, ColorSelMouseHover := "F9D886"										;;  Цвет фона элемента при наведении мыши     96C3DC F9D886 8FC5FC AEC7E1
+, ColorSelButton := "96C3DC"											;;  Цвет фона при нажатии на кнопки
+, ColorSelAnchor := "FFFF80"											;;  Цвет фона заголовка для якоря
+, HighLightBckg := "FFE0E0"												;;  Цвет фона некоторых абзацев
+, ColorDelimiter := "E14B30"											;;  Цвет шрифта разделителя заголовков и параметров
+, ColorTitle := "27419B"												;;  Цвет шрифта заголовка
+, ColorParam := "189200"												;;  Цвет шрифта параметров
+, HeigtButton := 32														;;  Высота кнопок
+, RangeTimer := 100														;;  Период опроса данных, увеличьте на слабом ПК
+  HeightStart := 530													;;  Высота окна при старте
+  wKey := 142															;;  Ширина кнопок
+  wColor := wKey // 2													;;  Ширина цветного фрагмента
 
 Global ThisMode := IniRead("StartMode", "Control"), LastModeSave := (ThisMode = "LastMode"), ThisMode := ThisMode = "LastMode" ? IniRead("LastMode", "Control") : ThisMode
 , ActiveNoPause := IniRead("ActiveNoPause", 0), MemoryPos := IniRead("MemoryPos", 0), MemorySize := IniRead("MemorySize", 0)
@@ -106,9 +106,9 @@ Global _S1 := "<span>", _S2 := "</span>", _DB := "<span style='position: relativ
 	. "onmouseup='OnButtonUp (this)' onmouseover='OnButtonOver (this)' contenteditable='false' ", _BT2 := "</span>"
 , _BP1 := "<span contenteditable='false' oncontextmenu='return false' class='BB'>" _BT1 "style='color: #" ColorParam "' name='pre' ", _BP2 := "</span></span>"
 
-  ;	Решает проблему запуска ресайза кнопки когда выделен текст, но не получается установить свой курсор
-; , _BP1 := "<span class='button' unselectable='on' oncontextmenu='return false' onmouseleave='OnButtonOut (this)' onmousedown='OnButtonDown (this)' "
-	; . "onmouseup='OnButtonUp (this)' onmouseover='OnButtonOver (this)' contenteditable='false' style='color: #" ColorParam "' name='pre' ", _BP2 := "</span>"
+  ;;	Решает проблему запуска ресайза кнопки когда выделен текст, но не получается установить свой курсор
+;; , _BP1 := "<span class='button' unselectable='on' oncontextmenu='return false' onmouseleave='OnButtonOut (this)' onmousedown='OnButtonDown (this)' "
+	;; . "onmouseup='OnButtonUp (this)' onmouseover='OnButtonOver (this)' contenteditable='false' style='color: #" ColorParam "' name='pre' ", _BP2 := "</span>"
 
 , _BB1 := "<span contenteditable='false' oncontextmenu='return false' class='BB' style='height: 0px;'>" _BT1 " ", _BB2 := "</span></span>"
 , _T1 := "<span class='box'><span class='line'><span class='hr'></span><span class='con'><span class='title' ", _T2 := "</span></span></span><br>"
@@ -157,8 +157,8 @@ ShowMarkersCreate("oShowMarkers", "E14B30")
 Gui, +AlwaysOnTop +HWNDhGui +ReSize -DPIScale +Owner%hMarkerGui% +E%WS_EX_APPWINDOW% 
 Gui, Color, %ColorBgPaused%
 Gui, Add, ActiveX, Border voDoc HWNDhActiveX x0 y+0, HTMLFile
-  ;	https://docs.microsoft.com/en-us/dotnet/api/system.windows.forms.htmlwindow?view=netframework-4.8
-  ;	https://developer.mozilla.org/en-US/docs/Web/API/Document_Object_Model
+  ;;	https://docs.microsoft.com/en-us/dotnet/api/system.windows.forms.htmlwindow?view=netframework-4.8
+  ;;	https://developer.mozilla.org/en-US/docs/Web/API/Document_Object_Model
 
 LoadJScript()
 oBody := oDoc.body
@@ -176,14 +176,14 @@ OnMessage(0x7B, "WM_CONTEXTMENU")
 OnMessage(0x6, "WM_ACTIVATE")
 OnMessage(0x47, "WM_WINDOWPOSCHANGED")
 
-; OnMessage(WM_WINDOWPOSCHANGING := 0x46, "WM_WINDOWPOSCHANGED") 
-; OnMessage(WM_MOVING := 0x216, "WM_WINDOWPOSCHANGED")
-; OnMessage(WM_MOVE := 0x03, "WM_WINDOWPOSCHANGED")
+;; OnMessage(WM_WINDOWPOSCHANGING := 0x46, "WM_WINDOWPOSCHANGED") 
+;; OnMessage(WM_MOVING := 0x216, "WM_WINDOWPOSCHANGED")
+;; OnMessage(WM_MOVE := 0x03, "WM_WINDOWPOSCHANGED")
 
 
 
 OnMessage(MsgAhkSpyZoom := DllCall("RegisterWindowMessage", "Str", "MsgAhkSpyZoom"), "MsgZoom")
-DllCall("PostMessage", "Ptr", A_ScriptHWND, "UInt", 0x50, "UInt", 0, "UInt", 0x409) ; eng layout
+DllCall("PostMessage", "Ptr", A_ScriptHWND, "UInt", 0x50, "UInt", 0, "UInt", 0x409) ;; eng layout
 
 Gui, TB: +HWNDhTBGui -Caption -DPIScale +Parent%hGui% +%WS_CHILDWINDOW% -%WS_POPUP% +E%WS_EX_NOACTIVATE%
 Gui, TB: Font, % " s" FontDPI, Verdana
@@ -197,7 +197,7 @@ Gui, F: +HWNDhFindGui -Caption -DPIScale +Parent%hGui% +%WS_CHILDWINDOW% -%WS_PO
 Gui, F: Color, %ColorBgPaused%
 Gui, F: Font, % " s" FontDPI
 Gui, F: Add, Edit, x1 y0 w180 h26 gFindNew WantTab HWNDhFindEdit
-SendMessage, 0x1501, 1, "Find to page",, ahk_id %hFindEdit%   ; EM_SETCUEBANNER
+SendMessage, 0x1501, 1, "Find to page",, ahk_id %hFindEdit%   ;; EM_SETCUEBANNER
 Gui, F: Add, UpDown, -16 Horz Range0-1 x+0 yp h26 w52 gFindNext vFindUpDown
 GuiControl, F: Move, FindUpDown, h26 w52
 Gui, F: Font, % " s" FontDPI
@@ -206,7 +206,7 @@ Gui, F: Add, Text, x+10 yp hp c2F2F2F +0x201 gFindOption, % " whole word "
 Gui, F: Add, Text, x+3 yp hp +0x201 w52 vFindMatches HWNDhFindAllText
 Gui, F: Add, Button, % "+0x300 +0xC00 y3 h20 w20 gFindHide x" widthTB - 21, X
 
-	; _________________________________________________ Menu Create _________________________________________________
+	;; _________________________________________________ Menu Create _________________________________________________
 
 Menu, Sys, Add, % name := "Backlight allways", % oMenu.Sys[name] := "_Sys_Backlight"
 Menu, Sys, Add, % name := "Backlight hold shift button", % oMenu.Sys[name] := "_Sys_Backlight"
@@ -324,7 +324,7 @@ Menu, Overflow, Check, %PreMaxHeightStr%
 Menu, Sys, Color, % ColorBgOriginal
 Menu, Overflow, Color, % ColorBgOriginal
 
-#Include *i %A_AppData%\AhkSpy\Include.ahk  ;	Для продолжения выполнения кода используйте GoTo IncludeLabel
+#Include *i %A_AppData%\AhkSpy\Include.ahk  ;;	Для продолжения выполнения кода используйте GoTo IncludeLabel
 IncludeLabel:
 
 Gui, Show, % "NA " (MemoryPos ? " x" IniRead("MemoryPosX", "Center") " y" IniRead("MemoryPosY", "Center") : "")
@@ -352,7 +352,7 @@ If !UpdRegister
 WinSet, TransParent, 255, ahk_id %hGui%
 Return
 
-	; _________________________________________________ Hotkey`s _________________________________________________
+	;; _________________________________________________ Hotkey`s _________________________________________________
 
 #If isAhkSpy && Sleep != 1 && ActiveNoPause
 
@@ -360,9 +360,9 @@ Return
 
 #If (isAhkSpy && Sleep != 1 && !isPaused && ThisMode != "Hotkey")
 
-; 1::
-	; Spot_Control(), (StateAllwaysSpot ? Spot_Win() : 0), Write_Control()
-	; Return
+;; 1::
+	;; Spot_Control(), (StateAllwaysSpot ? Spot_Win() : 0), Write_Control()
+	;; Return
 
 +Tab::
 SpotProc:
@@ -446,10 +446,10 @@ F3::
 F4::
 ~!WheelDown:: WheelRight
 
-F5:: Write_%ThisMode%()		;  Return original HTML
+F5:: Write_%ThisMode%()		;;  Return original HTML
 
 F6::
-^vk46:: _FindView()											;  Ctrl+F
+^vk46:: _FindView()											;;  Ctrl+F
 
 F7:: AnchorScroll()
 
@@ -472,25 +472,25 @@ Esc::
 
 #If isAhkSpy && Sleep != 1 && IsIEFocus() && (oDoc.selection.createRange().parentElement.isContentEditable)
 
-~^+vk41:: oDoc.execCommand("SelectAll")							;  Ctrl+Shift+A
+~^+vk41:: oDoc.execCommand("SelectAll")							;;  Ctrl+Shift+A
 
-~^vk41:: oBody.createTextRange().select()						;  Ctrl+A
+~^vk41:: oBody.createTextRange().select()						;;  Ctrl+A
 
 #If isAhkSpy && Sleep != 1 && IsIEFocus()
 
-^vk5A:: oDoc.execCommand("Undo")							;  Ctrl+Z
+^vk5A:: oDoc.execCommand("Undo")							;;  Ctrl+Z
 
-^vk59:: oDoc.execCommand("Redo")							;  Ctrl+Y
+^vk59:: oDoc.execCommand("Redo")							;;  Ctrl+Y
 
-^vk43:: GetSelected(CopyText) && ((Clipboard := CopyText), ToolTip("copy", 300))		;  Ctrl+C
+^vk43:: GetSelected(CopyText) && ((Clipboard := CopyText), ToolTip("copy", 300))		;;  Ctrl+C
 
-^vk56:: ClipPaste()																		;  Ctrl+V
+^vk56:: ClipPaste()																		;;  Ctrl+V
 
-^vk58:: CutSelection()								;  Ctrl+X
+^vk58:: CutSelection()								;;  Ctrl+X
 
-Del:: DeleteSelection()							;  Delete
+Del:: DeleteSelection()							;;  Delete
 
-Tab:: PasteStrSelection("    ")							;  &emsp	"&#x9;"  PasteStrSelection("&#x9;")
+Tab:: PasteStrSelection("    ")							;;  &emsp	"&#x9;"  PasteStrSelection("&#x9;")
 
 Enter:: PasteHTMLSelection("<br>")
 
@@ -511,7 +511,7 @@ RButton::
 +RButton:: ClipAdd(CopyText, 1)
 ^+RButton:: ClipAdd(CopyCommaParam(CopyText), 1)
 
-#If isAhkSpy && Sleep != 1 && ThisMode = "Hotkey" && (IsIEFocus() || MS_IsSelection()) && IsTextArea() && GetSelected(CopyText) ;	Mode = Hotkey
+#If isAhkSpy && Sleep != 1 && ThisMode = "Hotkey" && (IsIEFocus() || MS_IsSelection()) && IsTextArea() && GetSelected(CopyText) ;;	Mode = Hotkey
 
 RButton::
 	KeyWait, RButton, T0.3
@@ -556,7 +556,7 @@ IsAhkSpyUnderMouse(Byref hc) {
 	MouseGetPos, , , hw, hc, 2
 	Return (hw = hGui)
 }
-	; _________________________________________________ Mode_Win _________________________________________________
+	;; _________________________________________________ Mode_Win _________________________________________________
 
 Mode_Win:
 	If A_GuiControl
@@ -625,7 +625,7 @@ Spot_Win(NotHTML = 0) {
 	{
 		WinGet, WinTransparent, Transparent, ahk_id %WinID%
 		If WinTransparent !=
-			TransparentStr := _BP1 "id='set_button_Transparent'>Transparent:</span>" _BP2 "  <span id='get_win_Transparent' name='MS:'>"  WinTransparent "</span>"
+			TransparentStr := _BP1 "id='set_button_Transparent'>Transparent:</span>" _BP2 "  <span id='get_win_Transparent' name='MS:'>"  WinTransparent "</span>"     ;;  _INPHK "id='edithotkey' value='" WinTransparent "'>"
 	
 		WinGet, WinTransColor, TransColor, ahk_id %WinID%
 		If WinTransColor !=
@@ -686,7 +686,7 @@ Spot_Win(NotHTML = 0) {
 		_ParentWindow := "`n<span class='param'>Parent window:</span>  <span name='MS:'>" ParentClass "</span>" _DP " <span name='MS:'>" ParentProcessName "</span>" _DP "<span name='MS:'>" Format("0x{:x}", hParent) "</span>"
 	}
 
-	; _________________________________________________ HTML_Win _________________________________________________
+	;; _________________________________________________ HTML_Win _________________________________________________
 
 HTML_Win:
 	If w_ShowStyles
@@ -712,7 +712,7 @@ HTML_Win:
 	<span class='param'>Client area size:</span>  <span name='MS:'>w%caW% h%caH%</span>%_DP%<span class='param'>left</span> %caX% <span class='param'>top</span> %caY% <span class='param'>right</span> %caWinRight% <span class='param'>bottom</span> %caWinBottom%%_PRE2%
 	%_T1% id='__Other'> ( Other ) </span>%_BT1% id='flash_window'> flash %_BT2%%_ButWindow_Detective%%_T2%
 	%_PRE1%<span class='param' name='MS:N'>PID:</span>  <span name='MS:'>%WinPID%</span>%_DP%%ProcessBitSize%%IsAdmin%<span class='param'>Window count:</span> %WinCountProcess%%_DP%%_BB1% id='process_close'> process close %_BB2%
-	<span class='param' name='MS:N'>HWND:</span>  <span name='MS:'>%WinID%</span>%_DP%%_BB1% id='win_close'> win close %_BB2%%_DP%<span class='param'>Control count:</span>  %CountControl%%IsWindowUnicodeStr%%_ParentWindow%%EX1Str%%CLSID%
+	<span class='param' name='MS:N'>HWND:</span>  <span name='MS:'>%WinID%</span>%_DP%%_BB1% id='window_show_hide'> show / hide %_BB2%%_DP%%_BB1% id='win_close'> destroy %_BB2%%_DP%<span class='param'>Control count:</span>  %CountControl%%IsWindowUnicodeStr%%_ParentWindow%%EX1Str%%CLSID%
 	<span class='param'>Style:  </span><span id='w_Style' name='MS:'>%WinStyle%</span>%_DP%<span class='param'>ExStyle:  </span><span id='w_ExStyle' name='MS:'>%WinExStyle%</span>%ButtonStyle_%%_PRE2%
 	<span id=WinStyles>%WinStyles%</span>%SBText%%WinText%%MenuText%<a></a>%_T0%
 	</body>
@@ -807,7 +807,7 @@ Write_Win() {
 	Return 1
 }
 
-	; _________________________________________________ Mode_Control _________________________________________________
+	;; _________________________________________________ Mode_Control _________________________________________________
 
 Mode_Control:
 	If A_GuiControl
@@ -916,7 +916,7 @@ Spot_Control(NotHTML = 0) {
 		rmCtrlX := MXS - WinX - CtrlX, rmCtrlY := MYS - WinY - CtrlY
 		ControlNN_Sub := RegExReplace(ControlNN, "S)\d+| ")
 		
-		; Scintilla,Edit,SysListView,SysTreeView,ListBox,ComboBox,CtrlNotfySink,msctls_progress,msctls_trackbar,msctls_updown,SysTabControl,ToolbarWindow,AtlAxWin,InternetExplorer_Server
+		;; Scintilla,Edit,SysListView,SysTreeView,ListBox,ComboBox,CtrlNotfySink,msctls_progress,msctls_trackbar,msctls_updown,SysTabControl,ToolbarWindow,AtlAxWin,InternetExplorer_Server
 		If IsFunc("GetInfo_" ControlNN_Sub)
 			Func := ControlNN_Sub
 		Else If RegExMatch(ControlNN_Sub, "i)(TreeView|ListView|ListBox|ComboBox|NotfySink|Edit|Scintilla|progress|trackbar|updown|Tab|Toolbar|RichEd)", Match) 
@@ -1010,7 +1010,7 @@ Spot_Control(NotHTML = 0) {
 	Else 
 		CaretPosStr = <span class='error'>Caret position undefined</span>
 	
-	; _________________________________________________ HTML_Control _________________________________________________
+	;; _________________________________________________ HTML_Control _________________________________________________
  
 HTML_Control:
 	If ControlID
@@ -1145,14 +1145,14 @@ Write_Control() {
 	Return 1
 }
 
-	; _________________________________________________ Get Menu _________________________________________________
+	;; _________________________________________________ Get Menu _________________________________________________
 
 GetMenu(hWnd) {
-	; Static prhWnd, MenuText
-	; If (hWnd = prhWnd)
-		; Return MenuText
-	; prhWnd := hWnd
-	SendMessage, 0x1E1, 0, 0, , ahk_id %hWnd%	;  MN_GETHMENU
+	;; Static prhWnd, MenuText
+	;; If (hWnd = prhWnd)
+		;; Return MenuText
+	;; prhWnd := hWnd
+	SendMessage, 0x1E1, 0, 0, , ahk_id %hWnd%	;;  MN_GETHMENU
 	hMenu := ErrorLevel
 	If !hMenu || (hMenu + 0 = "")
 		Return
@@ -1165,13 +1165,13 @@ GetMenuText(hMenu, child = 0)
 	Loop, % DllCall("GetMenuItemCount", "Ptr", hMenu)
 	{
 		idx := A_Index - 1
-		nSize++ := DllCall("GetMenuString", "Ptr", hMenu, "int", idx, "Uint", 0, "int", 0, "Uint", 0x400)   ;  MF_BYPOSITION
+		nSize++ := DllCall("GetMenuString", "Ptr", hMenu, "int", idx, "Uint", 0, "int", 0, "Uint", 0x400)   ;;  MF_BYPOSITION
 		nSize := (nSize * (A_IsUnicode ? 2 : 1))
 		VarSetCapacity(sString, nSize)
-		DllCall("GetMenuString", "Ptr", hMenu, "int", idx, "str", sString, "int", nSize, "Uint", 0x400)   ;  MF_BYPOSITION
+		DllCall("GetMenuString", "Ptr", hMenu, "int", idx, "str", sString, "int", nSize, "Uint", 0x400)   ;;  MF_BYPOSITION
 		sString := TransformHTML(sString)
 		idn := DllCall("GetMenuItemID", "Ptr", hMenu, "int", idx)
-		IdItem := "<span class='param menuitemid' style='display: " (!MenuIdView ? "none" : "inline") ";'>`t`t`t<span name='MS:'>" idn "</span></span>"
+		IdItem := "<span class='param menuitemid' style='display: " (!MenuIdView ? "none" : "inline") ";;'>`t`t`t<span name='MS:'>" idn "</span></span>"
 		isSubMenu := (idn = -1) && (hSubMenu := DllCall("GetSubMenu", "Ptr", hMenu, "int", idx)) ? 1 : 0
 		If isSubMenu
 			sContents .= AddTab(child) "<span class='param'>" idx + 1 ":  </span><span name='MS:' class='titleparam'>" sString "</span>" IdItem "`n"
@@ -1191,11 +1191,11 @@ AddTab(c) {
 	Return Tab
 }
 
-	; _________________________________________________ Get Info Control _________________________________________________
+	;; _________________________________________________ Get Info Control _________________________________________________
 
-; Scintilla,Edit,SysListView,SysTreeView,ListBox,ComboBox,CtrlNotfySink,msctls_progress,msctls_trackbar,msctls_updown,SysTabControl,ToolbarWindow,AtlAxWin,InternetExplorer_Server
+;; Scintilla,Edit,SysListView,SysTreeView,ListBox,ComboBox,CtrlNotfySink,msctls_progress,msctls_trackbar,msctls_updown,SysTabControl,ToolbarWindow,AtlAxWin,InternetExplorer_Server
 
-; TreeView, ListView, NotfySink, progress, trackbar, updown, Tab, Toolbar
+;; TreeView, ListView, NotfySink, progress, trackbar, updown, Tab, Toolbar
 
 
 
@@ -1214,7 +1214,7 @@ GetInfo_SysListView(hwnd) {
 }
 
 GetInfo_SysTreeView(hwnd) { 
-	SendMessage 0x1105, 0, 0, , ahk_id %hwnd%   ; TVM_GETCOUNT
+	SendMessage 0x1105, 0, 0, , ahk_id %hwnd%   ;; TVM_GETCOUNT
 	ItemCount := ErrorLevel
 	Return	"<span class='param' name='MS:N'>Item count:</span> <span name='MS:'>" ItemCount "</span>"
 }
@@ -1225,7 +1225,7 @@ GetInfo_ListBox(hwnd) {
 
 GetInfo_ComboBox(hwnd, ListBox = 0) { 
 	ControlGet, ListText, List,,, ahk_id %hwnd%
-	SendMessage, (ListBox ? 0x188 : 0x147), 0, 0, , ahk_id %hwnd%   ; 0x188 - LB_GETCURSEL, 0x147 - CB_GETCURSEL
+	SendMessage, (ListBox ? 0x188 : 0x147), 0, 0, , ahk_id %hwnd%   ;; 0x188 - LB_GETCURSEL, 0x147 - CB_GETCURSEL
 	SelPos := ErrorLevel
 	SelPos := SelPos = 0xffffffff || SelPos < 0 ? "NoSelect" : SelPos + 1
 	RegExReplace(ListText, "m`a)$", "", RowCount)
@@ -1238,8 +1238,8 @@ GetInfo_CtrlNotifySink(hwnd) {
 	Return GetInfo_Scintilla(hwnd)
 }
 
-	;  http://forum.script-coding.com/viewtopic.php?pid=117128#p117128
-	;  https://msdn.microsoft.com/en-us/library/windows/desktop/ms645478(v=vs.85).aspx
+	;;  http://forum.script-coding.com/viewtopic.php?pid=117128#p117128
+	;;  https://msdn.microsoft.com/en-us/library/windows/desktop/ms645478(v=vs.85).aspx
 
 GetInfo_Edit(hwnd) { 
 	Edit_GetFont(hwnd, FName, FSize)
@@ -1248,7 +1248,7 @@ GetInfo_Edit(hwnd) {
 }
 
 Edit_GetFont(hwnd, byref FontName, byref FontSize) {
-	SendMessage 0x31, 0, 0, , ahk_id %hwnd% ; WM_GETFONT
+	SendMessage 0x31, 0, 0, , ahk_id %hwnd% ;; WM_GETFONT
 	If ErrorLevel = FAIL
 		Return
 	hFont := Errorlevel, VarSetCapacity(LF, szLF := 60 * (A_IsUnicode ? 2 : 1))
@@ -1263,9 +1263,9 @@ GetInfo_Scintilla(hwnd) {
 	ControlGet, CurrentCol, CurrentCol,,, ahk_id %hwnd%
 	ControlGet, CurrentLine, CurrentLine,,, ahk_id %hwnd%
 	ControlGet, Selected, Selected,,, ahk_id %hwnd%
-	SendMessage, 0x00B0, , , , ahk_id %hwnd%			;  EM_GETSEL
+	SendMessage, 0x00B0, , , , ahk_id %hwnd%			;;  EM_GETSEL
 	EM_GETSEL := ErrorLevel >> 16
-	SendMessage, 0x00CE, , , , ahk_id %hwnd%			;  EM_GETFIRSTVISIBLELINE
+	SendMessage, 0x00CE, , , , ahk_id %hwnd%			;;  EM_GETFIRSTVISIBLELINE
 	EM_GETFIRSTVISIBLELINE := ErrorLevel + 1
 	Return	"<span class='param' name='MS:N'>Row count:</span> <span name='MS:'>" LineCount "</span>" _DP
 			. "<span class='param' name='MS:N'>Selected length:</span> <span name='MS:'>" StrLen(Selected) "</span>"
@@ -1276,11 +1276,11 @@ GetInfo_Scintilla(hwnd) {
 }
 
 GetInfo_msctls_progress(hwnd) { 
-	SendMessage, 0x0400+7,"TRUE",,, ahk_id %hwnd%	;  PBM_GETRANGE
+	SendMessage, 0x0400+7,"TRUE",,, ahk_id %hwnd%	;;  PBM_GETRANGE
 	PBM_GETRANGEMIN := ErrorLevel
-	SendMessage, 0x0400+7,,,, ahk_id %hwnd%			;  PBM_GETRANGE
+	SendMessage, 0x0400+7,,,, ahk_id %hwnd%			;;  PBM_GETRANGE
 	PBM_GETRANGEMAX := ErrorLevel
-	SendMessage, 0x0400+8,,,, ahk_id %hwnd%			;  PBM_GETPOS
+	SendMessage, 0x0400+8,,,, ahk_id %hwnd%			;;  PBM_GETPOS
 	PBM_GETPOS := ErrorLevel
 	Return	"<span class='param' name='MS:N'>Level:</span> <span name='MS:'>" PBM_GETPOS "</span>" _DP
 			. "<span class='param'>Range:  </span><span class='param' name='MS:N'>Min: </span><span name='MS:'>" PBM_GETRANGEMIN "</span>"
@@ -1288,11 +1288,11 @@ GetInfo_msctls_progress(hwnd) {
 }
 
 GetInfo_msctls_trackbar(hwnd) { 
-	SendMessage, 0x0400+1,,,, ahk_id %hwnd%			;  TBM_GETRANGEMIN
+	SendMessage, 0x0400+1,,,, ahk_id %hwnd%			;;  TBM_GETRANGEMIN
 	TBM_GETRANGEMIN := ErrorLevel
-	SendMessage, 0x0400+2,,,, ahk_id %hwnd%			;  TBM_GETRANGEMAX
+	SendMessage, 0x0400+2,,,, ahk_id %hwnd%			;;  TBM_GETRANGEMAX
 	TBM_GETRANGEMAX := ErrorLevel
-	SendMessage, 0x0400,,,, ahk_id %hwnd%			;  TBM_GETPOS
+	SendMessage, 0x0400,,,, ahk_id %hwnd%			;;  TBM_GETPOS
 	TBM_GETPOS := ErrorLevel
 	ControlGet, CtrlStyle, Style,,, ahk_id %hwnd%
 	(!(CtrlStyle & 0x0200)) ? (TBS_REVERSED := "No")
@@ -1304,9 +1304,9 @@ GetInfo_msctls_trackbar(hwnd) {
 }
 
 GetInfo_msctls_updown(hwnd) { 
-	SendMessage, 0x0400+102,,,, ahk_id %hwnd%		;  UDM_GETRANGE
+	SendMessage, 0x0400+102,,,, ahk_id %hwnd%		;;  UDM_GETRANGE
 	UDM_GETRANGE := ErrorLevel
-	SendMessage, 0x400+114,,,, ahk_id %hwnd%		;  UDM_GETPOS32
+	SendMessage, 0x400+114,,,, ahk_id %hwnd%		;;  UDM_GETPOS32
 	UDM_GETPOS32 := ErrorLevel
 	Return	"<span class='param' name='MS:N'>Level:</span> <span name='MS:'>" UDM_GETPOS32 "</span>" _DP
 			. "<span class='param'>Range:  </span><span class='param' name='MS:N'>Min: </span><span name='MS:'>" UDM_GETRANGE >> 16 "</span>"
@@ -1315,9 +1315,9 @@ GetInfo_msctls_updown(hwnd) {
 
 GetInfo_SysTabControl(hwnd) { 
 	ControlGet, SelTab, Tab,,, ahk_id %hwnd%
-	SendMessage, 0x1300+44,,,, ahk_id %hwnd%		;  TCM_GETROWCOUNT
+	SendMessage, 0x1300+44,,,, ahk_id %hwnd%		;;  TCM_GETROWCOUNT
 	TCM_GETROWCOUNT := ErrorLevel
-	SendMessage, 0x1300+4,,,, ahk_id %hwnd%			;  TCM_GETITEMCOUNT
+	SendMessage, 0x1300+4,,,, ahk_id %hwnd%			;;  TCM_GETITEMCOUNT
 	TCM_GETITEMCOUNT := ErrorLevel
 	Return	"<span class='param' name='MS:N'>Item count:</span> <span name='MS:'>" TCM_GETITEMCOUNT "</span>" _DP
 			. "<span class='param' name='MS:N'>Row count:</span> <span name='MS:'>" TCM_GETROWCOUNT "</span>" _DP
@@ -1325,14 +1325,14 @@ GetInfo_SysTabControl(hwnd) {
 }
 
 GetInfo_ToolbarWindow(hwnd) { 
-	SendMessage, 0x0418,,,, ahk_id %hwnd%		;  TB_BUTTONCOUNT
+	SendMessage, 0x0418,,,, ahk_id %hwnd%		;;  TB_BUTTONCOUNT
 	BUTTONCOUNT := ErrorLevel
 	Return	"<span class='param' name='MS:N'>Button count:</span> <span name='MS:'>" BUTTONCOUNT "</span>"
 }
 
-	; _________________________________________________ Get Internet Explorer Info _________________________________________________
+	;; _________________________________________________ Get Internet Explorer Info _________________________________________________
 
-	;  http://www.autohotkey.com/board/topic/84258-iwb2-learner-iwebbrowser2/
+	;;  http://www.autohotkey.com/board/topic/84258-iwb2-learner-iwebbrowser2/
 
 GetInfo_AtlAxWin(hwnd) { 
 	Return GetInfo_InternetExplorer_Server(hwnd)
@@ -1349,7 +1349,7 @@ GetInfo_InternetExplorer_Server(hwnd) {
 	If !ratios[hwnd]
 	{
 		ratio := pwin.window.screen.deviceXDPI / pwin.window.screen.logicalXDPI
-		Sleep 10 ; при частом запросе deviceXDPI, возвращает пусто
+		Sleep 10 ;; при частом запросе deviceXDPI, возвращает пусто
 		!ratio && (ratio := 1)
 		ratios[hwnd] := ratio
 	}
@@ -1449,18 +1449,24 @@ WBGet(hwnd) {
 	Return ComObj(9, ComObjQuery(pdoc, IID_IHTMLWindow2, IID_IHTMLWindow2), 1), ObjRelease(pdoc)
 }
 
-	; _________________________________________________ Get Acc Info _________________________________________________
+	;; _________________________________________________ Get Acc Info _________________________________________________
 
-	;  http://www.autohotkey.com/board/topic/77888-accessible-info-viewer-alpha-release-2012-09-20/
-
+	;;  http://www.autohotkey.com/board/topic/77888-accessible-info-viewer-alpha-release-2012-09-20/
+	   
 AccInfoUnderMouse(mx, my, wx, wy, cx, cy, caX, caY, WinID, ControlID) {
 	Static h, WM_GETOBJECT := 0x003D
+	
 	If Not h
 		h := DllCall("LoadLibrary", "Str", "oleacc", "Ptr")
+		
+		;;  https://docs.microsoft.com/en-us/windows/win32/api/oleacc/nf-oleacc-accessibleobjectfrompoint
 	If DllCall("oleacc\AccessibleObjectFromPoint"
 		, "Int64", mx&0xFFFFFFFF|my<<32, "Ptr*", pacc
 		, "Ptr", VarSetCapacity(varChild,8+2*A_PtrSize,0)*0+&varChild) = 0
-	Acc := ComObjEnwrap(9,pacc,1), child := NumGet(varChild,8,"UInt")
+		
+		;;  http://forum.script-coding.com/viewtopic.php?pid=139109#p139109
+		Acc := ComObjEnwrap(9,pacc,1), child := NumGet(varChild,8,"UInt")
+		
 	If !IsObject(Acc)
 		Return
 	
@@ -1474,7 +1480,7 @@ AccInfoUnderMouse(mx, my, wx, wy, cx, cy, caX, caY, WinID, ControlID) {
 	Else If ChildCount
 		Var := "<span name='MS:'>Container</span>" _DP "<span class='param' name='MS:N'>ChildCount:  </span>" ChildCount _DP "<span class='param' name='MS:N'>Id:  </span>" child 
 	Else
-		Var := "<span name='MS:'>Real Object</span>" _DP "<span class='param' name='MS:N'>Id:  </span>" child    ;  _DP "<span class='param' name='MS:N'>Container child count:  </span>" ChildCount
+		Var := "<span name='MS:'>Real Object</span>" _DP "<span class='param' name='MS:N'>Id:  </span>" child    ;;  _DP "<span class='param' name='MS:N'>Container child count:  </span>" ChildCount
 		
 	If DynamicAccPath
 	{ 
@@ -1573,8 +1579,8 @@ accDoDefaultAction() {
 	Acc.accDoDefaultAction(oPubObj.Acc.child)
 }
 
-	;	https://docs.microsoft.com/ru-ru/windows/desktop/WinAuto/object-state-constants
-	;	http://forum.script-coding.com/viewtopic.php?pid=130762#p130762
+	;;	https://docs.microsoft.com/ru-ru/windows/desktop/WinAuto/object-state-constants
+	;;	http://forum.script-coding.com/viewtopic.php?pid=130762#p130762
 AccState(Acc, child, byref style, byref str, i := 1) {
 	style := Format("0x{1:08X}", Acc.accState(child))
 	If (style = 0)
@@ -1590,7 +1596,7 @@ AccWindowFromObject(pacc) {
 	If DllCall("oleacc\WindowFromAccessibleObject", "Ptr", IsObject(pacc) ? ComObjValue(pacc) : pacc, "Ptr*", hWnd) = 0
 		Return hWnd
 }
-	;	http://forum.script-coding.com/viewtopic.php?pid=130762#p130762
+	;;	http://forum.script-coding.com/viewtopic.php?pid=130762#p130762
 
 AccAccFocus(hWnd, byref name, byref value, byref role, byref irole) {
 	Acc := Acc_ObjectFromWindow(hWnd)
@@ -1677,13 +1683,13 @@ GetEnumIndex(Acc)
 {
 	For Each, child in Acc_Children(Acc_Parent(Acc))
 	{
-		; MsgBox % (ComObjValue(Acc) "`n"  ComObjValue(child)) "`n" oPubObj.Acc.child "`n" A_Index
+		;; MsgBox % (ComObjValue(Acc) "`n"  ComObjValue(child)) "`n" oPubObj.Acc.child "`n" A_Index
 		if IsObject(child) 
 		and (child.accDefaultAction(0) = Acc.accDefaultAction(0)) 	
 		and (child.accDescription(0) = Acc.accDescription(0)) 	
 		and (child.accHelp(0) = Acc.accHelp(0)) 	
 		and (child.accKeyboardShortcut(0) = Acc.accKeyboardShortcut(0)) 
-		   ;  
+		   ;;  
 		and (Acc_Location(child) = Acc_Location(Acc))
 		and (child.accChildCount = Acc.accChildCount) 
 		and (child.accName(0) = Acc.accName(0)) 	
@@ -1746,7 +1752,7 @@ Acc_Query(Acc) {
 	try return ComObj(9, ComObjQuery(Acc,"{618736e0-3c3d-11cf-810c-00aa00389b71}"), 1)
 }
 
-	; _________________________________________________ Mode_Hotkey _________________________________________________
+	;; _________________________________________________ Mode_Hotkey _________________________________________________
 
 Mode_Hotkey:
 	Try SetTimer, Loop_%ThisMode%, Off
@@ -1758,7 +1764,7 @@ Mode_Hotkey:
 	If ThisMode != Hotkey
 		HTML_%ThisMode% := oBody.innerHTML
 	ThisMode := "Hotkey"
-	If A_GuiControl  ;	WinActive("ahk_id" hGui)
+	If A_GuiControl  ;;	WinActive("ahk_id" hGui)
 		Hotkey_Hook(!isPaused)
 	TitleText := (TitleTextP1 := "AhkSpy - Button") . TitleTextP2
 	ShowMarker ? (HideAllMarkers()) : 0
@@ -1766,7 +1772,7 @@ Mode_Hotkey:
 	oDocEl.scrollLeft := ScrollPos[ThisMode,1], oDocEl.scrollTop := ScrollPos[ThisMode,2]
 	SendMessage, 0xC, 0, &TitleText, , ahk_id %hGui%
 	GuiControl, TB: -0x0001, But3
-	; WinActivate ahk_id %hGui%
+	;; WinActivate ahk_id %hGui%
 	GuiControl, 1:Focus, oDoc
 	If isFindView
 		FindNewText()
@@ -1962,9 +1968,9 @@ Write_Hotkey() {
 		oDocEl.scrollLeft := 0
 }
 
-	; _________________________________________________ Hotkey Functions _________________________________________________
+	;; _________________________________________________ Hotkey Functions _________________________________________________
 
-	;  http://forum.script-coding.com/viewtopic.php?pid=69765#p69765
+	;;  http://forum.script-coding.com/viewtopic.php?pid=69765#p69765
 
 Hotkey_Init(Func, Options = "") {
 	#HotkeyInterval 0
@@ -2018,7 +2024,7 @@ Hotkey_Main(In) {
 	K.VK := "vk" In.VK, K.SC := "sc" In.SC, K.TK := GetKeyName(K.VK K.SC)
 	K.TK := K.TK = "" ? K.VK K.SC : (StrLen(K.TK) = 1 ? Format("{:U}", K.TK) : K.TK)
 	(IsMod) ? (K.HK := K.Pref := K.LRPref := K.Name := K.IsCode := "", ModsOnly := K.Mods = "" ? 0 : 1)
-	: (K.IsCode := (SendCode != "name" && StrLen(K.TK) = 1)  ;	 && !Instr("1234567890-=", K.TK)
+	: (K.IsCode := (SendCode != "name" && StrLen(K.TK) = 1)  ;;	 && !Instr("1234567890-=", K.TK)
 	, K.HK := K.IsCode ? K[SendCode] : K.TK
 	, K.Name := K.HK = "vkBF" ? "/" : K.TK
 	, K.Pref := K.PCtrl K.PShift K.PAlt K.PWin
@@ -2091,7 +2097,7 @@ Hotkey_Arr(P*) {
 	Return P.MaxIndex() = 1 ? Arr[P[1]] : (Arr[P[1]] := P[2])
 }
 
-	;  http://forum.script-coding.com/viewtopic.php?id=6350
+	;;  http://forum.script-coding.com/viewtopic.php?id=6350
 
 Hotkey_LowLevelKeyboardProc(nCode, wParam, lParam) {
 	Static Mods := {"A4":"LAlt","A5":"RAlt","A2":"LCtrl","A3":"RCtrl"
@@ -2114,9 +2120,9 @@ Hotkey_LowLevelKeyboardProc(nCode, wParam, lParam) {
 				VK := Format("{:X}", NumGet(Lp + 0, "UInt"))
 				Ext := NumGet(Lp + 0, 8, "UInt")
 				SC1 := NumGet(Lp + 0, 4, "UInt")
-				NFP := (Ext >> 4) & 1				;  Не физическое нажатие
+				NFP := (Ext >> 4) & 1				;;  Не физическое нажатие
 				KeyUp := Ext >> 7
-				; Time := NumGet(Lp + 12, "UInt")
+				;; Time := NumGet(Lp + 12, "UInt")
 				IsMod := Mods[VK]
 				If !SC1
 					SC2 := GetKeySC("vk" VK), SC := SC2 = "" ? "" : Format("{:X}", SC2)
@@ -2139,7 +2145,7 @@ Hotkey_SetHook(On = 1) {
 	Static hHook
 	If (On = 1 && !hHook)
 		hHook := DllCall("SetWindowsHookEx" . (A_IsUnicode ? "W" : "A")
-				, "Int", 13   ;  WH_KEYBOARD_LL
+				, "Int", 13   ;;  WH_KEYBOARD_LL
 				, "Ptr", RegisterCallback("Hotkey_LowLevelKeyboardProc", "Fast")
 				, "Ptr", DllCall("GetModuleHandle", "UInt", 0, "Ptr")
 				, "UInt", 0, "Ptr")
@@ -2148,8 +2154,8 @@ Hotkey_SetHook(On = 1) {
 }
 
 GetVKCodeName(id) {  
-  ;	https://docs.microsoft.com/en-us/windows/desktop/inputdev/virtual-key-codes
-  ;	http://www.kbdedit.com/manual/low_level_vk_list.html
+  ;;	https://docs.microsoft.com/en-us/windows/desktop/inputdev/virtual-key-codes
+  ;;	http://www.kbdedit.com/manual/low_level_vk_list.html
 
 	Static Start, VK_, Chr, Num, Undefined, Reserved, Unassigned, VK_Names
 	
@@ -2187,7 +2193,7 @@ GetVKCodeName(id) {
 		Unassigned := "88|89|8A|8B|8C|8D|8E|8F|97|98|99|9A|9B|9C|9D|9E|9F|D8|D9|DA|E8"
 	}
 	If (id ~= "i)^vk_") && VK_Names.HasKey(id)
-		Return QVK(oDoc.getElementById("edithotkey").value := Format("{:U}", id), "0x" VK_Names[id])  ;	vK_EreOF
+		Return QVK(oDoc.getElementById("edithotkey").value := Format("{:U}", id), "0x" VK_Names[id])  ;;	vK_EreOF
 		
 	If VK := GetKeyVK(id)  
 		id := Format("0x{:02X}", VK)
@@ -2195,7 +2201,7 @@ GetVKCodeName(id) {
 		id := "0x" RegExReplace(id, "i)(^vk([0-9a-f]+)).*", "$2")  
 		
 	If !(InStr(id, "0x") && id > 0 && id < 256)
-		Return   ;	"Is not virtual key code" 
+		Return   ;;	"Is not virtual key code" 
 	id := Format("{:02X}", id) 
 	If VK_[id]
 		Return  QVK(VK_[id], "0x" id)  
@@ -2224,7 +2230,7 @@ GetScanCode(id) {
 }
 
 
-	; _________________________________________________ Menu Labels _________________________________________________
+	;; _________________________________________________ Menu Labels _________________________________________________
 
 ShowSys(x, y) {
 ShowSys:
@@ -2245,7 +2251,7 @@ MenuCheck()  {
 		Menu := MenuGetName(GetMenuForMenu(WinID))
 		If Menu && (F := oMenu[Menu][oOther.ThisMenuItem := AccUnderMouse(WinID, Id).accName(Id)]) && (F ~= "^_")
 		{
-			; If !(F ~= "^_") ; Return DllCall("mouse_event", "UInt", 0x0002|0x0004)  ;	WinClose("ahk_class #32768 ahk_pid " oOther.CurrentProcessId), SetTimer(F, -1)
+			;; If !(F ~= "^_") ;; Return DllCall("mouse_event", "UInt", 0x0002|0x0004)  ;;	WinClose("ahk_class #32768 ahk_pid " oOther.CurrentProcessId), SetTimer(F, -1)
 			oOther.MenuItemExist := 1
 			If IsLabel(F)
 				GoSub, % F
@@ -2259,7 +2265,7 @@ MenuCheck()  {
 }
 
 GetMenuForMenu(hWnd) {
-	SendMessage, 0x1E1, 0, 0, , ahk_id %hWnd%	;  MN_GETHMENU
+	SendMessage, 0x1E1, 0, 0, , ahk_id %hWnd%	;;  MN_GETHMENU
 	hMenu := ErrorLevel
 	If (hMenu + 0)
 		Return hMenu
@@ -2520,19 +2526,19 @@ Help_OpenScriptDir:
 	Minimize()
 	Return
 
-	; _________________________________________________ Functions _________________________________________________
+	;; _________________________________________________ Functions _________________________________________________
 
 WM_ACTIVATE(wp, lp) {
 	Critical
 	If isConfirm
 		Return
-	If ((wp & 0xFFFF = 0) && lp != hGui)  ;	Deactivated
+	If ((wp & 0xFFFF = 0) && lp != hGui)  ;;	Deactivated
 	{
 		ZoomMsg(7, 0)
 		If Hotkey_Arr("Hook")
 			Hotkey_Hook(0)
 	}
-	Else If (wp & 0xFFFF != 0 && WinActive("ahk_id" hGui)) ;	Activated
+	Else If (wp & 0xFFFF != 0 && WinActive("ahk_id" hGui)) ;;	Activated
 	{
 		ZoomMsg(7, 1)
 		If (ThisMode = "Hotkey" && !isPaused)
@@ -2554,17 +2560,17 @@ WM_WINDOWPOSCHANGED(Wp, Lp) {
 		w := NumGet(Lp + 0, 16 + PtrAdd, "UInt")
 		hDWP := DllCall("BeginDeferWindowPos", "Int", 3)
 		hDWP := DllCall("DeferWindowPos"
-		, "Ptr", hDWP, "Ptr", hGui, "UInt", -1  ;	for +AlwaysOnTop
+		, "Ptr", hDWP, "Ptr", hGui, "UInt", -1  ;;	for +AlwaysOnTop
 		, "Int", 0, "Int", 0, "Int", 0, "Int", 0
-		, "UInt", 0x0003)    ;  SWP_NOMOVE := 0x0002 | SWP_NOSIZE := 0x0001
+		, "UInt", 0x0003)    ;;  SWP_NOMOVE := 0x0002 | SWP_NOSIZE := 0x0001
 		hDWP := DllCall("DeferWindowPos"
 		, "Ptr", hDWP, "Ptr", oOther.hZoom, "UInt", 0
 		, "Int", x + w, "Int", y, "Int", 0, "Int", 0
-		, "UInt", 0x0011)    ; 0x0010 := SWP_NOACTIVATE | 0x0001 := SWP_NOSIZE | SWP_NOOWNERZORDER := 0x0200
+		, "UInt", 0x0011)    ;; 0x0010 := SWP_NOACTIVATE | 0x0001 := SWP_NOSIZE | SWP_NOOWNERZORDER := 0x0200
 		hDWP := DllCall("DeferWindowPos"
 		, "Ptr", hDWP, "Ptr", oOther.hZoomLW, "UInt", 0
 		, "Int", x + w + 1, "Int", y + 46, "Int", 0, "Int", 0
-		, "UInt", 0x0211)    ; 0x0010 := SWP_NOACTIVATE | 0x0001 := SWP_NOSIZE | SWP_NOOWNERZORDER := 0x0200
+		, "UInt", 0x0211)    ;; 0x0010 := SWP_NOACTIVATE | 0x0001 := SWP_NOSIZE | SWP_NOOWNERZORDER := 0x0200
 		DllCall("EndDeferWindowPos", "Ptr", hDWP)
 	}
 	If MemoryPos
@@ -2576,7 +2582,7 @@ GuiSize:
 		Return
 	If A_EventInfo = 1
 		ZoomMsg(11, 1)
-	Sleep := A_EventInfo  ;	= 1 minimize
+	Sleep := A_EventInfo  ;;	= 1 minimize
 	If A_EventInfo != 1
 	{
 		ControlsMove(A_GuiWidth, A_GuiHeight)
@@ -2674,7 +2680,7 @@ OnlyShiftTab_LButton_Up_Wait:
 	SetTimer, ShiftUpHide, -300
 	return
 
-   ;  http://forum.script-coding.com/viewtopic.php?pid=131490#p131490
+   ;;  http://forum.script-coding.com/viewtopic.php?pid=131490#p131490
 /*
 ChildFromPath(str, hwnd) 
 {
@@ -2718,7 +2724,7 @@ _ChildToPath(hwnd, arr, i = 1) {
 	Static DesktopHwnd := DllCall("User32.dll\GetDesktopWindow", "ptr") 
 	While hPrev := DllCall("GetWindow", "Ptr", hwnd, UInt, GW_HWNDPREV, "Ptr")
 		++i, hwnd := hPrev
-	   ;  DllCall("GetParent", "Ptr", hwnd)
+	   ;;  DllCall("GetParent", "Ptr", hwnd)
 	hParent := DllCall("GetAncestor", "Ptr", hwnd, Uint, GA_PARENT)
 	if !hParent || (hParent = DesktopHwnd)
 		return
@@ -2780,18 +2786,18 @@ ControlsMove(Width, Height) {
 	hDWP := DllCall("DeferWindowPos"
 	, "Ptr", hDWP, "Ptr", hTBGui, "UInt", 0
 	, "Int", (Width - widthTB) // 2.2, "Int", 0, "Int", 0, "Int", 0
-	, "UInt", 0x0011)    ; 0x0010 := SWP_NOACTIVATE | 0x0001 := SWP_NOSIZE
+	, "UInt", 0x0011)    ;; 0x0010 := SWP_NOACTIVATE | 0x0001 := SWP_NOSIZE
 	hDWP := DllCall("DeferWindowPos"
 	, "Ptr", hDWP, "Ptr", hActiveX, "UInt", 0
 	, "Int", 0, "Int", HeigtButton
 	, "Int", Width, "Int", Height - HeigtButton - (isFindView ? 28 : 0)
-	, "UInt", 0x0010)    ; 0x0010 := SWP_NOACTIVATE
+	, "UInt", 0x0010)    ;; 0x0010 := SWP_NOACTIVATE
 	If isFindView
 		hDWP := DllCall("DeferWindowPos"
 		, "Ptr", hDWP, "Ptr", hFindGui, "UInt", 0
 		, "Int", (Width - widthTB) // 2.2, "Int", (Height - (Height < HeigtButton * 2 ? -2 : 27))
 		, "Int", 0, "Int", 0
-		, "UInt", 0x0011)    ; 0x0010 := SWP_NOACTIVATE | 0x0001 := SWP_NOSIZE
+		, "UInt", 0x0011)    ;; 0x0010 := SWP_NOACTIVATE | 0x0001 := SWP_NOSIZE
 	DllCall("EndDeferWindowPos", "Ptr", hDWP)
 	
 	SetTimer, AnchorFitScroll, -500 
@@ -2802,18 +2808,18 @@ ZoomSpot() {
 		(ThisMode = "Control" ? (Spot_Control() (StateAllwaysSpot ? Spot_Win() : 0) Write_Control()) : (Spot_Win() (StateAllwaysSpot ? Spot_Control() : 0) Write_Win()))
 }
 
-MsgZoom(wParam, lParam) {  ;	получает
-	If (wParam = 1)  ;	шаг мыши
+MsgZoom(wParam, lParam) {  ;;	получает
+	If (wParam = 1)  ;;	шаг мыши
 		SetTimer, ZoomSpot, -1
-	Else If (wParam = 2)  ;	ZoomShow
+	Else If (wParam = 2)  ;;	ZoomShow
 		oOther.ZoomShow := lParam, (MemoryStateZoom && IniWrite(lParam, "ZoomShow"))
-	Else If (wParam = 0)  ;	хэндл окна
+	Else If (wParam = 0)  ;;	хэндл окна
 		oOther.hZoom := lParam
-	Else If (wParam = 3)  ;	хэндл окна LW
+	Else If (wParam = 3)  ;;	хэндл окна LW
 		oOther.hZoomLW := lParam
 }
 
-ZoomMsg(wParam = -1, lParam = -1) {  ;	отправляет
+ZoomMsg(wParam = -1, lParam = -1) {  ;;	отправляет
 	If WinExist("AhkSpyZoom ahk_id" oOther.hZoom)
 		SendMessage, % MsgAhkSpyZoom, wParam, lParam, , % "ahk_id" oOther.hZoom
 }
@@ -2856,8 +2862,8 @@ SaveSize() {
 	}
 }
 
-	;  http://forum.script-coding.com/viewtopic.php?pid=87817#p87817
-	;  http://www.autohotkey.com/board/topic/93660-embedded-ie-shellexplorer-render-issues-fix-force-it-to-use-a-newer-render-engine/
+	;;  http://forum.script-coding.com/viewtopic.php?pid=87817#p87817
+	;;  http://www.autohotkey.com/board/topic/93660-embedded-ie-shellexplorer-render-issues-fix-force-it-to-use-a-newer-render-engine/
 
 FixIE() {
 	Key := "Software\Microsoft\Internet Explorer\MAIN"
@@ -2966,9 +2972,9 @@ ShowMarkers(arr, x, y, w, h, b) {
 	for k, v in [[x, y, b, h],[x, y+h-b, w, b],[x+w-b, y, b, h],[x, y, w, b]]
 		{
 			hDWP := DllCall("DeferWindowPos"
-			, "Ptr", hDWP, "Ptr", arr[k], "UInt", -1  ;	-1 := HWND_TOPMOST
+			, "Ptr", hDWP, "Ptr", arr[k], "UInt", -1  ;;	-1 := HWND_TOPMOST
 			, "Int", v[1], "Int", v[2], "Int", v[3], "Int", v[4]
-			, "UInt", 0x0250)    ; 0x0010 := SWP_NOACTIVATE | 0x0040 := SWP_SHOWWINDOW | SWP_NOOWNERZORDER := 0x0200
+			, "UInt", 0x0250)    ;; 0x0010 := SWP_NOACTIVATE | 0x0040 := SWP_SHOWWINDOW | SWP_NOOWNERZORDER := 0x0200
 		}
 	DllCall("EndDeferWindowPos", "Ptr", hDWP)
 	ShowMarker := 1
@@ -2980,7 +2986,7 @@ HideMarkers(arr) {
 		hDWP := DllCall("DeferWindowPos"
 		, "Ptr", hDWP, "Ptr", arr[A_Index], "UInt", 0
 		, "Int", 0, "Int", 0, "Int", 0, "Int", 0
-		, "UInt", 0x0083)    ; 0x0080 := SWP_HIDEWINDOW | SWP_NOMOVE := 0x0002 | SWP_NOSIZE := 0x0001
+		, "UInt", 0x0083)    ;; 0x0080 := SWP_HIDEWINDOW | SWP_NOMOVE := 0x0002 | SWP_NOSIZE := 0x0001
 	DllCall("EndDeferWindowPos", "Ptr", hDWP)
 	ShowMarker := 0
 }
@@ -3050,7 +3056,7 @@ ShowMarkerInvert(x, y, w, h, b := 6) {
 	hDC := DllCall("GetDC", "Ptr", 0, "Ptr") 
 	
 	DllCall("BitBlt", "Ptr", hDCMarkerInvert, "int", 0, "int", 0, "int", w, "int", h
-			, "Ptr", hDC, "int", X, "int", Y, "Uint", 0x00330008)   ; NOTSRCCOPY
+			, "Ptr", hDC, "int", X, "int", Y, "Uint", 0x00330008)   ;; NOTSRCCOPY
 	
 	WinSet, TransParent, 255, ahk_id %hMarkerGui%
 	Gui, MI: +AlwaysOnTop
@@ -3195,14 +3201,14 @@ Add_DP(addN, Items*) {
 	Return (addN ? "`n" : "") SubStr(Ret, 1, -StrLen(_DP))
 }
 
-	;  http://forum.script-coding.com/viewtopic.php?pid=53516#p53516
+	;;  http://forum.script-coding.com/viewtopic.php?pid=53516#p53516
 
-; GetCommandLineProc(pid) {
-	; ComObjGet("winmgmts:").ExecQuery("Select * from Win32_Process WHERE ProcessId = " pid)._NewEnum.next(X)
-	; Return Trim(X.CommandLine)
-; }
+;; GetCommandLineProc(pid) {
+	;; ComObjGet("winmgmts:").ExecQuery("Select * from Win32_Process WHERE ProcessId = " pid)._NewEnum.next(X)
+	;; Return Trim(X.CommandLine)
+;; }
 
-	;  http://forum.script-coding.com/viewtopic.php?pid=111775#p111775
+	;;  http://forum.script-coding.com/viewtopic.php?pid=111775#p111775
 
 GetCommandLineProc(PID, ByRef Cmd, ByRef Bit, ByRef IsAdmin) {
 	Static PROCESS_QUERY_INFORMATION := 0x400, PROCESS_VM_READ := 0x10, STATUS_SUCCESS := 0
@@ -3215,7 +3221,7 @@ GetCommandLineProc(PID, ByRef Cmd, ByRef Bit, ByRef IsAdmin) {
 	else
 		PtrSize := 8, PtrType := "Int64", pPtr := "Int64P", offsetCMD := 0x70
 	hModule := DllCall("GetModuleHandle", "str", "Ntdll", Ptr)
-	if (A_PtrSize < PtrSize) {            ; скрипт 32, целевой процесс 64
+	if (A_PtrSize < PtrSize) {            ;; скрипт 32, целевой процесс 64
 		if !QueryInformationProcess := DllCall("GetProcAddress", Ptr, hModule, AStr, "NtWow64QueryInformationProcess64", Ptr)
 			failed := "NtWow64QueryInformationProcess64"
 		if !ReadProcessMemory := DllCall("GetProcAddress", Ptr, hModule, AStr, "NtWow64ReadVirtualMemory64", Ptr)
@@ -3226,9 +3232,9 @@ GetCommandLineProc(PID, ByRef Cmd, ByRef Bit, ByRef IsAdmin) {
 		if !QueryInformationProcess := DllCall("GetProcAddress", Ptr, hModule, AStr, "NtQueryInformationProcess", Ptr)
 			failed := "NtQueryInformationProcess"
 		ReadProcessMemory := "ReadProcessMemory"
-		if (A_PtrSize > PtrSize)            ; скрипт 64, целевой процесс 32
+		if (A_PtrSize > PtrSize)            ;; скрипт 64, целевой процесс 32
 			info := 26, szPBI := 8, offsetPEB := 0
-		else                                ; скрипт и целевой процесс одной битности
+		else                                ;; скрипт и целевой процесс одной битности
 			info := 0, szPBI := PtrSize * 6, offsetPEB := PtrSize
 	}
 	if failed  {
@@ -3270,10 +3276,10 @@ SeDebugPrivilege() {
 	res := A_LastError
 	DllCall("CloseHandle", Ptr, token)
 	DllCall("CloseHandle", Ptr, hProc)
-	Return res  ; в случае удачи 0
+	Return res  ;; в случае удачи 0
 }
 
-	;  http://www.autohotkey.com/board/topic/69254-func-api-getwindowinfo-ahk-l/#entry438372
+	;;  http://www.autohotkey.com/board/topic/69254-func-api-getwindowinfo-ahk-l/#entry438372
 
 GetClientPos(hwnd, ByRef left, ByRef top, ByRef w, ByRef h) {
 	Static _ := VarSetCapacity(pwi, 60, 0)
@@ -3284,7 +3290,7 @@ GetClientPos(hwnd, ByRef left, ByRef top, ByRef w, ByRef h) {
 	h := NumGet(pwi, 32, "Int") - NumGet(pwi, 24, "Int")
 }
 
-	;  http://forum.script-coding.com/viewtopic.php?pid=81833#p81833
+	;;  http://forum.script-coding.com/viewtopic.php?pid=81833#p81833
 
 SelectFilePath(FilePath) {
 	If !FileExist(FilePath)
@@ -3400,7 +3406,7 @@ NextLink(s = "") {
 	If (!curpos && s = "-")
 		Return
 	While (pos := oDoc.getElementsByTagName("a").item(A_Index-1).getBoundingClientRect().top) != ""
-		(s 1) * pos > 0 && (!res || abs(res) > abs(pos)) ? res := pos : ""       ; http://forum.script-coding.com/viewtopic.php?pid=82360#p82360
+		(s 1) * pos > 0 && (!res || abs(res) > abs(pos)) ? res := pos : ""       ;; http://forum.script-coding.com/viewtopic.php?pid=82360#p82360
 	If (res = "" && s = "")
 		Return
 	st := !res ? -curpos : res, co := abs(st) > 150 ? 20 : 10
@@ -3421,12 +3427,12 @@ GuiRedraw(att = 1) {
 	If !oOther.anchor[ThisMode]
 		Return
 	
-		; ToolTip %  oDocEl.scrollTop "`n" 444
-	; While !oDocEl.scrollTop
-	; {
-		; ToolTip %  oDocEl.scrollTop
-		; Sleep 2
-	; }	 
+		;; ToolTip %  oDocEl.scrollTop "`n" 444
+	;; While !oDocEl.scrollTop
+	;; {
+		;; ToolTip %  oDocEl.scrollTop
+		;; Sleep 2
+	;; }	 
 	GuiControl, +Redraw, %hActiveX%   
 	Return
 	
@@ -3516,7 +3522,7 @@ HighLight(elem, time = "", RemoveFormat = 1) {
 		Return
 }
 
-	; _________________________________________________ Command as function _________________________________________________
+	;; _________________________________________________ Command as function _________________________________________________
 
 IniRead(Key, Error := " ") {
 	IniRead, Value, %A_AppData%\AhkSpy\Settings.ini, AhkSpy, %Key%, %Error%
@@ -3563,7 +3569,7 @@ ToolTip(text, time = 500) {
 		Return
 }
 
-	; _________________________________________________ Update _________________________________________________
+	;; _________________________________________________ Update _________________________________________________
 
 UpdateAhkSpy(in = 1) {
 	Static att, Ver, req
@@ -3618,22 +3624,23 @@ UpdRegister() {
 		Return
 }
 
-	; _________________________________________________ WindowStyles _________________________________________________
+	;; _________________________________________________ WindowStyles _________________________________________________
 
-ViewStylesWin(elem, update = 0) {  ;
+ViewStylesWin(update = 0) {  ;;
 	
 	If update
 	{
 		WinGet, WinStyle, Style, % "ahk_id" oOther.WinID
 		WinGet, WinExStyle, ExStyle, % "ahk_id" oOther.WinID
+		
 		If (WinStyle WinExStyle = "")
 			Return ToolTip("Window not exist", 500)
 		oDoc.getElementById("w_Style").innerText := WinStyle
 		oDoc.getElementById("w_ExStyle").innerText := WinExStyle
-	}
-	If !update
-		elem.innerText := !(w_ShowStyles := !w_ShowStyles) ? " show styles " : " hide styles "
-		, IniWrite(w_ShowStyles, "w_ShowStyles")
+		w_ShowStyles := 0
+	}  
+	oDoc.getElementById("get_styles_w").innerText := !(w_ShowStyles := !w_ShowStyles) ? " show styles " : " hide styles "
+	IniWrite(w_ShowStyles, "w_ShowStyles")
 			
 	If w_ShowStyles || update
 		Styles := "<a></a>" GetStyles(oOther.WinClass
@@ -3645,20 +3652,21 @@ ViewStylesWin(elem, update = 0) {  ;
 	HTML_Win := oBody.innerHTML
 }
 
-ViewStylesControl(elem, update = 0) {  ;
+ViewStylesControl(update = 0) {  ;;
 	
 	If update
 	{
 		ControlGet, CtrlStyle, Style,,, % "ahk_id" oOther.ControlID
 		ControlGet, CtrlExStyle, ExStyle,,, % "ahk_id" oOther.ControlID
+		
 		If (CtrlStyle CtrlExStyle = "")
 			Return ToolTip("Window not exist", 500)
 		oDoc.getElementById("c_Style").innerText := CtrlStyle
 		oDoc.getElementById("c_ExStyle").innerText := CtrlExStyle
-	}
-	If !update  
-		elem.innerText := !(c_ShowStyles := !c_ShowStyles) ? " show styles " : " hide styles "
-		, IniWrite(c_ShowStyles, "c_ShowStyles")  
+		c_ShowStyles := 0
+	} 
+	oDoc.getElementById("get_styles_c").innerText := !(c_ShowStyles := !c_ShowStyles) ? " show styles " : " hide styles "
+	IniWrite(c_ShowStyles, "c_ShowStyles")  
 
 	If c_ShowStyles
 		Styles := "<a></a>" GetStyles(oOther.CtrlClass
@@ -3670,21 +3678,21 @@ ViewStylesControl(elem, update = 0) {  ;
 } 
 
 GetStyles(Class, Style, ExStyle, hWnd, IsChild = 0, IsChildInfoExist = 0) {
-	;	http://msdn.microsoft.com/en-us/library/windows/desktop/ms632600(v=vs.85).aspx			Styles
-	;	http://msdn.microsoft.com/en-us/library/windows/desktop/ff700543(v=vs.85).aspx			ExStyles
-	;	https://www.autohotkey.com/boards/viewtopic.php?p=25880#p25880							Forum Constants
-	;	https://github.com/AHK-just-me/AHK_Gui_Constants/tree/master/Sources			GitHub Constants
+	;;	http://msdn.microsoft.com/en-us/library/windows/desktop/ms632600(v=vs.85).aspx			Styles
+	;;	http://msdn.microsoft.com/en-us/library/windows/desktop/ff700543(v=vs.85).aspx			ExStyles
+	;;	https://www.autohotkey.com/boards/viewtopic.php?p=25880#p25880							Forum Constants
+	;;	https://github.com/AHK-just-me/AHK_Gui_Constants/tree/master/Sources			GitHub Constants
 	
-	;	http://www.frolov-lib.ru/books/bsp/v11/ch3_2.htm   русский фак по стилям
-	;	https://github.com/strobejb/winspy/blob/master/src/DisplayStyleInfo.c			Логика WinSpy++
-	;	http://forum.script-coding.com/viewtopic.php?pid=130846#p130846
+	;;	http://www.frolov-lib.ru/books/bsp/v11/ch3_2.htm   русский фак по стилям
+	;;	https://github.com/strobejb/winspy/blob/master/src/DisplayStyleInfo.c			Логика WinSpy++
+	;;	http://forum.script-coding.com/viewtopic.php?pid=130846#p130846
 	
 	Static Styles, ExStyles, ClassStyles, DlgStyles, ToolTipStyles, GCL_STYLE := -26
 	
 	If !hWnd
 		Return
 	If !Styles
-		   ;  В массивах стили без условий
+		   ;;  В массивах стили без условий
 		Styles := {"WS_BORDER":"0x00800000", "WS_SYSMENU":"0x00080000"
 		, "WS_CLIPCHILDREN":"0x02000000", "WS_CLIPSIBLINGS":"0x04000000", "WS_DISABLED":"0x08000000"
 		, "WS_HSCROLL":"0x00100000", "WS_MAXIMIZE":"0x01000000"
@@ -3705,47 +3713,47 @@ GetStyles(Class, Style, ExStyle, hWnd, IsChild = 0, IsChildInfoExist = 0) {
 	orStyle := Style
 	Style := sStyle := Style & 0xffff0000
 
-	IF (Style & 0x00C00000) = 0x00C00000  && (WS_CAPTION := 1, WS_BORDER := 1, Style -= 0x00C00000)  ;	WS_CAPTION && WS_BORDER 
+	IF (Style & 0x00C00000) = 0x00C00000  && (WS_CAPTION := 1, WS_BORDER := 1, Style -= 0x00C00000)  ;;	WS_CAPTION && WS_BORDER 
 		Ret .= QStyle("WS_CAPTION", "0x00C00000") QStyle("WS_BORDER", "0x00800000") 
 		
-	IF !WS_CAPTION && (Style & 0x00400000) && (WS_DLGFRAME := 1, Style -= 0x00400000)  ;	WS_DLGFRAME 
+	IF !WS_CAPTION && (Style & 0x00400000) && (WS_DLGFRAME := 1, Style -= 0x00400000)  ;;	WS_DLGFRAME 
 		Ret .= QStyle("WS_DLGFRAME", "0x00400000", "!(WS_CAPTION)")
 		
 	For K, V In Styles
 		If (Style & V) = V && (%K% := 1, Style -= V) 
 			Ret .= QStyle(K, V)
  
-	IF (Style & 0x00040000) && (WS_SIZEBOX := 1, WS_THICKFRAME := 1, Style -= 0x00040000)  ;	WS_SIZEBOX := WS_THICKFRAME 
+	IF (Style & 0x00040000) && (WS_SIZEBOX := 1, WS_THICKFRAME := 1, Style -= 0x00040000)  ;;	WS_SIZEBOX := WS_THICKFRAME 
 		Ret .= QStyle("WS_SIZEBOX := WS_THICKFRAME", "0x00040000")
 
-	IF (Style & 0x40000000) && (WS_CHILD := 1, Style -= 0x40000000)  ;	WS_CHILD := WS_CHILDWINDOW := 0x40000000
+	IF (Style & 0x40000000) && (WS_CHILD := 1, Style -= 0x40000000)  ;;	WS_CHILD := WS_CHILDWINDOW := 0x40000000
 		Ret .= QStyle("WS_CHILD := WS_CHILDWINDOW", "0x40000000") 
 		
-	IF (Style & 0x00010000) && (WS_TABSTOP := 1, Style -= 0x00010000)  ;	WS_TABSTOP
-		Ret .= QStyle("WS_TABSTOP", "0x00010000")    ;  , "(WS_CHILD)"
+	IF (Style & 0x00010000) && (WS_TABSTOP := 1, Style -= 0x00010000)  ;;	WS_TABSTOP
+		Ret .= QStyle("WS_TABSTOP", "0x00010000")    ;;  , "(WS_CHILD)"
 		
-	IF (Style & 0x00020000) && WS_CHILD && (WS_GROUP := 1, Style -= 0x00020000)  ;	WS_GROUP
+	IF (Style & 0x00020000) && WS_CHILD && (WS_GROUP := 1, Style -= 0x00020000)  ;;	WS_GROUP
 		Ret .= QStyle("WS_GROUP", "0x00020000", "(WS_CHILD)")  
 
-	IF (Style & 0x20000000) && (WS_MINIMIZE := 1, Style -= 0x20000000)  ;	WS_MINIMIZE := WS_ICONIC
+	IF (Style & 0x20000000) && (WS_MINIMIZE := 1, Style -= 0x20000000)  ;;	WS_MINIMIZE := WS_ICONIC
 		Ret .= QStyle("WS_MINIMIZE := WS_ICONIC", "0x20000000")   
 
-	IF (Style & 0x80000000) && !WS_CHILD && (WS_POPUP := 1, Style -= 0x80000000)  ;	WS_POPUP
+	IF (Style & 0x80000000) && !WS_CHILD && (WS_POPUP := 1, Style -= 0x80000000)  ;;	WS_POPUP
 		Ret .= QStyle("WS_POPUP", "0x80000000", "!(WS_CHILD)")  
 
-	IF (WS_POPUP && WS_BORDER && WS_SYSMENU) && (WS_POPUPWINDOW := 1)  ;	WS_POPUPWINDOW
+	IF (WS_POPUP && WS_BORDER && WS_SYSMENU) && (WS_POPUPWINDOW := 1)  ;;	WS_POPUPWINDOW
 		Ret .= QStyle("WS_POPUPWINDOW", "0x80880000", "(WS_POPUP | WS_BORDER | WS_SYSMENU)")
 
-	IF !WS_POPUP && !WS_CHILD && WS_BORDER && WS_CAPTION && (WS_OVERLAPPED := 1)  ;	WS_OVERLAPPED := WS_TILED
+	IF !WS_POPUP && !WS_CHILD && WS_BORDER && WS_CAPTION && (WS_OVERLAPPED := 1)  ;;	WS_OVERLAPPED := WS_TILED
 		Ret .= QStyle("WS_OVERLAPPED := WS_TILED", "0x00000000", "(WS_BORDER | WS_CAPTION) & !(WS_POPUP | WS_CHILD)")
 
-	IF WS_SYSMENU && (sStyle & 0x00020000) && (WS_MINIMIZEBOX := 1, (Style & 0x00020000) && (Style -= 0x00020000))  ;	WS_MINIMIZEBOX
+	IF WS_SYSMENU && (sStyle & 0x00020000) && (WS_MINIMIZEBOX := 1, (Style & 0x00020000) && (Style -= 0x00020000))  ;;	WS_MINIMIZEBOX
 		Ret .= QStyle("WS_MINIMIZEBOX", "0x00020000", "(WS_SYSMENU)") 
 
-	IF WS_SYSMENU && (sStyle & 0x00010000) && (WS_MAXIMIZEBOX := 1)  ;	WS_MAXIMIZEBOX
+	IF WS_SYSMENU && (sStyle & 0x00010000) && (WS_MAXIMIZEBOX := 1)  ;;	WS_MAXIMIZEBOX
 		Ret .= QStyle("WS_MAXIMIZEBOX", "0x00010000", "(WS_SYSMENU)")
 
-	If (WS_OVERLAPPED && WS_SIZEBOX && WS_SYSMENU && WS_MINIMIZEBOX && WS_MAXIMIZEBOX)  ;	WS_OVERLAPPEDWINDOW := WS_TILEDWINDOW
+	If (WS_OVERLAPPED && WS_SIZEBOX && WS_SYSMENU && WS_MINIMIZEBOX && WS_MAXIMIZEBOX)  ;;	WS_OVERLAPPEDWINDOW := WS_TILEDWINDOW
 		Ret .= QStyle("WS_OVERLAPPEDWINDOW := WS_TILEDWINDOW", "0x00CF0000", "(WS_OVERLAPPED | WS_SIZEBOX | WS_SYSMENU | WS_MINIMIZEBOX | WS_MAXIMIZEBOX)") 
 
 	If IsFunc("GetStyle_" Class)
@@ -3756,28 +3764,28 @@ GetStyles(Class, Style, ExStyle, hWnd, IsChild = 0, IsChildInfoExist = 0) {
 		If (ExStyle & V) && (%K% := 1, ExStyle -= V)
 			RetEx .= QStyle(K, V)  
 
-	IF !CS_OWNDC && !CS_CLASSDC && (ExStyle & 0x02000000) && (1, ExStyle -= 0x02000000)  ;	WS_EX_COMPOSITED
+	IF !CS_OWNDC && !CS_CLASSDC && (ExStyle & 0x02000000) && (1, ExStyle -= 0x02000000)  ;;	WS_EX_COMPOSITED
 		RetEx .= QStyle("WS_EX_COMPOSITED", "0x02000000", "!(CS_OWNDC | CS_CLASSDC)")  
 
-	IF !WS_MAXIMIZEBOX && !WS_MINIMIZEBOX && (ExStyle & 0x00000400) && (1, ExStyle -= 0x00000400)  ;	WS_EX_CONTEXTHELP
+	IF !WS_MAXIMIZEBOX && !WS_MINIMIZEBOX && (ExStyle & 0x00000400) && (1, ExStyle -= 0x00000400)  ;;	WS_EX_CONTEXTHELP
 		RetEx .= QStyle("WS_EX_CONTEXTHELP", "0x00000400", "!(WS_MAXIMIZEBOX | WS_MINIMIZEBOX)")   
 		
-	IF !CS_OWNDC && !CS_CLASSDC && (ExStyle & 0x00080000) && (1, ExStyle -= 0x00080000)  ;	WS_EX_LAYERED
+	IF !CS_OWNDC && !CS_CLASSDC && (ExStyle & 0x00080000) && (1, ExStyle -= 0x00080000)  ;;	WS_EX_LAYERED
 		RetEx .= QStyle("WS_EX_LAYERED", "0x00080000", "!(CS_OWNDC | CS_CLASSDC)")   
 
-	IF !WS_EX_RIGHT  ;	WS_EX_LEFT
+	IF !WS_EX_RIGHT  ;;	WS_EX_LEFT
 		RetEx .= QStyle("WS_EX_LEFT", "0x00000000", "!(WS_EX_RIGHT)")    
 
-	IF !WS_EX_LEFTSCROLLBAR  ;	WS_EX_RIGHTSCROLLBAR
+	IF !WS_EX_LEFTSCROLLBAR  ;;	WS_EX_RIGHTSCROLLBAR
 		RetEx .= QStyle("WS_EX_RIGHTSCROLLBAR", "0x00000000", "!(WS_EX_LEFTSCROLLBAR)")     
 
-	IF !WS_EX_RTLREADING  ;	WS_EX_LTRREADING
+	IF !WS_EX_RTLREADING  ;;	WS_EX_LTRREADING
 		RetEx .= QStyle("WS_EX_LTRREADING", "0x00000000", "!(WS_EX_RTLREADING)")      
 
-	IF WS_EX_WINDOWEDGE && WS_EX_CLIENTEDGE  ;	WS_EX_OVERLAPPEDWINDOW
+	IF WS_EX_WINDOWEDGE && WS_EX_CLIENTEDGE  ;;	WS_EX_OVERLAPPEDWINDOW
 		RetEx .= QStyle("WS_EX_OVERLAPPEDWINDOW", "0x00000300", "(WS_EX_WINDOWEDGE | WS_EX_CLIENTEDGE)")       
 
-	IF WS_EX_WINDOWEDGE && WS_EX_TOOLWINDOW && WS_EX_TOPMOST  ;	WS_EX_PALETTEWINDOW 
+	IF WS_EX_WINDOWEDGE && WS_EX_TOOLWINDOW && WS_EX_TOPMOST  ;;	WS_EX_PALETTEWINDOW 
 		RetEx .= QStyle("WS_EX_PALETTEWINDOW", "0x00000188", "(WS_EX_WINDOWEDGE | WS_EX_TOOLWINDOW | WS_EX_TOPMOST)")
  
 	IF Style
@@ -3791,7 +3799,7 @@ GetStyles(Class, Style, ExStyle, hWnd, IsChild = 0, IsChildInfoExist = 0) {
 		Res .= _T1 " id='__ExStyles_Win'>" QStyleTitle("ExStyles", "", 8, sExStyle) "</span>" _T2 _PRE1 RetEx _PRE2 
 	Res .= ChildExStyles 
 		
-	StyleBits := DllCall("GetClassLong", "Ptr", hWnd, "int", GCL_STYLE)	;  https://docs.microsoft.com/en-us/windows/desktop/api/winuser/nf-winuser-setclasslongw
+	StyleBits := DllCall("GetClassLong", "Ptr", hWnd, "int", GCL_STYLE)	;;  https://docs.microsoft.com/en-us/windows/desktop/api/winuser/nf-winuser-setclasslongw
 	For K, V In ClassStyles
 		If (StyleBits & V) && (%K% := 1)
 				RetClass .= QStyle(K, V) 
@@ -3813,7 +3821,7 @@ QStyleRest(F, V) {
 QStyle(k, v, q = "") {
 	Return "<span name='MS:Q'>" k " := <span class='param' name='MS:'>" v "</span></span>" . (q != "" ? _StIf q "</span>`n" : "`n")
 }
-	; _________________________________________________ ControlStyles _________________________________________________
+	;; _________________________________________________ ControlStyles _________________________________________________
 
 /*
 	Added:
@@ -3823,7 +3831,7 @@ QStyle(k, v, q = "") {
 */  
 	
 GetStyle_#32770(Style, hWnd)  {
-	;	https://docs.microsoft.com/en-us/windows/desktop/dlgbox/dialog-box-styles
+	;;	https://docs.microsoft.com/en-us/windows/desktop/dlgbox/dialog-box-styles
 	Static oStyles
 	If !oStyles
 		oStyles := {"DS_3DLOOK":"0x00000004","DS_ABSALIGN":"0x00000001","DS_CENTER":"0x00000800","DS_CENTERMOUSE":"0x00001000","DS_CONTEXTHELP":"0x00002000"
@@ -3846,7 +3854,7 @@ GetStyle_#32770(Style, hWnd)  {
 
 
 GetStyle_tooltips_class32(Style, hWnd)  {
-	;	https://docs.microsoft.com/en-us/windows/desktop/controls/tooltip-styles
+	;;	https://docs.microsoft.com/en-us/windows/desktop/controls/tooltip-styles
 	Static oStyles
 	If !oStyles
 		oStyles := {"TTS_ALWAYSTIP":"0x00000001","TTS_BALLOON":"0x00000040","TTS_CLOSE":"0x00000080","TTS_NOANIMATE":"0x00000010","TTS_NOFADE":"0x00000020"
@@ -3869,8 +3877,8 @@ GetStyle_tooltips_class32(Style, hWnd)  {
 
 
 GetStyle_Static(Style, hWnd)  {
-	;	https://www.autohotkey.com/boards/viewtopic.php?p=25869#p25869
-	;	https://docs.microsoft.com/en-us/windows/desktop/controls/static-control-styles
+	;;	https://www.autohotkey.com/boards/viewtopic.php?p=25869#p25869
+	;;	https://docs.microsoft.com/en-us/windows/desktop/controls/static-control-styles
 	Static oStyles, oEx
 	If !oStyles
 		oStyles := {"SS_ELLIPSISMASK":"0xC000"
@@ -3893,7 +3901,7 @@ GetStyle_Static(Style, hWnd)  {
 	For K, V In oStyles
 		If Style && ((Style & V) = V) && (%K% := 1, Style -= V) 
 			Ret .= QStyle(K, V)
-	IF !SS_CENTER && !SS_RIGHT  ;	SS_LEFT
+	IF !SS_CENTER && !SS_RIGHT  ;;	SS_LEFT
 		Ret .= QStyle("SS_LEFT", "0x0000", "!(SS_CENTER | SS_RIGHT)")
 	IF Style
 		Ret .= GetStyle_CommonСontrol(Style, Style)
@@ -3906,8 +3914,8 @@ GetStyle_Static(Style, hWnd)  {
 }
 
 GetStyle_Button(Style, hWnd)  {
-	;	https://www.autohotkey.com/boards/viewtopic.php?p=25841#p25841
-	;	https://docs.microsoft.com/en-us/windows/desktop/controls/button-styles
+	;;	https://www.autohotkey.com/boards/viewtopic.php?p=25841#p25841
+	;;	https://docs.microsoft.com/en-us/windows/desktop/controls/button-styles
 	Static oStyles, oEx
 	If !oStyles
 		oStyles := {"BS_ICON":"0x0040","BS_BITMAP":"0x0080","BS_LEFT":"0x0100","BS_RIGHT":"0x0200","BS_CENTER":"0x0300"
@@ -3918,7 +3926,7 @@ GetStyle_Button(Style, hWnd)  {
 		,"BS_RADIOBUTTON":"0x0004","BS_3STATE":"0x0005","BS_AUTO3STATE":"0x0006","BS_GROUPBOX":"0x0007","BS_USERBUTTON":"0x0008"
 		,"BS_AUTORADIOBUTTON":"0x0009","BS_PUSHBOX":"0x000A","BS_OWNERDRAW":"0x000B","BS_COMMANDLINK":"0x000E"
 		,"BS_DEFCOMMANDLINK":"0x000F","BS_SPLITBUTTON":"0x000C","BS_DEFSPLITBUTTON":"0x000D","BS_PUSHBUTTON":"0x0000","BS_TEXT":"0x0000"}
-		  ; "BS_TYPEMASK":"0x000F"
+		  ;; "BS_TYPEMASK":"0x000F"
 
 	Style := sStyle := Style & 0xffff
 	For K, V In oEx
@@ -3927,17 +3935,17 @@ GetStyle_Button(Style, hWnd)  {
 			Ret .= QStyle(K, V)
 			Break
 		}
-	If ((Style & 0x0020) = 0x0020)  ;	BS_LEFTTEXT  ;	BS_RIGHTBUTTON
+	If ((Style & 0x0020) = 0x0020)  ;;	BS_LEFTTEXT  ;;	BS_RIGHTBUTTON
 		Ret .= QStyle("BS_LEFTTEXT := BS_RIGHTBUTTON", "0x0020")
 
 	For K, V In oStyles
 		If ((Style & V) = V) && (%K% := 1, Style -= V)
 			Ret .= QStyle(K, V)
 
-	IF !BS_ICON && !BS_BITMAP && !BS_AUTOCHECKBOX && !BS_AUTORADIOBUTTON && !BS_CHECKBOX && !BS_RADIOBUTTON  ;	BS_TEXT
+	IF !BS_ICON && !BS_BITMAP && !BS_AUTOCHECKBOX && !BS_AUTORADIOBUTTON && !BS_CHECKBOX && !BS_RADIOBUTTON  ;;	BS_TEXT
 		Ret .= QStyle("BS_TEXT", "0x0000", "!(BS_ICON | BS_BITMAP | BS_AUTOCHECKBOX | BS_AUTORADIOBUTTON | BS_CHECKBOX | BS_RADIOBUTTON)")
 
-	IF !BS_DEFPUSHBUTTON && !BS_CHECKBOX && !BS_AUTOCHECKBOX && !BS_RADIOBUTTON && !BS_GROUPBOX && !BS_AUTORADIOBUTTON  ;	BS_PUSHBUTTON
+	IF !BS_DEFPUSHBUTTON && !BS_CHECKBOX && !BS_AUTOCHECKBOX && !BS_RADIOBUTTON && !BS_GROUPBOX && !BS_AUTORADIOBUTTON  ;;	BS_PUSHBUTTON
 		Ret .= QStyle("BS_PUSHBUTTON", "0x0000", "!(BS_DEFPUSHBUTTON | BS_CHECKBOX | BS_AUTOCHECKBOX | BS_RADIOBUTTON | BS_GROUPBOX | BS_AUTORADIOBUTTON)")
 
 	IF Style
@@ -3951,8 +3959,8 @@ GetStyle_Button(Style, hWnd)  {
 }
 
 GetStyle_Edit(Style, hWnd)  {
-	;	https://www.autohotkey.com/boards/viewtopic.php?p=25848#p25848
-	;	https://docs.microsoft.com/en-us/windows/desktop/controls/edit-control-styles
+	;;	https://www.autohotkey.com/boards/viewtopic.php?p=25848#p25848
+	;;	https://docs.microsoft.com/en-us/windows/desktop/controls/edit-control-styles
 	Static oStyles
 	If !oStyles
 		oStyles := {"ES_CENTER":"0x0001","ES_RIGHT":"0x0002","ES_MULTILINE":"0x0004"
@@ -3965,7 +3973,7 @@ GetStyle_Edit(Style, hWnd)  {
 		If ((Style & V) = V) && (%K% := 1, Style -= V)
 			Ret .= QStyle(K, V)
 
-	IF !ES_CENTER && !ES_RIGHT  ;	ES_LEFT
+	IF !ES_CENTER && !ES_RIGHT  ;;	ES_LEFT
 		Ret .= QStyle("ES_LEFT", "0x0000", "!(ES_CENTER | ES_RIGHT)")
 
 	IF Style
@@ -3983,8 +3991,8 @@ GetStyle_ComboLBox(Style, hWnd)  {
 }
 
 GetStyle_ListBox(Style, hWnd)  {
-	;	https://www.autohotkey.com/boards/viewtopic.php?p=25855#p25855
-	;	https://docs.microsoft.com/en-us/windows/desktop/controls/list-box-styles
+	;;	https://www.autohotkey.com/boards/viewtopic.php?p=25855#p25855
+	;;	https://docs.microsoft.com/en-us/windows/desktop/controls/list-box-styles
 	Static oStyles
 	If !oStyles
 		oStyles := {"LBS_NOTIFY":"0x0001","LBS_SORT":"0x0002","LBS_NOREDRAW":"0x0004","LBS_MULTIPLESEL":"0x0008"
@@ -4000,7 +4008,7 @@ GetStyle_ListBox(Style, hWnd)  {
 		If ((Style & V) = V) && (%K% := 1, Style -= V)
 			Ret .= QStyle(K, V) 
 
-	IF LBS_NOTIFY && LBS_SORT && (wStyle & WS_VSCROLL) && (wStyle & WS_BORDER) && (1, Style -= 0x0003)  ;	LBS_STANDARD 
+	IF LBS_NOTIFY && LBS_SORT && (wStyle & WS_VSCROLL) && (wStyle & WS_BORDER) && (1, Style -= 0x0003)  ;;	LBS_STANDARD 
 		Ret .= QStyle("LBS_STANDARD", "0xA00003", "(LBS_NOTIFY | LBS_SORT | WS_VSCROLL | WS_BORDER)")
 
 	IF Style
@@ -4014,7 +4022,7 @@ GetStyle_ListBox(Style, hWnd)  {
 }
 
 GetStyle_SysAnimate32(Style, hWnd)  {
-	;	https://docs.microsoft.com/en-us/windows/desktop/controls/animation-control-styles
+	;;	https://docs.microsoft.com/en-us/windows/desktop/controls/animation-control-styles
 	Static oStyles
 	If !oStyles
 		oStyles := {"ACS_CENTER":"0x0001","ACS_TRANSPARENT":"0x0002","ACS_AUTOPLAY":"0x0004","ACS_TIMER":"0x0008"}
@@ -4034,7 +4042,7 @@ GetStyle_SysAnimate32(Style, hWnd)  {
 }
 
 GetStyle_SysPager(Style, hWnd)  {
-	;	https://docs.microsoft.com/en-us/windows/desktop/controls/pager-control-styles
+	;;	https://docs.microsoft.com/en-us/windows/desktop/controls/pager-control-styles
 	Static oStyles, oEx
 	If !oStyles
 		oStyles := {"PGS_HORZ":"0x0001","PGS_AUTOSCROLL":"0x0002","PGS_DRAGNDROP":"0x0004"}
@@ -4056,8 +4064,8 @@ GetStyle_SysPager(Style, hWnd)  {
 }
 
 GetStyle_msctls_updown32(Style, hWnd)  {
-	;	https://www.autohotkey.com/boards/viewtopic.php?p=25878#p25878
-	;	https://docs.microsoft.com/en-us/windows/desktop/controls/up-down-control-styles
+	;;	https://www.autohotkey.com/boards/viewtopic.php?p=25878#p25878
+	;;	https://docs.microsoft.com/en-us/windows/desktop/controls/up-down-control-styles
 	Static oStyles
 	If !oStyles
 		oStyles := {"UDS_WRAP":"0x0001","UDS_SETBUDDYINT":"0x0002","UDS_ALIGNRIGHT":"0x0004","UDS_ALIGNLEFT":"0x0008"
@@ -4078,8 +4086,8 @@ GetStyle_msctls_updown32(Style, hWnd)  {
 }
 
 GetStyle_SysDateTimePick32(Style, hWnd)  {
-	;	https://www.autohotkey.com/boards/viewtopic.php?p=25878#p25878
-	;	https://docs.microsoft.com/en-us/windows/desktop/controls/date-and-time-picker-control-styles
+	;;	https://www.autohotkey.com/boards/viewtopic.php?p=25878#p25878
+	;;	https://docs.microsoft.com/en-us/windows/desktop/controls/date-and-time-picker-control-styles
 	Static oStyles
 	If !oStyles
 		oStyles := {"DTS_UPDOWN":"0x0001","DTS_SHOWNONE":"0x0002","DTS_LONGDATEFORMAT":"0x0004","DTS_TIMEFORMAT":"0x0009"
@@ -4089,7 +4097,7 @@ GetStyle_SysDateTimePick32(Style, hWnd)  {
 	For K, V In oStyles
 		If ((Style & V) = V) && (%K% := 1, Style -= V)
 			Ret .= QStyle(K, V) 
-	IF !DTS_LONGDATEFORMAT  ;	DTS_SHORTDATEFORMAT
+	IF !DTS_LONGDATEFORMAT  ;;	DTS_SHORTDATEFORMAT
 		Ret .= QStyle("DTS_SHORTDATEFORMAT", "0x0000", "!(DTS_LONGDATEFORMAT)")
 
 	IF Style
@@ -4103,8 +4111,8 @@ GetStyle_SysDateTimePick32(Style, hWnd)  {
 }
 
 GetStyle_SysMonthCal32(Style, hWnd)  {
-	;	https://www.autohotkey.com/boards/viewtopic.php?p=25861#p25861
-	;	https://docs.microsoft.com/en-us/windows/desktop/controls/month-calendar-control-styles
+	;;	https://www.autohotkey.com/boards/viewtopic.php?p=25861#p25861
+	;;	https://docs.microsoft.com/en-us/windows/desktop/controls/month-calendar-control-styles
 	Static oStyles
 	If !oStyles
 		oStyles := {"MCS_DAYSTATE":"0x0001","MCS_MULTISELECT":"0x0002","MCS_WEEKNUMBERS":"0x0004","MCS_NOTODAYCIRCLE":"0x0008"
@@ -4125,8 +4133,8 @@ GetStyle_SysMonthCal32(Style, hWnd)  {
 }
 
 GetStyle_msctls_trackbar32(Style, hWnd)  {
-	;	https://www.autohotkey.com/boards/viewtopic.php?p=25875#p25875
-	;	https://docs.microsoft.com/en-us/windows/desktop/controls/trackbar-control-styles
+	;;	https://www.autohotkey.com/boards/viewtopic.php?p=25875#p25875
+	;;	https://docs.microsoft.com/en-us/windows/desktop/controls/trackbar-control-styles
 	Static oStyles
 	If !oStyles
 		oStyles := {"TBS_AUTOTICKS":"0x0001","TBS_VERT":"0x0002"
@@ -4141,18 +4149,18 @@ GetStyle_msctls_trackbar32(Style, hWnd)  {
 
 	IF !TBS_VERT
 	{
-		Ret .= QStyle("TBS_HORZ", "0x0000", "!(TBS_VERT)")  ;	TBS_HORZ
-		IF ((Style & 0x0004) = 0x0004) && (1, Style -= 0x0004)  ;	TBS_TOP 
+		Ret .= QStyle("TBS_HORZ", "0x0000", "!(TBS_VERT)")  ;;	TBS_HORZ
+		IF ((Style & 0x0004) = 0x0004) && (1, Style -= 0x0004)  ;;	TBS_TOP 
 			Ret .= QStyle("TBS_TOP", "0x0004", "(TBS_HORZ)")
-		IF !TBS_TOP  ;	TBS_BOTTOM 
+		IF !TBS_TOP  ;;	TBS_BOTTOM 
 			Ret .= QStyle("TBS_BOTTOM", "0x0000", "!(TBS_TOP) && (TBS_HORZ)")
 	}
 	Else
 	{
-		IF ((Style & 0x0004) = 0x0004) && (TBS_LEFT := 1, Style -= 0x0004)  ;	TBS_LEFT
+		IF ((Style & 0x0004) = 0x0004) && (TBS_LEFT := 1, Style -= 0x0004)  ;;	TBS_LEFT
 			Ret .= QStyle("TBS_LEFT", "0x0004", "(TBS_VERT)")
 
-		IF !TBS_LEFT  ;	TBS_RIGHT 
+		IF !TBS_LEFT  ;;	TBS_RIGHT 
 			Ret .= QStyle("TBS_RIGHT", "0x0000", "!(TBS_LEFT) && (TBS_VERT)")
 	}
 	IF Style
@@ -4166,8 +4174,8 @@ GetStyle_msctls_trackbar32(Style, hWnd)  {
 }
 
 GetStyle_msctls_statusbar32(Style, hWnd)  {
-	;	https://www.autohotkey.com/boards/viewtopic.php?p=25870#p25870
-	;	https://docs.microsoft.com/en-us/windows/desktop/controls/status-bar-styles
+	;;	https://www.autohotkey.com/boards/viewtopic.php?p=25870#p25870
+	;;	https://docs.microsoft.com/en-us/windows/desktop/controls/status-bar-styles
 	Static oStyles
 	If !oStyles
 		oStyles := {"SBARS_SIZEGRIP":"0x0100","SBARS_TOOLTIPS":"0x0800"}
@@ -4187,8 +4195,8 @@ GetStyle_msctls_statusbar32(Style, hWnd)  {
 }
 
 GetStyle_msctls_progress32(Style, hWnd)  {
-	;	https://www.autohotkey.com/boards/viewtopic.php?p=25864#p25864
-	;	https://docs.microsoft.com/en-us/windows/desktop/controls/progress-bar-control-styles
+	;;	https://www.autohotkey.com/boards/viewtopic.php?p=25864#p25864
+	;;	https://docs.microsoft.com/en-us/windows/desktop/controls/progress-bar-control-styles
 	Static oStyles
 	If !oStyles
 		oStyles := {"PBS_SMOOTH":"0x0001","PBS_VERTICAL":"0x0004","PBS_MARQUEE":"0x0008","PBS_SMOOTHREVERSE":"0x0010"}
@@ -4208,14 +4216,14 @@ GetStyle_msctls_progress32(Style, hWnd)  {
 }
 
 GetStyle_SysHeader32(Style, hWnd)  {
-	;	https://www.autohotkey.com/boards/viewtopic.php?p=25850#p25850
-	;	https://docs.microsoft.com/en-us/windows/desktop/controls/header-control-styles
+	;;	https://www.autohotkey.com/boards/viewtopic.php?p=25850#p25850
+	;;	https://docs.microsoft.com/en-us/windows/desktop/controls/header-control-styles
 	Static oStyles
 	If !oStyles
 		oStyles := {"HDS_BUTTONS":"0x0002","HDS_CHECKBOXES":"0x0400","HDS_DRAGDROP":"0x0040","HDS_FILTERBAR":"0x0100","HDS_FLAT":"0x0200"
 		,"HDS_FULLDRAG":"0x0080","HDS_HIDDEN":"0x0008","HDS_HORZ":"0x0000","HDS_HOTTRACK":"0x0004","HDS_NOSIZING":"0x0800","HDS_OVERFLOW":"0x1000"}
 
-	; Style := DllCall("GetWindowLong", "Ptr", hWnd, "int", GWL_STYLE := -16)
+	;; Style := DllCall("GetWindowLong", "Ptr", hWnd, "int", GWL_STYLE := -16)
 
 	Style := sStyle := Style & 0xffff
 	For K, V In oStyles
@@ -4232,8 +4240,8 @@ GetStyle_SysHeader32(Style, hWnd)  {
 }
 
 GetStyle_SysLink(Style, hWnd) {
-	;	https://www.autohotkey.com/boards/viewtopic.php?p=25859#p25859
-	;	https://docs.microsoft.com/en-us/windows/desktop/controls/syslink-control-styles
+	;;	https://www.autohotkey.com/boards/viewtopic.php?p=25859#p25859
+	;;	https://docs.microsoft.com/en-us/windows/desktop/controls/syslink-control-styles
 	Static oStyles
 	If !oStyles
 		oStyles := {"LWS_IGNORERETURN":"0x0002","LWS_NOPREFIX":"0x0004","LWS_RIGHT":"0x0020","LWS_TRANSPARENT":"0x0001","LWS_USECUSTOMTEXT":"0x0010","LWS_USEVISUALSTYLE":"0x0008"}
@@ -4253,8 +4261,8 @@ GetStyle_SysLink(Style, hWnd) {
 }
 
 GetStyle_ReBarWindow32(Style, hWnd) {
-	;	https://www.autohotkey.com/boards/viewtopic.php?p=25865#p25865
-	;	https://docs.microsoft.com/en-us/windows/desktop/controls/rebar-control-styles
+	;;	https://www.autohotkey.com/boards/viewtopic.php?p=25865#p25865
+	;;	https://docs.microsoft.com/en-us/windows/desktop/controls/rebar-control-styles
 	Static oStyles
 	If !oStyles
 		oStyles := {"RBS_AUTOSIZE":"0x2000","RBS_BANDBORDERS":"0x0400","RBS_DBLCLKTOGGLE":"0x8000","RBS_FIXEDORDER":"0x0800"
@@ -4273,8 +4281,8 @@ GetStyle_ReBarWindow32(Style, hWnd) {
 	Return Res
 }
 
-GetStyle_CommonСontrol(Style, ByRef NewStyle) {   ;	Остаток от стилей контролов
-	;	https://www.autohotkey.com/boards/viewtopic.php?p=25846#p25846
+GetStyle_CommonСontrol(Style, ByRef NewStyle) {   ;;	Остаток от стилей контролов
+	;;	https://www.autohotkey.com/boards/viewtopic.php?p=25846#p25846
 	Static oStyles, oEx
 	If !oStyles
 		oStyles := {"CCS_ADJUSTABLE":"0x0020","CCS_BOTTOM":"0x0003","CCS_NODIVIDER":"0x0040","CCS_NOMOVEY":"0x0002"
@@ -4286,11 +4294,11 @@ GetStyle_CommonСontrol(Style, ByRef NewStyle) {   ;	Остаток от сти�
 	For K, V In oStyles
 		If ((NewStyle & V) = V) && (%K% := 1, NewStyle -= V)
 			Ret .= QStyle(K, V)
-	IF !CCS_VERT && !CCS_TOP && (NewStyle & oEx.CCS_LEFT) && (1, NewStyle -= oEx.CCS_LEFT)  ;	CCS_LEFT
+	IF !CCS_VERT && !CCS_TOP && (NewStyle & oEx.CCS_LEFT) && (1, NewStyle -= oEx.CCS_LEFT)  ;;	CCS_LEFT
 		Ret .= QStyle("CCS_LEFT", "0x0081", "!(CCS_VERT | CCS_TOP)")
-	IF !CCS_VERT && !CCS_NOMOVEY && (NewStyle & oEx.CCS_NOMOVEX) && (1, NewStyle -= oEx.CCS_NOMOVEX)  ;	CCS_NOMOVEX
+	IF !CCS_VERT && !CCS_NOMOVEY && (NewStyle & oEx.CCS_NOMOVEX) && (1, NewStyle -= oEx.CCS_NOMOVEX)  ;;	CCS_NOMOVEX
 		Ret .= QStyle("CCS_NOMOVEX", "0x0082", "!(CCS_VERT | CCS_NOMOVEY)") 
-	IF !CCS_VERT && !CCS_BOTTOM && (NewStyle & oEx.CCS_RIGHT) && (1, NewStyle -= oEx.CCS_RIGHT)  ;	CCS_RIGHT
+	IF !CCS_VERT && !CCS_BOTTOM && (NewStyle & oEx.CCS_RIGHT) && (1, NewStyle -= oEx.CCS_RIGHT)  ;;	CCS_RIGHT
 		Ret .= QStyle("CCS_RIGHT", "0x0083", "!(CCS_VERT | CCS_BOTTOM)") 
 	Return Ret
 }
@@ -4299,9 +4307,9 @@ GetStyle_CommonСontrol(Style, ByRef NewStyle) {   ;	Остаток от сти�
 
 
 GetStyle_SysListView32(Style, hWnd, byref ResEx)  {
-	;	https://www.autohotkey.com/boards/viewtopic.php?p=25857#p25857
-	;	https://docs.microsoft.com/en-us/windows/desktop/controls/list-view-window-styles
-	;	https://docs.microsoft.com/en-us/windows/desktop/controls/extended-list-view-styles
+	;;	https://www.autohotkey.com/boards/viewtopic.php?p=25857#p25857
+	;;	https://docs.microsoft.com/en-us/windows/desktop/controls/list-view-window-styles
+	;;	https://docs.microsoft.com/en-us/windows/desktop/controls/extended-list-view-styles
 	Static oStyles, oExStyles, oEx, LVM_GETEXTENDEDLISTVIEWSTYLE := 0x1037
 	If !oStyles
 		oStyles := {"LVS_AUTOARRANGE":"0x0100","LVS_EDITLABELS":"0x0200"
@@ -4329,21 +4337,21 @@ GetStyle_SysListView32(Style, hWnd, byref ResEx)  {
 		If ((sStyle & V) = V) && (%K% := 1, Style -= V)
 			Ret .= QStyle(K, V) 
 
-	IF ((sStyle & oEx.LVS_TYPEMASK) = oEx.LVS_REPORT) && (LVS_REPORT := 1, Style -= oEx.LVS_REPORT)      ;	LVS_REPORT 
+	IF ((sStyle & oEx.LVS_TYPEMASK) = oEx.LVS_REPORT) && (LVS_REPORT := 1, Style -= oEx.LVS_REPORT)      ;;	LVS_REPORT 
 		Ret .= QStyle("LVS_REPORT", "0x0001", "(LVS_TYPEMASK = 0x0001)")
-	IF ((sStyle & oEx.LVS_TYPEMASK) = oEx.LVS_SMALLICON) && (LVS_SMALLICON := 1, Style -= oEx.LVS_SMALLICON)      ;	LVS_SMALLICON
+	IF ((sStyle & oEx.LVS_TYPEMASK) = oEx.LVS_SMALLICON) && (LVS_SMALLICON := 1, Style -= oEx.LVS_SMALLICON)      ;;	LVS_SMALLICON
 		Ret .= QStyle("LVS_SMALLICON", "0x0002", "(LVS_TYPEMASK = 0x0002)")
-	IF ((sStyle & oEx.LVS_TYPEMASK) = oEx.LVS_LIST) && (LVS_LIST := 1, Style -= oEx.LVS_LIST)      ;	LVS_LIST
+	IF ((sStyle & oEx.LVS_TYPEMASK) = oEx.LVS_LIST) && (LVS_LIST := 1, Style -= oEx.LVS_LIST)      ;;	LVS_LIST
 		Ret .= QStyle("LVS_LIST", "0x0003", "(LVS_TYPEMASK = 0x0003)")
-	IF ((sStyle & oEx.LVS_TYPEMASK) = oEx.LVS_ICON) && !LVS_REPORT && !LVS_SMALLICON && !LVS_LIST && (LVS_ICON := 1)      ;	LVS_ICON
+	IF ((sStyle & oEx.LVS_TYPEMASK) = oEx.LVS_ICON) && !LVS_REPORT && !LVS_SMALLICON && !LVS_LIST && (LVS_ICON := 1)      ;;	LVS_ICON
 		Ret .= QStyle("LVS_ICON", "0x0000", "!(LVS_REPORT | LVS_SMALLICON | LVS_LIST)")
-	IF ((sStyle & oEx.LVS_ALIGNMASK) = oEx.LVS_ALIGNLEFT) && (LVS_ALIGNLEFT := 1, Style -= oEx.LVS_ALIGNLEFT)      ;	LVS_ALIGNLEFT
+	IF ((sStyle & oEx.LVS_ALIGNMASK) = oEx.LVS_ALIGNLEFT) && (LVS_ALIGNLEFT := 1, Style -= oEx.LVS_ALIGNLEFT)      ;;	LVS_ALIGNLEFT
 		Ret .= QStyle("LVS_ALIGNLEFT", "0x0800", "(LVS_ALIGNMASK = 0x0800)")
-	IF ((sStyle & oEx.LVS_ALIGNMASK) = oEx.LVS_ALIGNTOP) && (LVS_SMALLICON || LVS_ICON) && (LVS_ALIGNTOP := 1, Style -= oEx.LVS_ALIGNTOP)      ;	LVS_ALIGNTOP
+	IF ((sStyle & oEx.LVS_ALIGNMASK) = oEx.LVS_ALIGNTOP) && (LVS_SMALLICON || LVS_ICON) && (LVS_ALIGNTOP := 1, Style -= oEx.LVS_ALIGNTOP)      ;;	LVS_ALIGNTOP
 		Ret .= QStyle("LVS_ALIGNTOP", "0x0000", "(LVS_SMALLICON || LVS_ICON)")
-	IF ((sStyle & oEx.LVS_NOSORTHEADER) = oEx.LVS_NOSORTHEADER) && (LVS_NOSORTHEADER := 1, Style -= oEx.LVS_NOSORTHEADER)      ;	LVS_NOSORTHEADER
+	IF ((sStyle & oEx.LVS_NOSORTHEADER) = oEx.LVS_NOSORTHEADER) && (LVS_NOSORTHEADER := 1, Style -= oEx.LVS_NOSORTHEADER)      ;;	LVS_NOSORTHEADER
 		Ret .= QStyle("LVS_NOSORTHEADER", "0x8000", "(LVS_TYPEMASK = 0x0003)")
-	IF ((sStyle & oEx.LVS_NOCOLUMNHEADER) = oEx.LVS_NOCOLUMNHEADER) && (LVS_NOCOLUMNHEADER := 1, Style -= oEx.LVS_NOCOLUMNHEADER)      ;	LVS_NOCOLUMNHEADER
+	IF ((sStyle & oEx.LVS_NOCOLUMNHEADER) = oEx.LVS_NOCOLUMNHEADER) && (LVS_NOCOLUMNHEADER := 1, Style -= oEx.LVS_NOCOLUMNHEADER)      ;;	LVS_NOCOLUMNHEADER
 		Ret .= QStyle("LVS_NOCOLUMNHEADER", "0x4000")
 
 	IF Style
@@ -4366,9 +4374,9 @@ GetStyle_SysListView32(Style, hWnd, byref ResEx)  {
 }
 
 GetStyle_SysTreeView32(Style, hWnd, byref ResEx)  {
-	;	https://www.autohotkey.com/boards/viewtopic.php?p=25876#p25876
-	;	https://docs.microsoft.com/en-us/windows/desktop/controls/tree-view-control-window-styles
-	;	https://docs.microsoft.com/en-us/windows/desktop/controls/tree-view-control-window-extended-styles
+	;;	https://www.autohotkey.com/boards/viewtopic.php?p=25876#p25876
+	;;	https://docs.microsoft.com/en-us/windows/desktop/controls/tree-view-control-window-styles
+	;;	https://docs.microsoft.com/en-us/windows/desktop/controls/tree-view-control-window-extended-styles
 	Static oStyles, oExStyles, TVM_GETEXTENDEDSTYLE := 0x112D
 	If !oStyles
 		oStyles := {"TVS_CHECKBOXES":"0x0100","TVS_DISABLEDRAGDROP":"0x0010","TVS_EDITLABELS":"0x0008","TVS_FULLROWSELECT":"0x1000","TVS_HASBUTTONS":"0x0001"
@@ -4407,9 +4415,9 @@ GetStyle_SysTreeView32(Style, hWnd, byref ResEx)  {
 }
 
 GetStyle_SysTabControl32(Style, hWnd, byref ResEx)  {
-	;	https://www.autohotkey.com/boards/viewtopic.php?p=25871#p25871
-	;	https://docs.microsoft.com/en-us/windows/desktop/controls/tab-control-styles
-	;	https://docs.microsoft.com/en-us/windows/desktop/controls/tab-control-extended-styles
+	;;	https://www.autohotkey.com/boards/viewtopic.php?p=25871#p25871
+	;;	https://docs.microsoft.com/en-us/windows/desktop/controls/tab-control-styles
+	;;	https://docs.microsoft.com/en-us/windows/desktop/controls/tab-control-extended-styles
 	Static oStyles, TCM_GETEXTENDEDSTYLE := 0x1335
 	If !oStyles
 		oStyles := {"TCS_SCROLLOPPOSITE":"0x0001","TCS_MULTISELECT":"0x0004","TCS_FLATBUTTONS":"0x0008"
@@ -4424,15 +4432,15 @@ GetStyle_SysTabControl32(Style, hWnd, byref ResEx)  {
 		If ((Style & V) = V) && (%K% := 1, Style -= V)
 			Ret .= QStyle(K, V)
 
-	IF !TCS_BUTTONS   ;	TCS_TABS
+	IF !TCS_BUTTONS   ;;	TCS_TABS
 		Ret .= QStyle("TCS_TABS", "0x0000", "!(TCS_BUTTONS)")
-	IF !TCS_MULTILINE   ;	TCS_SINGLELINE
+	IF !TCS_MULTILINE   ;;	TCS_SINGLELINE
 		Ret .= QStyle("TCS_SINGLELINE", "0x0000", "!(TCS_MULTILINE)")
-	IF TCS_MULTILINE   ;	TCS_RIGHTJUSTIFY
+	IF TCS_MULTILINE   ;;	TCS_RIGHTJUSTIFY
 		Ret .= QStyle("TCS_RIGHTJUSTIFY", "0x0000", "(TCS_MULTILINE)")
-	IF TCS_MULTILINE && ((Style & 0x0080) = 0x0080) && (TCS_VERTICAL := 1, Style -= 0x0080)  ;	"TCS_VERTICAL":"0x0080"
+	IF TCS_MULTILINE && ((Style & 0x0080) = 0x0080) && (TCS_VERTICAL := 1, Style -= 0x0080)  ;;	"TCS_VERTICAL":"0x0080"
 		Ret .= QStyle("TCS_VERTICAL", "0x0080", "(TCS_MULTILINE)")
-	IF ((Style & 0x0002) = 0x0002) && (1, Style -= 0x0002)   ;	"TCS_BOTTOM":"0x0002","TCS_RIGHT":"0x0002"
+	IF ((Style & 0x0002) = 0x0002) && (1, Style -= 0x0002)   ;;	"TCS_BOTTOM":"0x0002","TCS_RIGHT":"0x0002"
 	{
 		IF TCS_VERTICAL
 			Ret .= QStyle("TCS_RIGHT", "0x0002", "(TCS_VERTICAL)")
@@ -4446,9 +4454,9 @@ GetStyle_SysTabControl32(Style, hWnd, byref ResEx)  {
 	If Ret !=
 		Res .= _T1 " id='__Styles_Control'>" QStyleTitle("Styles", "SysTabControl32", 4, sStyle) "</span>" _T2 _PRE1 Ret _PRE2
  
-	If ((ExStyle & 0x00000001) = 0x00000001) && (1, ExStyle -= 0x00000001)  ;	TCS_EX_FLATSEPARATORS
+	If ((ExStyle & 0x00000001) = 0x00000001) && (1, ExStyle -= 0x00000001)  ;;	TCS_EX_FLATSEPARATORS
 		RetEx .= QStyle("TCS_EX_FLATSEPARATORS", "0x00000001")
-	If ((ExStyle & 0x00000002) = 0x00000002) && (1, ExStyle -= 0x00000002)  ;	TCS_EX_REGISTERDROP
+	If ((ExStyle & 0x00000002) = 0x00000002) && (1, ExStyle -= 0x00000002)  ;;	TCS_EX_REGISTERDROP
 		RetEx .= QStyle("TCS_EX_REGISTERDROP", "0x00000002")
 
 	IF ExStyle
@@ -4460,8 +4468,8 @@ GetStyle_SysTabControl32(Style, hWnd, byref ResEx)  {
 }
 
 GetStyle_ComboBox(Style, hWnd, byref ResEx)  {
-	;	https://www.autohotkey.com/boards/viewtopic.php?p=25842#p25842
-	;	https://docs.microsoft.com/en-us/windows/desktop/controls/combo-box-styles
+	;;	https://www.autohotkey.com/boards/viewtopic.php?p=25842#p25842
+	;;	https://docs.microsoft.com/en-us/windows/desktop/controls/combo-box-styles
 	Static oStyles, oExStyles, oEx, CBEM_GETEXTENDEDSTYLE := 0x0409
 	If !oStyles
 		oStyles := {"CBS_SIMPLE":"0x0001","CBS_DROPDOWN":"0x0002","CBS_OWNERDRAWFIXED":"0x0010"
@@ -4487,7 +4495,7 @@ GetStyle_ComboBox(Style, hWnd, byref ResEx)  {
 		} 
 	}
 	Style := sStyle := Style & 0xffff
-	If ((Style & oEx.CBS_DROPDOWNLIST) = oEx.CBS_DROPDOWNLIST) && (1, Style -= oEx.CBS_DROPDOWNLIST)  ;	CBS_DROPDOWNLIST
+	If ((Style & oEx.CBS_DROPDOWNLIST) = oEx.CBS_DROPDOWNLIST) && (1, Style -= oEx.CBS_DROPDOWNLIST)  ;;	CBS_DROPDOWNLIST
 		Ret .= QStyle("CBS_DROPDOWNLIST", oEx.CBS_DROPDOWNLIST)
 	For K, V In oStyles
 		If ((Style & V) = V) && (1, Style -= V)
@@ -4504,10 +4512,10 @@ GetStyle_ComboBox(Style, hWnd, byref ResEx)  {
 }
 
 GetStyle_ToolbarWindow32(Style, hWnd, byref ResEx)  {
-	;	https://www.autohotkey.com/boards/viewtopic.php?p=25872#p25872
-	;	https://docs.microsoft.com/en-us/windows/desktop/controls/toolbar-control-and-button-styles
-	;	https://docs.microsoft.com/en-us/windows/desktop/controls/toolbar-extended-styles
-	;	https://docs.microsoft.com/en-us/windows/desktop/api/Commctrl/ns-commctrl-_tbbutton
+	;;	https://www.autohotkey.com/boards/viewtopic.php?p=25872#p25872
+	;;	https://docs.microsoft.com/en-us/windows/desktop/controls/toolbar-control-and-button-styles
+	;;	https://docs.microsoft.com/en-us/windows/desktop/controls/toolbar-extended-styles
+	;;	https://docs.microsoft.com/en-us/windows/desktop/api/Commctrl/ns-commctrl-_tbbutton
 	Static oStyles, oExStyles, TB_GETSTYLE := 0x0439, TB_GETEXTENDEDSTYLE := 0x0455
 	If !oStyles
 		oStyles := {"TBSTYLE_ALTDRAG":"0x0400","TBSTYLE_CUSTOMERASE":"0x2000","TBSTYLE_FLAT":"0x0800","TBSTYLE_LIST":"0x1000"
@@ -4554,13 +4562,13 @@ GetStyle_ToolbarWindow32(Style, hWnd, byref ResEx)  {
 		fsState := NumGet(TBBUTTON, 8, "UChar")
 		fsStyle := NumGet(TBBUTTON, 9, "UChar")
 		bReserved := NumGet(TBBUTTON, 10, "UChar")
-		;bReserved := NumGet(TBBUTTON, 10, "UChar")
+		;;bReserved := NumGet(TBBUTTON, 10, "UChar")
 		dwData := NumGet(TBBUTTON, A_PtrSize == 8 ? 16 : 12, "UPtr")
 		iString := NumGet(TBBUTTON, A_PtrSize == 8 ? 24 : 16, "Ptr")
 */
 }
 
-	; _________________________________________________ FullScreen _________________________________________________
+	;; _________________________________________________ FullScreen _________________________________________________
 
 FullScreenMode() {
 	Static Max, hFunc
@@ -4572,7 +4580,7 @@ FullScreenMode() {
 		WinGetNormalPos(hwnd, X, Y, W, H)
 		WinGet, Max, MinMax, ahk_id %hwnd%
 		If Max = 1
-			WinSet, Style, -0x01000000	;	WS_MAXIMIZE
+			WinSet, Style, -0x01000000	;;	WS_MAXIMIZE
 		Gui, 1: -ReSize -Caption
 		Gui, 1: Show, x0 y0 w%A_ScreenWidth% h%A_ScreenHeight%
 		Gui, 1: Maximize
@@ -4614,7 +4622,7 @@ WinSetNormalPos(hwnd, x, y, w, h) {
 	DllCall("SetWindowPlacement", "Ptr", hWnd, "Ptr", &wp)
 }
 
-	; _________________________________________________ Find _________________________________________________
+	;; _________________________________________________ Find _________________________________________________
 
 _FindView() {
 	If isFindView
@@ -4666,7 +4674,7 @@ FindNewText() {
 }
 
 FindNext(Hwnd) {
-	SendMessage, 0x400+114,,,, ahk_id %Hwnd%		;  UDM_GETPOS32
+	SendMessage, 0x400+114,,,, ahk_id %Hwnd%		;;  UDM_GETPOS32
 	Back := !ErrorLevel
 	FindSearch(0, Back)
 }
@@ -4687,10 +4695,10 @@ FindAll() {
 		If (F = 0)
 			Break
 		El := R.parentElement()
-		If (El.TagName = "INPUT" || El.className ~= "^(button|title|param)$") && !R.collapse(0)  ;	https://msdn.microsoft.com/en-us/library/ff976065(v=vs.85).aspx
+		If (El.TagName = "INPUT" || El.className ~= "^(button|title|param)$") && !R.collapse(0)  ;;	https://msdn.microsoft.com/en-us/library/ff976065(v=vs.85).aspx
 			Continue
-		; R.execCommand("BackColor", 0, "EF0FFF")
-		; R.execCommand("ForeColor", 0, "FFEEFF")
+		;; R.execCommand("BackColor", 0, "EF0FFF")
+		;; R.execCommand("ForeColor", 0, "FFEEFF")
 		R.collapse(0), ++Matches
 	}
 	GuiControl, F:Text, FindMatches, % Matches ? Matches : ""
@@ -4736,7 +4744,7 @@ FindSearch(New, Back = 0) {
 			SetEditColor(hFindEdit, 0xFFFFFF, 0x000000)
 	}
 }
-	; _________________________________________________ Mouse hover selection _________________________________________________
+	;; _________________________________________________ Mouse hover selection _________________________________________________
 
 MS_Cancel() {
 	If !oMS.ELSel
@@ -4788,12 +4796,12 @@ MS_Select(EL) {
 	oMS.ELSelChild := oMS.ELSel.childNodes[0 + (InStr(EL.Name, ":SP") || InStr(EL.Name, ":Q"))]
 	oMS.ELSelChild.style.color := "#FFFFFF"
 	
-	; ToolTip % oMS.ELSelChild.OuterText "`n" EL.Name
+	;; ToolTip % oMS.ELSelChild.OuterText "`n" EL.Name
 }
 
-	; _________________________________________________ Load JScripts _________________________________________________
+	;; _________________________________________________ Load JScripts _________________________________________________
 
-ChangeCSS(id, css) {	;  https://webo.in/articles/habrahabr/68-fast-dynamic-css/
+ChangeCSS(id, css) {	;;  https://webo.in/articles/habrahabr/68-fast-dynamic-css/
 	oDoc.getElementById(id).styleSheet.cssText := css
 }
 
@@ -4926,9 +4934,9 @@ ComObjConnect(onhkinput := oDoc.getElementById("hkinputevent"), "onhkinput_")
 ComObjConnect(ontooltip := oDoc.getElementById("tooltipevent"), "tooltip_")
 }
 
-	; _________________________________________________ Doc Events _________________________________________________
+	;; _________________________________________________ Doc Events _________________________________________________
 
-onhkinput_onclick() {  ;	http://forum.script-coding.com/viewtopic.php?id=8206
+onhkinput_onclick() {  ;;	http://forum.script-coding.com/viewtopic.php?id=8206
 	If (oJScript.key2 = "focus")
 		Sleep(1), Hotkey_Hook(0)
 	Else If (WinActive("ahk_id" hGui) && !isPaused && ThisMode = "Hotkey")
@@ -4939,7 +4947,7 @@ tooltip_onclick() {
 	ToolTip(oJScript.key1, 500)
 }
 
-Class Events {  ;	http://forum.script-coding.com/viewtopic.php?pid=82283#p82283
+Class Events {  ;;	http://forum.script-coding.com/viewtopic.php?pid=82283#p82283
 	onclick() {
 		oevent := oDoc.parentWindow.event.srcElement
 		If (oevent.ClassName = "button" || oevent.tagname = "button")
@@ -4963,10 +4971,10 @@ Class Events {  ;	http://forum.script-coding.com/viewtopic.php?pid=82283#p82283
 					: (rng.moveStart("character", 1), t := 0))
 			sel := rng.text, rng.moveEnd("character", StrLen(RTrim(sel)) - StrLen(sel)), rng.select()  
 		}
-		Else If (ThisMode != "Hotkey" && (oevent.ClassName = "title" || oevent.ClassName = "con" || oevent.ClassName = "hr" || oevent.ClassName = "box"))  ;	anchor
+		Else If (ThisMode != "Hotkey" && (oevent.ClassName = "title" || oevent.ClassName = "con" || oevent.ClassName = "hr" || oevent.ClassName = "box"))  ;;	anchor
 		{
 			R := oDoc.selection.createRange(), R.collapse(1), R.select()
-			  ;	EL = [class 'hr'], _text = [class 'title'].id
+			  ;;	EL = [class 'hr'], _text = [class 'title'].id
 			If oevent.ClassName = "con"
 				_text := oevent.firstChild.id, EL := oevent.parentElement.firstChild
 			Else If oevent.ClassName = "hr"
@@ -5178,13 +5186,15 @@ ButtonClick(oevent) {
 	Else If (thisid = "win_close" && (oOther.WinPID || !ToolTip("Invalid parametrs", 500)) && ConfirmAction("Window close?"))
 		WinClose, % "ahk_id" oOther.WinID
 	Else If (thisid = "control_destroy" && (WinExist("ahk_id" oOther.ControlID) || !ToolTip("window not exist", 500)) && ConfirmAction("Destroy window?"))
-			WinClose, % "ahk_id" oOther.ControlID     ; DllCall("DestroyWindow", "Ptr", oOther.ControlID)   ;  не работает
-	Else If (thisid = "control_show_hide" && (WinExist("ahk_id" oOther.ControlID) || !ToolTip("window not exist", 500)))
+			WinClose, % "ahk_id" oOther.ControlID     ;; DllCall("DestroyWindow", "Ptr", oOther.ControlID)   ;;  не работает
+	Else If (thisid = "control_show_hide" || thisid = "window_show_hide" && (WinExist("ahk_id" oOther.ControlID) || !ToolTip("window not exist", 500)))
 	{
-		If DllCall("IsWindowVisible", "Ptr", oOther.ControlID) 
-			WinHide, % "ahk_id" oOther.ControlID
+		Hwnd := thisid = "window_show_hide" ? oOther.WinID : oOther.ControlID
+		If b := DllCall("IsWindowVisible", "Ptr", Hwnd) 
+			WinHide, % "ahk_id" Hwnd
 		Else 
-			WinShow, % "ahk_id" oOther.ControlID
+			WinShow, % "ahk_id" Hwnd
+		ToolTip(b ? "Hide" : "Show" , 500)
 	}
 	Else If (thisid = "SendCode")
 		Events.SendCode()
@@ -5200,13 +5210,13 @@ ButtonClick(oevent) {
 		edithotkey := oDoc.getElementById("edithotkey"), edithotkey.value := "", edithotkey.focus()
 		, oDoc.execCommand("Paste"), oDoc.getElementById("keyname").click()
 	Else If thisid = get_styles_w
-		ViewStylesWin(oevent)
+		ViewStylesWin()
 	Else If thisid = update_styles_w
-		ViewStylesWin(oevent, 1) 
+		ViewStylesWin(1) 
 	Else If thisid = get_styles_c
-		ViewStylesControl(oevent)
+		ViewStylesControl()
 	Else If thisid = update_styles_c
-		ViewStylesControl(oevent, 1) 
+		ViewStylesControl(1) 
 	Else If thisid = run_AccViewer
 		RunAhkPath(ExtraFile("AccViewer Source"), oPubObjGUID)
 	Else If thisid = run_iWB2Learner
@@ -5220,8 +5230,8 @@ ButtonClick(oevent) {
 			Run % Path_User "\Window Detective.lnk"
 		TimerFunc(Func("MyWindowDetectiveStart").Bind(ThisMode = "Win" ? oOther.WinID : oOther.ControlID, WinExist() ? 1 : 0), -300)
 	}
-	Else If thisid = set_button_Transparent
-		WinSet, Transparent, % oDoc.getElementById("get_win_Transparent").innerText + 0, % "ahk_id" oOther.WinID
+	Else If (thisid = "set_button_Transparent" && ToolTip((v := oDoc.getElementById("get_win_Transparent").innerText + 0), 500)) 
+		WinSet, Transparent, % v, % "ahk_id" oOther.WinID
 	Else If thisid = set_button_TransColor
 		WinSet, TransColor, % oDoc.getElementById("get_win_TransColor").innerText, % "ahk_id" oOther.WinID
 	Else If thisid = set_button_pos
@@ -5343,8 +5353,8 @@ control_path_func() {
 }
 
 acc_path_func(manual, Acc) {
-	; If (manual && oOther.anchor[ThisMode "_text"] = "P__Tree_Acc_Path")
-		; MsgBox %  oDoc.getElementById("P__Tree_Acc_Path").innerHTML
+	;; If (manual && oOther.anchor[ThisMode "_text"] = "P__Tree_Acc_Path")
+		;; MsgBox %  oDoc.getElementById("P__Tree_Acc_Path").innerHTML
 	If !Malcev_AccPathNotBlink && manual
 	{
 		oDoc.getElementById("acc_path").disabled := 1
@@ -5374,7 +5384,7 @@ acc_path_func(manual, Acc) {
 	HTML_Control := oBody.innerHTML
 }
 
-	; _________________________________________________ SingleInstance _________________________________________________
+	;; _________________________________________________ SingleInstance _________________________________________________
 
 SingleInstance(Icon = 0) {
 	#NoTrayIcon
@@ -5419,9 +5429,9 @@ SingleInstance(Icon = 0) {
 		Menu, Tray, Icon
 }
 
-	; ________________________________________________________________________________________________________
-	; _________________________________________________ Zoom _________________________________________________
-	; ________________________________________________________________________________________________________
+	;; ________________________________________________________________________________________________________
+	;; _________________________________________________ Zoom _________________________________________________
+	;; ________________________________________________________________________________________________________
 
 ShowZoom:
 hAhkSpy = %2%
@@ -5456,8 +5466,8 @@ Z_MsgZoom(12, OnlyShiftTab)
 OnMessage(MsgAhkSpyZoom := DllCall("RegisterWindowMessage", "Str", "MsgAhkSpyZoom"), "Z_MsgZoom")
 OnMessage(0x0020, "WM_SETCURSOR")
 OnExit("ZoomOnClose")
-OnMessage(0x201, "LBUTTONDOWN") ; WM_LBUTTONDOWN
-OnMessage(0xA1, "LBUTTONDOWN") ; WM_NCLBUTTONDOWN
+OnMessage(0x201, "LBUTTONDOWN") ;; WM_LBUTTONDOWN
+OnMessage(0xA1, "LBUTTONDOWN") ;; WM_NCLBUTTONDOWN
 
 SetWinEventHook("EVENT_OBJECT_DESTROY", 0x8001)
 SetWinEventHook("EVENT_SYSTEM_MINIMIZESTART", 0x0016)
@@ -5473,7 +5483,7 @@ If Min != -1
 	ZoomShow()
 Return
 
-#If isZoom && oZoom.Show  ;	&& !oZoom.Work
+#If isZoom && oZoom.Show  ;;	&& !oZoom.Work
 
 +#PgUp::
 +#PgDn::
@@ -5493,13 +5503,13 @@ ZoomCreate() {
 		GuiW := IniRead("MemoryZoomSizeW", oZoom.GuiMinW), GuiH := IniRead("MemoryZoomSizeH", oZoom.GuiMinH)
 	Else
 		GuiW := oZoom.GuiMinW, GuiH := oZoom.GuiMinH
-	Gui, Zoom: -Caption -DPIScale +Border +LabelZoomOn +HWNDhGui +AlwaysOnTop +E%WS_EX_NOACTIVATE%    ;	+Owner%hAhkSpy%
+	Gui, Zoom: -Caption -DPIScale +Border +LabelZoomOn +HWNDhGui +AlwaysOnTop +E%WS_EX_NOACTIVATE%    ;;	+Owner%hAhkSpy%
 	Gui, Zoom: Color, F5F5F5
 	Gui, Zoom: Add, Text, hwndhStatic +Border
 	DllCall("SetClassLong", "Ptr", hGui, "int", -26
 	, "int", DllCall("GetClassLong", "Ptr", hGui, "int", -26) | 0x20000)
 
-	Gui, LW: -Caption +E%WS_EX_LAYERED% +AlwaysOnTop +ToolWindow +HWNDhLW +E%WS_EX_NOACTIVATE% +Owner%hGui% ;	++E%WS_EX_NOACTIVATE% +E%WS_EX_TRANSPARENT%
+	Gui, LW: -Caption +E%WS_EX_LAYERED% +AlwaysOnTop +ToolWindow +HWNDhLW +E%WS_EX_NOACTIVATE% +Owner%hGui% ;;	++E%WS_EX_NOACTIVATE% +E%WS_EX_TRANSPARENT%
 
 	Gui, ZoomTB: +HWNDhTBGui -Caption -DPIScale +Parent%hGui% +E%WS_EX_NOACTIVATE% +%WS_CHILDWINDOW% -%WS_POPUP%
 	Gui, ZoomTB: Color, F5F5F5
@@ -5552,12 +5562,12 @@ SetSize() {
 	hDWP := DllCall("DeferWindowPos"
 	, "Ptr", hDWP, "Ptr", oZoom.hStatic, "UInt", 0
 	, "Int", Left - 1, "Int", Top - 1, "Int", Width + 2, "Int", Height + 2
-	, "UInt", 0x0010)    ; 0x0010 := SWP_NOACTIVATE
+	, "UInt", 0x0010)    ;; 0x0010 := SWP_NOACTIVATE
 	hDWP := DllCall("DeferWindowPos"
 	, "Ptr", hDWP, "Ptr", oZoom.hTBGui, "UInt", 0
 	, "Int", (oZoom.GuiWidth - oZoom.GuiMinW) / 2
 	, "Int", 0, "Int", 0, "Int", 0
-	, "UInt", 0x0011)    ; 0x0010 := SWP_NOACTIVATE | 0x0001 := SWP_NOSIZE
+	, "UInt", 0x0011)    ;; 0x0010 := SWP_NOACTIVATE | 0x0001 := SWP_NOSIZE
 	DllCall("EndDeferWindowPos", "Ptr", hDWP)
 
 	oZoom.nWidthSrc := conW // Zoom
@@ -5664,7 +5674,7 @@ SetWinEventHook(EventProc, eventMin, eventMax = 0)  {
 				, "UInt", eventMin, "UInt", eventMax := !eventMax ? eventMin : eventMax
 				, "Ptr", hmodWinEventProc := 0, "Ptr", lpfnWinEventProc := RegisterCallback(EventProc, "F")
 				, "UInt", idProcess := 0, "UInt", idThread := 0
-				, "UInt", dwflags := 0x0|0x2, "Ptr")	;	WINEVENT_OUTOFCONTEXT | WINEVENT_SKIPOWNPROCESS
+				, "UInt", dwflags := 0x0|0x2, "Ptr")	;;	WINEVENT_OUTOFCONTEXT | WINEVENT_SKIPOWNPROCESS
 }
 
 ZoomShow() {
@@ -5693,11 +5703,11 @@ ShowZoom(Show) {
 		try Gui, LW: Show, % "NA x" oZoom.LWX " y" oZoom.LWY " w" oZoom.LWWidth " h" oZoom.LWHeight
 		Return
 	}
-	Gui,  LW: Show, % "NA w" 0 " h" 0  ;	нельзя применять Hide, иначе после появления и ресайза остаётся прозрачный след
+	Gui,  LW: Show, % "NA w" 0 " h" 0  ;;	нельзя применять Hide, иначе после появления и ресайза остаётся прозрачный след
 	Gui,  Zoom: Show, NA Hide
 }
 
-	; _________________________________________________ Zoom Events _________________________________________________
+	;; _________________________________________________ Zoom Events _________________________________________________
 
 ZoomOnSize() {
 	Critical
@@ -5719,37 +5729,37 @@ ZoomOnClose() {
 	ExitApp
 }
 
-	; wParam: 0 hide, 1 show, 2 пауза AhkSpy, 3 однократный зум, 4 MemoryZoomSize, 5 MinSize, 6 ActiveNoPause, 7 WinActive AhkSpy, 8 Suspend, 9 Menu, 10 Hotkey, 11 MIN, 12 ShiftTab
+	;; wParam: 0 hide, 1 show, 2 пауза AhkSpy, 3 однократный зум, 4 MemoryZoomSize, 5 MinSize, 6 ActiveNoPause, 7 WinActive AhkSpy, 8 Suspend, 9 Menu, 10 Hotkey, 11 MIN, 12 ShiftTab
 
 Zoom_Msg(wParam, lParam) {
-	If wParam = 0  ;	hide
+	If wParam = 0  ;;	hide
 		ZoomHide()
-	Else If wParam = 1  ;	show
+	Else If wParam = 1  ;;	show
 		ZoomShow()
-	If wParam = 2  ;	пауза AhkSpy
+	If wParam = 2  ;;	пауза AhkSpy
 		ZoomRules("Pause", lParam)
-	Else If wParam = 3  ;	однократный зум  ;	AhkSpy отвечает за контекст вызова
+	Else If wParam = 3  ;;	однократный зум  ;;	AhkSpy отвечает за контекст вызова
 		Magnify(1)
-	Else If wParam = 4  ;	MemoryZoomSize
+	Else If wParam = 4  ;;	MemoryZoomSize
 	{
 		If (oZoom.MemoryZoomSize := lParam)
 			IniWrite(oZoom.GuiWidth, "MemoryZoomSizeW"), IniWrite(oZoom.GuiHeight, "MemoryZoomSizeH")
 	}
-	Else If (wParam = 5 && DllCall("IsWindowVisible", "Ptr", oZoom.hGui))  ;	MinSize
+	Else If (wParam = 5 && DllCall("IsWindowVisible", "Ptr", oZoom.hGui))  ;;	MinSize
 		Gui, Zoom:Show, % "NA w" oZoom.GuiMinW " h" oZoom.GuiMinH
-	Else If wParam = 6  ;	ActiveNoPause
+	Else If wParam = 6  ;;	ActiveNoPause
 		ActiveNoPause := lParam, ZoomRules("Win", ActiveNoPause ? 0 : SpyActive)
-	Else If wParam = 7  ;	WinActive AhkSpy
+	Else If wParam = 7  ;;	WinActive AhkSpy
 		SpyActive := lParam, ZoomRules("Win", ActiveNoPause ? 0 : SpyActive)
-	Else If wParam = 8  ;	Suspend
+	Else If wParam = 8  ;;	Suspend
 		Suspend % lParam ? "On" : "Off"
-	Else If wParam = 9  ;	Menu
+	Else If wParam = 9  ;;	Menu
 		ZoomRules("Menu", lParam)
-	Else If wParam = 10  ;	Menu
+	Else If wParam = 10  ;;	Menu
 		ZoomRules("Hotkey", lParam)
-	Else If wParam = 11  ;	MIN
+	Else If wParam = 11  ;;	MIN
 		ZoomRules("MIN", 1)
-	Else If wParam = 12  ;	ShiftTab
+	Else If wParam = 12  ;;	ShiftTab
 		ZoomRules("ShiftTab", lParam)
 }
 
@@ -5771,7 +5781,7 @@ ZoomRules(Rule, value) {
 	StrPut(!!value, &Rules + Arr[Rule] - 1, 1, "CP0")
 	If oZoom.Work := !(StrGet(&Rules, Len, "CP0") + 0)
 		SetTimer, Magnify, -1
-	; ToolTip % Rule "`n" Arr[Rule] "`n" value "`n`n`n"  (StrGet(&Rules, Len, "CP0")) "`n123456789" "`n" oZoom.Work,4,55,6
+	;; ToolTip % Rule "`n" Arr[Rule] "`n" value "`n`n`n"  (StrGet(&Rules, Len, "CP0")) "`n123456789" "`n" oZoom.Work,4,55,6
 }
 
 EVENT_OBJECT_DESTROY(hWinEventHook, event, hwnd, idObject, idChild) {
@@ -5822,9 +5832,9 @@ EVENT_SYSTEM_MOVESIZEEND(hWinEventHook, event, hwnd, idObject, idChild) {
 	ZoomRules("MOVE", 0)
 }
 
-	; _________________________________________________ Zoom Sizing _________________________________________________
+	;; _________________________________________________ Zoom Sizing _________________________________________________
 
-  ;	https://docs.microsoft.com/en-us/windows/win32/api/winuser/nf-winuser-loadcursora
+  ;;	https://docs.microsoft.com/en-us/windows/win32/api/winuser/nf-winuser-loadcursora
 WM_SETCURSOR(W, L, M, H) {
 	Static SIZENWSE := DllCall("User32.dll\LoadCursor", "Ptr", NULL, "Int", 32642, "UPtr")
 			, SIZENS := DllCall("User32.dll\LoadCursor", "Ptr", NULL, "Int", 32645, "UPtr")
@@ -5887,10 +5897,10 @@ SetSystemCursor(CursorName, cx = 0, cy = 0) {
 }
 
 RestoreCursors() {
-	DllCall("SystemParametersInfo", UInt, 0x57, UInt, 0, UInt, 0, UInt, 0)  ;	SPI_SETCURSORS := 0x57
+	DllCall("SystemParametersInfo", UInt, 0x57, UInt, 0, UInt, 0, UInt, 0)  ;;	SPI_SETCURSORS := 0x57
 }
 
-	; _________________________________________________ Zoom Magnify _________________________________________________
+	;; _________________________________________________ Zoom Magnify _________________________________________________
 
 Magnify(one = 0) {
 	If (a := oZoom.Work) || one
@@ -5906,7 +5916,7 @@ Magnify(one = 0) {
 		Memory()
 	If a
 		SetTimer, Magnify, -10
-	; ToolTip % A_TickCount "`nMagnify", 4, 4, 4
+	;; ToolTip % A_TickCount "`nMagnify", 4, 4, 4
 }
 
 Redraw() {
@@ -5925,7 +5935,7 @@ Memory() {
 	oZoom.NewSpot := 0
 }
 
-	; _________________________________________________ Zoom Gdip _________________________________________________
+	;; _________________________________________________ Zoom Gdip _________________________________________________
 
 UpdateWindow(Src, X, Y) {
 	hbm := CreateDIBSection(oZoom.nWidthDest, oZoom.nHeightDest, oZoom.hDCBuf)
@@ -5933,11 +5943,11 @@ UpdateWindow(Src, X, Y) {
 	StretchBlt(oZoom.hDCBuf, oZoom.conX, oZoom.conY, oZoom.nWidthDest, oZoom.nHeightDest
 	, Src, X, Y, oZoom.nWidthSrc, oZoom.nHeightSrc)
 	For k, v In oZoom.oMarkers[oZoom.Mark]
-		StretchBlt(oZoom.hDCBuf, v.x, v.y, v.w, v.h, oZoom.hDCBuf, v.x, v.y, v.w, v.h, 0x5A0049)	; PATINVERT
+		StretchBlt(oZoom.hDCBuf, v.x, v.y, v.w, v.h, oZoom.hDCBuf, v.x, v.y, v.w, v.h, 0x5A0049)	;; PATINVERT
 	DllCall("gdiplus\GdipCreateBitmapFromHBITMAP", "UPtr", hbm, "UPtr", 0, "UPtr*", pBitmap)
-	; DllCall("SelectObject", "UPtr", oZoom.hDCBuf, "UPtr", hbm)
+	;; DllCall("SelectObject", "UPtr", oZoom.hDCBuf, "UPtr", hbm)
 	DllCall("gdiplus\GdipCreateFromHDC", "UPtr", oZoom.hDCBuf, "UPtr*", G)
-	; DllCall("gdiplus\GdipSetInterpolationMode", "UPtr", G, "int", 5)
+	;; DllCall("gdiplus\GdipSetInterpolationMode", "UPtr", G, "int", 5)
 	DrawImage(G, pBitmap, 0, 0, oZoom.LWWidth, oZoom.LWHeight)
 	If oZoom.Show
 		UpdateLayeredWindow(oZoom.hLW, oZoom.hDCBuf, oZoom.LWWidth, oZoom.LWHeight)
@@ -5970,11 +5980,11 @@ UpdateLayeredWindow(hwnd, hdc, w, h) {
 					, UPtr, hdc
 					, "int64*", 0
 					, "uint", 0
-					, "UInt*", 33488896  ;	(Alpha := 255)<<16|1<<24
+					, "UInt*", 33488896  ;;	(Alpha := 255)<<16|1<<24
 					, "uint", 2)
 }
 
-StretchBlt(ddc, dx, dy, dw, dh, sdc, sx, sy, sw, sh, Raster=0x40CC0020) {  ;	0x00CC0020|0x40000000
+StretchBlt(ddc, dx, dy, dw, dh, sdc, sx, sy, sw, sh, Raster=0x40CC0020) {  ;;	0x00CC0020|0x40000000
 	Return DllCall("gdi32\StretchBlt"
 					, UPtr, ddc
 					, "int", dx
@@ -6036,13 +6046,13 @@ CreateCompatibleDC(hdc=0) {
 	Return DllCall("CreateCompatibleDC", "UPtr", hdc)
 }
 
-	; _________________________________________________ UIA _________________________________________________
+	;; _________________________________________________ UIA _________________________________________________
 
 
 
-;~ UI Automation Constants: http://msdn.microsoft.com/en-us/library/windows/desktop/ee671207(v=vs.85).aspx
-;~ UI Automation Enumerations: http://msdn.microsoft.com/en-us/library/windows/desktop/ee671210(v=vs.85).aspx
-;~ http://www.autohotkey.com/board/topic/94619-ahk-l-screen-reader-a-tool-to-get-text-anywhere/
+;;~ UI Automation Constants: http://msdn.microsoft.com/en-us/library/windows/desktop/ee671207(v=vs.85).aspx
+;;~ UI Automation Enumerations: http://msdn.microsoft.com/en-us/library/windows/desktop/ee671210(v=vs.85).aspx
+;;~ http://www.autohotkey.com/board/topic/94619-ahk-l-screen-reader-a-tool-to-get-text-anywhere/
 
 /* Questions:
 	- better way to do __properties?
@@ -6065,16 +6075,16 @@ class UIA_Base {
 		,ObjInsert(this,"__Flag",flag)
 	}
 	__Get(member) {
-		if member not in base,__UIA ; base & __UIA should act as normal
-		{	if raw:=SubStr(member,0)="*" ; return raw data - user should know what they are doing
+		if member not in base,__UIA ;; base & __UIA should act as normal
+		{	if raw:=SubStr(member,0)="*" ;; return raw data - user should know what they are doing
 				member:=SubStr(member,1,-1)
-			if RegExMatch(this.__properties, "im)^" member ",(\d+),(\w+)", m) { ; if the member is in the properties. if not - give error message
-				if (m2="VARIANT")	; return VARIANT data - DllCall output param different
+			if RegExMatch(this.__properties, "im)^" member ",(\d+),(\w+)", m) { ;; if the member is in the properties. if not - give error message
+				if (m2="VARIANT")	;; return VARIANT data - DllCall output param different
 					return UIA_Hr(DllCall(this.__Vt(m1), "ptr",this.__Value, "ptr",UIA_Variant(out)))? (raw?out:UIA_VariantData(out)):
-				else if (m2="RECT") ; return RECT struct - DllCall output param different
+				else if (m2="RECT") ;; return RECT struct - DllCall output param different
 					return UIA_Hr(DllCall(this.__Vt(m1), "ptr",this.__Value, "ptr",&(rect,VarSetCapacity(rect,16))))? (raw?out:UIA_RectToObject(rect)):
 				else if UIA_Hr(DllCall(this.__Vt(m1), "ptr",this.__Value, "ptr*",out))
-					return raw?out:m2="BSTR"?StrGet(out):RegExMatch(m2,"i)IUIAutomation\K\w+",n)?new UIA_%n%(out):out ; Bool, int, DWORD, HWND, CONTROLTYPEID, OrientationType?
+					return raw?out:m2="BSTR"?StrGet(out):RegExMatch(m2,"i)IUIAutomation\K\w+",n)?new UIA_%n%(out):out ;; Bool, int, DWORD, HWND, CONTROLTYPEID, OrientationType?
 			}
 			else throw Exception("Property not supported by the " this.__Class " Class.",-1,member)
 		}
@@ -6095,7 +6105,7 @@ class UIA_Base {
 }
 
 class UIA_Interface extends UIA_Base {
-	;~ http://msdn.microsoft.com/en-us/library/windows/desktop/ee671406(v=vs.85).aspx
+	;;~ http://msdn.microsoft.com/en-us/library/windows/desktop/ee671406(v=vs.85).aspx
 	static __IID := "{30cbe57d-d9d0-452a-ab13-7ac5ac4825ee}"
 		,  __properties := "ControlViewWalker,14,IUIAutomationTreeWalker`r`nContentViewWalker,15,IUIAutomationTreeWalker`r`nRawViewWalker,16,IUIAutomationTreeWalker`r`nRawViewCondition,17,IUIAutomationCondition`r`nControlViewCondition,18,IUIAutomationCondition`r`nContentViewCondition,19,IUIAutomationCondition`r`nProxyFactoryMapping,48,IUIAutomationProxyFactoryMapping`r`nReservedNotSupportedValue,54,IUnknown`r`nReservedMixedAttributeValue,55,IUnknown"
 
@@ -6117,14 +6127,14 @@ class UIA_Interface extends UIA_Base {
 	GetFocusedElement() {
 		return UIA_Hr(DllCall(this.__Vt(8), "ptr",this.__Value, "ptr*",out))? new UIA_Element(out):
 	}
-	;~ GetRootElementBuildCache 	9
-	;~ ElementFromHandleBuildCache 	10
-	;~ ElementFromPointBuildCache 	11
-	;~ GetFocusedElementBuildCache 	12
+	;;~ GetRootElementBuildCache 	9
+	;;~ ElementFromHandleBuildCache 	10
+	;;~ ElementFromPointBuildCache 	11
+	;;~ GetFocusedElementBuildCache 	12
 	CreateTreeWalker(condition) {
 		return UIA_Hr(DllCall(this.__Vt(13), "ptr",this.__Value, "ptr",Condition.__Value, "ptr*",out))? new UIA_TreeWalker(out):
 	}
-	;~ CreateCacheRequest 	20
+	;;~ CreateCacheRequest 	20
 
 	CreateTrueCondition() {
 		return UIA_Hr(DllCall(this.__Vt(21), "ptr",this.__Value, "ptr*",out))? new UIA_Condition(out):
@@ -6137,8 +6147,8 @@ class UIA_Interface extends UIA_Base {
 			UIA_Variant(var,type,var)
 		return UIA_Hr(DllCall(this.__Vt(23), "ptr",this.__Value, "int",propertyId, "ptr",&var, "ptr*",out))? new UIA_PropertyCondition(out):
 	}
-	CreatePropertyConditionEx(propertyId, ByRef var, type="Variant", flags=0x1) { ; NOT TESTED
-	; PropertyConditionFlags_IgnoreCase = 0x1
+	CreatePropertyConditionEx(propertyId, ByRef var, type="Variant", flags=0x1) { ;; NOT TESTED
+	;; PropertyConditionFlags_IgnoreCase = 0x1
 		if (type!="Variant")
 			UIA_Variant(var,type,var)
 		return UIA_Hr(DllCall(this.__Vt(24), "ptr",this.__Value, "int",propertyId, "ptr",&var, "uint",flags, "ptr*",out))? new UIA_PropertyCondition(out):
@@ -6146,90 +6156,90 @@ class UIA_Interface extends UIA_Base {
 	CreateAndCondition(c1,c2) {
 		return UIA_Hr(DllCall(this.__Vt(25), "ptr",this.__Value, "ptr",c1.__Value, "ptr",c2.__Value, "ptr*",out))? new UIA_AndCondition(out):
 	}
-	CreateAndConditionFromArray(array) { ; ComObj(0x2003)??
-	;->in: AHK Array or Wrapped SafeArray
+	CreateAndConditionFromArray(array) { ;; ComObj(0x2003)??
+	;;->in: AHK Array or Wrapped SafeArray
 		if ComObjValue(array)&0x2000
 			SafeArray:=array
 		else {
 			SafeArray:=ComObj(0x2003,DllCall("oleaut32\SafeArrayCreateVector", "uint",13, "uint",0, "uint",array.MaxIndex()),1)
 			for i,c in array
-				SafeArray[A_Index-1]:=c.__Value, ObjAddRef(c.__Value) ; AddRef - SafeArrayDestroy will release UIA_Conditions - they also release themselves
+				SafeArray[A_Index-1]:=c.__Value, ObjAddRef(c.__Value) ;; AddRef - SafeArrayDestroy will release UIA_Conditions - they also release themselves
 		}
 		return UIA_Hr(DllCall(this.__Vt(26), "ptr",this.__Value, "ptr",ComObjValue(SafeArray), "ptr*",out))? new UIA_AndCondition(out):
 	}
-	CreateAndConditionFromNativeArray(p*) { ; Not Implemented
+	CreateAndConditionFromNativeArray(p*) { ;; Not Implemented
 		return UIA_NotImplemented()
 	/*	[in]           IUIAutomationCondition **conditions,
 		[in]           int conditionCount,
 		[out, retval]  IUIAutomationCondition **newCondition
 	*/
-		;~ return UIA_Hr(DllCall(this.__Vt(27), "ptr",this.__Value,
+		;;~ return UIA_Hr(DllCall(this.__Vt(27), "ptr",this.__Value,
 	}
 	CreateOrCondition(c1,c2) {
 		return UIA_Hr(DllCall(this.__Vt(28), "ptr",this.__Value, "ptr",c1.__Value, "ptr",c2.__Value, "ptr*",out))? new UIA_OrCondition(out):
 	}
 	CreateOrConditionFromArray(array) {
-	;->in: AHK Array or Wrapped SafeArray
+	;;->in: AHK Array or Wrapped SafeArray
 		if ComObjValue(array)&0x2000
 			SafeArray:=array
 		else {
 			SafeArray:=ComObj(0x2003,DllCall("oleaut32\SafeArrayCreateVector", "uint",13, "uint",0, "uint",array.MaxIndex()),1)
 			for i,c in array
-				SafeArray[A_Index-1]:=c.__Value, ObjAddRef(c.__Value) ; AddRef - SafeArrayDestroy will release UIA_Conditions - they also release themselves
+				SafeArray[A_Index-1]:=c.__Value, ObjAddRef(c.__Value) ;; AddRef - SafeArrayDestroy will release UIA_Conditions - they also release themselves
 		}
 		return UIA_Hr(DllCall(this.__Vt(29), "ptr",this.__Value, "ptr",ComObjValue(SafeArray), "ptr*",out))? new UIA_AndCondition(out):
 	}
-	CreateOrConditionFromNativeArray(p*) { ; Not Implemented
+	CreateOrConditionFromNativeArray(p*) { ;; Not Implemented
 		return UIA_NotImplemented()
 	/*	[in]           IUIAutomationCondition **conditions,
 		[in]           int conditionCount,
 		[out, retval]  IUIAutomationCondition **newCondition
 	*/
-		;~ return UIA_Hr(DllCall(this.__Vt(27), "ptr",this.__Value,
+		;;~ return UIA_Hr(DllCall(this.__Vt(27), "ptr",this.__Value,
 	}
 	CreateNotCondition(c) {
 		return UIA_Hr(DllCall(this.__Vt(31), "ptr",this.__Value, "ptr",c.__Value, "ptr*",out))? new UIA_NotCondition(out):
 	}
 
-	;~ AddAutomationEventHandler 	32
-	;~ RemoveAutomationEventHandler 	33
-	;~ AddPropertyChangedEventHandlerNativeArray 	34
+	;;~ AddAutomationEventHandler 	32
+	;;~ RemoveAutomationEventHandler 	33
+	;;~ AddPropertyChangedEventHandlerNativeArray 	34
 	AddPropertyChangedEventHandler(element,scope=0x1,cacheRequest=0,handler="",propertyArray="") {
 		SafeArray:=ComObjArray(0x3,propertyArray.MaxIndex())
 		for i,propertyId in propertyArray
 			SafeArray[i-1]:=propertyId
 		return UIA_Hr(DllCall(this.__Vt(35), "ptr",this.__Value, "ptr",element.__Value, "int",scope, "ptr",cacheRequest,"ptr",handler.__Value,"ptr",ComObjValue(SafeArray)))
 	}
-	;~ RemovePropertyChangedEventHandler 	36
-	;~ AddStructureChangedEventHandler 	37
-	;~ RemoveStructureChangedEventHandler 	38
+	;;~ RemovePropertyChangedEventHandler 	36
+	;;~ AddStructureChangedEventHandler 	37
+	;;~ RemoveStructureChangedEventHandler 	38
 	AddFocusChangedEventHandler(cacheRequest, handler) {
 		return UIA_Hr(DllCall(this.__Vt(39), "ptr",this.__Value, "ptr",cacheRequest, "ptr",handler.__Value))
 	}
-	;~ RemoveFocusChangedEventHandler 	40
-	;~ RemoveAllEventHandlers 	41
+	;;~ RemoveFocusChangedEventHandler 	40
+	;;~ RemoveAllEventHandlers 	41
 
 	IntNativeArrayToSafeArray(ByRef nArr, n="") {
 		return UIA_Hr(DllCall(this.__Vt(42), "ptr",this.__Value, "ptr",&nArr, "int",n?n:VarSetCapacity(nArr)/4, "ptr*",out))? ComObj(0x2003,out,1):
 	}
-/*	IntSafeArrayToNativeArray(sArr, Byref nArr="", Byref arrayCount="") { ; NOT WORKING
+/*	IntSafeArrayToNativeArray(sArr, Byref nArr="", Byref arrayCount="") { ;; NOT WORKING
 		VarSetCapacity(nArr,(sArr.MaxIndex()+1)*4)
 		return UIA_Hr(DllCall(this.__Vt(43), "ptr",this.__Value, "ptr",ComObjValue(sArr), "ptr*",nArr, "int*",arrayCount))? arrayCount:
 	}
 */
-	RectToVariant(ByRef rect, ByRef out="") {	; in:{left,top,right,bottom} ; out:(left,top,width,height)
-		; in:	RECT Struct
-		; out:	AHK Wrapped SafeArray & ByRef Variant
+	RectToVariant(ByRef rect, ByRef out="") {	;; in:{left,top,right,bottom} ;; out:(left,top,width,height)
+		;; in:	RECT Struct
+		;; out:	AHK Wrapped SafeArray & ByRef Variant
 		return UIA_Hr(DllCall(this.__Vt(44), "ptr",this.__Value, "ptr",&rect, "ptr",UIA_Variant(out)))? UIA_VariantData(out):
 	}
-/*	VariantToRect(ByRef var, ByRef out="") { ; NOT WORKING
-		; in:	VT_VARIANT (SafeArray)
-		; out:	AHK Wrapped RECT Struct & ByRef Struct
+/*	VariantToRect(ByRef var, ByRef out="") { ;; NOT WORKING
+		;; in:	VT_VARIANT (SafeArray)
+		;; out:	AHK Wrapped RECT Struct & ByRef Struct
 		return UIA_Hr(DllCall(this.__Vt(45), "ptr",this.__Value, "ptr",var, "ptr",&(out,VarSetCapacity(out,16))))? UIA_RectToObject(out):
 	}
 */
-	;~ SafeArrayToRectNativeArray 	46
-	;~ CreateProxyFactoryEntry 	47
+	;;~ SafeArrayToRectNativeArray 	46
+	;;~ CreateProxyFactoryEntry 	47
 	GetPropertyProgrammaticName(Id) {
 		return UIA_Hr(DllCall(this.__Vt(49), "ptr",this.__Value, "int",Id, "ptr*",out))? StrGet(out):
 	}
@@ -6242,7 +6252,7 @@ class UIA_Interface extends UIA_Base {
 	PollForPotentialSupportedProperties(e, Byref Ids="", Byref Names="") {
 		return UIA_Hr(DllCall(this.__Vt(52), "ptr",this.__Value, "ptr",e.__Value, "ptr*",Ids, "ptr*",Names))? UIA_SafeArraysToObject(Names:=ComObj(0x2008,Names,1),Ids:=ComObj(0x2003,Ids,1)):
 	}
-	CheckNotSupported(value) { ; Useless in this Framework???
+	CheckNotSupported(value) { ;; Useless in this Framework???
 	/*	Checks a provided VARIANT to see if it contains the Not Supported identifier.
 		After retrieving a property for a UI Automation element, call this method to determine whether the element supports the
 		retrieved property. CheckNotSupported is typically called after calling a property retrieving method such as GetCurrentPropertyValue.
@@ -6251,16 +6261,16 @@ class UIA_Interface extends UIA_Base {
 	}
 	ElementFromIAccessible(IAcc, childId=0) {
 	/* The method returns E_INVALIDARG - "One or more arguments are not valid" - if the underlying implementation of the
-	Microsoft UI Automation element is not a native Microsoft Active Accessibility server; that is, if a client attempts to retrieve
+	Microsoft UI Automation element is not a native Microsoft Active Accessibility server;; that is, if a client attempts to retrieve
 	the IAccessible interface for an element originally supported by a proxy object from Oleacc.dll, or by the UIA-to-MSAA Bridge.
 	*/
 		return UIA_Hr(DllCall(this.__Vt(56), "ptr",this.__Value, "ptr",ComObjValue(IAcc), "int",childId, "ptr*",out))? new UIA_Element(out):
 	}
-	;~ ElementFromIAccessibleBuildCache 	57
+	;;~ ElementFromIAccessibleBuildCache 	57
 }
 
 class UIA_Element extends UIA_Base {
-	;~ http://msdn.microsoft.com/en-us/library/windows/desktop/ee671425(v=vs.85).aspx
+	;;~ http://msdn.microsoft.com/en-us/library/windows/desktop/ee671425(v=vs.85).aspx
 	static __IID := "{d22108aa-8ac5-49a5-837b-37bbb3d7591e}"
 		,  __properties := "CurrentProcessId,20,int`r`nCurrentControlType,21,CONTROLTYPEID`r`nCurrentLocalizedControlType,22,BSTR`r`nCurrentName,23,BSTR`r`nCurrentAcceleratorKey,24,BSTR`r`nCurrentAccessKey,25,BSTR`r`nCurrentHasKeyboardFocus,26,BOOL`r`nCurrentIsKeyboardFocusable,27,BOOL`r`nCurrentIsEnabled,28,BOOL`r`nCurrentAutomationId,29,BSTR`r`nCurrentClassName,30,BSTR`r`nCurrentHelpText,31,BSTR`r`nCurrentCulture,32,int`r`nCurrentIsControlElement,33,BOOL`r`nCurrentIsContentElement,34,BOOL`r`nCurrentIsPassword,35,BOOL`r`nCurrentNativeWindowHandle,36,UIA_HWND`r`nCurrentItemType,37,BSTR`r`nCurrentIsOffscreen,38,BOOL`r`nCurrentOrientation,39,OrientationType`r`nCurrentFrameworkId,40,BSTR`r`nCurrentIsRequiredForForm,41,BOOL`r`nCurrentItemStatus,42,BSTR`r`nCurrentBoundingRectangle,43,RECT`r`nCurrentLabeledBy,44,IUIAutomationElement`r`nCurrentAriaRole,45,BSTR`r`nCurrentAriaProperties,46,BSTR`r`nCurrentIsDataValidForForm,47,BOOL`r`nCurrentControllerFor,48,IUIAutomationElementArray`r`nCurrentDescribedBy,49,IUIAutomationElementArray`r`nCurrentFlowsTo,50,IUIAutomationElementArray`r`nCurrentProviderDescription,51,BSTR`r`nCachedProcessId,52,int`r`nCachedControlType,53,CONTROLTYPEID`r`nCachedLocalizedControlType,54,BSTR`r`nCachedName,55,BSTR`r`nCachedAcceleratorKey,56,BSTR`r`nCachedAccessKey,57,BSTR`r`nCachedHasKeyboardFocus,58,BOOL`r`nCachedIsKeyboardFocusable,59,BOOL`r`nCachedIsEnabled,60,BOOL`r`nCachedAutomationId,61,BSTR`r`nCachedClassName,62,BSTR`r`nCachedHelpText,63,BSTR`r`nCachedCulture,64,int`r`nCachedIsControlElement,65,BOOL`r`nCachedIsContentElement,66,BOOL`r`nCachedIsPassword,67,BOOL`r`nCachedNativeWindowHandle,68,UIA_HWND`r`nCachedItemType,69,BSTR`r`nCachedIsOffscreen,70,BOOL`r`nCachedOrientation,71,OrientationType`r`nCachedFrameworkId,72,BSTR`r`nCachedIsRequiredForForm,73,BOOL`r`nCachedItemStatus,74,BSTR`r`nCachedBoundingRectangle,75,RECT`r`nCachedLabeledBy,76,IUIAutomationElement`r`nCachedAriaRole,77,BSTR`r`nCachedAriaProperties,78,BSTR`r`nCachedIsDataValidForForm,79,BOOL`r`nCachedControllerFor,80,IUIAutomationElementArray`r`nCachedDescribedBy,81,IUIAutomationElementArray`r`nCachedFlowsTo,82,IUIAutomationElementArray`r`nCachedProviderDescription,83,BSTR"
 
@@ -6271,47 +6281,47 @@ class UIA_Element extends UIA_Base {
 		return UIA_Hr(DllCall(this.__Vt(4), "ptr",this.__Value, "ptr*",sa))? ComObj(0x2003,sa,1):
 	}
 	FindFirst(c="", scope=0x2) {
-		static tc	; TrueCondition
+		static tc	;; TrueCondition
 		if !tc
 			tc:=this.__uia.CreateTrueCondition()
 		return UIA_Hr(DllCall(this.__Vt(5), "ptr",this.__Value, "uint",scope, "ptr",(c=""?tc:c).__Value, "ptr*",out))? new UIA_Element(out):
 	}
 	FindAll(c="", scope=0x2) {
-		static tc	; TrueCondition
+		static tc	;; TrueCondition
 		if !tc
 			tc:=this.__uia.CreateTrueCondition()
 		return UIA_Hr(DllCall(this.__Vt(6), "ptr",this.__Value, "uint",scope, "ptr",(c=""?tc:c).__Value, "ptr*",out))? UIA_ElementArray(out):
 	}
-	;~ Find (First/All, Element/Children/Descendants/Parent/Ancestors/Subtree, Conditions)
-	;~ FindFirstBuildCache 	7	IUIAutomationElement
-	;~ FindAllBuildCache 	8	IUIAutomationElementArray
-	;~ BuildUpdatedCache 	9	IUIAutomationElement
+	;;~ Find (First/All, Element/Children/Descendants/Parent/Ancestors/Subtree, Conditions)
+	;;~ FindFirstBuildCache 	7	IUIAutomationElement
+	;;~ FindAllBuildCache 	8	IUIAutomationElementArray
+	;;~ BuildUpdatedCache 	9	IUIAutomationElement
 	GetCurrentPropertyValue(propertyId, ByRef out="") {
 		return UIA_Hr(DllCall(this.__Vt(10), "ptr",this.__Value, "uint",propertyId, "ptr",UIA_Variant(out)))? UIA_VariantData(out):
 	}
 	GetCurrentPropertyValueEx(propertyId, ignoreDefaultValue=1, ByRef out="") {
-	; Passing FALSE in the ignoreDefaultValue parameter is equivalent to calling GetCurrentPropertyValue
+	;; Passing FALSE in the ignoreDefaultValue parameter is equivalent to calling GetCurrentPropertyValue
 		return UIA_Hr(DllCall(this.__Vt(11), "ptr",this.__Value, "uint",propertyId, "uint",ignoreDefaultValue, "ptr",UIA_Variant(out)))? UIA_VariantData(out):
 	}
-	;~ GetCachedPropertyValue 	12	VARIANT
-	;~ GetCachedPropertyValueEx 	13	VARIANT
+	;;~ GetCachedPropertyValue 	12	VARIANT
+	;;~ GetCachedPropertyValueEx 	13	VARIANT
 	GetCurrentPatternAs(pattern="") {
 		if IsObject(UIA_%pattern%Pattern)&&(iid:=UIA_%pattern%Pattern.__iid)&&(pId:=UIA_%pattern%Pattern.__PatternID)
 			return UIA_Hr(DllCall(this.__Vt(14), "ptr",this.__Value, "int",pId, "ptr",UIA_GUID(riid,iid), "ptr*",out))? new UIA_%pattern%Pattern(out):
 		else throw Exception("Pattern not implemented.",-1, "UIA_" pattern "Pattern")
 	}
-	;~ GetCachedPatternAs 	15	void **ppv
-	;~ GetCurrentPattern 	16	Iunknown **patternObject
-	;~ GetCachedPattern 	17	Iunknown **patternObject
-	;~ GetCachedParent 	18	IUIAutomationElement
-	GetCachedChildren() { ; Haven't successfully tested
+	;;~ GetCachedPatternAs 	15	void **ppv
+	;;~ GetCurrentPattern 	16	Iunknown **patternObject
+	;;~ GetCachedPattern 	17	Iunknown **patternObject
+	;;~ GetCachedParent 	18	IUIAutomationElement
+	GetCachedChildren() { ;; Haven't successfully tested
 		return UIA_Hr(DllCall(this.__Vt(19), "ptr",this.__Value, "ptr*",out))&&out? UIA_ElementArray(out):
 	}
-	;~ GetClickablePoint 	84	POINT, BOOL
+	;;~ GetClickablePoint 	84	POINT, BOOL
 }
 
 class UIA_ElementArray extends UIA_Base {
-	;~ http://msdn.microsoft.com/en-us/library/windows/desktop/ee671426(v=vs.85).aspx
+	;;~ http://msdn.microsoft.com/en-us/library/windows/desktop/ee671426(v=vs.85).aspx
 	static __IID := "{14314595-b4bc-4055-95f2-58f2e42c9855}"
 		,  __properties := "Length,3,int"
 
@@ -6321,7 +6331,7 @@ class UIA_ElementArray extends UIA_Base {
 }
 
 class UIA_TreeWalker extends UIA_Base {
-	;~ http://msdn.microsoft.com/en-us/library/windows/desktop/ee671470(v=vs.85).aspx
+	;;~ http://msdn.microsoft.com/en-us/library/windows/desktop/ee671470(v=vs.85).aspx
 	static __IID := "{4042c624-389c-4afc-a630-9df854a541fc}"
 		,  __properties := "Condition,15,IUIAutomationCondition"
 
@@ -6365,59 +6375,59 @@ class UIA_TreeWalker extends UIA_Base {
 }
 
 class UIA_Condition extends UIA_Base {
-	;~ http://msdn.microsoft.com/en-us/library/windows/desktop/ee671420(v=vs.85).aspx
+	;;~ http://msdn.microsoft.com/en-us/library/windows/desktop/ee671420(v=vs.85).aspx
 	static __IID := "{352ffba8-0973-437c-a61f-f64cafd81df9}"
 }
 
 class UIA_PropertyCondition extends UIA_Condition {
-	;~ http://msdn.microsoft.com/en-us/library/windows/desktop/ee696121(v=vs.85).aspx
+	;;~ http://msdn.microsoft.com/en-us/library/windows/desktop/ee696121(v=vs.85).aspx
 	static __IID := "{99ebf2cb-5578-4267-9ad4-afd6ea77e94b}"
 		,  __properties := "PropertyId,3,PROPERTYID`r`nPropertyValue,4,VARIANT`r`nPropertyConditionFlags,5,PropertyConditionFlags"
 }
-; should returned children have a condition type (property/and/or/bool/not), or be a generic uia_condition object?
+;; should returned children have a condition type (property/and/or/bool/not), or be a generic uia_condition object?
 class UIA_AndCondition extends UIA_Condition {
-	;~ http://msdn.microsoft.com/en-us/library/windows/desktop/ee671407(v=vs.85).aspx
+	;;~ http://msdn.microsoft.com/en-us/library/windows/desktop/ee671407(v=vs.85).aspx
 	static __IID := "{a7d0af36-b912-45fe-9855-091ddc174aec}"
 		,  __properties := "ChildCount,3,int"
 
-	;~ GetChildrenAsNativeArray	4	IUIAutomationCondition ***childArray
+	;;~ GetChildrenAsNativeArray	4	IUIAutomationCondition ***childArray
 	GetChildren() {
 		return UIA_Hr(DllCall(this.__Vt(5), "ptr",this.__Value, "ptr*",out))&&out? ComObj(0x2003,out,1):
 	}
 }
 class UIA_OrCondition extends UIA_Condition {
-	;~ http://msdn.microsoft.com/en-us/library/windows/desktop/ee696108(v=vs.85).aspx
+	;;~ http://msdn.microsoft.com/en-us/library/windows/desktop/ee696108(v=vs.85).aspx
 	static __IID := "{8753f032-3db1-47b5-a1fc-6e34a266c712}"
 		,  __properties := "ChildCount,3,int"
 
-	;~ GetChildrenAsNativeArray	4	IUIAutomationCondition ***childArray
-	;~ GetChildren	5	SAFEARRAY
+	;;~ GetChildrenAsNativeArray	4	IUIAutomationCondition ***childArray
+	;;~ GetChildren	5	SAFEARRAY
 }
 class UIA_BoolCondition extends UIA_Condition {
-	;~ http://msdn.microsoft.com/en-us/library/windows/desktop/ee671411(v=vs.85).aspx
+	;;~ http://msdn.microsoft.com/en-us/library/windows/desktop/ee671411(v=vs.85).aspx
 	static __IID := "{8753f032-3db1-47b5-a1fc-6e34a266c712}"
 		,  __properties := "BooleanValue,3,boolVal"
 }
 class UIA_NotCondition extends UIA_Condition {
-	;~ http://msdn.microsoft.com/en-us/library/windows/desktop/ee696106(v=vs.85).aspx
+	;;~ http://msdn.microsoft.com/en-us/library/windows/desktop/ee696106(v=vs.85).aspx
 	static __IID := "{f528b657-847b-498c-8896-d52b565407a1}"
 
-	;~ GetChild	3	IUIAutomationCondition
+	;;~ GetChild	3	IUIAutomationCondition
 }
 
 class UIA_IUnknown extends UIA_Base {
-	;~ http://msdn.microsoft.com/en-us/library/windows/desktop/ms680509(v=vs.85).aspx
+	;;~ http://msdn.microsoft.com/en-us/library/windows/desktop/ms680509(v=vs.85).aspx
 	static __IID := "{00000000-0000-0000-C000-000000000046}"
 }
 
 class UIA_CacheRequest  extends UIA_Base {
-	;~ http://msdn.microsoft.com/en-us/library/windows/desktop/ee671413(v=vs.85).aspx
+	;;~ http://msdn.microsoft.com/en-us/library/windows/desktop/ee671413(v=vs.85).aspx
 	static __IID := "{b32a92b5-bc25-4078-9c08-d7ee95c48e03}"
 }
 
 
 class _UIA_EventHandler {
-	;~ http://msdn.microsoft.com/en-us/library/windows/desktop/ee696044(v=vs.85).aspx
+	;;~ http://msdn.microsoft.com/en-us/library/windows/desktop/ee696044(v=vs.85).aspx
 	static __IID := "{146c3c17-f12e-4e22-8c27-f894b9b79c69}"
 
 /*	HandleAutomationEvent	3
@@ -6426,7 +6436,7 @@ class _UIA_EventHandler {
 */
 }
 class _UIA_FocusChangedEventHandler {
-	;~ http://msdn.microsoft.com/en-us/library/windows/desktop/ee696051(v=vs.85).aspx
+	;;~ http://msdn.microsoft.com/en-us/library/windows/desktop/ee696051(v=vs.85).aspx
 	static __IID := "{c270f6b5-5c69-4290-9745-7a7f97169468}"
 
 /*	HandleFocusChangedEvent	3
@@ -6434,7 +6444,7 @@ class _UIA_FocusChangedEventHandler {
 */
 }
 class _UIA_PropertyChangedEventHandler {
-	;~ http://msdn.microsoft.com/en-us/library/windows/desktop/ee696119(v=vs.85).aspx
+	;;~ http://msdn.microsoft.com/en-us/library/windows/desktop/ee696119(v=vs.85).aspx
 	static __IID := "{40cd37d4-c756-4b0c-8c6f-bddfeeb13b50}"
 
 /*	HandlePropertyChangedEvent	3
@@ -6444,7 +6454,7 @@ class _UIA_PropertyChangedEventHandler {
 */
 }
 class _UIA_StructureChangedEventHandler {
-	;~ http://msdn.microsoft.com/en-us/library/windows/desktop/ee696197(v=vs.85).aspx
+	;;~ http://msdn.microsoft.com/en-us/library/windows/desktop/ee696197(v=vs.85).aspx
 	static __IID := "{e81d1b4e-11c5-42f8-9754-e7036c79f054}"
 
 /*	HandleStructureChangedEvent	3
@@ -6453,17 +6463,17 @@ class _UIA_StructureChangedEventHandler {
 		[in]  SAFEARRAY *runtimeId[int]
 */
 }
-class _UIA_TextEditTextChangedEventHandler { ; Windows 8.1 Preview [desktop apps only]
-	;~ http://msdn.microsoft.com/en-us/library/windows/desktop/dn302202(v=vs.85).aspx
+class _UIA_TextEditTextChangedEventHandler { ;; Windows 8.1 Preview [desktop apps only]
+	;;~ http://msdn.microsoft.com/en-us/library/windows/desktop/dn302202(v=vs.85).aspx
 	static __IID := "{92FAA680-E704-4156-931A-E32D5BB38F3F}"
 
-	;~ HandleTextEditTextChangedEvent	3
+	;;~ HandleTextEditTextChangedEvent	3
 }
 
 
-;~ 		UIA_Patterns - http://msdn.microsoft.com/en-us/library/windows/desktop/ee684023
+;;~ 		UIA_Patterns - http://msdn.microsoft.com/en-us/library/windows/desktop/ee684023
 class UIA_DockPattern extends UIA_Base {
-	;~ http://msdn.microsoft.com/en-us/library/windows/desktop/ee671421
+	;;~ http://msdn.microsoft.com/en-us/library/windows/desktop/ee671421
 	static	__IID := "{fde5ef97-1464-48f6-90bf-43d0948e86ec}"
 		,	__PatternID := 10011
 		,	__Properties := "CurrentDockPosition,4,int`r`nCachedDockPosition,5,int"
@@ -6480,7 +6490,7 @@ class UIA_DockPattern extends UIA_Base {
 */
 }
 class UIA_ExpandCollapsePattern extends UIA_Base {
-	;~ http://msdn.microsoft.com/en-us/library/windows/desktop/ee696046
+	;;~ http://msdn.microsoft.com/en-us/library/windows/desktop/ee696046
 	static	__IID := "{619be086-1f4e-4ee4-bafa-210128738730}"
 		,	__PatternID := 10005
 		,	__Properties := "CachedExpandCollapseState,6,int`r`nCurrentExpandCollapseState,5,int"
@@ -6498,23 +6508,23 @@ class UIA_ExpandCollapsePattern extends UIA_Base {
 */
 }
 class UIA_GridItemPattern extends UIA_Base {
-	;~ http://msdn.microsoft.com/en-us/library/windows/desktop/ee696053
+	;;~ http://msdn.microsoft.com/en-us/library/windows/desktop/ee696053
 	static	__IID := "{78f8ef57-66c3-4e09-bd7c-e79b2004894d}"
 		,	__PatternID := 10007
 		,	__Properties := "CurrentContainingGrid,3,IUIAutomationElement`r`nCurrentRow,4,int`r`nCurrentColumn,5,int`r`nCurrentRowSpan,6,int`r`nCurrentColumnSpan,7,int`r`nCachedContainingGrid,8,IUIAutomationElement`r`nCachedRow,9,int`r`nCachedColumn,10,int`r`nCachedRowSpan,11,int`r`nCachedColumnSpan,12,int"
 }
 class UIA_GridPattern extends UIA_Base {
-	;~ http://msdn.microsoft.com/en-us/library/windows/desktop/ee696064
+	;;~ http://msdn.microsoft.com/en-us/library/windows/desktop/ee696064
 	static	__IID := "{414c3cdc-856b-4f5b-8538-3131c6302550}"
 		,	__PatternID := 10006
 		,	__Properties := "CurrentRowCount,4,int`r`nCurrentColumnCount,5,int`r`nCachedRowCount,6,int`r`nCachedColumnCount,7,int"
 
-	GetItem(row,column) { ; Hr!=0 if no result, or blank output?
+	GetItem(row,column) { ;; Hr!=0 if no result, or blank output?
 		return UIA_Hr(DllCall(this.__Vt(3), "ptr",this.__Value, "uint",row, "uint",column, "ptr*",out))? new UIA_Element(out):
 	}
 }
 class UIA_InvokePattern extends UIA_Base {
-	;~ http://msdn.microsoft.com/en-us/library/windows/desktop/ee696070
+	;;~ http://msdn.microsoft.com/en-us/library/windows/desktop/ee696070
 	static	__IID := "{fb377fbe-8ea6-46d5-9c73-6499642d3059}"
 		,	__PatternID := 10000
 
@@ -6523,18 +6533,18 @@ class UIA_InvokePattern extends UIA_Base {
 	}
 }
 class UIA_ItemContainerPattern extends UIA_Base {
-	;~ http://msdn.microsoft.com/en-us/library/windows/desktop/ee696072
+	;;~ http://msdn.microsoft.com/en-us/library/windows/desktop/ee696072
 	static	__IID := "{c690fdb2-27a8-423c-812d-429773c9084e}"
 		,	__PatternID := 10019
 
-	FindItemByProperty(startAfter, propertyId, ByRef value, type=8) {	; Hr!=0 if no result, or blank output?
+	FindItemByProperty(startAfter, propertyId, ByRef value, type=8) {	;; Hr!=0 if no result, or blank output?
 		if (type!="Variant")
 			UIA_Variant(value,type,value)
 		return UIA_Hr(DllCall(this.__Vt(3), "ptr",this.__Value, "ptr",startAfter.__Value, "int",propertyId, "ptr",&value, "ptr*",out))? new UIA_Element(out):
 	}
 }
 class UIA_LegacyIAccessiblePattern extends UIA_Base {
-	;~ http://msdn.microsoft.com/en-us/library/windows/desktop/ee696074
+	;;~ http://msdn.microsoft.com/en-us/library/windows/desktop/ee696074
 	static	__IID := "{828055ad-355b-4435-86d5-3b51c14a9b1b}"
 		,	__PatternID := 10018
 		,	__Properties := "CurrentChildId,6,int`r`nCurrentName,7,BSTR`r`nCurrentValue,8,BSTR`r`nCurrentDescription,9,BSTR`r`nCurrentRole,10,DWORD`r`nCurrentState,11,DWORD`r`nCurrentHelp,12,BSTR`r`nCurrentKeyboardShortcut,13,BSTR`r`nCurrentDefaultAction,15,BSTR`r`nCachedChildId,16,int`r`nCachedName,17,BSTR`r`nCachedValue,18,BSTR`r`nCachedDescription,19,BSTR`r`nCachedRole,20,DWORD`r`nCachedState,21,DWORD`r`nCachedHelp,22,BSTR`r`nCachedKeyboardShortcut,23,BSTR`r`nCachedDefaultAction,25,BSTR"
@@ -6548,28 +6558,28 @@ class UIA_LegacyIAccessiblePattern extends UIA_Base {
 	SetValue(value) {
 		return UIA_Hr(DllCall(this.__Vt(5), "ptr",this.__Value, "ptr",&value))
 	}
-	GetCurrentSelection() { ; Not correct
-		;~ if (hr:=DllCall(this.__Vt(14), "ptr",this.__Value, "ptr*",array))=0
-			;~ return new UIA_ElementArray(array)
-		;~ else
-			;~ MsgBox,, Error, %hr%
+	GetCurrentSelection() { ;; Not correct
+		;;~ if (hr:=DllCall(this.__Vt(14), "ptr",this.__Value, "ptr*",array))=0
+			;;~ return new UIA_ElementArray(array)
+		;;~ else
+			;;~ MsgBox,, Error, %hr%
 	}
-	;~ GetCachedSelection	24	IUIAutomationElementArray
+	;;~ GetCachedSelection	24	IUIAutomationElementArray
 	GetIAccessible() {
 	/*	This method returns NULL if the underlying implementation of the UI Automation element is not a native
-	Microsoft Active Accessibility server; that is, if a client attempts to retrieve the IAccessible interface
+	Microsoft Active Accessibility server;; that is, if a client attempts to retrieve the IAccessible interface
 	for an element originally supported by a proxy object from OLEACC.dll, or by the UIA-to-MSAA Bridge.
 	*/
 		return UIA_Hr(DllCall(this.__Vt(26), "ptr",this.__Value, "ptr*",pacc))&&pacc? ComObj(9,pacc,1):
 	}
 }
 class UIA_MultipleViewPattern extends UIA_Base {
-	;~ http://msdn.microsoft.com/en-us/library/windows/desktop/ee696099
+	;;~ http://msdn.microsoft.com/en-us/library/windows/desktop/ee696099
 	static	__IID := "{8d253c91-1dc5-4bb5-b18f-ade16fa495e8}"
 		,	__PatternID := 10008
 		,	__Properties := "CurrentCurrentView,5,int`r`nCachedCurrentView,7,int"
 
-	GetViewName(view) { ; need to release BSTR?
+	GetViewName(view) { ;; need to release BSTR?
 		return UIA_Hr(DllCall(this.__Vt(3), "ptr",this.__Value, "int",view, "ptr*",name))? StrGet(name):
 	}
 	SetCurrentView(view) {
@@ -6583,7 +6593,7 @@ class UIA_MultipleViewPattern extends UIA_Base {
 	}
 }
 class UIA_RangeValuePattern extends UIA_Base {
-	;~ http://msdn.microsoft.com/en-us/library/windows/desktop/ee696147
+	;;~ http://msdn.microsoft.com/en-us/library/windows/desktop/ee696147
 	static	__IID := "{59213f4f-7346-49e5-b120-80555987a148}"
 		,	__PatternID := 10003
 		,	__Properties := "CurrentValue,4,double`r`nCurrentIsReadOnly,5,BOOL`r`nCurrentMaximum,6,double`r`nCurrentMinimum,7,double`r`nCurrentLargeChange,8,double`r`nCurrentSmallChange,9,double`r`nCachedValue,10,double`r`nCachedIsReadOnly,11,BOOL`r`nCachedMaximum,12,double`r`nCachedMinimum,13,double`r`nCachedLargeChange,14,double`r`nCachedSmallChange,15,double"
@@ -6593,7 +6603,7 @@ class UIA_RangeValuePattern extends UIA_Base {
 	}
 }
 class UIA_ScrollItemPattern extends UIA_Base {
-	;~ http://msdn.microsoft.com/en-us/library/windows/desktop/ee696165
+	;;~ http://msdn.microsoft.com/en-us/library/windows/desktop/ee696165
 	static	__IID := "{b488300f-d015-4f19-9c29-bb595e3645ef}"
 		,	__PatternID := 10017
 
@@ -6602,7 +6612,7 @@ class UIA_ScrollItemPattern extends UIA_Base {
 	}
 }
 class UIA_ScrollPattern extends UIA_Base {
-	;~ http://msdn.microsoft.com/en-us/library/windows/desktop/ee696167
+	;;~ http://msdn.microsoft.com/en-us/library/windows/desktop/ee696167
 	static	__IID := "{88f4d42a-e881-459d-a77c-73bbbb7e02dc}"
 		,	__PatternID := 10004
 		,	__Properties := "CurrentHorizontalScrollPercent,5,double`r`nCurrentVerticalScrollPercent,6,double`r`nCurrentHorizontalViewSize,7,double`r`CurrentHorizontallyScrollable,9,BOOL`r`nCurrentVerticallyScrollable,10,BOOL`r`nCachedHorizontalScrollPercent,11,double`r`nCachedVerticalScrollPercent,12,double`r`nCachedHorizontalViewSize,13,double`r`nCachedVerticalViewSize,14,double`r`nCachedHorizontallyScrollable,15,BOOL`r`nCachedVerticallyScrollable,16,BOOL"
@@ -6621,29 +6631,29 @@ class UIA_ScrollPattern extends UIA_Base {
 	ScrollAmount_SmallIncrement	= 4
 */
 }
-;~ class UIA_SelectionItemPattern extends UIA_Base {10010
-;~ class UIA_SelectionPattern extends UIA_Base {10001
-;~ class UIA_SpreadsheetItemPattern extends UIA_Base {10027
-;~ class UIA_SpreadsheetPattern extends UIA_Base {10026
-;~ class UIA_StylesPattern extends UIA_Base {10025
-;~ class UIA_SynchronizedInputPattern extends UIA_Base {10021
-;~ class UIA_TableItemPattern extends UIA_Base {10013
-;~ class UIA_TablePattern extends UIA_Base {10012
-;~ class UIA_TextChildPattern extends UIA_Base {10029
-;~ class UIA_TextEditPattern extends UIA_Base {10032
-;~ class UIA_TextPattern extends UIA_Base {10014
-;~ class UIA_TextPattern2 extends UIA_Base {10024
-;~ class UIA_TogglePattern extends UIA_Base {10015
-;~ class UIA_TransformPattern extends UIA_Base {10016
-;~ class UIA_TransformPattern2 extends UIA_Base {10028
-;~ class UIA_ValuePattern extends UIA_Base {10002
-;~ class UIA_VirtualizedItemPattern extends UIA_Base {10020
-;~ class UIA_WindowPattern extends UIA_Base {10009
-;~ class UIA_AnnotationPattern extends UIA_Base {10023		; Windows 8 [desktop apps only]
-;~ class UIA_DragPattern extends UIA_Base {10030			; Windows 8 [desktop apps only]
-;~ class UIA_DropTargetPattern extends UIA_Base {10031		; Windows 8 [desktop apps only]
-/* class UIA_ObjectModelPattern extends UIA_Base {			; Windows 8 [desktop apps only]
-	;~ http://msdn.microsoft.com/en-us/library/windows/desktop/hh437262(v=vs.85).aspx
+;;~ class UIA_SelectionItemPattern extends UIA_Base {10010
+;;~ class UIA_SelectionPattern extends UIA_Base {10001
+;;~ class UIA_SpreadsheetItemPattern extends UIA_Base {10027
+;;~ class UIA_SpreadsheetPattern extends UIA_Base {10026
+;;~ class UIA_StylesPattern extends UIA_Base {10025
+;;~ class UIA_SynchronizedInputPattern extends UIA_Base {10021
+;;~ class UIA_TableItemPattern extends UIA_Base {10013
+;;~ class UIA_TablePattern extends UIA_Base {10012
+;;~ class UIA_TextChildPattern extends UIA_Base {10029
+;;~ class UIA_TextEditPattern extends UIA_Base {10032
+;;~ class UIA_TextPattern extends UIA_Base {10014
+;;~ class UIA_TextPattern2 extends UIA_Base {10024
+;;~ class UIA_TogglePattern extends UIA_Base {10015
+;;~ class UIA_TransformPattern extends UIA_Base {10016
+;;~ class UIA_TransformPattern2 extends UIA_Base {10028
+;;~ class UIA_ValuePattern extends UIA_Base {10002
+;;~ class UIA_VirtualizedItemPattern extends UIA_Base {10020
+;;~ class UIA_WindowPattern extends UIA_Base {10009
+;;~ class UIA_AnnotationPattern extends UIA_Base {10023		;; Windows 8 [desktop apps only]
+;;~ class UIA_DragPattern extends UIA_Base {10030			;; Windows 8 [desktop apps only]
+;;~ class UIA_DropTargetPattern extends UIA_Base {10031		;; Windows 8 [desktop apps only]
+/* class UIA_ObjectModelPattern extends UIA_Base {			;; Windows 8 [desktop apps only]
+	;;~ http://msdn.microsoft.com/en-us/library/windows/desktop/hh437262(v=vs.85).aspx
 	static	__IID := "{71c284b3-c14d-4d14-981e-19751b0d756d}"
 		,	__PatternID := 10022
 
@@ -6653,16 +6663,16 @@ class UIA_ScrollPattern extends UIA_Base {
 }
 */
 
-;~ class UIA_PatternHandler extends UIA_Base {
-;~ class UIA_PatternInstance extends UIA_Base {
-;~ class UIA_TextRange extends UIA_Base {
-;~ class UIA_TextRange2 extends UIA_Base {
-;~ class UIA_TextRangeArray extends UIA_Base {
+;;~ class UIA_PatternHandler extends UIA_Base {
+;;~ class UIA_PatternInstance extends UIA_Base {
+;;~ class UIA_TextRange extends UIA_Base {
+;;~ class UIA_TextRange2 extends UIA_Base {
+;;~ class UIA_TextRangeArray extends UIA_Base {
 
 
 
 
-{  ;~ UIA Functions
+{  ;;~ UIA Functions
 	UIA_Interface() {
 		try {
 			if uia:=ComObjCreate("{ff48dba4-60ef-4201-aa87-54103eef594e}","{30cbe57d-d9d0-452a-ab13-7ac5ac4825ee}")
@@ -6672,11 +6682,11 @@ class UIA_ScrollPattern extends UIA_Base {
 			MsgBox, 262160, UIA Startup Error, % IsObject(e)?"IUIAutomation Interface is not registered.":e.Message
 	}
 	UIA_Hr(hr) {
-		;~ http://blogs.msdn.com/b/eldar/archive/2007/04/03/a-lot-of-hresult-codes.aspx
-		static err:={0x8000FFFF:"Catastrophic failure.",0x80004001:"Not implemented.",0x8007000E:"Out of memory.",0x80070057:"One or more arguments are not valid.",0x80004002:"Interface not supported.",0x80004003:"Pointer not valid.",0x80070006:"Handle not valid.",0x80004004:"Operation aborted.",0x80004005:"Unspecified error.",0x80070005:"General access denied.",0x800401E5:"The object identified by this moniker could not be found.",0x80040201:"UIA_E_ELEMENTNOTAVAILABLE",0x80040200:"UIA_E_ELEMENTNOTENABLED",0x80131509:"UIA_E_INVALIDOPERATION",0x80040202:"UIA_E_NOCLICKABLEPOINT",0x80040204:"UIA_E_NOTSUPPORTED",0x80040203:"UIA_E_PROXYASSEMBLYNOTLOADED"} ; //not completed
+		;;~ http://blogs.msdn.com/b/eldar/archive/2007/04/03/a-lot-of-hresult-codes.aspx
+		static err:={0x8000FFFF:"Catastrophic failure.",0x80004001:"Not implemented.",0x8007000E:"Out of memory.",0x80070057:"One or more arguments are not valid.",0x80004002:"Interface not supported.",0x80004003:"Pointer not valid.",0x80070006:"Handle not valid.",0x80004004:"Operation aborted.",0x80004005:"Unspecified error.",0x80070005:"General access denied.",0x800401E5:"The object identified by this moniker could not be found.",0x80040201:"UIA_E_ELEMENTNOTAVAILABLE",0x80040200:"UIA_E_ELEMENTNOTENABLED",0x80131509:"UIA_E_INVALIDOPERATION",0x80040202:"UIA_E_NOCLICKABLEPOINT",0x80040204:"UIA_E_NOTSUPPORTED",0x80040203:"UIA_E_PROXYASSEMBLYNOTLOADED"} ;; //not completed
 		if hr&&(hr&=0xFFFFFFFF) {
 			RegExMatch(Exception("",-2).what,"(\w+).(\w+)",i)
-			; throw Exception(UIA_Hex(hr) " - " err[hr], -2, i2 "  (" i1 ")")
+			;; throw Exception(UIA_Hex(hr) " - " err[hr], -2, i2 "  (" i1 ")")
 		}
 		return !hr
 	}
@@ -6684,13 +6694,13 @@ class UIA_ScrollPattern extends UIA_Base {
 		RegExMatch(Exception("",-2).What,"(\D+)\.(\D+)",m)
 		MsgBox, 262192, UIA Message, Class:`t%m1%`nMember:`t%m2%`n`nMethod has not been implemented yet.
 	}
-	UIA_ElementArray(p, uia="") { ; should AHK Object be 0 or 1 based?
+	UIA_ElementArray(p, uia="") { ;; should AHK Object be 0 or 1 based?
 		a:=new UIA_ElementArray(p),out:=[]
 		Loop % a.Length
 			out[A_Index]:=a.GetElement(A_Index-1)
 		return out, out.base:={UIA_ElementArray:a}
 	}
-	UIA_RectToObject(ByRef r) { ; rect.__Value work with DllCalls?
+	UIA_RectToObject(ByRef r) { ;; rect.__Value work with DllCalls?
 		static b:={__Class:"object",__Type:"RECT",Struct:Func("UIA_RectStructure")}
 		return {l:NumGet(r,0,"Int"),t:NumGet(r,4,"Int"),r:NumGet(r,8,"Int"),b:NumGet(r,12,"Int"),base:b}
 	}
@@ -6701,7 +6711,7 @@ class UIA_ScrollPattern extends UIA_Base {
 			NumPut(this[A_LoopField],r,(A_Index-1)*4,"Int")
 	}
 	UIA_SafeArraysToObject(keys,values) {
-	;~	1 dim safearrays w/ same # of elements
+	;;~	1 dim safearrays w/ same # of elements
 		out:={}
 		for key in keys
 			out[key]:=values[A_Index-1]
@@ -6714,12 +6724,12 @@ class UIA_ScrollPattern extends UIA_Base {
 		SetFormat,IntegerFast,%setting%
 		return out
 	}
-	UIA_GUID(ByRef GUID, sGUID) { ;~ Converts a string to a binary GUID and returns its address.
+	UIA_GUID(ByRef GUID, sGUID) { ;;~ Converts a string to a binary GUID and returns its address.
 		VarSetCapacity(GUID,16,0)
 		return DllCall("ole32\CLSIDFromString", "wstr",sGUID, "ptr",&GUID)>=0?&GUID:""
 	}
 	UIA_Variant(ByRef var,type=0,val=0) {
-		; Does a variant need to be cleared? If it uses SysAllocString?
+		;; Does a variant need to be cleared? If it uses SysAllocString?
 		return (VarSetCapacity(var,8+2*A_PtrSize)+NumPut(type,var,0,"short")+NumPut(type=8? DllCall("oleaut32\SysAllocString", "ptr",&val):val,var,8,"ptr"))*0+&var
 	}
 	UIA_IsVariant(ByRef vt, ByRef type="") {
@@ -6729,8 +6739,8 @@ class UIA_ScrollPattern extends UIA_Base {
 	UIA_Type(ByRef item, ByRef info) {
 	}
 	UIA_VariantData(ByRef p, flag=1) {
-		; based on Sean's COM_Enumerate function
-		; need to clear varaint? what if you still need it (flag param)?
+		;; based on Sean's COM_Enumerate function
+		;; need to clear varaint? what if you still need it (flag param)?
 		return !UIA_IsVariant(p,vt)?"Invalid Variant"
 				:vt=3?NumGet(p,8,"int")
 				:vt=8?StrGet(NumGet(p,8))
@@ -6738,32 +6748,32 @@ class UIA_ScrollPattern extends UIA_Base {
 				:vt<0x1000&&UIA_VariantChangeType(&p,&p)=0?StrGet(NumGet(p,8)) UIA_VariantClear(&p)
 				:NumGet(p,8)
 	/*
-		VT_EMPTY     =      0  		; No value
-		VT_NULL      =      1 		; SQL-style Null
-		VT_I2        =      2 		; 16-bit signed int
-		VT_I4        =      3 		; 32-bit signed int
-		VT_R4        =      4 		; 32-bit floating-point number
-		VT_R8        =      5 		; 64-bit floating-point number
-		VT_CY        =      6 		; Currency
-		VT_DATE      =      7  		; Date
-		VT_BSTR      =      8 		; COM string (Unicode string with length prefix)
-		VT_DISPATCH  =      9 		; COM object
-		VT_ERROR     =    0xA  10	; Error code (32-bit integer)
-		VT_BOOL      =    0xB  11	; Boolean True (-1) or False (0)
-		VT_VARIANT   =    0xC  12	; VARIANT (must be combined with VT_ARRAY or VT_BYREF)
-		VT_UNKNOWN   =    0xD  13	; IUnknown interface pointer
-		VT_DECIMAL   =    0xE  14	; (not supported)
-		VT_I1        =   0x10  16	; 8-bit signed int
-		VT_UI1       =   0x11  17	; 8-bit unsigned int
-		VT_UI2       =   0x12  18	; 16-bit unsigned int
-		VT_UI4       =   0x13  19	; 32-bit unsigned int
-		VT_I8        =   0x14  20	; 64-bit signed int
-		VT_UI8       =   0x15  21	; 64-bit unsigned int
-		VT_INT       =   0x16  22	; Signed machine int
-		VT_UINT      =   0x17  23	; Unsigned machine int
-		VT_RECORD    =   0x24  36	; User-defined type
-		VT_ARRAY     = 0x2000  		; SAFEARRAY
-		VT_BYREF     = 0x4000  		; Pointer to another type of value
+		VT_EMPTY     =      0  		;; No value
+		VT_NULL      =      1 		;; SQL-style Null
+		VT_I2        =      2 		;; 16-bit signed int
+		VT_I4        =      3 		;; 32-bit signed int
+		VT_R4        =      4 		;; 32-bit floating-point number
+		VT_R8        =      5 		;; 64-bit floating-point number
+		VT_CY        =      6 		;; Currency
+		VT_DATE      =      7  		;; Date
+		VT_BSTR      =      8 		;; COM string (Unicode string with length prefix)
+		VT_DISPATCH  =      9 		;; COM object
+		VT_ERROR     =    0xA  10	;; Error code (32-bit integer)
+		VT_BOOL      =    0xB  11	;; Boolean True (-1) or False (0)
+		VT_VARIANT   =    0xC  12	;; VARIANT (must be combined with VT_ARRAY or VT_BYREF)
+		VT_UNKNOWN   =    0xD  13	;; IUnknown interface pointer
+		VT_DECIMAL   =    0xE  14	;; (not supported)
+		VT_I1        =   0x10  16	;; 8-bit signed int
+		VT_UI1       =   0x11  17	;; 8-bit unsigned int
+		VT_UI2       =   0x12  18	;; 16-bit unsigned int
+		VT_UI4       =   0x13  19	;; 32-bit unsigned int
+		VT_I8        =   0x14  20	;; 64-bit signed int
+		VT_UI8       =   0x15  21	;; 64-bit unsigned int
+		VT_INT       =   0x16  22	;; Signed machine int
+		VT_UINT      =   0x17  23	;; Unsigned machine int
+		VT_RECORD    =   0x24  36	;; User-defined type
+		VT_ARRAY     = 0x2000  		;; SAFEARRAY
+		VT_BYREF     = 0x4000  		;; Pointer to another type of value
 					 = 0x1000  4096
 		COM_VariantChangeType(pvarDst, pvarSrc, vt=8) {
 			return DllCall("oleaut32\VariantChangeTypeEx", "ptr",pvarDst, "ptr",pvarSrc, "Uint",1024, "Ushort",0, "Ushort",vt)
@@ -6783,10 +6793,10 @@ class UIA_ScrollPattern extends UIA_Base {
 		}
 	*/
 	}
-	UIA_VariantChangeType(pvarDst, pvarSrc, vt=8) { ; written by Sean
+	UIA_VariantChangeType(pvarDst, pvarSrc, vt=8) { ;; written by Sean
 		return DllCall("oleaut32\VariantChangeTypeEx", "ptr",pvarDst, "ptr",pvarSrc, "Uint",1024, "Ushort",0, "Ushort",vt)
 	}
-	UIA_VariantClear(pvar) { ; Written by Sean
+	UIA_VariantClear(pvar) { ;; Written by Sean
 		DllCall("oleaut32\VariantClear", "ptr",pvar)
 	}
 }
@@ -6799,20 +6809,20 @@ enum TreeScope
 	TreeScope_Parent	= 0x8,
 	TreeScope_Ancestors	= 0x10,
 	TreeScope_Subtree	= ( ( TreeScope_Element | TreeScope_Children )  | TreeScope_Descendants )
-    } ;
+    } ;;
 DllCall("oleaut32\SafeArrayGetVartype", "ptr*",ComObjValue(SafeArray), "uint*",pvt)
 HRESULT SafeArrayGetVartype(
   _In_   SAFEARRAY *psa,
   _Out_  VARTYPE *pvt
-);
+);;
 DllCall("oleaut32\SafeArrayDestroy", "ptr",ComObjValue(SafeArray))
 HRESULT SafeArrayDestroy(
   _In_  SAFEARRAY *psa
-);
+);;
 */
 
 
-  ;	Added
+  ;;	Added
   
 UIA_ControlType(n) {
 	Static name:={50000:"Button",50001:"Calendar",50002:"CheckBox",50003:"ComboBox",50004:"Edit",50005:"Hyperlink",50006:"Image",50007:"ListItem",50008:"List",50009:"Menu"
@@ -6822,6 +6832,6 @@ UIA_ControlType(n) {
 	return name[n]
 }
 
-	; _________________________________________________ End _________________________________________________
+	;; _________________________________________________ End _________________________________________________
 
-	;)
+	;;)
