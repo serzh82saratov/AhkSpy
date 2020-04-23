@@ -26,7 +26,7 @@
     Актуальный исходник - https://raw.githubusercontent.com/serzh82saratov/AhkSpy/master/AhkSpy.ahk
 */
 
-Global AhkSpyVersion := 4.18
+Global AhkSpyVersion := 4.19
 
 	;; _________________________________________________ Caption _________________________________________________
 
@@ -5187,9 +5187,11 @@ ButtonClick(oevent) {
 		WinClose, % "ahk_id" oOther.WinID
 	Else If (thisid = "control_destroy" && (WinExist("ahk_id" oOther.ControlID) || !ToolTip("window not exist", 500)) && ConfirmAction("Destroy window?"))
 			WinClose, % "ahk_id" oOther.ControlID     ;; DllCall("DestroyWindow", "Ptr", oOther.ControlID)   ;;  не работает
-	Else If (thisid = "control_show_hide" || thisid = "window_show_hide" && (WinExist("ahk_id" oOther.ControlID) || !ToolTip("window not exist", 500)))
+	Else If (thisid = "control_show_hide" || thisid = "window_show_hide")
 	{
 		Hwnd := thisid = "window_show_hide" ? oOther.WinID : oOther.ControlID
+		If !WinExist("ahk_id" Hwnd)  
+			Return ToolTip("window not exist", 500)
 		If b := DllCall("IsWindowVisible", "Ptr", Hwnd) 
 			WinHide, % "ahk_id" Hwnd
 		Else 
