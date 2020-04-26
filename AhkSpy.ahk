@@ -26,7 +26,7 @@
     Актуальный исходник - https://raw.githubusercontent.com/serzh82saratov/AhkSpy/master/AhkSpy.ahk
 */
 
-Global AhkSpyVersion := 4.19
+Global AhkSpyVersion := 4.20
 
 	;; _________________________________________________ Caption _________________________________________________
 
@@ -142,7 +142,7 @@ If MemoryAnchor
 		oOther.anchor["Control"] := 1
 }
 ; ObjRegisterActive(oPubObj, oPubObjGUID := CreateGUID())
-oPubObj := {}
+
 
 FixIE()
 SeDebugPrivilege()
@@ -154,7 +154,8 @@ CreateMarkerInvert()
 ShowMarkersCreate("oShowAccMarkers", "26419F")  
 ShowMarkersCreate("oShowMarkers", "E14B30")
 
-Gui, +AlwaysOnTop +HWNDhGui +ReSize -DPIScale +Owner%hMarkerGui% +E%WS_EX_APPWINDOW% 
+
+Gui, +AlwaysOnTop +HWNDhGui +ReSize -DPIScale +Owner%hMarkerGui% +E%WS_EX_APPWINDOW% ;   +E%WS_EX_NOACTIVATE%
 Gui, Color, %ColorBgPaused%
 Gui, Add, ActiveX, Border voDoc HWNDhActiveX x0 y+0, HTMLFile
   ;;	https://docs.microsoft.com/en-us/dotnet/api/system.windows.forms.htmlwindow?view=netframework-4.8
@@ -705,7 +706,7 @@ HTML_Win:
 	%_PRE1%<span id='wintitle3'><span class='param' name='MS:S' id='wintitle3_'>ahk_exe </span><span name='MS:'>%WinProcessName%</span></span>%_PRE2%
 	%_T1% id='__ProcessPath'> ( ProcessPath ) </span>%_BT1% id='infolder'> in folder %_BT2%%_DB%%_BT1% id='paste_process_path'> paste %_BT2%%_T2%
 	%_PRE1%<span><span class='param' name='MS:S'>ahk_exe </span><span id='copy_processpath' name='MS:'>%WinProcessPath%</span></span>%_PRE2%
-	%_T1% id='__CommandLine'> ( CommandLine ) </span>%_BT1% id='w_command_line'> launch %_BT2%%_DB%%_BT1% id='paste_command_line'> paste %_BT2%%_T2%
+	%_T1% id='__CommandLine'> ( CommandLine ) </span>%_BT1% id='w_command_line'> launch %_BT2%%_DB%%_BT1% id='paste_command_line'> paste %_BT2%%_DB%%_BT1% id='clean_command_line'> clean %_BT2%%_DB%%_BT1% id='command_line_infolder'> in folder %_BT2%%_T2%
 	%_PRE1%<span id='c_command_line' name='MS:'>%ComLine%</span>%_PRE2%
 	%_T1% id='__Position'> ( Position ) </span>%_T2%
 	%_PRE1%%_BP1% id='set_button_pos'>Pos:%_BP2%  <span name='MS:'>x%WinX% y%WinY%</span>%_DP%<span name='MS:'>x&sup2;%WinX2% y&sup2;%WinY2%</span>%_DP%%_BP1% id='set_button_pos'>Size:%_BP2%  <span name='MS:'>w%WinWidth% h%WinHeight%</span>%ViewStrPos1%
@@ -1465,14 +1466,19 @@ AccInfoUnderMouse(mx, my, wx, wy, cx, cy, caX, caY, WinID, ControlID) {
 		, "Ptr", VarSetCapacity(varChild,8+2*A_PtrSize,0)*0+&varChild) = 0
 		
 		;;  http://forum.script-coding.com/viewtopic.php?pid=139109#p139109
-		Acc := ComObjEnwrap(9,pacc,1), child := NumGet(varChild,8,"UInt")
+		
+		; Acc := ComObjEnwrap(9, pacc, 1), child := NumGet(varChild,8,"UInt")
+		Acc := ComObject(9, pacc, 1)
+		ObjAddRef(pacc)
+		ObjRelease(pacc)
+		child := NumGet(varChild, 8, "UInt")
 		
 	If !IsObject(Acc)
-		Return
-	
+		Return 
+		
 	SendMessage, WM_GETOBJECT, 0, 1, , ahk_id %ControlID%
 	
-	oPubObj.Acc := {AccObj:Object(Acc), child:child, WinID:WinID, ControlID:ControlID}
+	oPubObj.Acc := {AccObj: Object(Acc), child: child, WinID: WinID, ControlID: ControlID}
 	
 	ChildCount := Acc.accChildCount	
 	If child
@@ -1484,7 +1490,7 @@ AccInfoUnderMouse(mx, my, wx, wy, cx, cy, caX, caY, WinID, ControlID) {
 		
 	If DynamicAccPath
 	{ 
-		If acc_path_func(0, Acc)
+		If acc_path_func(0)
 			acc_path_value := SaveAccPath()
 		Else 
 			error := "<span style='color:#ff0000'>  path not found</span>"
@@ -1571,9 +1577,8 @@ AccInfoUnderMouse(mx, my, wx, wy, cx, cy, caX, caY, WinID, ControlID) {
 		
 	Return code
 }
-
-
-
+ 
+ 
 accDoDefaultAction() { 
 	Acc := Object(oPubObj.Acc.AccObj) 
 	Acc.accDoDefaultAction(oPubObj.Acc.child)
@@ -1643,8 +1648,8 @@ AddSpace(c) {
 	Return Tab
 }
 
-GetAccPath(Acc) { 
-	if !Acc_GetPath(Acc, arr)
+GetAccPath() { 
+	if !Acc_GetPath(arr)
 		Return 0
 	for k, v in arr
 	{ 
@@ -1657,12 +1662,15 @@ GetAccPath(Acc) {
 	Return 1
 }
 
-Acc_GetPath(Acc, byref arr) {
-    static DesktopHwnd := DllCall("User32.dll\GetDesktopWindow", "ptr")
-	Local
+Acc_GetPath(byref arr) {
+    Static DesktopHwnd := DllCall("User32.dll\GetDesktopWindow", "ptr") 
+	Acc := Object(oPubObj.Acc.AccObj) 
 	arr := []
+	
 	While Hwnd := Acc_WindowFromObject(Parent := Acc_Parent(Acc)) {
-		t1 := GetEnumIndex(Acc)
+		If (DesktopHwnd != Hwnd)
+			t1 := GetEnumIndex(Acc)
+			
 		If (PrHwnd != "" && Hwnd != PrHwnd)
 		{
 			PrHwnd := Format("0x{:06X}", PrHwnd)
@@ -1685,12 +1693,12 @@ GetEnumIndex(Acc)
 	{
 		;; MsgBox % (ComObjValue(Acc) "`n"  ComObjValue(child)) "`n" oPubObj.Acc.child "`n" A_Index
 		if IsObject(child) 
+		and (Acc_Location(child) = Acc_Location(Acc))
 		and (child.accDefaultAction(0) = Acc.accDefaultAction(0)) 	
 		and (child.accDescription(0) = Acc.accDescription(0)) 	
 		and (child.accHelp(0) = Acc.accHelp(0)) 	
 		and (child.accKeyboardShortcut(0) = Acc.accKeyboardShortcut(0)) 
-		   ;;  
-		and (Acc_Location(child) = Acc_Location(Acc))
+		    
 		and (child.accChildCount = Acc.accChildCount) 
 		and (child.accName(0) = Acc.accName(0)) 	
 		and (child.accRole(0) = Acc.accRole(0)) 	
@@ -2751,8 +2759,8 @@ ActivateUnderMouse() {
 
 MouseGetPosScreen(ByRef x, ByRef y) {
 	VarSetCapacity(POINT, 8, 0)
-	NumPut(x, &POINT, 0,"Int")
-	NumPut(y, &POINT, 4,"Int")
+	NumPut(x, &POINT, 0, "Int")
+	NumPut(y, &POINT, 4, "Int")
 	DllCall("GetCursorPos", "Ptr", &POINT)
 	x := NumGet(POINT, 0, "Int"), y := NumGet(POINT, 4, "Int")
 }
@@ -3413,7 +3421,7 @@ NextLink(s = "") {
 	Loop % co
 		oDocEl.scrollTop := curpos + (st*(A_Index/co))
 	oDocEl.scrollTop := curpos + res
-}
+} 
 
 GuiNoRedraw() { 
 	Return 
@@ -5053,6 +5061,14 @@ Class Events {  ;;	http://forum.script-coding.com/viewtopic.php?pid=82283#p82283
 		ToolTip(GetLangName(hActiveX), 500)
 		(OnHook ? Hotkey_Hook(1) : 0)
 	}
+	clean_command_line() { 
+		cl := oDoc.getElementById("c_command_line").OuterText
+		StringReplace, cl, cl, ", , 1 
+		process := oDoc.getElementById("copy_processpath").OuterText
+		cl := RegExReplace(cl, "i)\Q" process "\E(.*)", "$1", , 1)
+		cl := Trim(cl, " ")
+		oDoc.getElementById("c_command_line").innerText :=  RegExReplace(cl, "i)\Q" process "\E(.*)", "$1", , 1)
+	}
 }
 
 ButtonClick(oevent) { 
@@ -5147,12 +5163,17 @@ ButtonClick(oevent) {
 	}
 	Else If thisid = pause_button
 		Gosub, PausedScript
-	Else If thisid = infolder
-	{
-		If FileExist(FilePath := oDoc.getElementById("copy_processpath").OuterText)
+	Else If (thisid = "infolder" || thisid = "command_line_infolder")
+	{	
+		If (thisid = "command_line_infolder")
+			FilePath := oDoc.getElementById("c_command_line").OuterText
+		Else 
+			FilePath := oDoc.getElementById("copy_processpath").OuterText
+			
+		If FileExist(FilePath)
 			SelectFilePath(FilePath), Minimize()
 		Else
-			ToolTip("Not file exist", 500)
+			ToolTip("File not exist", 500)
 	}
 	Else If (thisid = "flash_window" || thisid = "flash_control" || thisid = "flash_ctrl_window")
 	{
@@ -5179,6 +5200,8 @@ ButtonClick(oevent) {
 		oDoc.getElementById("copy_processpath").innerHTML := TransformHTML(Trim(Trim(Clipboard), """"))
 	Else If thisid = w_command_line
 		RunRealPath(oDoc.getElementById("c_command_line").OuterText)
+	Else If thisid = clean_command_line
+		Events.clean_command_line()
 	Else If thisid = paste_command_line
 		oDoc.getElementById("c_command_line").innerHTML := TransformHTML(Clipboard)
 	Else If (thisid = "process_close" && (oOther.WinPID || !ToolTip("Invalid parametrs", 500)) && ConfirmAction("Process close?"))
@@ -5342,7 +5365,7 @@ ButtonClick(oevent) {
 		FlashArea(x, y, w, h)
 	}
 	Else If thisid = acc_path 
-		acc_path_func(1, Object(oPubObj.Acc.AccObj))
+		acc_path_func(1)
 	Else If thisid = control_path 
 		control_path_func()
 }
@@ -5354,7 +5377,7 @@ control_path_func() {
 	HTML_Control := oBody.innerHTML
 }
 
-acc_path_func(manual, Acc) {
+acc_path_func(manual) {
 	;; If (manual && oOther.anchor[ThisMode "_text"] = "P__Tree_Acc_Path")
 		;; MsgBox %  oDoc.getElementById("P__Tree_Acc_Path").innerHTML
 	If !Malcev_AccPathNotBlink && manual
@@ -5369,7 +5392,7 @@ acc_path_func(manual, Acc) {
 		)
 		oDoc.getElementById("acc_path").innerHTML := marquee   
 	}
-	b := GetAccPath(Acc) 
+	b := GetAccPath() 
 	If !manual
 		Return b
 	If b
