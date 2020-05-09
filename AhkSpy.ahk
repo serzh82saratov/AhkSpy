@@ -26,7 +26,7 @@
     Актуальный исходник - https://raw.githubusercontent.com/serzh82saratov/AhkSpy/master/AhkSpy.ahk
 */
 
-Global AhkSpyVersion := 4.20
+Global AhkSpyVersion := 4.21
 
 	;; _________________________________________________ Caption _________________________________________________
 
@@ -122,7 +122,8 @@ Global _S1 := "<span>", _S2 := "</span>", _DB := "<span style='position: relativ
 , _INPHK := "<input onfocus='funchkinputevent (this, ""focus"")' onblur='funchkinputevent(this, ""blur"")' "
 
 , _PreOverflowHideCSS := ".lpre {max-width: 99`%; max-height: " PreMaxHeight "px; overflow: auto; border: 1px solid #E2E2E2;}"
-, _BodyWrapCSS := "body {word-wrap: break-word; overflow-x: hidden;} .lpre {overflow-x: hidden;}"
+
+, _BodyWrapCSS := "body {word-wrap: break-word`; overflow-x: hidden;} .lpre {overflow-x: hidden`;}"
 
 , _ButAccViewer := ExtraFile("AccViewer Source") ? _DB _BT1 " id='run_AccViewer'> run accviewer " _BT2 : ""
 , _ButiWB2Learner := ExtraFile("iWB2 Learner") ? _DB _BT1 " id='run_iWB2Learner'> run iwb2 learner " _BT2 : ""
@@ -172,8 +173,8 @@ ComObjConnect(oDoc, Events)
 OnMessage(0x133, "WM_CTLCOLOREDIT")
 OnMessage(0x201, "WM_LBUTTONDOWN")
 OnMessage(0x208, "WM_MBUTTONUP")
-OnMessage(0xA1, "WM_NCLBUTTONDOWN")
 OnMessage(0x7B, "WM_CONTEXTMENU")
+OnMessage(0xA1, "WM_NCLBUTTONDOWN")
 OnMessage(0x6, "WM_ACTIVATE")
 OnMessage(0x47, "WM_WINDOWPOSCHANGED")
 
@@ -185,6 +186,8 @@ OnMessage(0x47, "WM_WINDOWPOSCHANGED")
 
 OnMessage(MsgAhkSpyZoom := DllCall("RegisterWindowMessage", "Str", "MsgAhkSpyZoom"), "MsgZoom")
 DllCall("PostMessage", "Ptr", A_ScriptHWND, "UInt", 0x50, "UInt", 0, "UInt", 0x409) ;; eng layout
+SetWinEventHook("EVENT_OBJECT_CLOAKED", 0x8017)
+SetWinEventHook("EVENT_OBJECT_UNCLOAKED", 0x8018) 
 
 Gui, TB: +HWNDhTBGui -Caption -DPIScale +Parent%hGui% +%WS_CHILDWINDOW% -%WS_POPUP% +E%WS_EX_NOACTIVATE%
 Gui, TB: Font, % " s" FontDPI, Verdana
@@ -288,7 +291,9 @@ Menu, Overflow, Add, % name := "1 / 5", % oMenu.Overflow[name] := "_MenuOverflow
 Menu, Overflow, Add, % name := "1 / 6", % oMenu.Overflow[name] := "_MenuOverflowLabel"
 Menu, Overflow, Add, % name := "1 / 8", % oMenu.Overflow[name] := "_MenuOverflowLabel"
 Menu, Overflow, Add, % name := "1 / 10", % oMenu.Overflow[name] := "_MenuOverflowLabel"
-Menu, Overflow, Add, % name := "1 / 15", % oMenu.Overflow[name] := "_MenuOverflowLabel"
+Menu, Overflow, Add, % name := "1 / 15", % oMenu.Overflow[name] := "_MenuOverflowLabel" 
+Menu, Overflow, Check, %PreMaxHeightStr%
+Menu, Overflow, Color, % ColorBgOriginal
 Menu, View, Add, Big text overflow hide, :Overflow
 
 Menu, Sys, Add, Start mode, :Startmode
@@ -320,10 +325,7 @@ Menu, Sys, Add, % name := "Default size", % oMenu.Sys[name] := "DefaultSize"
 Menu, Sys, Add, % name := "Full screen", % oMenu.Sys[name] := "FullScreenMode"
 Menu, Sys, Add, % name := "Find to page", % oMenu.Sys[name] := "_FindView"
 
-Menu, Overflow, Check, %PreMaxHeightStr%
-
 Menu, Sys, Color, % ColorBgOriginal
-Menu, Overflow, Color, % ColorBgOriginal
 
 #Include *i %A_AppData%\AhkSpy\Include.ahk  ;;	Для продолжения выполнения кода используйте GoTo IncludeLabel
 IncludeLabel:
@@ -349,8 +351,9 @@ If !DllCall("WindowFromPoint", "Int64", WinX & 0xFFFFFFFF | WinY << 32)
 	Gui, Show, NA xCenter yCenter
 If !UpdRegister
 	SetTimer, UpdRegister, -1000 
-	
 WinSet, TransParent, 255, ahk_id %hGui%
+
+; MsgBox % oDoc.documentMode  "`n" oDoc.compatMode
 Return
 
 	;; _________________________________________________ Hotkey`s _________________________________________________
@@ -524,14 +527,14 @@ RButton::
 
 #If (isAhkSpy && Sleep != 1 && !isPaused && ThisMode != "Hotkey")
 
-+#Up::MouseStep(0, -1)
-+#Down::MouseStep(0, 1)
-+#Left::MouseStep(-1, 0)
-+#Right::MouseStep(1, 0)
-^+#Up::MouseStep(0, -10)
-^+#Down::MouseStep(0, 10)
-^+#Left::MouseStep(-10, 0)
-^+#Right::MouseStep(10, 0)
++#Up:: MouseStep(0, -1)
++#Down:: MouseStep(0, 1)
++#Left:: MouseStep(-1, 0)
++#Right:: MouseStep(1, 0)
+^+#Up:: MouseStep(0, -10)
+^+#Down:: MouseStep(0, 10)
+^+#Left:: MouseStep(-10, 0)
+^+#Right:: MouseStep(10, 0)
 
 #If oJScript.ButtonOver
 
@@ -868,8 +871,9 @@ Spot_Control(NotHTML = 0) {
 	RWinX := MXS - WinX, RWinY := MYS - WinY
 	GetClientPos(WinID, caX, caY, caW, caH)
 	MXC := RWinX - caX, MYC := RWinY - caY
-
-	WithRespectWin := "`n" _BP1 " id='set_pos'>Relative window:" _BP2 "  <span name='MS:'>"
+	
+	cc = %_DP%%_BB1% name='x%RWinX% y%RWinY%' id='control_click'> control click %_BB2% 
+	WithRespectWin := cc "`n" _BP1 " id='set_pos'>Relative window:" _BP2 "  <span name='MS:'>"
 		. Round(RWinX / WinW, 4) ", " Round(RWinY / WinH, 4) "</span>  <span class='param'>for</span> <span name='MS:'>w" WinW " h" WinH "</span>" _DP
 	WithRespectClient := _BP1 " id='set_pos'>Relative client:" _BP2 "  <span name='MS:'>" Round(MXC / caW, 4) ", " Round(MYC / caH, 4)
 		. "</span>  <span class='param'>for</span> <span name='MS:'>w" caW " h" caH "</span>"
@@ -1455,8 +1459,8 @@ WBGet(hwnd) {
 	;;  http://www.autohotkey.com/board/topic/77888-accessible-info-viewer-alpha-release-2012-09-20/
 	   
 AccInfoUnderMouse(mx, my, wx, wy, cx, cy, caX, caY, WinID, ControlID) {
-	Static h, WM_GETOBJECT := 0x003D
-	
+	Static h, WM_GETOBJECT := 0x003D 
+
 	If Not h
 		h := DllCall("LoadLibrary", "Str", "oleacc", "Ptr")
 		
@@ -1478,9 +1482,9 @@ AccInfoUnderMouse(mx, my, wx, wy, cx, cy, caX, caY, WinID, ControlID) {
 		
 	SendMessage, WM_GETOBJECT, 0, 1, , ahk_id %ControlID%
 	
-	oPubObj.Acc := {AccObj: Object(Acc), child: child, WinID: WinID, ControlID: ControlID}
+	oPubObj.Acc := {AccObj: Object(Acc), child: child, WinID: WinID, ControlID: ControlID} 
 	
-	ChildCount := Acc.accChildCount	
+	ChildCount := Acc.accChildCount
 	If child
 		Var := "<span name='MS:'>Simple Element</span>" _DP "<span class='param' name='MS:N'>Id:  </span>" child
 	Else If ChildCount
@@ -1573,13 +1577,33 @@ AccInfoUnderMouse(mx, my, wx, wy, cx, cy, caX, caY, WinID, ControlID) {
 		. _BT1 " id='copy_button'> copy " _BT2 _T2 _LPRE ">" TransformHTML(accFocusValue) _PRE2
 	If (role != "" && irole != "")
 		, code .= _T1 " id='P__Role_Acc'" _T1P "> ( Focus - Role ) </span>" _T2 _PRE1 "<span name='MS:'>" TransformHTML(role) "</span>"
-		. _DP "<span class='param' name='MS:N'>code: </span><span name='MS:'>" irole "</span>" _PRE2
-		
+		. _DP "<span class='param' name='MS:N'>code: </span><span name='MS:'>" irole "</span>" _PRE2 
 	Return code
+} 
+
+CL() {
+	If !oPubObj.Acc.CLOAKED
+		Return 
+	Exit
+}
+
+EVENT_OBJECT_CLOAKED(hWinEventHook, event, hwnd, idObject, idChild) {
+	If (idObject || idChild)
+		Return
+	If (hwnd = oPubObj.Acc.WinID)
+		oPubObj.Acc.CLOAKED := 1 
+} 
+
+EVENT_OBJECT_UNCLOAKED(hWinEventHook, event, hwnd, idObject, idChild) {
+	If (idObject || idChild)
+		Return
+	If (hwnd = oPubObj.Acc.WinID)
+		oPubObj.Acc.CLOAKED := 0
 }
  
- 
 accDoDefaultAction() { 
+	If oPubObj.Acc.CLOAKED
+		Return 0, ToolTip("CLOAKED", 500)
 	Acc := Object(oPubObj.Acc.AccObj) 
 	Acc.accDoDefaultAction(oPubObj.Acc.child)
 }
@@ -1664,10 +1688,12 @@ GetAccPath() {
 
 Acc_GetPath(byref arr) {
     Static DesktopHwnd := DllCall("User32.dll\GetDesktopWindow", "ptr") 
+	If oPubObj.Acc.CLOAKED
+		Return 0
 	Acc := Object(oPubObj.Acc.AccObj) 
 	arr := []
 	
-	While Hwnd := Acc_WindowFromObject(Parent := Acc_Parent(Acc)) {
+	While Hwnd := Acc_WindowFromObject(Parent := Acc_Parent(Acc)) { 
 		If (DesktopHwnd != Hwnd)
 			t1 := GetEnumIndex(Acc)
 			
@@ -1676,7 +1702,7 @@ Acc_GetPath(byref arr) {
 			PrHwnd := Format("0x{:06X}", PrHwnd)
 			WinGetClass, WinClass, ahk_id %PrHwnd%
 			WinGet, ProcessName, ProcessName, ahk_id %PrHwnd%
-			arr.InsertAt(1, {Hwnd:PrHwnd,Path:SubStr(t2, 1, -1), WinClass:WinClass, ProcessName:ProcessName})
+			arr.InsertAt(1, {Hwnd: PrHwnd, Path: SubStr(t2, 1, -1), WinClass: WinClass, ProcessName: ProcessName})
 		}
 		if (t1 = "" || Hwnd = DesktopHwnd)
 		   break
@@ -1684,14 +1710,13 @@ Acc_GetPath(byref arr) {
 		PrHwnd := Hwnd
 		Acc := Parent 
 	}
-	return arr.Count()
+	Return arr.Count()
 }
 
 GetEnumIndex(Acc)
 {
 	For Each, child in Acc_Children(Acc_Parent(Acc))
-	{
-		;; MsgBox % (ComObjValue(Acc) "`n"  ComObjValue(child)) "`n" oPubObj.Acc.child "`n" A_Index
+	{ 
 		if IsObject(child) 
 		and (Acc_Location(child) = Acc_Location(Acc))
 		and (child.accDefaultAction(0) = Acc.accDefaultAction(0)) 	
@@ -1749,15 +1774,15 @@ Acc_ObjectFromWindow(hWnd, idObject = 0) {
 		Return ComObjEnwrap(9,pacc,1)
 }
 Acc_WindowFromObject(pacc) {
-	If DllCall("oleacc\WindowFromAccessibleObject", "Ptr", IsObject(pacc)?ComObjValue(pacc):pacc, "Ptr*", hWnd)=0
+	If DllCall("oleacc\WindowFromAccessibleObject", "Ptr", IsObject(pacc) ? ComObjValue(pacc) : pacc, "Ptr*", hWnd)=0
 		Return	hWnd
 } 
 Acc_Parent(Acc) { 
-	try parent:=Acc.accParent
+	try parent := Acc.accParent 
 	return parent ? Acc_Query(parent) : ""
 }
 Acc_Query(Acc) {
-	try return ComObj(9, ComObjQuery(Acc,"{618736e0-3c3d-11cf-810c-00aa00389b71}"), 1)
+	try return ComObj(9, ComObjQuery(Acc, "{618736e0-3c3d-11cf-810c-00aa00389b71}"), 1)
 }
 
 	;; _________________________________________________ Mode_Hotkey _________________________________________________
@@ -4809,12 +4834,12 @@ MS_Select(EL) {
 
 	;; _________________________________________________ Load JScripts _________________________________________________
 
-ChangeCSS(id, css) {	;;  https://webo.in/articles/habrahabr/68-fast-dynamic-css/
+ChangeCSS(id, css) {	;;  https://webo.in/articles/habrahabr/68-fast-dynamic-css/ 
 	oDoc.getElementById(id).styleSheet.cssText := css
 }
 
 LoadJScript() {
-	Static onhkinput, ontooltip
+	Static onhkinput, ontooltip 
 	PreOver_ := PreOverflowHide ? _PreOverflowHideCSS : ""
 	BodyWrap_ := WordWrap ? _BodyWrapCSS : ""
 html =
@@ -5186,6 +5211,8 @@ ButtonClick(oevent) {
 	}
 	Else If (thisid = "flash_acc")
 	{
+		If oPubObj.Acc.CLOAKED
+			Return 0, ToolTip("CLOAKED", 500)
 		Acc := Object(oPubObj.Acc.AccObj)
 		AccGetLocation(Acc, oPubObj.Acc.child)
 		FlashArea(AccCoord[1], AccCoord[2], AccCoord[3], AccCoord[4])
@@ -5271,6 +5298,10 @@ ButtonClick(oevent) {
 			WinMove, % "ahk_id " oOther.WinID, , p1, p2, p3, p4
 		Else
 			ControlMove, , p1, p2, p3, p4, % "ahk_id " oOther.ControlID
+	}
+	Else If thisid = control_click
+	{ 
+		ControlClick, % oevent.name, % "ahk_id" oOther.WinID, , , , Pos
 	}
 	Else If thisid = set_button_focus_ctrl
 	{
@@ -5396,13 +5427,19 @@ acc_path_func(manual) {
 	If !manual
 		Return b
 	If b
-		oDoc.getElementById("acc_path_value").innerHTML := SaveAccPath()
+	{ 
+		oDoc.getElementById("acc_path_error").innerHTML := ""
+		oDoc.getElementById("acc_path_value").innerHTML := SaveAccPath() 
+	}
 	If !b
-		oDoc.getElementById("acc_path_error").outerHTML := "<span style='color:#ff0000'>  path not found  </span>" 
-		, oDoc.getElementById("acc_path_value").innerHTML := ""
+	{
+		oDoc.getElementById("acc_path_error").innerHTML := "<span style='color:#ff0000'>  "
+			. (oPubObj.Acc.CLOAKED ? "CLOAKED" : "path not found")  "  </span>" 
+		oDoc.getElementById("acc_path_value").innerHTML := ""
+	}
 	Else 
 		oDoc.getElementById("acc_path_value").disabled := 0
-		
+	
 	oDoc.getElementById("acc_path").innerHTML := ""
 	oDoc.getElementById("acc_path").innerText := " Get path "
 	oDoc.getElementById("acc_path").disabled := 0
@@ -5695,11 +5732,17 @@ MagnifyMarkSave() {
 }
 
 SetWinEventHook(EventProc, eventMin, eventMax = 0)  {
+	; DllCall("CoInitialize", UInt, 0)
 	Return DllCall("SetWinEventHook"
 				, "UInt", eventMin, "UInt", eventMax := !eventMax ? eventMin : eventMax
 				, "Ptr", hmodWinEventProc := 0, "Ptr", lpfnWinEventProc := RegisterCallback(EventProc, "F")
 				, "UInt", idProcess := 0, "UInt", idThread := 0
 				, "UInt", dwflags := 0x0|0x2, "Ptr")	;;	WINEVENT_OUTOFCONTEXT | WINEVENT_SKIPOWNPROCESS
+}
+
+UnhookWinEvent(hWinEventHook) {  
+	DllCall("UnhookWinEvent", "Ptr", hWinEventHook)
+	DllCall("GlobalFree", "Ptr", &hWinEventHook) ; free up allocated memory for RegisterCallback
 }
 
 ZoomShow() {
