@@ -26,7 +26,7 @@
     Актуальный исходник - https://raw.githubusercontent.com/serzh82saratov/AhkSpy/master/AhkSpy.ahk
 */
 
-Global AhkSpyVersion := 4.21
+Global AhkSpyVersion := 4.22
 
 	;; _________________________________________________ Caption _________________________________________________
 
@@ -102,9 +102,17 @@ Global ThisMode := IniRead("StartMode", "Control"), LastModeSave := (ThisMode = 
 #Include *i %A_AppData%\AhkSpy\IncludeSettings.ahk
 
 Global _S1 := "<span>", _S2 := "</span>", _DB := "<span style='position: relative; margin-right: 1em;'></span>"
-, _BT1 := "<span class='button' unselectable='on' oncontextmenu='return false' onmouseleave='OnButtonOut (this)' onmousedown='OnButtonDown (this)' "
-	. "onmouseup='OnButtonUp (this)' onmouseover='OnButtonOver (this)' contenteditable='false' ", _BT2 := "</span>"
+
+
+; , _BT1 := "<span class='button' unselectable='on' oncontextmenu='return false' onmouseleave='OnButtonOut (this)' onmousedown='OnButtonDown (this)' "
+	; . "onmouseup='OnButtonUp (this)' onmouseover='OnButtonOver (this)' contenteditable='false' ", _BT2 := "</span>"
+; , _BP1 := "<span contenteditable='false' oncontextmenu='return false' class='BB'>" _BT1 "style='color: #" ColorParam "' name='pre' ", _BP2 := "</span></span>"
+ 
+, _BT1 := "<span class='button' unselectable='on' oncontextmenu='return false' contenteditable='false' ", _BT2 := "</span>"
 , _BP1 := "<span contenteditable='false' oncontextmenu='return false' class='BB'>" _BT1 "style='color: #" ColorParam "' name='pre' ", _BP2 := "</span></span>"
+
+
+
 
   ;;	Решает проблему запуска ресайза кнопки когда выделен текст, но не получается установить свой курсор
 ;; , _BP1 := "<span class='button' unselectable='on' oncontextmenu='return false' onmouseleave='OnButtonOut (this)' onmousedown='OnButtonDown (this)' "
@@ -118,8 +126,7 @@ Global _S1 := "<span>", _S2 := "</span>", _DB := "<span style='position: relativ
 , _LPRE := "<pre contenteditable='true' class='lpre'"
 , _DP := "  <span style='color: #" ColorDelimiter "'>&#9642</span>  "
 , _StIf := "    <span style='color: #f0f0f0'>&#9642</span>    <span class='faded_color' name='MS:' style='color: #C0C0C0'>"
-, _BR := "<p class='br'></p>", _DN := "`n"
-, _INPHK := "<input onfocus='funchkinputevent (this, ""focus"")' onblur='funchkinputevent(this, ""blur"")' "
+, _BR := "<p class='br'></p>", _DN := "`n"  
 
 , _PreOverflowHideCSS := ".lpre {max-width: 99`%; max-height: " PreMaxHeight "px; overflow: auto; border: 1px solid #E2E2E2;}"
 
@@ -629,7 +636,7 @@ Spot_Win(NotHTML = 0) {
 	{
 		WinGet, WinTransparent, Transparent, ahk_id %WinID%
 		If WinTransparent !=
-			TransparentStr := _BP1 "id='set_button_Transparent'>Transparent:</span>" _BP2 "  <span id='get_win_Transparent' name='MS:'>"  WinTransparent "</span>"     ;;  _INPHK "id='edithotkey' value='" WinTransparent "'>"
+			TransparentStr := _BP1 "id='set_button_Transparent'>Transparent:</span>" _BP2 "  <span id='get_win_Transparent' name='MS:'>"  WinTransparent "</span>"     
 	
 		WinGet, WinTransColor, TransColor, ahk_id %WinID%
 		If WinTransColor !=
@@ -1141,7 +1148,7 @@ Write_Control() {
 	If (ThisMode != "Control")
 		Return 0 
 	If oOther.anchor[ThisMode]
-		GuiNoRedraw(), HTML_Control := AnchorBefore(HTML_Control) 
+		GuiNoRedraw(), HTML_Control := AnchorBefore(HTML_Control)  
 	oBody.innerHTML := HTML_Control
 	AnchorScroll()
 	If oDocEl.scrollLeft
@@ -1378,7 +1385,7 @@ GetInfo_InternetExplorer_Server(hwnd) {
 			Frame .= "`n<span class='param' name='MS:N'>TagName:  </span><span name='MS:'>" TransformHTML(Tag) "</span>"
 		If ((Var := pelt.id) != "")
 			Frame .= "`n<span class='param' name='MS:N'>ID:  </span><span name='MS:'>" TransformHTML(Var) "</span>"
-		If ((Var := pelt.ClassName) != "")
+		If ((Var := pelt.className) != "")
 			Frame .= "`n<span class='param' name='MS:N'>Class:  </span><span name='MS:'>" TransformHTML(Var) "</span>"
 		If ((Var := pelt.sourceIndex) != "")
 			Frame .= "`n<span class='param' name='MS:N'>Index:  </span><span name='MS:'>" TransformHTML(Var) "</span>"
@@ -1412,7 +1419,7 @@ GetInfo_InternetExplorer_Server(hwnd) {
 
 	If ((Var := pelt.id) != "")
 		Info .= "`n<span class='param' name='MS:N'>ID:  </span><span name='MS:'>" Var "</span>"
-	If ((Var := pelt.ClassName) != "")
+	If ((Var := pelt.className) != "")
 		Info .= "`n<span class='param' name='MS:N'>Class:  </span><span name='MS:'>" Var "</span>"
 	If ((Var := pelt.sourceIndex) != "")
 		Info .= "`n<span class='param' name='MS:N'>Index:  </span><span name='MS:'>" Var "</span>"
@@ -1588,6 +1595,7 @@ CL() {
 }
 
 EVENT_OBJECT_CLOAKED(hWinEventHook, event, hwnd, idObject, idChild) {
+	Critical
 	If (idObject || idChild)
 		Return
 	If (hwnd = oPubObj.Acc.WinID)
@@ -1595,6 +1603,7 @@ EVENT_OBJECT_CLOAKED(hWinEventHook, event, hwnd, idObject, idChild) {
 } 
 
 EVENT_OBJECT_UNCLOAKED(hWinEventHook, event, hwnd, idObject, idChild) {
+	Critical
 	If (idObject || idChild)
 		Return
 	If (hwnd = oPubObj.Acc.WinID)
@@ -1718,17 +1727,17 @@ GetEnumIndex(Acc)
 	For Each, child in Acc_Children(Acc_Parent(Acc))
 	{ 
 		if IsObject(child) 
-		and (Acc_Location(child) = Acc_Location(Acc))
-		and (child.accDefaultAction(0) = Acc.accDefaultAction(0)) 	
-		and (child.accDescription(0) = Acc.accDescription(0)) 	
-		and (child.accHelp(0) = Acc.accHelp(0)) 	
-		and (child.accKeyboardShortcut(0) = Acc.accKeyboardShortcut(0)) 
-		    
-		and (child.accChildCount = Acc.accChildCount) 
-		and (child.accName(0) = Acc.accName(0)) 	
-		and (child.accRole(0) = Acc.accRole(0)) 	
-		and (child.accState(0) = Acc.accState(0)) 
-		and (child.accValue(0) = Acc.accValue(0))
+		&& (Acc_Location(child) = Acc_Location(Acc))
+		&& (child.accDefaultAction(0) = Acc.accDefaultAction(0)) 	
+		&& (child.accDescription(0) = Acc.accDescription(0)) 	
+		&& (child.accHelp(0) = Acc.accHelp(0)) 	
+		&& (child.accKeyboardShortcut(0) = Acc.accKeyboardShortcut(0)) 
+		
+		&& (child.accChildCount = Acc.accChildCount) 
+		&& (child.accName(0) = Acc.accName(0)) 	
+		&& (child.accRole(0) = Acc.accRole(0)) 	
+		&& (child.accState(0) = Acc.accState(0)) 
+		&& (child.accValue(0) = Acc.accValue(0))
 			return A_Index
 	}
 }
@@ -1891,7 +1900,7 @@ Write_HotkeyHTML(K) {
 	%_PRE2%
 	%_T1%> ( GetKeyName ) </span>%_BT1% id='paste_keyname'> paste %_BT2%%_T2%
 	<br>
-	<span id='hotkeybox'>%_INPHK% id='edithotkey' value='%inp_hotkey%'><button id='keyname'> &#8250 </button>%_INPHK% id='editkeyname' value='%inp_keyname%'></span>
+	<span id='hotkeybox'><input id='edithotkey' value='%inp_hotkey%'><button id='keyname'> &#8250 </button><input id='editkeyname' value='%inp_keyname%'></span>
 	<br>
 	<br>
 	<span id='vkname'>%GetVKCodeNameStr%</span><span id='scname'>%GetSCCodeNameStr%</span>
@@ -2898,6 +2907,8 @@ SaveSize() {
 	;;  http://forum.script-coding.com/viewtopic.php?pid=87817#p87817
 	;;  http://www.autohotkey.com/board/topic/93660-embedded-ie-shellexplorer-render-issues-fix-force-it-to-use-a-newer-render-engine/
 
+   ; +1:: MsgBox % oDoc.compatMode "`n" oDoc.documentMode
+   
 FixIE() {
 	Key := "Software\Microsoft\Internet Explorer\MAIN"
 	. "\FeatureControl\FEATURE_BROWSER_EMULATION", ver := 8000
@@ -4798,7 +4809,7 @@ MS_SelectionCheck() {
 }
 
 MS_MouseOver() {
-	EL := oMS.EL
+	EL := oMS.EL 
 	If !MS_IsSelect(EL)
 		Return
 	MS_Select(EL)
@@ -4886,6 +4897,9 @@ html =
 			col[i].style.display = param;
 		}
 	}
+	function getname(el) {
+		alert(el.className);
+	}
 	function removemenuitem(parent, selector) {
 		col = parent.querySelectorAll(selector);
 		for (var i = 0; i < col.length; i++) {
@@ -4900,27 +4914,27 @@ html =
 			return
 		shift(1);
 	}
-	function OnButtonDown (el) {
-		if (window.event.button != 1)   //  only left button https://msdn.microsoft.com/en-us/library/aa703876(v=vs.85).aspx
-			return
+	function onmousedown(el) {  // строка 57  
 		el.style.backgroundColor = "#%ColorSelButton%";
+		ButtonOverColor = el.style.color;
 		el.style.color = "#fff";
 		el.style.border = "1px solid black";
 	}
-	function OnButtonUp (el) {
+	function onmouseup(el) { 
 		el.style.backgroundColor = "";
 		// el.style.color = (el.name != "pre" ? "#%ColorFont%" : "#%ColorParam%");
 		el.style.color = ButtonOverColor;
 		if (window.event.button == 2 && el.parentElement.className == 'BB')
 			document.documentElement.focus();
 	}
-	function OnButtonOver (el) {
+	function onmouseover(el) {   
 		ButtonOverColor = el.style.color;
 		el.style.zIndex = "2";
 		el.style.border = "1px solid black";
 		ButtonOver = el;
+		return 0;
 	}
-	function OnButtonOut (el) {
+	function onmouseout(el) {  
 		el.style.zIndex = "0";
 		el.style.backgroundColor = "";
 		// el.style.color = (el.name != "pre" ? "#%ColorFont%" : "#%ColorParam%");
@@ -4941,18 +4955,7 @@ html =
 	}
 	//	alert(value);
 	//	tooltip(value);
-</script>
-
-<script id='hkinputevent' type="text/javascript">
-	function funchkinputevent(el, eventname) {
-		key1 = el, key2 = eventname;
-		hkinputevent.click();
-		if (eventname == 'focus')
-			el.style.border = "1px solid #4A8DFF";
-		else
-			el.style.border = "1px dotted black";
-	}
-</script>
+</script> 
 
 <script id='tooltipevent' type="text/javascript">
 	function tooltip(text) {
@@ -4960,21 +4963,13 @@ html =
 		tooltipevent.click();
 	}
 </script>
-)
+) 
 oDoc.Write("<!DOCTYPE html><head><meta http-equiv=""X-UA-Compatible"" content=""IE=8""></head>" html)
-oDoc.Close()
-ComObjConnect(onhkinput := oDoc.getElementById("hkinputevent"), "onhkinput_")
+oDoc.Close() 
 ComObjConnect(ontooltip := oDoc.getElementById("tooltipevent"), "tooltip_")
 }
 
 	;; _________________________________________________ Doc Events _________________________________________________
-
-onhkinput_onclick() {  ;;	http://forum.script-coding.com/viewtopic.php?id=8206
-	If (oJScript.key2 = "focus")
-		Sleep(1), Hotkey_Hook(0)
-	Else If (WinActive("ahk_id" hGui) && !isPaused && ThisMode = "Hotkey")
-		Sleep(1), Hotkey_Hook(1)
-}
 
 tooltip_onclick() {
 	ToolTip(oJScript.key1, 500)
@@ -4983,7 +4978,7 @@ tooltip_onclick() {
 Class Events {  ;;	http://forum.script-coding.com/viewtopic.php?pid=82283#p82283
 	onclick() {
 		oevent := oDoc.parentWindow.event.srcElement
-		If (oevent.ClassName = "button" || oevent.tagname = "button")
+		If (oevent.className = "button" || oevent.tagname = "button")
 			Return ButtonClick(oevent)
 		If (ThisMode = "Hotkey" && !Hotkey_Arr("Hook") && !isPaused && oevent.tagname ~= "PRE|SPAN")
 			Hotkey_Hook(1)
@@ -4991,7 +4986,7 @@ Class Events {  ;;	http://forum.script-coding.com/viewtopic.php?pid=82283#p82283
 	ondblclick() {
 		oevent := oDoc.parentWindow.event.srcElement
 		
-		If (oevent.ClassName = "button" || oevent.tagname = "button")
+		If (oevent.className = "button" || oevent.tagname = "button")
 			Return ButtonClick(oevent)
 			
 		If (oevent.tagname != "input" && (rng := oDoc.selection.createRange()).text != "" && oevent.isContentEditable)
@@ -5004,17 +4999,17 @@ Class Events {  ;;	http://forum.script-coding.com/viewtopic.php?pid=82283#p82283
 					: (rng.moveStart("character", 1), t := 0))
 			sel := rng.text, rng.moveEnd("character", StrLen(RTrim(sel)) - StrLen(sel)), rng.select()  
 		}
-		Else If (ThisMode != "Hotkey" && (oevent.ClassName = "title" || oevent.ClassName = "con" || oevent.ClassName = "hr" || oevent.ClassName = "box"))  ;;	anchor
+		Else If (ThisMode != "Hotkey" && (oevent.className = "title" || oevent.className = "con" || oevent.className = "hr" || oevent.className = "box"))  ;;	anchor
 		{
 			R := oDoc.selection.createRange(), R.collapse(1), R.select()
 			  ;;	EL = [class 'hr'], _text = [class 'title'].id
-			If oevent.ClassName = "con"
+			If oevent.className = "con"
 				_text := oevent.firstChild.id, EL := oevent.parentElement.firstChild
-			Else If oevent.ClassName = "hr"
+			Else If oevent.className = "hr"
 				_text := oevent.parentElement.childNodes[1].firstChild.id, EL := oevent
-			Else If oevent.ClassName = "box"
+			Else If oevent.className = "box"
 				_text := oevent.firstChild.childNodes[1].firstChild.id, EL := oevent.firstChild.firstChild
-			Else If oevent.ClassName = "title"
+			Else If oevent.className = "title"
 				_text := oevent.id, EL := oevent.parentElement.parentElement.firstChild
 				
 			If (_text = "P__Tree_Acc_Path")
@@ -5045,13 +5040,42 @@ Class Events {  ;;	http://forum.script-coding.com/viewtopic.php?pid=82283#p82283
 				IniWrite(oOther.anchor[ThisMode "_text"], ThisMode "_Anchor")
 		}
 	}
-    onmouseover() {
+	onfocusin() { 
+		If !(oDoc.parentWindow.event.srcElement.id = "editkeyname" || oDoc.parentWindow.event.srcElement.id = "edithotkey") 
+			Return 
+		oDoc.parentWindow.event.srcElement.style.border := "1px solid #4A8DFF" 
+		Sleep(1), Hotkey_Hook(0)  
+	} 
+	onfocusout() {
+		If !(oDoc.parentWindow.event.srcElement.id = "editkeyname" || oDoc.parentWindow.event.srcElement.id = "edithotkey") 
+			Return
+		oDoc.parentWindow.event.srcElement.style.border := "1px dotted black"
+		If (WinActive("ahk_id" hGui) && !isPaused && ThisMode = "Hotkey")
+			Sleep(1), Hotkey_Hook(1)
+	}
+	onmouseup() {   
+		if (oDoc.parentWindow.event.srcElement.className != "button")
+			return
+		oJScript.onmouseup(oDoc.parentWindow.event.srcElement)
+    }
+	onmousedown() {   
+		if oDoc.parentWindow.event.button != 1		;   only left button https://msdn.microsoft.com/en-us/library/aa703876(v=vs.85).aspx
+			return
+		if (oDoc.parentWindow.event.srcElement.className != "button")
+			return
+		oJScript.onmousedown(oDoc.parentWindow.event.srcElement)
+    }
+    onmouseover() {  
+		if (oDoc.parentWindow.event.srcElement.className = "button")
+			return oJScript.onmouseover(oDoc.parentWindow.event.srcElement) 
 		If oMS.Selection
 			Return
 		oMS.EL := oDoc.parentWindow.event.srcElement
 		SetTimer, MS_MouseOver, -50
     }
 	onmouseout() {
+		if (oDoc.parentWindow.event.srcElement.className = "button")
+			return oJScript.onmouseout(oDoc.parentWindow.event.srcElement) 
 		MS_Cancel()
     }
 	onselectionchange() {
@@ -5062,6 +5086,7 @@ Class Events {  ;;	http://forum.script-coding.com/viewtopic.php?pid=82283#p82283
 	onselectstart() {
 		SetTimer, MS_Cancel, -8
     }
+	
 	SendMode() {
 		IniWrite(SendMode := {Send:"SendInput",SendInput:"SendPlay",SendPlay:"SendEvent",SendEvent:"Send"}[SendMode], "SendMode")
 		SendModeStr := Format("{:L}", SendMode), oDoc.getElementById("SendMode").innerText := " " SendModeStr " "
