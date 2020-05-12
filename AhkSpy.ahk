@@ -26,7 +26,7 @@
     Актуальный исходник - https://raw.githubusercontent.com/serzh82saratov/AhkSpy/master/AhkSpy.ahk
 */
 
-Global AhkSpyVersion := 4.30
+Global AhkSpyVersion := 4.31
 
 	;; _________________________________________________ Caption _________________________________________________
 
@@ -58,39 +58,86 @@ Global Path_User := A_AppData "\AhkSpy"
 If !InStr(FileExist(Path_User), "D")
 	FileCreateDir, % Path_User
 
+
 Global MemoryFontSize := IniRead("MemoryFontSize", 0)
+, FontBold := IniRead("FontBold", 0)
 , FontSize := MemoryFontSize ? IniRead("FontSize", "15") : 15			;;  Размер шрифта
 , FontFamily :=  "Arial"												;;  Шрифт - Times New Roman | Georgia | Myriad Pro | Arial
-, FontWeight := 500														;;  Толщина шрифта 500 600
-, ColorFont := "000000"													;;  Цвет шрифта
-, ColorBg := ColorBgOriginal := "FFFFFF"								;;  Цвет фона          "F0F0F0" E4E4E4     F8F8F8
-, ColorBgPaused := "f7f7f7"												;;  Цвет фона при паузе     F0F0F0
-, ColorSelMouseHover := "F9D886"										;;  Цвет фона элемента при наведении мыши     96C3DC F9D886 8FC5FC AEC7E1
-, ColorSelButton := "96C3DC"											;;  Цвет фона при нажатии на кнопки
-, ColorSelAnchor := "FFFF80"											;;  Цвет фона заголовка для якоря
-, HighLightBckg := "FFE0E0"												;;  Цвет фона некоторых абзацев
-, ColorDelimiter := "E14B30"											;;  Цвет шрифта разделителя заголовков и параметров
-, ColorTitle := "27419B"												;;  Цвет шрифта заголовка
-, ColorParam := "189200"												;;  Цвет шрифта параметров
+, FontWeight := FontBold ? 900 : 500									;;  Насыщенность шрифта
 , HeigtButton := 32														;;  Высота кнопок
 , RangeTimer := 100														;;  Период опроса данных, увеличьте на слабом ПК
   HeightStart := 530													;;  Высота окна при старте
   wKey := 142															;;  Ширина кнопок
   wColor := wKey // 2													;;  Ширина цветного фрагмента
 
-Global ThisMode := IniRead("StartMode", "Control"), LastModeSave := (ThisMode = "LastMode"), ThisMode := ThisMode = "LastMode" ? IniRead("LastMode", "Control") : ThisMode
+DarkTheme := IniRead("DarkTheme", 0)
+If !DarkTheme
+{
+	Global ColorFont := "000000"											;;  Цвет шрифта
+	, ColorBg := "FFFFFF"								;;  Цвет фона          "F0F0F0" E4E4E4     F8F8F8
+	, ColorBgPaused := "f7f7f7"												;;  Цвет фона при паузе     F0F0F0
+	, ColorSelMouseHover := "3399FF"										;;  Цвет фона элемента при наведении мыши  3399FF   96C3DC F9D886 8FC5FC AEC7E1
+	, ColorSelButton := "96C3DC"											;;  Цвет фона при нажатии на кнопки
+	, ColorSelAnchor := "FFFF80"											;;  Цвет фона заголовка для якоря
+	, ColorHighLightBckg := "FFE0E0"										;;  Цвет фона некоторых абзацев
+	, ColorDelimiter := "E14B30"											;;  Цвет шрифта разделителя заголовков и параметров
+	, ColorTitle := "27419B"												;;  Цвет шрифта заголовка
+	, ColorLineTitles := "ff0000"											;;  Цвет линии заголовка
+	, ColorParam := "189200"												;;  Цвет шрифта параметров
+	, ColorErrorAccPath := "ff0000"
+	, ColorErrorAccMarquee := "ffcc00"
+	, ColorErrorAccMarquee := "ffcc00"
+	, ColorStyleComment1 := "f0f0f0"
+	, ColorStyleComment2 := "C0C0C0" 
+	, ColorSelectedFind := "6666FF" 
+	, ColorBorderHoverInput := "4A8DFF"
+	, ColorPreOverflowHide := "E2E2E2" 
+	, ColorScrollArrows := "686868" 
+	, ColorScrollBack := "F0F0F0" 
+	, ColorScrollFace := "CDCDCD" 
+}
+Else 
+{
+	Global ColorFont := "FFFFFF"											;;  Цвет шрифта
+	, ColorBg := "000000"								;;  Цвет фона          "F0F0F0" E4E4E4     F8F8F8
+	, ColorBgPaused := "080808"												;;  Цвет фона при паузе     F0F0F0
+	, ColorSelMouseHover := "703A03"										;;  Цвет фона элемента при наведении мыши     96C3DC F9D886 8FC5FC AEC7E1
+	, ColorSelButton := "693C23"											;;  Цвет фона при нажатии на кнопки
+	, ColorSelAnchor := "E14B30"											;;  Цвет фона заголовка для якоря
+	, ColorHighLightBckg := "001F1F"										;;  Цвет фона некоторых абзацев
+	, ColorDelimiter := "1EB4CF"											;;  Цвет шрифта разделителя заголовков и параметров
+	, ColorTitle := "D8BE64"												;;  Цвет шрифта заголовка
+	, ColorLineTitles := "00FFFF"											;;  Цвет линии заголовка
+	, ColorParam := "E76DFF"												;;  Цвет шрифта параметров
+	, ColorErrorAccPath := "00FFFF"
+	, ColorErrorAccMarquee := "0033FF"
+	, ColorErrorAccMarquee := "0033FF"
+	, ColorStyleComment1 := "0F0F0F"
+	, ColorStyleComment2 := "3F3F3F" 
+	, ColorSelectedFind := "999900" 
+	, ColorBorderHoverInput := "B57200"
+	, ColorPreOverflowHide := "1D1D1D" 
+	, ColorScrollArrows := "979797" 
+	, ColorScrollBack := "0F0F0F" 
+	, ColorScrollFace := "323232" 
+}
+Global ColorBgOriginal := ColorBg
+
+Global ThisMode := IniRead("StartMode", "Control"), LastModeSave := (ThisMode = "LastMode")
+, ThisMode := ThisMode = "LastMode" ? IniRead("LastMode", "Control") : ThisMode
 , ActiveNoPause := IniRead("ActiveNoPause", 0), MemoryPos := IniRead("MemoryPos", 0), MemorySize := IniRead("MemorySize", 0)
 , MemoryZoomSize := IniRead("MemoryZoomSize", 0), MemoryStateZoom := IniRead("MemoryStateZoom", 0), StateLight := IniRead("StateLight", 1)
 , StateLightAcc := IniRead("StateLightAcc", 1), SendCode := IniRead("SendCode", "vk"), StateLightMarker := IniRead("StateLightMarker", 1)
 , StateUpdate := IniRead("StateUpdate", 0), SendMode := IniRead("SendMode", "send"), SendModeStr := Format("{:L}", SendMode)
-, AnchorFullScroll := IniRead("AnchorFullScroll", 0), MemoryAnchor := IniRead("MemoryAnchor", 1)
-, StateAllwaysSpot := IniRead("AllwaysSpot", 0), w_ShowStyles := IniRead("w_ShowStyles", 0), c_ShowStyles := IniRead("c_ShowStyles", 0), ViewStrPos := IniRead("ViewStrPos", 0)
-, WordWrap := IniRead("WordWrap", 0), PreMaxHeightStr := IniRead("MaxHeightOverFlow", "1 / 3"), UseUIA := IniRead("UseUIA", 0), UIAAlienDetect := IniRead("UIAAlienDetect", 0)
-, OnlyShiftTab := IniRead("OnlyShiftTab", 0), MoveTitles := IniRead("MoveTitles", 1), DetectHiddenText := IniRead("DetectHiddenText", "on")
-, MinimizeEscape := IniRead("MinimizeEscape", 0), MarkerInvertFrame := IniRead("MarkerInvertFrame", 1), MenuIdView := IniRead("MenuIdView", 0)
+, AnchorFullScroll := IniRead("AnchorFullScroll", 1), MemoryAnchor := IniRead("MemoryAnchor", 1), MenuIdView := IniRead("MenuIdView", 0)
+, StateAllwaysSpot := IniRead("AllwaysSpot", 0), w_ShowStyles := IniRead("w_ShowStyles", 0), MarkerInvertFrame := IniRead("MarkerInvertFrame", 1)
+, c_ShowStyles := IniRead("c_ShowStyles", 0), ViewStrPos := IniRead("ViewStrPos", 0), OnlyShiftTab := IniRead("OnlyShiftTab", 0)
+, WordWrap := IniRead("WordWrap", 0), PreMaxHeightStr := IniRead("MaxHeightOverFlow", "1 / 3"), UpdRegister := IniRead("UpdRegister2", 0)
+, UseUIA := IniRead("UseUIA", 0), UIAAlienDetect := IniRead("UIAAlienDetect", 0), MinimizeEscape := IniRead("MinimizeEscape", 0)
+, DetectHiddenText := IniRead("DetectHiddenText", "on"), MoveTitles := IniRead("MoveTitles", 1)
 , DynamicControlPath := IniRead("DynamicControlPath", 0), DynamicAccPath := IniRead("DynamicAccPath", 0)
-, UpdRegister := IniRead("UpdRegister2", 0), UpdRegisterLink := "https://u.to/zeONFA", testvar
-, oDivOld, oDivNew, DivWorkIndex, oDivWork1, oDivWork2
+
+, UpdRegisterLink := "https://u.to/zeONFA", testvar, oDivOld, oDivNew, DivWorkIndex, oDivWork1, oDivWork2
 
 , FontDPI := {96:12,120:10,144:8,168:6}[A_ScreenDPI], ScrollPos := {}, AccCoord := [], oOther := {}, oFind := {}, Edits := [], oMS := {}, oMenu := {}, oPubObj := {}
 
@@ -105,16 +152,8 @@ Global ThisMode := IniRead("StartMode", "Control"), LastModeSave := (ThisMode = 
 
 Global _S1 := "<span>", _S2 := "</span>", _DB := "<span style='position: relative; margin-right: 1em;'></span>"
 
-
-; , _BT1 := "<span class='button' unselectable='on' oncontextmenu='return false' onmouseleave='OnButtonOut (this)' onmousedown='OnButtonDown (this)' "
-	; . "onmouseup='OnButtonUp (this)' onmouseover='OnButtonOver (this)' contenteditable='false' ", _BT2 := "</span>"
-; , _BP1 := "<span contenteditable='false' oncontextmenu='return false' class='BB'>" _BT1 "style='color: #" ColorParam "' name='pre' ", _BP2 := "</span></span>"
- 
 , _BT1 := "<span class='button' unselectable='on' oncontextmenu='return false' contenteditable='false' ", _BT2 := "</span>"
 , _BP1 := "<span contenteditable='false' oncontextmenu='return false' class='BB'>" _BT1 "style='color: #" ColorParam "' name='pre' ", _BP2 := "</span></span>"
-
-
-
 
   ;;	Решает проблему запуска ресайза кнопки когда выделен текст, но не получается установить свой курсор
 ;; , _BP1 := "<span class='button' unselectable='on' oncontextmenu='return false' onmouseleave='OnButtonOut (this)' onmousedown='OnButtonDown (this)' "
@@ -127,10 +166,10 @@ Global _S1 := "<span>", _S2 := "</span>", _DB := "<span style='position: relativ
 , _PRE1 := "<pre contenteditable='true'>", _PRE2 := "</pre>"
 , _LPRE := "<pre contenteditable='true' class='lpre'"
 , _DP := "  <span style='color: #" ColorDelimiter "'>&#9642</span>  "
-, _StIf := "    <span style='color: #f0f0f0'>&#9642</span>    <span class='faded_color' name='MS:' style='color: #C0C0C0'>"
+, _StIf := "    <span style='color: #" ColorStyleComment1 "'>&#9642</span>    <span class='faded_color' name='MS:' style='color: #" ColorStyleComment2 "'>"
 , _BR := "<p class='br'></p>", _DN := "`n"  
 
-, _PreOverflowHideCSS := ".lpre {max-width: 99`%; max-height: " PreMaxHeight "px; overflow: auto; border: 1px solid #E2E2E2;}"
+, _PreOverflowHideCSS := ".lpre {max-width: 99`%; max-height: " PreMaxHeight "px; overflow: auto; border: 1px solid #" ColorPreOverflowHide ";}"
 
 , _BodyWrapCSS := "body, .divwork {word-wrap: break-word`; overflow-x: 'hidden';} .lpre {overflow-x: hidden`;}"
 
@@ -191,8 +230,6 @@ OnMessage(0x47, "WM_WINDOWPOSCHANGED")
 ;; OnMessage(WM_MOVING := 0x216, "WM_WINDOWPOSCHANGED")
 ;; OnMessage(WM_MOVE := 0x03, "WM_WINDOWPOSCHANGED")
 
-
-
 OnMessage(MsgAhkSpyZoom := DllCall("RegisterWindowMessage", "Str", "MsgAhkSpyZoom"), "MsgZoom")
 DllCall("PostMessage", "Ptr", A_ScriptHWND, "UInt", 0x50, "UInt", 0, "UInt", 0x409) ;; eng layout
 SetWinEventHook("EVENT_OBJECT_CLOAKED", 0x8017)
@@ -202,7 +239,7 @@ Gui, TB: +HWNDhTBGui -Caption -DPIScale +Parent%hGui% +%WS_CHILDWINDOW% -%WS_POP
 Gui, TB: Font, % " s" FontDPI, Verdana
 Gui, TB: Add, Button, x0 y0 h%HeigtButton% w%wKey% vBut1 gMode_Win hwndhButtonWindow, Window
 Gui, TB: Add, Button, x+0 yp hp wp vBut2 gMode_Control hwndhButtonControl, Control
-Gui, TB: Add, Progress, x+0 yp hp w%wColor% vColorProgress HWNDhColorProgress cWhite, 100
+Gui, TB: Add, Progress, x+0 yp hp w%wColor% vColorProgress HWNDhColorProgress c%ColorBgOriginal%, 100
 Gui, TB: Add, Button, x+0 yp hp w%wKey% vBut3 gMode_Hotkey hwndhButtonButton, Button
 Gui, TB: Show, % "x0 y0 NA h" HeigtButton " w" widthTB := wKey*3+wColor
 
@@ -271,24 +308,28 @@ Menu, View, % MemoryAnchor ? "Check" : "UnCheck", % name
 Menu, View, Add
 Menu, View, Add, % name := "Dynamic control path (low speed)", % oMenu.View[name] := "_DynamicControlPath"
 Menu, View, % DynamicControlPath ? "Check" : "UnCheck", % name
-Menu, View, Add, % name := "Dynamic accesible path (low speed)", % oMenu.View[name] := "_DynamicAccPath"
+Menu, View, Add, % name := "Dynamic accesible path (low speed, not recommended)", % oMenu.View[name] := "_DynamicAccPath"
 Menu, View, % DynamicAccPath ? "Check" : "UnCheck", % name
 Menu, View, Add
 Menu, View, Add, % name := "Use UI Automation interface", % oMenu.View[name] := "_UseUIA"
 Menu, View, % UseUIA ? "Check" : "UnCheck", % name
 Menu, View, Add, % name := "UIA change background for different hwnd", % oMenu.View[name] := "_UIAAlienDetect"
 Menu, View, % UIAAlienDetect ? "Check" : "UnCheck", % name  
-Menu, View, Add 
+Menu, View, Add  
+Menu, View, Add, % name := "Dark theme (reload needed)", % oMenu.View[name] := "_DarkTheme"
+Menu, View, % DarkTheme ? "Check" : "UnCheck", % name 
+Menu, View, Add, % name := "Font bold (reload needed)", % oMenu.View[name] := "_FontBold"
+Menu, View, % FontBold ? "Check" : "UnCheck", % name 
+Menu, View, Add, % name := "Word wrap", % oMenu.View[name] := "_WordWrap"
+Menu, View, % WordWrap ? "Check" : "UnCheck", % name
+Menu, View, Add, % name := "View coordinates string extended", % oMenu.View[name] := "_ViewStrPos"
+Menu, View, % ViewStrPos ? "Check" : "UnCheck", % name
 Menu, View, Add, % name := "Flash edge", % oMenu.View[name] := "_MarkerInvertFrame"
 Menu, View, % MarkerInvertFrame ? "Check" : "UnCheck", % name
 Menu, View, Add, % name := "Full scroll with existing anchor", % oMenu.View[name] := "_AnchorFullScroll"
 Menu, View, % AnchorFullScroll ? "Check" : "UnCheck", % name  
 Menu, View, Add, % name := "Moving titles", % oMenu.View[name] := "_MoveTitles"
 Menu, View, % MoveTitles ? "Check" : "UnCheck", % name
-Menu, View, Add, % name := "View position string for command", % oMenu.View[name] := "_ViewStrPos"
-Menu, View, % ViewStrPos ? "Check" : "UnCheck", % name
-Menu, View, Add, % name := "Word wrap", % oMenu.View[name] := "_WordWrap"
-Menu, View, % WordWrap ? "Check" : "UnCheck", % name
 Menu, Sys, Add, View settings, :View
 
 Menu, Overflow, Add, % name := "Switch off", % oMenu.Overflow[name] := "_MenuOverflowLabel"
@@ -302,7 +343,7 @@ Menu, Overflow, Add, % name := "1 / 8", % oMenu.Overflow[name] := "_MenuOverflow
 Menu, Overflow, Add, % name := "1 / 10", % oMenu.Overflow[name] := "_MenuOverflowLabel"
 Menu, Overflow, Add, % name := "1 / 15", % oMenu.Overflow[name] := "_MenuOverflowLabel" 
 Menu, Overflow, Check, %PreMaxHeightStr%
-Menu, Overflow, Color, % ColorBgOriginal
+; Menu, Overflow, Color, % ColorBgOriginal
 Menu, View, Add, Big text overflow hide, :Overflow
 
 Menu, Sys, Add, Start mode, :Startmode
@@ -334,7 +375,7 @@ Menu, Sys, Add, % name := "Default size", % oMenu.Sys[name] := "DefaultSize"
 Menu, Sys, Add, % name := "Full screen", % oMenu.Sys[name] := "FullScreenMode"
 Menu, Sys, Add, % name := "Find to page", % oMenu.Sys[name] := "_FindView"
 
-Menu, Sys, Color, % ColorBgOriginal
+; Menu, Sys, Color, % ColorBgOriginal
 
 #Include *i %A_AppData%\AhkSpy\Include.ahk  ;;	Для продолжения выполнения кода используйте GoTo IncludeLabel
 IncludeLabel:
@@ -554,12 +595,12 @@ RButton::
 
 +LButton::
 	oJScript.onmousedown(oJScript.ButtonOver)
-	obj := Func("ButtonClick").Bind(oJScript.ButtonOver)
-	SetTimer, % obj, -10
-	; ButtonClick(oJScript.ButtonOver)
 	KeyWait LButton
-	if (oJScript.ButtonOver.className != "button")
+	if !oJScript.ButtonOver
 		return 
+	obj := Func("ButtonClick").Bind(oJScript.ButtonOver)
+	SetTimer, % obj, -100
+	; ButtonClick(oJScript.ButtonOver)
 	oJScript.onmouseup(oJScript.ButtonOver, 1)
 	Return
 
@@ -711,7 +752,8 @@ Spot_Win(NotHTML = 0) {
 	{
 		WinGet, ParentProcessName, ProcessName, ahk_id %hParent% 
 		WinGetClass, ParentClass, ahk_id %hParent%
-		_ParentWindow := "`n<span class='param'>Parent window:</span>  <span name='MS:'>" ParentClass "</span>" _DP " <span name='MS:'>" ParentProcessName "</span>" _DP "<span name='MS:'>" Format("0x{:x}", hParent) "</span>"
+		_ParentWindow := "`n<span class='param'>Parent window:</span>  <span name='MS:'>" ParentClass "</span>" 
+			. _DP " <span name='MS:'>" ParentProcessName "</span>" _DP "<span name='MS:'>" Format("0x{:x}", hParent) "</span>"
 	}
 
 	;; _________________________________________________ HTML_Win _________________________________________________
@@ -891,7 +933,8 @@ Spot_Control(NotHTML = 0) {
 		
 		ControlGetText, CtrlText, , ahk_id %ControlID%
 		If CtrlText !=
-			CtrlText := _T1 " id='__Control_Text'> ( Control Text ) </span><a></a>" _BT1 " id='settext_button' value=`" ControlID "`> set " _BT2 _DB _BT1 " id='copy_button'> copy " _BT2  _T2 _LPRE ">" TransformHTML(CtrlText) _PRE2
+			CtrlText := _T1 " id='__Control_Text'> ( Control Text ) </span><a></a>" _BT1 " id='settext_button' value=`" ControlID "`> set " _BT2 
+				. _DB _BT1 " id='copy_button'> copy " _BT2  _T2 _LPRE ">" TransformHTML(CtrlText) _PRE2
 		
 		ControlGet, CtrlStyle, Style,,, ahk_id %ControlID%
 		ControlGet, CtrlExStyle, ExStyle,,, ahk_id %ControlID%
@@ -964,7 +1007,7 @@ Spot_Control(NotHTML = 0) {
 			UIAProcessPath = %A_LoopFileLongPath%
 			
 		If UIAAlienDetect && ((UIAPID != WinPID) || (ControlID && ControlID != UIAHWND) || (!ControlID && WinID != UIAHWND))
-			bc = style='background-color: #%HighLightBckg%'
+			bc = style='background-color: #%ColorHighLightBckg%'
 		
 		UseUIAStr := "`n" _T1 " id='P__UIA_Object'> ( UIA Interface ) </span><a></a>" _T2
 		. _PRE1 "<div " bc "><span class='param' name='MS:N'>PID:</span>  <span name='MS:'>" UIAPID "</span>" 
@@ -1022,7 +1065,8 @@ HTML_Control:
 		 
 		HTML_ControlExist := ""
 		. _T1 " id='__Control'> ( Control ) </span>" _BT1 " id='flash_control'> flash " _BT2  _ButWindow_Detective  _T2 
-			. _PRE1 "<span class='param'>ClassNN:</span>  <span name='MS:'>" ControlNN "</span>"
+		
+		. _PRE1 "<span class='param'>ClassNN:</span>  <span name='MS:'>" ControlNN "</span>"
 			. _DP  "<span class='param'>Class:</span>  <span name='MS:'>" CtrlClass "</span>"
 			
 		. "`n" _BP1 " id='set_button_pos'>Pos:" _BP2 "  <span name='MS:'>x" CtrlX " y" CtrlY "</span>" 
@@ -1164,7 +1208,8 @@ AddTab(c) {
 
 	;; _________________________________________________ Get Info Control _________________________________________________
 
-;; Scintilla,Edit,SysListView,SysTreeView,ListBox,ComboBox,CtrlNotfySink,msctls_progress,msctls_trackbar,msctls_updown,SysTabControl,ToolbarWindow,AtlAxWin,InternetExplorer_Server
+;; Scintilla,Edit,SysListView,SysTreeView,ListBox,ComboBox,CtrlNotfySink,msctls_progress
+;; ,msctls_trackbar,msctls_updown,SysTabControl,ToolbarWindow,AtlAxWin,InternetExplorer_Server
 
 ;; TreeView, ListView, NotfySink, progress, trackbar, updown, Tab, Toolbar
 
@@ -1212,7 +1257,8 @@ GetInfo_CtrlNotifySink(hwnd) {
 
 GetInfo_Edit(hwnd) { 
 	Edit_GetFont(hwnd, FName, FSize)
-	Return GetInfo_Scintilla(hwnd) "`n<span class='param' name='MS:N'>FontSize:</span> <span name='MS:'>" FSize "</span>" _DP "<span class='param' name='MS:N'>FontName:</span> <span name='MS:'>" FName "</span>"
+	Return GetInfo_Scintilla(hwnd) "`n<span class='param' name='MS:N'>FontSize:</span> <span name='MS:'>" FSize "</span>" 
+		. _DP "<span class='param' name='MS:N'>FontName:</span> <span name='MS:'>" FName "</span>"
 		. "`n<span class='param' name='MS:N'>DlgCtrlID:</span> <span name='MS:'>" DllCall("GetDlgCtrlID", Ptr, hwnd) "</span>"
 }
 
@@ -1461,7 +1507,7 @@ AccInfoUnderMouse(mx, my, wx, wy, cx, cy, caX, caY, WinID, ControlID) {
 		If acc_path_func(0)
 			acc_path_value := SaveAccPath()
 		Else 
-			error := "<span style='color:#ff0000'>  path not found</span>"
+			error := "<span style='color:#" ColorErrorAccPath "'>  path not found</span>"
 	}
 	pathbutton := _DP _BP1 " id='acc_path'> Get path " _BP2 "</span><span id='acc_path_error'>" error "</span>"
 
@@ -1490,7 +1536,7 @@ AccInfoUnderMouse(mx, my, wx, wy, cx, cy, caX, caY, WinID, ControlID) {
 		WinGet, WinProcess, ProcessName, ahk_id %Hwnd%
 		WinGet, WinPID, PID, ahk_id %Hwnd%
 		code .= _T1 " id='P__WindowFromObject'" _T1P "> ( WindowFromObject ) </span><a></a>" _T2 _PRE1
-		. "<div style='background-color: #" HighLightBckg "'><span class='param' name='MS:N'>HWND:</span>  <span name='MS:'>" Format("0x{:x}", Hwnd) "</span>"
+		. "<div style='background-color: #" ColorHighLightBckg "'><span class='param' name='MS:N'>HWND:</span>  <span name='MS:'>" Format("0x{:x}", Hwnd) "</span>"
 		. _DP "<span class='param' name='MS:N'>Class:</span>  <span name='MS:'>" TransformHTML(CtrlClass) "</span>"
 		. _DP "<span class='param' name='MS:N'>Exe:</span>  <span name='MS:'>" TransformHTML(WinProcess) "</span>"
 		. _DP "<span class='param' name='MS:N'>PID:</span>  <span name='MS:'>" WinPID "</span></div>" _PRE2
@@ -1733,12 +1779,14 @@ Acc_Location(Acc, ChildId=0) {
 	return "x" NumGet(x, 0, "int") " y" NumGet(y, 0, "int") " w" NumGet(w, 0, "int") " h" NumGet(h, 0, "int")
 }
 Acc_ObjectFromPoint(ByRef _idChild_ = "", x = "", y = "") {
-	If DllCall("oleacc\AccessibleObjectFromPoint", "Int64", x==""||y==""?0*DllCall("GetCursorPos","Int64*",pt)+pt:x&0xFFFFFFFF|y<<32, "Ptr*", pacc, "Ptr", VarSetCapacity(varChild,8+2*A_PtrSize,0)*0+&varChild)=0
+	If DllCall("oleacc\AccessibleObjectFromPoint", "Int64", x==""||y==""?0*DllCall("GetCursorPos","Int64*",pt)+pt:x&0xFFFFFFFF|y<<32
+		, "Ptr*", pacc, "Ptr", VarSetCapacity(varChild,8+2*A_PtrSize,0)*0+&varChild)=0
 		Return ComObjEnwrap(9,pacc,1), _idChild_:=NumGet(varChild,8,"UInt")
 }
 
 Acc_ObjectFromWindow(hWnd, idObject = 0) {
-	If DllCall("oleacc\AccessibleObjectFromWindow", "Ptr", hWnd, "UInt", idObject&=0xFFFFFFFF, "Ptr", -VarSetCapacity(IID,16)+NumPut(idObject==0xFFFFFFF0?0x46000000000000C0:0x719B3800AA000C81,NumPut(idObject==0xFFFFFFF0?0x0000000000020400:0x11CF3C3D618736E0,IID,"Int64"),"Int64"), "Ptr*", pacc)=0
+	If DllCall("oleacc\AccessibleObjectFromWindow", "Ptr", hWnd, "UInt", idObject&=0xFFFFFFFF
+		, "Ptr", -VarSetCapacity(IID,16)+NumPut(idObject==0xFFFFFFF0?0x46000000000000C0:0x719B3800AA000C81,NumPut(idObject==0xFFFFFFF0?0x0000000000020400:0x11CF3C3D618736E0,IID,"Int64"),"Int64"), "Ptr*", pacc)=0
 		Return ComObjEnwrap(9,pacc,1)
 }
 Acc_WindowFromObject(pacc) {
@@ -1915,7 +1963,8 @@ Write_HotkeyHTML(K, scroll = 0) {
 		#edithotkey, #keyname, #editkeyname {
 			font-size: 1.2em;
 			text-align: center;
-			border: 1px dotted black;
+			border: 1px dotted;
+			border-color: #%ColorFont%;
 		}
 		#keyname {
 			position: relative;
@@ -2203,7 +2252,7 @@ QVK(key, value, VK = 1) {
 		, Description2 := "<span style='color: #" ColorDelimiter "'>Virtual-key code symbolic names:  </span>"
 	If VK
 		Return T _PRE1 Description1 "<span><span name='MS:'>" key "</span><span class='param' name='MS:SP'> := " value "</span></span><br>" _PRE2
-	Return T _PRE1 Description2 "<span style='color: #C0C0C0'>" key "</span><br>" _PRE2
+	Return T _PRE1 Description2 "<span style='color: #" ColorStyleComment2 "'>" key "</span><br>" _PRE2
 }
 
 GetScanCode(id) { 
@@ -2269,6 +2318,24 @@ MaxHeightStrToNum()  {
 	Return Round(A_ScreenHeight / SubStr(PreMaxHeightStr, 5))
 }
 
+_DarkTheme: 
+	IniWrite(DarkTheme := !DarkTheme, "DarkTheme")
+	Menu, View, % DarkTheme ? "Check" : "UnCheck"
+	, % oOther.MenuItemExist ? oOther.ThisMenuItem : A_ThisMenuItem
+	Return
+	
+_FontBold: 
+	IniWrite(FontBold := !FontBold, "FontBold")
+	Menu, View, % FontBold ? "Check" : "UnCheck"
+	, % oOther.MenuItemExist ? oOther.ThisMenuItem : A_ThisMenuItem
+	Return
+
+_ViewStrPos:
+	IniWrite(ViewStrPos := !ViewStrPos, "ViewStrPos")
+	Menu, View, % ViewStrPos ? "Check" : "UnCheck"
+	, % oOther.MenuItemExist ? oOther.ThisMenuItem : A_ThisMenuItem
+	Return
+
 _MenuOverflowLabel:
 	ThisMenuItem := oOther.MenuItemExist ? oOther.ThisMenuItem : A_ThisMenuItem
 	PreOverflowHide := ThisMenuItem = "Switch off" ? 0 : 1
@@ -2277,7 +2344,7 @@ _MenuOverflowLabel:
 		Menu, Overflow, UnCheck, % v
 	Menu, Overflow, Check, % PreMaxHeightStr := ThisMenuItem
 	PreMaxHeight := MaxHeightStrToNum()
-	_PreOverflowHideCSS := ".lpre {max-width: 99`%; max-height: " PreMaxHeight "px; overflow: auto; border: 1px solid #E2E2E2;}"
+	_PreOverflowHideCSS := ".lpre {max-width: 99`%; max-height: " PreMaxHeight "px; overflow: auto; border: 1px solid #" ColorPreOverflowHide ";}"
 	ChangeCSS("css_PreOverflowHide", PreOverflowHide ? _PreOverflowHideCSS : "")
 	AnchorFitScroll()
 	Return
@@ -2439,11 +2506,6 @@ _MarkerInvertFrame:
 	IniWrite(MarkerInvertFrame := !MarkerInvertFrame, "MarkerInvertFrame")
 	Menu, View, % MarkerInvertFrame ? "Check" : "UnCheck", Flash edge
 	WinSet, Region, , ahk_id %hMarkerGui%
-	Return
-
-_ViewStrPos:
-	IniWrite(ViewStrPos := !ViewStrPos, "ViewStrPos")
-	Menu, View, % ViewStrPos ? "Check" : "UnCheck", View position string for command
 	Return
 
 _MemoryStateZoom:
@@ -3337,7 +3399,7 @@ MsgConfirm(Info, Title, hWnd) {
 	If !IsStart && (IsStart := 1) {
 		Gui, MsgBox:+HWNDhMsgBox -DPIScale -SysMenu +Owner%hWnd% +AlwaysOnTop
 		Gui, MsgBox:Font, % "s" FontDPI
-		Gui, MsgBox:Color, FFFFFF
+		Gui, MsgBox:Color, %ColorBgOriginal%
 		Gui, MsgBox:Add, Text, w200 vText r1 Center 
 		Gui, MsgBox:Add, Button, w88 vYes xp+4 y+20 gMsgBoxLabel, Yes
 		Gui, MsgBox:Add, Button, w88 vNo x+20 gMsgBoxLabel, No
@@ -3426,14 +3488,14 @@ _AnchorFitScroll(EL, off = 0) {
 	If !AnchorFullScroll
 		Return 
 	ta := EL.getBoundingClientRect().top   
-	oLast := oJScript.QS(oDivNew, "#id_T0") 
-	bl := oLast.getBoundingClientRect().top   
-	cl := oDivNew.clientHeight   
-	res := cl - (bl - ta)  
+	ELLast := oJScript.QS(oDivNew, "#id_T0") 
+	tl := ELLast.getBoundingClientRect().top   
+	clH := oDivNew.clientHeight   
+	res := clH - (tl - ta)  
 	If res < 0
 		res := 0 
-	; ToolTip % cl "`n" bl "`n" ba  "`n"  "`n" res, , , 2
-	oLast.style.height := res "px"
+	; ToolTip % clH "`n" tl "`n" ba  "`n"  "`n" res, , , 2
+	ELLast.style.height := res "px"
 	Return 1
 }
  
@@ -3463,8 +3525,8 @@ HighLight(elem, time = "", RemoveFormat = 1) {
 	(RemoveFormat ? R.execCommand("RemoveFormat") : 0)
 	R.collapse(1), R.select()
 	R.moveToElementText(elem)
-	R.execCommand("ForeColor", 0, "FFFFFF")
-	R.execCommand("BackColor", 0, "3399FF")
+	R.execCommand("ForeColor", 0, ColorBgOriginal)
+	R.execCommand("BackColor", 0, ColorSelMouseHover)
 	Return
 
 	UnHighLight:
@@ -4659,8 +4721,8 @@ FindSearch(New, Back = 0) {
 	R := oDoc.selection.createRange()
 	sR := R.duplicate()
 	R.collapse(New || Back ? 1 : 0)
-	If (oFind.Text = "" && !R.select())
-		SetEditColor(hFindEdit, 0xFFFFFF, 0x00)
+	If (oFind.Text = "" && !R.select()) 
+		SetEditColor(hFindEdit, "0x" ColorBgOriginal, "0x" ColorFont)
 	Else {
 		Option := (Back ? 1 : 0) ^ (oFind.Whole ? 2 : 0) ^ (oFind.Registr ? 4 : 0)
 		Loop {
@@ -4676,7 +4738,7 @@ FindSearch(New, Back = 0) {
 			}
 			If (!New && R.isEqual(sR)) {
 				If A {
-					hFunc := Func("SetEditColor").Bind(hFindEdit, 0xFFFFFF, 0x000000)
+					hFunc := Func("SetEditColor").Bind(hFindEdit, "0x" ColorBgOriginal, "0x" ColorFont)
 					SetTimer, % hFunc, -200
 				}
 				Break
@@ -4689,9 +4751,9 @@ FindSearch(New, Back = 0) {
 			Break
 		}
 		If (F != 1)
-			SetEditColor(hFindEdit, 0x6666FF, 0x000000)
+			SetEditColor(hFindEdit, "0x" ColorSelectedFind, "0x" ColorFont)
 		Else
-			SetEditColor(hFindEdit, 0xFFFFFF, 0x000000)
+			SetEditColor(hFindEdit, "0x" ColorBgOriginal, "0x" ColorFont)
 	}
 }
 	;; _________________________________________________ Mouse hover selection _________________________________________________
@@ -4699,10 +4761,12 @@ FindSearch(New, Back = 0) {
 MS_Cancel() {
 	If !oMS.ELSel
 		Return
-	oMS.ELSel.style.color := oMS.TextColor
-	oMS.ELSelChild.style.color := ""
-	oMS.ELSel.style.backgroundColor := ""
-	oMS.ELSel := ""
+	oMS.ELSel.style.backgroundColor := "" 
+	oMS.ELSel.style.color := ""
+	
+	Loop % oMS.ELSel.all.length 
+		oMS.ELSel.all[A_Index-1].style.color := ""
+	oMS.ELSel := ""	
 }
 
 MS_SelectionCheck() {
@@ -4731,24 +4795,24 @@ MS_IsSelection() {
 }
 
 MS_Select(EL) { 
-	If InStr(EL.Name, ":S")
-		oMS.ELSel := EL.ParentElement
-	Else If InStr(EL.Name, ":N")
+	If EL.Name = "MS:S" || EL.Name = "MS:SP"
+		oMS.ELSel := EL.ParentElement 
+	Else If EL.Name = "MS:N"
 		oMS.ELSel := oDoc.all.item(EL.sourceIndex + 1)
-	Else If InStr(EL.Name, ":P")
+	Else If EL.Name = "MS:P"
 		oMS.ELSel := oDoc.all.item(EL.sourceIndex - 1).ParentElement
 	Else
 		oMS.ELSel := EL
-	oMS.ELSel.style.backgroundColor := "#3399FF" 
-	oMS.TextColor := oMS.ELSel.style.color
-	oMS.ELSel.style.color := "#FFFFFF"
+		
+	oMS.ELSel.style.backgroundColor := "#" ColorSelMouseHover
+	oMS.ELSel.style.color := "#" ColorBgOriginal
 	
-	oMS.ELSelChild := oMS.ELSel.childNodes[0 + (InStr(EL.Name, ":SP") || InStr(EL.Name, ":Q"))]
-	oMS.ELSelChild.style.color := "#FFFFFF"
-	
-	;; ToolTip % oMS.ELSelChild.OuterText "`n" EL.Name
+	Loop % oMS.ELSel.all.length 
+		oMS.ELSel.all[A_Index-1].style.color := "#" ColorBgOriginal
+		 
+	; ToolTip % oMS.ELSel.all.length "`n" oMS.TextColor2.OuterText "`n" EL.Name "`n" el.style.color 
 }
-
+ 
 	;; _________________________________________________ Load JScripts _________________________________________________
 
 ChangeCSS(id, css) {	;;  https://webo.in/articles/habrahabr/68-fast-dynamic-css/ 
@@ -4765,6 +4829,7 @@ html =
 	<style id='css_ColorBg' type="text/css">.title, .button, .divwork {background-color: #%ColorBg%;}</style>
 	<style id='css_PreOverflowHide' type="text/css">%PreOver_%</style>
 	<style id='css_Body' type="text/css">%BodyWrap_%</style>
+	<style id='css_Test' type="text/css"></style>
 	
 <style>
 
@@ -4773,9 +4838,11 @@ html =
 	background: none;
 	font-family: %FontFamily%;
 	font-weight: %FontWeight%;
+	color: #%ColorFont%;
 }
 body {  
 	overflow: hidden;
+	background-color: #%ColorBgOriginal%;
 }
 .divwork { 
 	position: absolute;
@@ -4786,6 +4853,12 @@ body {
 	font-size: %FontSize%px;
 	visibility: hidden;
 	overflow: auto;   
+	scrollbar-face-color: #%ColorScrollFace%;			/* Цвет ползунка  */
+    scrollbar-arrow-color: #%ColorScrollArrows%;		/* Цвет стрелок */
+    scrollbar-base-color: #%ColorScrollBack%; 	/* Цвет полосы */
+	scrollbar-highlight-color: #%ColorScrollBack%;
+    scrollbar-shadow-color: #%ColorScrollBack%; /* Цвет тени */
+	scrollbar-track-color: #%ColorScrollBack%;
 } 
 .br {
 	height:0.1em;
@@ -4815,18 +4888,19 @@ body {
 .hr {
 	position: absolute;
 	width: 100`%;
-	border-bottom: 0.2em dashed red;
+	border-bottom: 0.2em dashed;
+	border-color: #%ColorLineTitles%;
 	height: 0.5em;
 }
 pre {
 	margin-bottom: 0.1em;
 	margin-top: 0.1em;
-	line-height: 1.3em;
+	line-height: 1.4em;
 }
 .button {
 	position: relative;
 	border: 1px dotted;
-	border-color: black;
+	border-color: #%ColorFont%;
 	white-space: pre;
 	cursor: pointer;
 }
@@ -4923,9 +4997,9 @@ pre {
 	}
 	function onmousedown(el) {  // строка 57  
 		el.style.backgroundColor = "#%ColorSelButton%";
-		ButtonOverColor = el.style.color;
-		el.style.color = "#fff";
-		el.style.border = "1px solid black";
+		ButtonOverColor = el.style.color; 
+		el.style.color = "#%ColorBgOriginal%";
+		el.style.border = "1px solid"; 
 	}
 	function onmouseup(el, man) { 
 		el.style.backgroundColor = "";
@@ -4935,9 +5009,10 @@ pre {
 			document.documentElement.focus();
 	}
 	function onmouseover(el) {   
-		ButtonOverColor = el.style.color;
+		// ButtonOverColor = el.style.color;
 		el.style.zIndex = "2";
-		el.style.border = "1px solid black";
+		el.style.border = "1px solid"; 
+		el.style.borderColor = "#%ColorFont%";
 		ButtonOver = el;
 		return 0;
 	}
@@ -4946,13 +5021,10 @@ pre {
 		el.style.backgroundColor = "";
 		// el.style.color = (el.name != "pre" ? "#%ColorFont%" : "#%ColorParam%");
 		el.style.color = ButtonOverColor;
-		el.style.border = "1px dotted black";
+		el.style.border = "1px dotted";
+		el.style.borderColor = "#%ColorFont%";
 		ButtonOver = 0;
-	}
-	function bcnone(el) {   
-		el.style.backgroundColor = ""; 
-		el.style.backgroundColor = "none"; 
-	}
+	} 
 	function Assync (param) {
 		setTimeout(param, 1);
 	}
@@ -5018,7 +5090,7 @@ Class Events {  ;;	http://forum.script-coding.com/viewtopic.php?pid=82283#p82283
 		Else If (ThisMode != "Hotkey" && (oevent.className = "title" || oevent.className = "con" || oevent.className = "hr" || oevent.className = "box"))  ;;	anchor
 		{
 			R := oDoc.selection.createRange(), R.collapse(1), R.select()
-			  ;;	EL = [class 'hr'], _text = [class 'title'].id
+			
 			If oevent.className = "con"
 				_text := oevent.firstChild.id, EL := oevent.parentElement.firstChild
 			Else If oevent.className = "hr"
@@ -5028,9 +5100,6 @@ Class Events {  ;;	http://forum.script-coding.com/viewtopic.php?pid=82283#p82283
 			Else If oevent.className = "title"
 				_text := oevent.id, EL := oevent.parentElement.parentElement.firstChild
 				
-			; MsgBox %  EL.outerHTML  "`n" _text "`n" EL.className
-; , _T1 := "<span class='box'><span class='line'><span class='hr'></span><span class='con'><span class='title' ", _T2 := "</span></span></span><br>"
-
 			If (_text = "P__Tree_Acc_Path" || _text = "")
 				Return
 				
@@ -5038,33 +5107,26 @@ Class Events {  ;;	http://forum.script-coding.com/viewtopic.php?pid=82283#p82283
 			{
 				pEL := GetAnchor().parentElement.parentElement.firstChild
 				pEL.style.background := "'none'"
-				; MsgBox % "!!!!`n" pEL.parentElement.parentElement.firstChild.className "`n" pEL.outerHTML   "`n" oOther.anchor[ThisMode "_text"]
-				; oJScript.bcnone(pEL)
-			; ToolTip % oevent.className "`n" _text "`n" 
-				; . "`n" pEL.outerText "`n" _text
 				pEL.Id := ""
+				
 				If (_text = oOther.anchor[ThisMode "_text"])
 				{
 					If AnchorFullScroll 
 						oJScript.QS(oDivNew, "#id_T0").style.height := 0
 					If MemoryAnchor
 						IniWrite("", ThisMode "_Anchor")
-					Return oOther.anchor[ThisMode] := 0, oOther.anchor[ThisMode "_text"] := "" ; , HTML_%ThisMode% := oBody.innerHTML
+					Return oOther.anchor[ThisMode] := 0, oOther.anchor[ThisMode "_text"] := "" 
 				}
 			} 
-				
-				
-			; ToolTip % oevent.className "`n" _text "`n" 
+			
 			oOther.anchor[ThisMode] := 1
 			oOther.anchor[ThisMode "_text"] := _text
 			EL.Id := "anchor"
 			EL.style.backgroundColor := "#" ColorSelAnchor
 			
 			_AnchorFitScroll(EL)
-				; MsgBox % EL.className "`n" EL.outerHTML 
+			
 			oDivNew.scrollTop := oDivNew.scrollTop + EL.getBoundingClientRect().top - 6
-			; AnchorScroll()
-			; HTML_%ThisMode% := oBody.innerHTML
 			
 			If MemoryAnchor
 				IniWrite(oOther.anchor[ThisMode "_text"], ThisMode "_Anchor") 
@@ -5073,13 +5135,15 @@ Class Events {  ;;	http://forum.script-coding.com/viewtopic.php?pid=82283#p82283
 	onfocusin() { 
 		If !(oDoc.parentWindow.event.srcElement.id = "editkeyname" || oDoc.parentWindow.event.srcElement.id = "edithotkey") 
 			Return 
-		oDoc.parentWindow.event.srcElement.style.border := "1px solid #4A8DFF" 
+		oDoc.parentWindow.event.srcElement.style.border := "1px solid #" ColorBorderHoverInput
 		Sleep(1), Hotkey_Hook(0) 
 	} 
 	onfocusout() {
 		If !(oDoc.parentWindow.event.srcElement.id = "editkeyname" || oDoc.parentWindow.event.srcElement.id = "edithotkey") 
 			Return
-		oDoc.parentWindow.event.srcElement.style.border := "1px dotted black"
+		oDoc.parentWindow.event.srcElement.style.border := "1px dotted"
+		oDoc.parentWindow.event.srcElement.style.borderColor :=  "#" ColorFont
+		
 		If (WinActive("ahk_id" hGui) && !isPaused && ThisMode = "Hotkey")
 			Sleep(1), Hotkey_Hook(1)
 	}
@@ -5092,7 +5156,7 @@ Class Events {  ;;	http://forum.script-coding.com/viewtopic.php?pid=82283#p82283
 		if oDoc.parentWindow.event.button != 1		;   only left button https://msdn.microsoft.com/en-us/library/aa703876(v=vs.85).aspx
 			return
 		if (oDoc.parentWindow.event.srcElement.className != "button")
-			return
+			return 
 		oJScript.onmousedown(oDoc.parentWindow.event.srcElement)
     }
     onmouseover() {  
@@ -5458,7 +5522,7 @@ ButtonClick(oevent) {
 
 control_path_func() {
 	If !ChildToPath(oOther.ControlID)
-		oDoc.getElementById("control_path_error").outerHTML := "<span style='color:#ff0000'>  control not found</span>" 
+		oDoc.getElementById("control_path_error").outerHTML := "<span style='color:#" ColorErrorAccPath "'>  control not found</span>" 
 	oDoc.getElementById("control_path_value").innerHTML := SaveChildPath()
 	HTML_Control := oDivNew.innerHTML
 }
@@ -5473,7 +5537,7 @@ acc_path_func(manual) {
 		w := oDoc.getElementById("acc_path").offsetWidth
 		marquee = 
 		( 
-			<marquee behavior='scroll' direction='right' bgcolor='#ffcc00' width="%w%px"> &#8226; &#8226; &#8226; 
+			<marquee behavior='scroll' direction='right' bgcolor='#" ColorErrorAccMarquee "' width="%w%px"> &#8226; &#8226; &#8226; 
 			</marquee>
 		)
 		oDoc.getElementById("acc_path").innerHTML := marquee   
@@ -5488,7 +5552,7 @@ acc_path_func(manual) {
 	}
 	If !b
 	{
-		oDoc.getElementById("acc_path_error").innerHTML := "<span style='color:#ff0000'>  "
+		oDoc.getElementById("acc_path_error").innerHTML := "<span style='color:#" ColorErrorAccPath "'>  "
 			. (oPubObj.Acc.CLOAKED ? "CLOAKED" : "path not found")  "  </span>" 
 		oDoc.getElementById("acc_path_value").innerHTML := ""
 	}
@@ -5610,6 +5674,7 @@ Return
 #If
 
 ZoomCreate() {
+	GuiColor := DarkTheme := IniRead("DarkTheme", 0) ? "0A0A0A" : "F5F5F5"
 	oZoom.Zoom := IniRead("MagnifyZoom", 4)
 	oZoom.Mark := IniRead("MagnifyMark", "Cross")
 	oZoom.MemoryZoomSize := IniRead("MemoryZoomSize", 0)
@@ -5621,7 +5686,7 @@ ZoomCreate() {
 	Else
 		GuiW := oZoom.GuiMinW, GuiH := oZoom.GuiMinH
 	Gui, Zoom: -Caption -DPIScale +Border +LabelZoomOn +HWNDhGui +AlwaysOnTop +E%WS_EX_NOACTIVATE%    ;;	+Owner%hAhkSpy%
-	Gui, Zoom: Color, F5F5F5
+	Gui, Zoom: Color, %GuiColor%
 	Gui, Zoom: Add, Text, hwndhStatic +Border
 	DllCall("SetClassLong", "Ptr", hGui, "int", -26
 	, "int", DllCall("GetClassLong", "Ptr", hGui, "int", -26) | 0x20000)
@@ -5629,7 +5694,7 @@ ZoomCreate() {
 	Gui, LW: -Caption +E%WS_EX_LAYERED% +AlwaysOnTop +ToolWindow +HWNDhLW +E%WS_EX_NOACTIVATE% +Owner%hGui% ;;	++E%WS_EX_NOACTIVATE% +E%WS_EX_TRANSPARENT%
 
 	Gui, ZoomTB: +HWNDhTBGui -Caption -DPIScale +Parent%hGui% +E%WS_EX_NOACTIVATE% +%WS_CHILDWINDOW% -%WS_POPUP%
-	Gui, ZoomTB: Color, F5F5F5
+	Gui, ZoomTB: Color, %GuiColor%
 	h := 32
 	Gui, ZoomTB: Add, Slider, % "hwndhSliderZoom gSliderZoom x8 Range1-50 w152 y" (44-h)/2 " h" h " Center AltSubmit NoTicks", % oZoom.Zoom
 	Gui, ZoomTB: Font, % "s" FontSize + 2
