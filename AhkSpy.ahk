@@ -26,7 +26,7 @@
     Актуальный исходник - https://raw.githubusercontent.com/serzh82saratov/AhkSpy/master/AhkSpy.ahk
 */
 
-Global AhkSpyVersion := 4.32
+Global AhkSpyVersion := 4.33
 
 	;; _________________________________________________ Caption _________________________________________________
 
@@ -141,12 +141,15 @@ Global ThisMode := IniRead("StartMode", "Control"), LastModeSave := (ThisMode = 
 
 , UpdRegisterLink := "https://u.to/zeONFA", testvar, oDivOld, oDivNew, DivWorkIndex, oDivWork1, oDivWork2
 
-, FontDPI := {96:12,120:10,144:8,168:6}[A_ScreenDPI], ScrollPos := {}, AccCoord := [], oOther := {}, oFind := {}, Edits := [], oMS := {}, oMenu := {}, oPubObj := {}
+, FontDPI := {96:12,120:10,144:8,168:6}[A_ScreenDPI], ScrollPos := {}, AccCoord := [], oOther := {}
+, oFind := {}, Edits := [], oMS := {}, oMenu := {}, oPubObj := {}
 
 , ClipAdd_Before := 0, ClipAdd_Delimiter := "`r`n"
 , HTML_Win, HTML_Control, HTML_Hotkey, rmCtrlX, rmCtrlY, widthTB, FullScreenMode, hColorProgress, hFindAllText, MsgAhkSpyZoom
-, hGui, hTBGui, hActiveX, hFindGui, oDoc, ShowMarker, isFindView, isIE, isPaused, PreMaxHeight := MaxHeightStrToNum(), PreOverflowHide := !!PreMaxHeight, DecimalCode, GetVKCodeNameStr, GetSCCodeNameStr
-, oDocEl, oPubObjGUID, oJScript, oBody, isConfirm, isAhkSpy := 1, TitleText, FreezeTitleText, TitleTextP1, oUIAInterface, Shift_Tab_Down, hButtonButton, hButtonControl, hButtonWindow
+, hGui, hTBGui, hActiveX, hFindGui, oDoc, ShowMarker, isFindView, isIE, isPaused, PreMaxHeight := MaxHeightStrToNum()
+, PreOverflowHide := !!PreMaxHeight, DecimalCode, GetVKCodeNameStr, GetSCCodeNameStr
+, oDocEl, oPubObjGUID, oJScript, oBody, isConfirm, isAhkSpy := 1, TitleText, FreezeTitleText, TitleTextP1, oUIAInterface
+, Shift_Tab_Down, hButtonButton, hButtonControl, hButtonWindow
 , TitleTextP2 := TitleTextP2_Reserved := "     ( Shift+Tab - Freeze | RButton - CopySelected | Pause - Pause )     v" AhkSpyVersion
 , Sleep, oShowMarkers, oShowAccMarkers, oShowMarkersEx, hDCMarkerInvert, hMarkerGui
 
@@ -168,7 +171,7 @@ Global _S1 := "<span>", _S2 := "</span>", _DB := "<span style='position: relativ
 , _PRE1 := "<pre contenteditable='true'>", _PRE2 := "</pre>"
 , _LPRE := "<pre contenteditable='true' class='lpre'"
 , _DP := "  <span style='color: #" ColorDelimiter "'>&#9642</span>  "
-, _StIf := "    <span style='color: #" ColorStyleComment1 "'>&#9642</span>    <span class='faded_color' name='MS:' style='color: #" ColorStyleComment2 "'>"
+, _StIf := "    <span class='QStyle1'>&#9642</span>    <span class='QStyle2' name='MS:'>"
 , _BR := "<p class='br'></p>", _DN := "`n"  
 
 , _PreOverflowHideCSS := ".lpre {max-width: 99`%; max-height: " PreMaxHeight "px; overflow: auto; border: 1px solid #" ColorPreOverflowHide ";}"
@@ -403,9 +406,12 @@ If !DllCall("WindowFromPoint", "Int64", WinX & 0xFFFFFFFF | WinY << 32)
 && !DllCall("WindowFromPoint", "Int64", (WinX + WinWidth) & 0xFFFFFFFF | (WinY + WinHeight) << 32)
 && !DllCall("WindowFromPoint", "Int64", (WinX) & 0xFFFFFFFF | (WinY + WinHeight) << 32)
 	Gui, Show, NA xCenter yCenter
+
 If !UpdRegister
 	SetTimer, UpdRegister, -1000 
+	
 WinSet, TransParent, 255, ahk_id %hGui%
+DllCall("RedrawWindow", "Ptr", hGui, "Uint", 0, "Uint", 0, "Uint", 0x1|0x4)
 
 ; MsgBox % oDoc.documentMode  "`n" oDoc.compatMode
 Return
@@ -1067,8 +1073,7 @@ HTML_Control:
 	{
 		If c_ShowStyles
 			ControlStyles := GetStyles(CtrlClass, CtrlStyle, CtrlExStyle, ControlID)
-			. _DP _BB1 " id='update_styles_c'> update styles " _BB2 
-		 
+			
 		HTML_ControlExist := ""
 		. _T1 " id='__Control'> ( Control ) </span>" _BT1 " id='flash_control'> flash " _BT2  _ButWindow_Detective  _T2 
 		
@@ -1093,7 +1098,8 @@ HTML_Control:
 			
 		. "`n<span class='param'>Style:</span>  <span id='c_Style' name='MS:'>" CtrlStyle "</span>" 
 			. _DP "<span class='param'>ExStyle:</span>  <span id='c_ExStyle' name='MS:'>" CtrlExStyle "</span>" 
-			. _DP _BB1 " id='get_styles_c'> " (!c_ShowStyles ? "show styles" : "hide styles") " " _BB2  _PRE2
+			. _DP _BB1 " id='get_styles_c'> " (!c_ShowStyles ? "show styles" : "hide styles") " " _BB2
+			. _DP _BB1 " id='update_styles_c'> update styles " _BB2   _PRE2
 		
 		. "`n<span id='control_path_value'>" control_path_value "</span>"
 		
@@ -2265,7 +2271,7 @@ QVK(key, value, VK = 1) {
 		, Description2 := "<span style='color: #" ColorDelimiter "'>Virtual-key code symbolic names:  </span>"
 	If VK
 		Return T _PRE1 Description1 "<span><span name='MS:'>" key "</span><span class='param' name='MS:SP'> := " value "</span></span><br>" _PRE2
-	Return T _PRE1 Description2 "<span style='color: #" ColorStyleComment2 "'>" key "</span><br>" _PRE2
+	Return T _PRE1 Description2 "<span class='QStyle2'>" key "</span><br>" _PRE2
 }
 
 GetScanCode(id) { 
@@ -2607,32 +2613,38 @@ WM_ACTIVATE(wp, lp) {
 
 WM_WINDOWPOSCHANGED(Wp, Lp) {
 	Static PtrAdd := A_PtrSize = 8 ? 8 : 0
-	Critical
+	; Critical
 	If (NumGet(Lp + 0, 0, "Ptr") != hGui) || Sleep = 1
-		Return 
+		Return  
+		
 	If oOther.ZoomShow
 	{
 		x := NumGet(Lp + 0, 8 + PtrAdd, "UInt")
 		y := NumGet(Lp + 0, 12 + PtrAdd, "UInt")
 		w := NumGet(Lp + 0, 16 + PtrAdd, "UInt")
-		hDWP := DllCall("BeginDeferWindowPos", "Int", 3)
-		hDWP := DllCall("DeferWindowPos"
-		, "Ptr", hDWP, "Ptr", hGui, "UInt", -1  ;;	for +AlwaysOnTop
-		, "Int", 0, "Int", 0, "Int", 0, "Int", 0
-		, "UInt", 0x0003)    ;;  SWP_NOMOVE := 0x0002 | SWP_NOSIZE := 0x0001
+		
+		hDWP := DllCall("BeginDeferWindowPos", "Int", 2)
+		
+		; hDWP := DllCall("DeferWindowPos"
+		; , "Ptr", hDWP, "Ptr", hGui, "UInt", -1  ;;	for +AlwaysOnTop
+		; , "Int", 0, "Int", 0, "Int", 0, "Int", 0
+		; , "UInt", 0x0003)    ;;  SWP_NOMOVE := 0x0002 | SWP_NOSIZE := 0x0001
+		
 		hDWP := DllCall("DeferWindowPos"
 		, "Ptr", hDWP, "Ptr", oOther.hZoom, "UInt", 0
 		, "Int", x + w, "Int", y, "Int", 0, "Int", 0
-		, "UInt", 0x0011)    ;; 0x0010 := SWP_NOACTIVATE | 0x0001 := SWP_NOSIZE | SWP_NOOWNERZORDER := 0x0200
+		, "UInt", 0x0011)    ;; 0x0010 := SWP_NOACTIVATE | 0x0001 := SWP_NOSIZE
+		
 		hDWP := DllCall("DeferWindowPos"
 		, "Ptr", hDWP, "Ptr", oOther.hZoomLW, "UInt", 0
 		, "Int", x + w + 1, "Int", y + 46, "Int", 0, "Int", 0
 		, "UInt", 0x0211)    ;; 0x0010 := SWP_NOACTIVATE | 0x0001 := SWP_NOSIZE | SWP_NOOWNERZORDER := 0x0200
+		
 		DllCall("EndDeferWindowPos", "Ptr", hDWP)
 	}
 	If MemoryPos
-		SetTimer, SavePos, -400
-}
+		SetTimer, SavePos, -400  
+} 
 
 GuiSize:
 	If A_Gui != 1
@@ -2654,7 +2666,6 @@ GuiSize:
 Minimize() {
 	Sleep := 1
 	Gui, 1: Minimize
-
 }
 
 TimerFunc(hFunc, Time) {
@@ -2694,6 +2705,7 @@ ChangeMode() {
 	
 WM_NCLBUTTONDOWN(wp) {
 	Static HTMINBUTTON := 8
+
 	If (wp = HTMINBUTTON)
 	{
 		SetTimer, Minimize, -10
@@ -2838,7 +2850,7 @@ IsTextArea() {
 	Return (DllCall("GetParent", Ptr, cid) = hActiveX)
 }
 
-ControlsMove(Width, Height) {
+ControlsMove(Width, Height) { 
 	hDWP := DllCall("BeginDeferWindowPos", "Int", isFindView ? 3 : 2)
 	hDWP := DllCall("DeferWindowPos"
 	, "Ptr", hDWP, "Ptr", hTBGui, "UInt", 0
@@ -3560,11 +3572,11 @@ HighLight(elements, time = 500) {
 	Static arr, ot
 	R := oBody.createTextRange(), R.collapse(1), R.select()
 	
-	If !elements
-		elements := arr, delete := 1
-	Else 
-		(arr && SetTimer(ot, "Off") HighLight(0))
+	If elements
+		(arr && SetTimer(ot, "Off") %A_ThisFunc%(0))
 		, bc := "#" ColorSelMouseHover, tc := "#" ColorSelMouseHoverText 
+	Else 
+		elements := arr, delete := 1
 		
 	for k, el in elements
 	{
@@ -4956,6 +4968,12 @@ pre {
 .param {
 	color: #%ColorParam%;
 }
+.QStyle1 {
+	color: #%ColorStyleComment1%;
+}
+.QStyle2 {
+	color: #%ColorStyleComment2%;
+}
 .error {
 	color: #%ColorDelimiter%;
 }  
@@ -5120,20 +5138,24 @@ Class Events {  ;;	http://forum.script-coding.com/viewtopic.php?pid=82283#p82283
 			Hotkey_Hook(1)
 	}
 	ondblclick() {
+		Static wordchar := "[_#\.\w]"
 		oevent := oDoc.parentWindow.event.srcElement
 		
 		If (oevent.className = "button" || oevent.tagname = "button")
 			Return ButtonClick(oevent)
 			
 		If (oevent.tagname != "input" && (rng := oDoc.selection.createRange()).text != "" && oevent.isContentEditable)
-		{
-			While !t 
-				rng.moveEnd("character", 1), (SubStr(rng.text, 0) = "_" ? rng.moveEnd("word", 1)
-					: (rng.moveEnd("character", -1), t := 1)) 
-			While t
-				rng.moveStart("character", -1), (SubStr(rng.text, 1, 1) = "_" ? rng.moveStart("word", -1)
-					: (rng.moveStart("character", 1), t := 0))
-			sel := rng.text, rng.moveEnd("character", StrLen(RTrim(sel)) - StrLen(sel)), rng.select()  
+		{ 
+			While len != StrLen(rng.text) { 
+				len := StrLen(rng.text)
+				(SubStr(rng.text, 0) ~= wordchar ? rng.moveEnd("character", 1) 
+				: (rng.moveEnd("character", -1), len := StrLen(rng.text))) 
+			} 
+			While !b {
+				rng.moveStart("character", -1), (SubStr(rng.text, 1, 1) ~= wordchar ? 0
+					: (rng.moveStart("character", 1), b := 1)) 
+			}
+			sel := rng.text, rng.moveEnd("character", StrLen(RTrim(sel)) - StrLen(sel)), rng.select()   
 		}
 		Else If (ThisMode != "Hotkey" && (oevent.className = "title" || oevent.className = "con" || oevent.className = "hr" || oevent.className = "box"))  ;;	anchor
 		{
@@ -5742,8 +5764,8 @@ ZoomCreate() {
 	Gui, Zoom: -Caption -DPIScale +Border +LabelZoomOn +HWNDhGui +AlwaysOnTop +E%WS_EX_NOACTIVATE%    ;;	+Owner%hAhkSpy%
 	Gui, Zoom: Color, %GuiColor%
 	Gui, Zoom: Add, Text, hwndhStatic +Border
-	DllCall("SetClassLong", "Ptr", hGui, "int", -26
-	, "int", DllCall("GetClassLong", "Ptr", hGui, "int", -26) | 0x20000)
+	; DllCall("SetClassLong", "Ptr", hGui, "int", -26
+	; , "int", DllCall("GetClassLong", "Ptr", hGui, "int", -26) | 0x20000)
 
 	Gui, LW: -Caption +E%WS_EX_LAYERED% +AlwaysOnTop +ToolWindow +HWNDhLW +E%WS_EX_NOACTIVATE% +Owner%hGui% ;;	++E%WS_EX_NOACTIVATE% +E%WS_EX_TRANSPARENT%
 
