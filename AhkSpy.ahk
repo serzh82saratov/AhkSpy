@@ -5725,7 +5725,10 @@ Return
 #If
 
 ZoomCreate() {
-	GuiColor := DarkTheme := IniRead("DarkTheme", 0) ? "0A0A0A" : "F5F5F5"
+	If IniRead("DarkTheme", 0)
+		GuiColor := "0A0A0A", TextColor := "F5F5F5"
+	Else 
+		GuiColor := "F5F5F5", TextColor := "0A0A0A"
 	oZoom.Zoom := IniRead("MagnifyZoom", 4)
 	oZoom.Mark := IniRead("MagnifyMark", "Cross")
 	oZoom.MemoryZoomSize := IniRead("MemoryZoomSize", 0)
@@ -5749,7 +5752,7 @@ ZoomCreate() {
 	h := 32
 	Gui, ZoomTB: Add, Slider, % "hwndhSliderZoom gSliderZoom x8 Range1-50 w152 y" (44-h)/2 " h" h " Center AltSubmit NoTicks", % oZoom.Zoom
 	Gui, ZoomTB: Font, % "s" FontSize + 2
-	Gui, ZoomTB: Add, Text, hwndhTextZoom +0x201 x+10 yp w36 hp, % oZoom.Zoom
+	Gui, ZoomTB: Add, Text, hwndhTextZoom +0x201 x+10 yp w36 hp c%TextColor%, % oZoom.Zoom
 	Gui, ZoomTB: Font, % "s" FontSize - 2
 	Gui, ZoomTB: Add, Button, hwndhChangeMark gChangeMark x+10 yp hp w52, % oZoom.Mark
 	Gui, ZoomTB: Add, Button, hwndhZoomHideBut gZoomHide x+10 yp hp w22, X
