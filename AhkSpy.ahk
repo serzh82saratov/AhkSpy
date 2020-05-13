@@ -26,7 +26,7 @@
     Актуальный исходник - https://raw.githubusercontent.com/serzh82saratov/AhkSpy/master/AhkSpy.ahk
 */
 
-Global AhkSpyVersion := 4.31
+Global AhkSpyVersion := 4.32
 
 	;; _________________________________________________ Caption _________________________________________________
 
@@ -77,6 +77,7 @@ If !DarkTheme
 	, ColorBg := "FFFFFF"								;;  Цвет фона          "F0F0F0" E4E4E4     F8F8F8
 	, ColorBgPaused := "f7f7f7"												;;  Цвет фона при паузе     F0F0F0
 	, ColorSelMouseHover := "3399FF"										;;  Цвет фона элемента при наведении мыши  3399FF   96C3DC F9D886 8FC5FC AEC7E1
+	, ColorSelMouseHoverText := ColorBg										;;  Цвет текста элемента при наведении мыши     96C3DC F9D886 8FC5FC AEC7E1
 	, ColorSelButton := "96C3DC"											;;  Цвет фона при нажатии на кнопки
 	, ColorSelAnchor := "FFFF80"											;;  Цвет фона заголовка для якоря
 	, ColorHighLightBckg := "FFE0E0"										;;  Цвет фона некоторых абзацев
@@ -101,7 +102,8 @@ Else
 	Global ColorFont := "FFFFFF"											;;  Цвет шрифта
 	, ColorBg := "000000"								;;  Цвет фона          "F0F0F0" E4E4E4     F8F8F8
 	, ColorBgPaused := "080808"												;;  Цвет фона при паузе     F0F0F0
-	, ColorSelMouseHover := "703A03"										;;  Цвет фона элемента при наведении мыши     96C3DC F9D886 8FC5FC AEC7E1
+	, ColorSelMouseHover := "FDE182"										;;  Цвет фона элемента при наведении мыши     96C3DC F9D886 8FC5FC AEC7E1
+	, ColorSelMouseHoverText := "000000"									;;  Цвет текста элемента при наведении мыши     96C3DC F9D886 8FC5FC AEC7E1
 	, ColorSelButton := "693C23"											;;  Цвет фона при нажатии на кнопки
 	, ColorSelAnchor := "E14B30"											;;  Цвет фона заголовка для якоря
 	, ColorHighLightBckg := "001F1F"										;;  Цвет фона некоторых абзацев
@@ -251,10 +253,12 @@ SendMessage, 0x1501, 1, "Find to page",, ahk_id %hFindEdit%   ;; EM_SETCUEBANNER
 Gui, F: Add, UpDown, -16 Horz Range0-1 x+0 yp h26 w52 gFindNext vFindUpDown
 GuiControl, F: Move, FindUpDown, h26 w52
 Gui, F: Font, % " s" FontDPI
-Gui, F: Add, Text, x+10 yp+1 h24 c2F2F2F +0x201 gFindOption, % " case sensitive "
-Gui, F: Add, Text, x+10 yp hp c2F2F2F +0x201 gFindOption, % " whole word "
-Gui, F: Add, Text, x+3 yp hp +0x201 w52 vFindMatches HWNDhFindAllText
-Gui, F: Add, Button, % "+0x300 +0xC00 y3 h20 w20 gFindHide x" widthTB - 21, X
+; 0x201 CENTER wh
+Gui, F: Add, Text, x+10 yp+1 h24 +0x201 gFindOption c%ColorFont%, % " case sensitive "
+Gui, F: Add, Text, x+10 yp hp +0x201 gFindOption c%ColorFont%, % " whole word "
+; BS_VCENTER := 0xC00, BS_CENTER := 0x300
+Gui, F: Add, Button, % "+0x300 +0xC00 yp hp w20 gFindHide x" widthTB - 21 c%ColorFont%, X   
+Gui, F: Add, Text, x+10 yp hp +0x201 w152 vFindMatches Left HWNDhFindAllText c%ColorFont%
 
 	;; _________________________________________________ Menu Create _________________________________________________
 
@@ -799,9 +803,11 @@ HTML_Win:
 	. _PRE1 "<span class='param' name='MS:N'>PID:</span>  <span name='MS:'>" WinPID "</span>" 
 		. _DP  ProcessBitSize  IsAdmin "<span class='param'>Window count:</span> " WinCountProcess  
 		. _DP  _BB1 " id='process_close'> process close " _BB2 
-	
+		. _DP "<span class='param'>Create info time:  </span><span name='MS:'>" A_Hour ":" A_Min ":" A_Sec 
+		. ".<span class='param' style='font-size: 0.75em'>" A_MSec "</span></span>"
+		
 	. "`n<span class='param' name='MS:N'>HWND:</span>  <span name='MS:'>" WinID "</span>" _DP  _BB1 " id='window_show_hide'> show / hide " _BB2
-		. _DP  _BB1 " id='win_close'> destroy " _BB2  _DP "<span class='param'>Control count:</span>  "
+		. _DP  _BB1 " id='win_close'> close " _BB2  _DP "<span class='param'>Control count:</span>  "
 		. CountControl  IsWindowUnicodeStr  _ParentWindow  EX1Str  CLSID 
 
 	. "`n<span class='param'>Style:  </span><span id='w_Style' name='MS:'>" WinStyle "</span>" 
@@ -1082,7 +1088,7 @@ HTML_Control:
 		. "`n" _BP1 " id='set_pos'>Mouse relative control:" _BP2 "  <span name='MS:'>x" rmCtrlX " y" rmCtrlY "</span>" WithRespectControl 
 		
 		. "`n<span class='param'>HWND:</span>  <span name='MS:'>" ControlID "</span>" _DP  _BB1 " id='control_show_hide'> show / hide " _BB2 
-			. _DP  _BB1 " id='control_destroy'> destroy " _BB2  _DP  _BP1 " id='control_path'> Get path " _BP2 
+			. _DP  _BB1 " id='control_destroy'> close " _BB2  _DP  _BP1 " id='control_path'> Get path " _BP2 
 			. "<span id='control_path_error'></span>" _ParentControl 
 			
 		. "`n<span class='param'>Style:</span>  <span id='c_Style' name='MS:'>" CtrlStyle "</span>" 
@@ -1120,6 +1126,8 @@ HTML_Control:
 		. "<span><span class='param' name='MS:S'>ahk_exe</span> <span name='MS:'>" ProcessName "</span></span> "
 		. "<span><span class='param' name='MS:S'>ahk_id</span> <span name='MS:'>" WinID "</span></span> "
 		. "<span><span class='param' name='MS:S'>ahk_pid</span> <span name='MS:'>" WinPID "</span></span>"
+		. _DP "<span class='param'>Create info time:  </span><span name='MS:'>" A_Hour ":" A_Min ":" A_Sec 
+		. ".<span class='param' style='font-size: 0.75em'>" A_MSec "</span></span>"
 
 	. "`n<span class='param'>Cursor:</span>  <span name='MS:'>" A_Cursor "</span>" 
 		. _DP  CaretPosStr  _DP "<span class='param'>Client area:</span>  <span name='MS:'>x" caX " y" caY " w" caW " h" caH "</span>"
@@ -1144,6 +1152,7 @@ Write_Control(scroll = 0) {
 	DivWorkIndex := DivWorkIndex = 1 ? 2 : 1
 	oDivNew := oDivWork%DivWorkIndex%  
 	oDivNew.innerHTML := HTML_Control 
+
 	If oOther.anchor[ThisMode]
 		AnchorScroll(AnchorColor())
 	Else
@@ -1470,31 +1479,30 @@ WBGet(hwnd) {
 	   
 AccInfoUnderMouse(mx, my, wx, wy, cx, cy, caX, caY, WinID, ControlID) {
 	Static h, WM_GETOBJECT := 0x003D 
-
+	Global AccObj
 	If Not h
 		h := DllCall("LoadLibrary", "Str", "oleacc", "Ptr")
 		
 		;;  https://docs.microsoft.com/en-us/windows/win32/api/oleacc/nf-oleacc-accessibleobjectfrompoint
 	If DllCall("oleacc\AccessibleObjectFromPoint"
-		, "Int64", mx&0xFFFFFFFF|my<<32, "Ptr*", pacc
+		, "Int64", mx&0xFFFFFFFF|my<<32, "Ptr*", pAccObj
 		, "Ptr", VarSetCapacity(varChild,8+2*A_PtrSize,0)*0+&varChild) = 0
 		
 		;;  http://forum.script-coding.com/viewtopic.php?pid=139109#p139109
 		
 		; Acc := ComObjEnwrap(9, pacc, 1), child := NumGet(varChild,8,"UInt")
-		Acc := ComObject(9, pacc, 1)
-		ObjAddRef(pacc)
-		ObjRelease(pacc)
+		AccObj := ComObject(9, pAccObj, 1)
+		ObjAddRef(pAccObj) 
 		child := NumGet(varChild, 8, "UInt")
-		
-	If !IsObject(Acc)
+
+	If !IsObject(AccObj)
 		Return 
 		
 	SendMessage, WM_GETOBJECT, 0, 1, , ahk_id %ControlID%
 	
-	oPubObj.Acc := {AccObj: Object(Acc), child: child, WinID: WinID, ControlID: ControlID} 
+	oPubObj.Acc := {AccObj: Object(AccObj), child: child, WinID: WinID, ControlID: ControlID, pAccObj: pAccObj} 
 	
-	ChildCount := Acc.accChildCount
+	ChildCount := AccObj.accChildCount
 	If child
 		Var := "<span name='MS:'>Simple Element</span>" _DP "<span class='param' name='MS:N'>Id:  </span>" child
 	Else If ChildCount
@@ -1513,7 +1521,7 @@ AccInfoUnderMouse(mx, my, wx, wy, cx, cy, caX, caY, WinID, ControlID) {
 
 	code := _PRE1 "<span class='param'>Type:</span>  " Var pathbutton _PRE2 "<span id='acc_path_value'>" acc_path_value "</span>"
 
-	AccGetLocation(Acc, child)
+	AccGetLocation(AccObj, child)
 	x := AccCoord[1], y := AccCoord[2], w := AccCoord[3], h := AccCoord[4]
 
 	code .= _T1 " id='P__Position_relative_Acc'" _T1P "> ( Position relative ) </span>" _T2 _PRE1 "<span class='param'>Screen: </span>"
@@ -1531,7 +1539,7 @@ AccInfoUnderMouse(mx, my, wx, wy, cx, cy, caX, caY, WinID, ControlID) {
 		. (cx != "" ? _DP "<span class='param'>Control: </span><span name='MS:'>x" (x - wx - cx) " y" (y - wy - cy) "</span>"
 		. _DP "<span name='MS:'>x&sup2;" (x - wx - cx) + w - 1 " y&sup2;" (y - wy - cy) + h - 1 "</span>" : "")  _PRE2
 
-	If ((Hwnd := AccWindowFromObject(pacc)) != ControlID && Hwnd != WinID) {   ;	можно Acc вместо pacc, then ComObjValue
+	If ((Hwnd := AccWindowFromObject(pAccObj)) != ControlID && Hwnd != WinID) {   ;	можно Acc вместо pAccObj, then ComObjValue
 		WinGetClass, CtrlClass, ahk_id %Hwnd%
 		WinGet, WinProcess, ProcessName, ahk_id %Hwnd%
 		WinGet, WinPID, PID, ahk_id %Hwnd%
@@ -1541,41 +1549,41 @@ AccInfoUnderMouse(mx, my, wx, wy, cx, cy, caX, caY, WinID, ControlID) {
 		. _DP "<span class='param' name='MS:N'>Exe:</span>  <span name='MS:'>" TransformHTML(WinProcess) "</span>"
 		. _DP "<span class='param' name='MS:N'>PID:</span>  <span name='MS:'>" WinPID "</span></div>" _PRE2
 	}
-	If ((Var := Acc.accName(child)) != "")
+	If ((Var := AccObj.accName(child)) != "")
 		code .= _T1 " id='P__Name_Acc'" _T1P "> ( Name ) </span><a></a>" _BT1 " id='copy_button'> copy " _BT2 _T2 _LPRE ">" TransformHTML(Var) _PRE2
 		
-	If ((Var := Acc.accValue(child)) != "")
+	If ((Var := AccObj.accValue(child)) != "")
 		code .= _T1 " id='P__Value_Acc'" _T1P "> ( Value ) </span><a></a>" _BT1 " id='copy_button'> copy " _BT2 _T2 _LPRE ">" TransformHTML(Var) _PRE2
 		
-	AccState(Acc, child, style, strstyles)
+	AccState(AccObj, child, style, strstyles)
 	If (strstyles != "")
 		code .= _T1 " id='P__State_Acc'" _T1P "> ( State: <span name='MS:' style='color: #" ColorFont ";'>" style "</span> ) </span>" _T2 _PRE1 strstyles _PRE2
 		
-	If ((Var := AccRole(Acc, child)) != "")
+	If ((Var := AccRole(AccObj, child)) != "")
 		code .= _T1 " id='P__Role_Acc'" _T1P "> ( Role ) </span>" _T2 _PRE1 "<span name='MS:'>" TransformHTML(Var) "</span>"
-		. _DP "<span class='param' name='MS:N'>code: </span><span name='MS:'>" Acc.accRole(child) "</span>" _PRE2
+		. _DP "<span class='param' name='MS:N'>code: </span><span name='MS:'>" AccObj.accRole(child) "</span>" _PRE2
 		
-	If (child &&(Var := AccRole(Acc)) != "")
+	If (child &&(Var := AccRole(AccObj)) != "")
 		code .= _T1 " id='P__Role_parent_Acc'" _T1P "> ( Role - parent ) </span>" _T2 _PRE1 "<span name='MS:'>" TransformHTML(Var) "</span>"
-		. _DP "<span class='param' name='MS:N'>code: </span><span name='MS:'>" Acc.accRole(0) "</span>" _PRE2
+		. _DP "<span class='param' name='MS:N'>code: </span><span name='MS:'>" AccObj.accRole(0) "</span>" _PRE2
 		
-	If ((Var := Acc.accDefaultAction(child)) != "")
+	If ((Var := AccObj.accDefaultAction(child)) != "")
 		code .= _T1 " id='P__Action_Acc'" _T1P "> ( Action ) </span>" _T2 _PRE1 "<span name='MS:'>" TransformHTML(Var) "</span>" 
 		. _DP _BP1 " id='acc_DoDefaultAction'> Execute " _BP2 _PRE2
 		
-	If ((Var := Acc.accSelection) > 0)
+	If ((Var := AccObj.accSelection) > 0)
 		code .= _T1 " id='P__Selection_parent_Acc'" _T1P "> ( Selection - parent ) </span>" _T2 _PRE1 "<span name='MS:'>" TransformHTML(Var) "</span>" _PRE2
 	
-	If ((Var := Acc.accDescription(child)) != "")
+	If ((Var := AccObj.accDescription(child)) != "")
 		code .= _T1 " id='P__Description_Acc'" _T1P "> ( Description ) </span>" _T2 _PRE1 "<span name='MS:'>" TransformHTML(Var) "</span>" _PRE2
 	
-	If ((Var := Acc.accKeyboardShortCut(child)) != "")
+	If ((Var := AccObj.accKeyboardShortCut(child)) != "")
 		code .= _T1 " id='P__ShortCut_Acc'" _T1P "> ( ShortCut ) </span>" _T2 _PRE1 "<span name='MS:'>" TransformHTML(Var) "</span>" _PRE2
 	
-	If ((Var := Acc.accHelp(child)) != "")
+	If ((Var := AccObj.accHelp(child)) != "")
 		code .= _T1 " id='P__Help_Acc'" _T1P "> ( Help ) </span>" _T2 _PRE1 "<span name='MS:'>" TransformHTML(Var) "</span>" _PRE2
 	
-	If ((Var := Acc.AccHelpTopic(child)))
+	If ((Var := AccObj.AccHelpTopic(child)))
 		code .= _T1 " id='P__HelpTopic_Acc'" _T1P "> ( HelpTopic ) </span>" _T2 _PRE1 "<span name='MS:'>" TransformHTML(Var) "</span>" _PRE2
 		
 	AccAccFocus(WinID, accFocusName, accFocusValue, role, irole)
@@ -1588,6 +1596,8 @@ AccInfoUnderMouse(mx, my, wx, wy, cx, cy, caX, caY, WinID, ControlID) {
 	If (role != "" && irole != "")
 		, code .= _T1 " id='P__Focus__Role_Acc'" _T1P "> ( Focus - Role ) </span>" _T2 _PRE1 "<span name='MS:'>" TransformHTML(role) "</span>"
 		. _DP "<span class='param' name='MS:N'>code: </span><span name='MS:'>" irole "</span>" _PRE2 
+	
+	ObjRelease(pAccObj)
 	Return code
 } 
 
@@ -1598,19 +1608,22 @@ CL() {
 }
 
 EVENT_OBJECT_CLOAKED(hWinEventHook, event, hwnd, idObject, idChild) {
+	Global AccObj
 	Critical
-	If (idObject || idChild)
+	If (idObject || idChild) || (hwnd != oPubObj.Acc.WinID)
 		Return
-	If (hwnd = oPubObj.Acc.WinID)
-		oPubObj.Acc.CLOAKED := 1 
-} 
+	; ToolTip % ComObjType(AccObj, "Name") "`n" A_ThisFunc
+	AccObj := ""
+	oPubObj.Acc.CLOAKED := 1 
+}
 
 EVENT_OBJECT_UNCLOAKED(hWinEventHook, event, hwnd, idObject, idChild) {
 	Critical
-	If (idObject || idChild)
-		Return
-	If (hwnd = oPubObj.Acc.WinID)
-		oPubObj.Acc.CLOAKED := 0
+	If (idObject || idChild) || (hwnd != oPubObj.Acc.WinID)
+		Return 
+	; ToolTip % "`n" A_ThisFunc
+	ObjRelease(oPubObj.Acc.pAccObj)
+	oPubObj.Acc.CLOAKED := 0
 }
  
 accDoDefaultAction() { 
@@ -3395,16 +3408,16 @@ ConfirmAction(Action) {
 }
 
 MsgConfirm(Info, Title, hWnd) {
-	Static IsStart, hMsgBox, Text, Yes, No, WinW, WinH
-	If !IsStart && (IsStart := 1) {
+	Static hMsgBox, Text, Yes, No, WinW, WinH
+	If !hMsgBox {
 		Gui, MsgBox:+HWNDhMsgBox -DPIScale -SysMenu +Owner%hWnd% +AlwaysOnTop
-		Gui, MsgBox:Font, % "s" FontDPI
+		Gui, MsgBox:Font, % "s" FontDPI " c" ColorFont
 		Gui, MsgBox:Color, %ColorBgOriginal%
 		Gui, MsgBox:Add, Text, w200 vText r1 Center 
 		Gui, MsgBox:Add, Button, w88 vYes xp+4 y+20 gMsgBoxLabel, Yes
-		Gui, MsgBox:Add, Button, w88 vNo x+20 gMsgBoxLabel, No
-		Gui, MsgBox:Show, Hide NA
-		Gui, MsgBox:Show, Hide AutoSize
+		Gui, MsgBox:Add, Button, w88 vNo x+20 gMsgBoxLabel, No 
+		WinSet, TransParent, 0, ahk_id %hMsgBox% 
+		Gui, MsgBox:Show, NA AutoSize x-32000 y-32000
 		WinGetPos, , , WinW, WinH, ahk_id %hMsgBox%
 	}
 	Gui, MsgBox:+Owner%hWnd% +AlwaysOnTop
@@ -3414,14 +3427,18 @@ MsgConfirm(Info, Title, hWnd) {
 	MouseGetPos, X, Y
 	x := X - (WinW / 2)
 	y := Y - WinH - 10
-	Gui, MsgBox: Show, NA Hide x%x% y%y%, % Title
-	Gui, MsgBox: Show, x%x% y%y%, % Title
+	Gui, MsgBox: Show, NA x%x% y%y%, % Title
+	Sleep 1
+	WinSet, TransParent, 255, ahk_id %hMsgBox%
+	Gui, MsgBox: Show, , % Title
+	Gui MsgBox:+AlwaysOnTop
 	GuiControl, MsgBox:+Default, No
 	GuiControl, MsgBox:Focus, No
 	While (RetValue = "")
 		Sleep 30
 	Gui, %hWnd%:-Disabled
-	Gui, MsgBox: Show, Hide
+	WinSet, TransParent, 0, ahk_id %hMsgBox% 
+	Gui, MsgBox: Show, x-32000 y-32000
 	Return RetValue
 
 	MsgBoxLabel:
@@ -3517,21 +3534,49 @@ TaskbarProgress(state, hwnd, pct = "") {
 		DllCall(NumGet(NumGet(tbl+0)+9*A_PtrSize), "ptr", tbl, "ptr", hwnd, "int64", pct, "int64", 100)
 }
 
+/*
 HighLight(elem, time = "", RemoveFormat = 1) {
 	If (elem.OuterText = "")
 		Return
 	Try SetTimer, UnHighLight, % "-" time
 	R := oBody.createTextRange()
 	(RemoveFormat ? R.execCommand("RemoveFormat") : 0)
-	R.collapse(1), R.select()
+	R.collapse(1)
+	R.select()
 	R.moveToElementText(elem)
-	R.execCommand("ForeColor", 0, ColorBgOriginal)
+	
+	; https://docs.microsoft.com/en-us/previous-versions/windows/internet-explorer/ie-developer/platform-apis/hh801229(v=vs.85)#forecolor
+	R.execCommand("ForeColor", 0, ColorBgOriginal) ; неработает 
 	R.execCommand("BackColor", 0, ColorSelMouseHover)
 	Return
 
 	UnHighLight:
 		oBody.createTextRange().execCommand("RemoveFormat")
 		Return
+}
+*/
+
+HighLight(elements, time = 500) {
+	Static arr, ot
+	R := oBody.createTextRange(), R.collapse(1), R.select()
+	
+	If !elements
+		elements := arr, delete := 1
+	Else 
+		(arr && SetTimer(ot, "Off") HighLight(0))
+		, bc := "#" ColorSelMouseHover, tc := "#" ColorSelMouseHoverText 
+		
+	for k, el in elements
+	{
+		el.style.backgroundColor := bc
+		el.style.color := tc
+		Loop % el.all.length
+			el.all[A_Index - 1].style.color := tc
+	}
+	If delete 
+		Return 0, arr := 0 
+	arr := elements 
+	Return 1, SetTimer(ot := Func(A_ThisFunc).Bind(0), "-" time)
 }
 
 	;; _________________________________________________ Command as function _________________________________________________
@@ -3564,7 +3609,7 @@ SendInput(key) {
 	SendInput % key
 }
 
-SetTimer(funcorlabel, time) {
+SetTimer(funcorlabel, time = -500) {
 	SetTimer, % funcorlabel, % time
 }
 
@@ -3811,7 +3856,8 @@ GetStyles(Class, Style, ExStyle, hWnd, IsChild = 0, IsChildInfoExist = 0) {
 		Res .= _T1 " id='__ExStyles_Win'>" QStyleTitle("ExStyles", "", 8, sExStyle) "</span>" _T2 _PRE1 RetEx _PRE2 
 	Res .= ChildExStyles 
 		
-	StyleBits := DllCall("GetClassLong", "Ptr", hWnd, "int", GCL_STYLE)	;;  https://docs.microsoft.com/en-us/windows/desktop/api/winuser/nf-winuser-setclasslongw
+	;;  https://docs.microsoft.com/en-us/windows/desktop/api/winuser/nf-winuser-setclasslongw
+	StyleBits := DllCall("GetClassLong", "Ptr", hWnd, "int", GCL_STYLE)	
 	For K, V In ClassStyles
 		If (StyleBits & V) && (%K% := 1)
 				RetClass .= QStyle(K, V) 
@@ -4665,7 +4711,8 @@ FindOption(Hwnd) {
 	ControlGet, Style, Style,, , ahk_id %Hwnd%
 	ControlGetText, Text, , ahk_id %Hwnd%
 	DllCall("DestroyWindow", "Ptr", Hwnd)
-	Gui, %A_Gui%: Add, Text, % "x" pX " y" pY " w" pW " h" pH " g" A_ThisFunc " " (Style & 0x1000 ? "c2F2F2F +0x0201" : "+Border +0x1201"), % Text
+	; BS_PUSHLIKE := 0x1000
+	Gui, %A_Gui%: Add, Text, % "x" pX " y" pY " w" pW " h" pH " g" A_ThisFunc " c" ColorFont " " (Style & 0x1000 ? "+0x0201" : "+Border +0x1201"), % Text
 	InStr(Text, "sensitive") ? (oFind.Registr := !(Style & 0x1000)) : (oFind.Whole := !(Style & 0x1000))
 	FindSearch(1)
 	FindAll()
@@ -4709,8 +4756,8 @@ FindAll() {
 		El := R.parentElement()
 		If (El.TagName = "INPUT" || El.className ~= "^(button|title|param)$") && !R.collapse(0)  ;;	https://msdn.microsoft.com/en-us/library/ff976065(v=vs.85).aspx
 			Continue
-		;; R.execCommand("BackColor", 0, "EF0FFF")
-		;; R.execCommand("ForeColor", 0, "FFEEFF")
+		; R.execCommand("BackColor", 0, "EF0FFF")
+		; R.execCommand("ForeColor", 0, "FFEEFF")
 		R.collapse(0), ++Matches
 	}
 	GuiControl, F:Text, FindMatches, % Matches ? Matches : ""
@@ -4805,16 +4852,16 @@ MS_Select(EL) {
 		oMS.ELSel := EL
 		
 	oMS.ELSel.style.backgroundColor := "#" ColorSelMouseHover
-	oMS.ELSel.style.color := "#" ColorBgOriginal
+	oMS.ELSel.style.color := "#" ColorSelMouseHoverText
 	
 	Loop % oMS.ELSel.all.length 
-		oMS.ELSel.all[A_Index-1].style.color := "#" ColorBgOriginal
+		oMS.ELSel.all[A_Index-1].style.color := "#" ColorSelMouseHoverText
 		 
 	; ToolTip % oMS.ELSel.all.length "`n" oMS.TextColor2.OuterText "`n" EL.Name "`n" el.style.color 
 }
  
 	;; _________________________________________________ Load JScripts _________________________________________________
-
+ 
 ChangeCSS(id, css) {	;;  https://webo.in/articles/habrahabr/68-fast-dynamic-css/ 
 	oDoc.getElementById(id).styleSheet.cssText := css
 }
@@ -4826,7 +4873,7 @@ LoadJScript() {
 html =
 (
 <head>
-	<style id='css_ColorBg' type="text/css">.title, .button, .divwork {background-color: #%ColorBg%;}</style>
+	<style id='css_ColorBg' type="text/css">body, .title, .button, .divwork {background-color: #%ColorBg%;}</style>
 	<style id='css_PreOverflowHide' type="text/css">%PreOver_%</style>
 	<style id='css_Body' type="text/css">%BodyWrap_%</style>
 	<style id='css_Test' type="text/css"></style>
@@ -4842,7 +4889,6 @@ html =
 }
 body {  
 	overflow: hidden;
-	background-color: #%ColorBgOriginal%;
 }
 .divwork { 
 	position: absolute;
@@ -4918,14 +4964,14 @@ pre {
 }
 #anchor {
 	background-color: #%ColorSelAnchor%;
-}
+} 
 </style>
 
 </head>
 
-<body id='body'>
-<div id='divwork1' class='divwork' onscroll='scrolldiv(this)' onresize='resizediv(this)'></div>
-<div id='divwork2' class='divwork' onscroll='scrolldiv(this)' onresize='resizediv(this)'></div>
+<body id='body'> 
+	<div id='divwork1' class='divwork' onscroll='scrolldiv(this)' onresize='resizediv(this)'></div>
+	<div id='divwork2' class='divwork' onscroll='scrolldiv(this)' onresize='resizediv(this)'></div>
 </body>
 
 <script type="text/javascript">
@@ -5000,6 +5046,7 @@ pre {
 		ButtonOverColor = el.style.color; 
 		el.style.color = "#%ColorBgOriginal%";
 		el.style.border = "1px solid"; 
+		el.style.borderColor = "#%ColorFont%";
 	}
 	function onmouseup(el, man) { 
 		el.style.backgroundColor = "";
@@ -5009,7 +5056,7 @@ pre {
 			document.documentElement.focus();
 	}
 	function onmouseover(el) {   
-		// ButtonOverColor = el.style.color;
+		ButtonOverColor = el.style.color;
 		el.style.zIndex = "2";
 		el.style.border = "1px solid"; 
 		el.style.borderColor = "#%ColorFont%";
@@ -5054,8 +5101,9 @@ oDoc.Write("<!DOCTYPE html><head><meta http-equiv=""X-UA-Compatible"" content=""
 oDoc.Close() 
 oDivWork1 := oDoc.getElementById("divwork1")
 oDivWork2 := oDoc.getElementById("divwork2") 
+ 
 ComObjConnect(ontooltip := oDoc.getElementById("tooltipevent"), "tooltip_")
-}
+} 
 
 	;; _________________________________________________ Doc Events _________________________________________________
 
@@ -5219,7 +5267,7 @@ ButtonClick(oevent) {
 	thisid := oevent.id
 	If (thisid = "copy_wintext")
 		o := oDoc.getElementById("wintextcon")
-		, GetKeyState("Shift") ? ClipAdd(o.OuterText, 1) : (Clipboard := o.OuterText), HighLight(o, 500)
+		, GetKeyState("Shift") ? ClipAdd(o.OuterText, 1) : (Clipboard := o.OuterText), HighLight([o])
 	Else If (thisid = "wintext_hidden")
 	{
 		R := oBody.createTextRange(), R.collapse(1), R.select()
@@ -5249,26 +5297,29 @@ ButtonClick(oevent) {
 		If !MenuIdView
 			oJScript.removemenuitem(preclone, ".menuitemid")
 		GetKeyState("Shift") ? ClipAdd(preclone.OuterText, 1) : (Clipboard := preclone.OuterText)
-		HighLight(pre_menutext, 500), preclone := ""
+		HighLight([pre_menutext]), preclone := ""
 	}
 	Else If (thisid = "copy_button")
 		o := oDoc.all.item(oevent.sourceIndex + 2)
-		, GetKeyState("Shift") ? ClipAdd(o.OuterText, 1) : (Clipboard := o.OuterText), HighLight(o, 500)
+		, GetKeyState("Shift") ? ClipAdd(o.OuterText, 1) : (Clipboard := o.OuterText), HighLight([o])
 	Else If (thisid = "settext_button")
 		ControlSetText, , % oDoc.all.item(oevent.sourceIndex + 4).OuterText, % "ahk_id" oevent.value 
 	Else If thisid = copy_alltitle
 	{
+		HighLight([oDoc.getElementById("wintitle1")
+			, oDoc.getElementById("wintitle2")
+			, oDoc.getElementById("wintitle3")]) 
+		
 		Text := (t:=oDoc.getElementById("wintitle1").OuterText) . (t = "" ? "" : " ")
 		. oDoc.getElementById("wintitle2").OuterText " " oDoc.getElementById("wintitle3").OuterText
 		GetKeyState("Shift") ? ClipAdd(Text, 1) : (Clipboard := Text)
-		HighLight(oDoc.getElementById("wintitle1"), 500)
-		HighLight(oDoc.getElementById("wintitle2"), 500, 0), HighLight(oDoc.getElementById("wintitle2_"), 500, 0)
-		HighLight(oDoc.getElementById("wintitle3"), 500, 0), HighLight(oDoc.getElementById("wintitle3_"), 500, 0)
 	}
 	Else If thisid = copy_sbtext
 	{
+		elements := []
 		Loop % oDoc.getElementById("copy_sbtext").name
-			el := oDoc.getElementById("sb_field_" A_Index), HighLight(el, 500, (A_Index = 1)), Text .= el.OuterText "`r`n"
+			el := oDoc.getElementById("sb_field_" A_Index), elements.Push(el), Text .= el.OuterText "`r`n"
+		HighLight(elements)
 		Text := RTrim(Text, "`r`n"), GetKeyState("Shift") ? ClipAdd(Text, 1) : (Clipboard := Text)
 	}
 	Else If thisid = keyname
@@ -5354,7 +5405,7 @@ ButtonClick(oevent) {
 		Process, Close, % oOther.WinPID
 	Else If (thisid = "win_close" && (oOther.WinPID || !ToolTip("Invalid parametrs", 500)) && ConfirmAction("Window close?"))
 		WinClose, % "ahk_id" oOther.WinID
-	Else If (thisid = "control_destroy" && (WinExist("ahk_id" oOther.ControlID) || !ToolTip("window not exist", 500)) && ConfirmAction("Destroy window?"))
+	Else If (thisid = "control_destroy" && (WinExist("ahk_id" oOther.ControlID) || !ToolTip("window not exist", 500)) && ConfirmAction("Window close?"))
 			WinClose, % "ahk_id" oOther.ControlID     ;; DllCall("DestroyWindow", "Ptr", oOther.ControlID)   ;;  не работает
 	Else If (thisid = "control_show_hide" || thisid = "window_show_hide")
 	{
@@ -5392,7 +5443,7 @@ ButtonClick(oevent) {
 		RunAhkPath(ExtraFile("AccViewer Source"), oPubObjGUID)
 	Else If thisid = run_iWB2Learner
 		RunAhkPath(ExtraFile("iWB2 Learner"))
-	Else If thisid = run_Window_Detective
+	Else If (thisid = "run_Window_Detective" && ConfirmAction("Run Window Detective?"))
 	{
 		Minimize()
 		If WinExist("Window Detective ahk_class Qt5QWindowIcon ahk_exe Window Detective.exe")
