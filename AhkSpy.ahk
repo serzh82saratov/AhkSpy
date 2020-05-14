@@ -26,7 +26,7 @@
     Актуальный исходник - https://raw.githubusercontent.com/serzh82saratov/AhkSpy/master/AhkSpy.ahk
 */
 
-Global AhkSpyVersion := 4.33
+Global AhkSpyVersion := 4.34
 
 	;; _________________________________________________ Caption _________________________________________________
 
@@ -60,15 +60,15 @@ If !InStr(FileExist(Path_User), "D")
 
 
 Global MemoryFontSize := IniRead("MemoryFontSize", 0)
-, FontBold := IniRead("FontBold", 0)
-, FontSize := MemoryFontSize ? IniRead("FontSize", "15") : 15			;;  Размер шрифта
-, FontFamily :=  "Arial"												;;  Шрифт - Times New Roman | Georgia | Myriad Pro | Arial
-, FontWeight := FontBold ? 900 : 500									;;  Насыщенность шрифта
-, HeigtButton := 32														;;  Высота кнопок
-, RangeTimer := 100														;;  Период опроса данных, увеличьте на слабом ПК
-  HeightStart := 530													;;  Высота окна при старте
-  wKey := 142															;;  Ширина кнопок
-  wColor := wKey // 2													;;  Ширина цветного фрагмента
+	, FontBold := IniRead("FontBold", 0)
+	, FontSize := MemoryFontSize ? IniRead("FontSize", "15") : 15			;;  Размер шрифта
+	, FontFamily :=  "Arial"												;;  Шрифт - Times New Roman | Georgia | Myriad Pro | Arial
+	, FontWeight := FontBold ? 900 : 500									;;  Насыщенность шрифта
+	, HeigtButton := 32														;;  Высота кнопок
+	, RangeTimer := 100														;;  Период опроса данных, увеличьте на слабом ПК
+	HeightStart := 530														;;  Высота окна при старте
+	wKey := 142																;;  Ширина кнопок
+	wColor := wKey // 2														;;  Ширина цветного фрагмента
 
 DarkTheme := IniRead("DarkTheme", 0)
 If !DarkTheme
@@ -125,6 +125,7 @@ Else
 }
 Global ColorBgOriginal := ColorBg
 
+
 Global ThisMode := IniRead("StartMode", "Control"), LastModeSave := (ThisMode = "LastMode")
 , ThisMode := ThisMode = "LastMode" ? IniRead("LastMode", "Control") : ThisMode
 , ActiveNoPause := IniRead("ActiveNoPause", 0), MemoryPos := IniRead("MemoryPos", 0), MemorySize := IniRead("MemorySize", 0)
@@ -158,11 +159,12 @@ Global ThisMode := IniRead("StartMode", "Control"), LastModeSave := (ThisMode = 
 Global _S1 := "<span>", _S2 := "</span>", _DB := "<span style='position: relative; margin-right: 1em;'></span>"
 
 , _BT1 := "<span class='button' unselectable='on' oncontextmenu='return false' contenteditable='false' ", _BT2 := "</span>"
-, _BP1 := "<span contenteditable='false' oncontextmenu='return false' class='BB'>" _BT1 "style='color: #" ColorParam "' name='pre' ", _BP2 := "</span></span>"
 
   ;;	Решает проблему запуска ресайза кнопки когда выделен текст, но не получается установить свой курсор
-;; , _BP1 := "<span class='button' unselectable='on' oncontextmenu='return false' onmouseleave='OnButtonOut (this)' onmousedown='OnButtonDown (this)' "
-	;; . "onmouseup='OnButtonUp (this)' onmouseover='OnButtonOver (this)' contenteditable='false' style='color: #" ColorParam "' name='pre' ", _BP2 := "</span>"
+, _BP1 := "<span contenteditable='false'><span class='button' unselectable='on' oncontextmenu='return false'"
+	. " contenteditable='false' style='color: #" ColorParam "' name='pre' ", _BP2 := "</span></span>"
+  ;;	Прежнее
+; , _BP1 := "<span contenteditable='false' oncontextmenu='return false' class='BB'>" _BT1 "style='color: #" ColorParam "' name='pre' ", _BP2 := "</span></span>"
 
 , _BB1 := "<span contenteditable='false' oncontextmenu='return false' class='BB' style='height: 0px;'>" _BT1 " ", _BB2 := "</span></span>"
 , _T1 := "<span class='box'><span class='line'><span class='hr'></span><span class='con'><span class='title' ", _T2 := "</span></span></span><br>"
@@ -413,7 +415,8 @@ If !UpdRegister
 WinSet, TransParent, 255, ahk_id %hGui%
 DllCall("RedrawWindow", "Ptr", hGui, "Uint", 0, "Uint", 0, "Uint", 0x1|0x4)
 
-; MsgBox % oDoc.documentMode  "`n" oDoc.compatMode
+
+; MsgBox % oDoc.documentMode  "`n" oDoc.compatMode  "`n" oDoc.designMode := "On"
 Return
 
 	;; _________________________________________________ Hotkey`s _________________________________________________
@@ -4956,14 +4959,14 @@ pre {
 	line-height: 1.4em;
 }
 .button {
+	cursor: hand;
 	position: relative;
 	border: 1px dotted;
 	border-color: #%ColorFont%;
 	white-space: pre;
-	cursor: pointer;
 }
 .BB {
-	display: inline-block;
+	display: inline-block; 
 } 
 .param {
 	color: #%ColorParam%;
@@ -5048,8 +5051,7 @@ pre {
 		//		if (WordWrap == 1)
 		//			return
 		//		shift(document.documentElement, 1);
-		//	}
-		
+		//	} 
 	function resizediv(el) {
 		//	tooltip(el.clientWidth)
 		shift(el, 0);
@@ -5077,7 +5079,7 @@ pre {
 		ButtonOverColor = el.style.color;
 		el.style.zIndex = "2";
 		el.style.border = "1px solid"; 
-		el.style.borderColor = "#%ColorFont%";
+		el.style.borderColor = "#%ColorFont%"; 
 		ButtonOver = el;
 		return 0;
 	}
@@ -5120,7 +5122,7 @@ oDoc.Close()
 oDivWork1 := oDoc.getElementById("divwork1")
 oDivWork2 := oDoc.getElementById("divwork2") 
  
-ComObjConnect(ontooltip := oDoc.getElementById("tooltipevent"), "tooltip_")
+ComObjConnect(ontooltip := oDoc.getElementById("tooltipevent"), "tooltip_") 
 } 
 
 	;; _________________________________________________ Doc Events _________________________________________________
@@ -5128,6 +5130,17 @@ ComObjConnect(ontooltip := oDoc.getElementById("tooltipevent"), "tooltip_")
 tooltip_onclick() {
 	ToolTip(oJScript.key1, 500)
 }
+
+BodyExistCheck() { 
+	If (oDivNew.innerHTML != "")
+		return 
+	LoadJScript()
+	DivWorkIndex := ""
+	oBody := oDoc.body
+	oDocEl := oDoc.documentElement 
+	Write_%ThisMode%()  
+} 
+
 
 Class Events {  ;;	http://forum.script-coding.com/viewtopic.php?pid=82283#p82283
 	onclick() {
@@ -5229,7 +5242,7 @@ Class Events {  ;;	http://forum.script-coding.com/viewtopic.php?pid=82283#p82283
 			return 
 		oJScript.onmousedown(oDoc.parentWindow.event.srcElement)
     }
-    onmouseover() {  
+    onmouseover() {   
 		if (oDoc.parentWindow.event.srcElement.className = "button")
 			return oJScript.onmouseover(oDoc.parentWindow.event.srcElement) 
 		If oMS.Selection
@@ -5242,14 +5255,15 @@ Class Events {  ;;	http://forum.script-coding.com/viewtopic.php?pid=82283#p82283
 			return oJScript.onmouseout(oDoc.parentWindow.event.srcElement) 
 		MS_Cancel()
     }
-	onselectionchange() {
+	onselectionchange() { 
 		e := oDoc.parentWindow.event
 		oMS.SCX := e.clientX, oMS.SCY := e.clientY
 		SetTimer, MS_SelectionCheck, -70
+		SetTimer, BodyExistCheck, -1000
     }
 	onselectstart() {
 		SetTimer, MS_Cancel, -8
-    }
+    } 
 	
 	SendMode() {
 		IniWrite(SendMode := {Send:"SendInput",SendInput:"SendPlay",SendPlay:"SendEvent",SendEvent:"Send"}[SendMode], "SendMode")
