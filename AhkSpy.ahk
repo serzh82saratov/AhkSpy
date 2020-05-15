@@ -26,26 +26,27 @@
     Актуальный исходник - https://raw.githubusercontent.com/serzh82saratov/AhkSpy/master/AhkSpy.ahk
 */
 
-Global AhkSpyVersion := 4.35
+
+Global AhkSpyVersion := 4.36
 
 	;; _________________________________________________ Caption _________________________________________________
 
 ComObjError(false)
 
-
-Global WS_EX_APPWINDOW := 0x40000 , WS_CHILDWINDOW := 0x40000000, WS_EX_LAYERED := 0x80000
+Global WS_EX_APPWINDOW := 0x40000, WS_CHILDWINDOW := 0x40000000, WS_EX_LAYERED := 0x80000
 		, WS_EX_TRANSPARENT := 0x20, WS_POPUP := 0x80000000, WS_EX_NOACTIVATE := 0x8000000
 
 p1 = %1%
 If (p1 = "Zoom")
 	GoTo ShowZoom
-	
+
 SingleInstance()
 #NoEnv
 #UseHook
+#KeyHistory 0
+
 SetBatchLines, -1
 ListLines, Off
-#KeyHistory 0
 DetectHiddenWindows, On
 CoordMode, Pixel
 CoordMode, Menu
@@ -137,8 +138,9 @@ Global ThisMode := IniRead("StartMode", "Control"), LastModeSave := (ThisMode = 
 , c_ShowStyles := IniRead("c_ShowStyles", 0), ViewStrPos := IniRead("ViewStrPos", 0), OnlyShiftTab := IniRead("OnlyShiftTab", 0)
 , WordWrap := IniRead("WordWrap", 0), PreMaxHeightStr := IniRead("MaxHeightOverFlow", "1 / 3"), UpdRegister := IniRead("UpdRegister2", 0)
 , UseUIA := IniRead("UseUIA", 0), UIAAlienDetect := IniRead("UIAAlienDetect", 0), MinimizeEscape := IniRead("MinimizeEscape", 0)
-, DetectHiddenText := IniRead("DetectHiddenText", "on"), MoveTitles := IniRead("MoveTitles", 1)
-, DynamicControlPath := IniRead("DynamicControlPath", 0), DynamicAccPath := IniRead("DynamicAccPath", 0)
+, DetectHiddenText := IniRead("DetectHiddenText", "on"), MoveTitles := IniRead("MoveTitles", 1), DynamicAccPath := IniRead("DynamicAccPath", 0)
+, DynamicControlPath := IniRead("DynamicControlPath", 0), ActiveScriptAllowChange := IniRead("ActiveScriptAllowChange", 0)
+
 
 , UpdRegisterLink := "https://u.to/zeONFA", testvar, oDivOld, oDivNew, DivWorkIndex := 2, oDivWork1, oDivWork2
 
@@ -200,11 +202,11 @@ If MemoryAnchor
 ; ObjRegisterActive(oPubObj, oPubObjGUID := CreateGUID())
 
 
+	
+ActiveScriptAllow()
 FixIE()
-SeDebugPrivilege()
-
+SeDebugPrivilege() 
 OnExit("Exit")
-
 
 CreateMarkerInvert()
 ShowMarkersCreate("oShowAccMarkers", "26419F")  
@@ -227,6 +229,7 @@ ComObjConnect(oDoc, Events)
 OnMessage(0x133, "WM_CTLCOLOREDIT")
 OnMessage(0x201, "WM_LBUTTONDOWN")
 OnMessage(0x208, "WM_MBUTTONUP")
+OnMessage(0x204, "WM_RBUTTONDOWN") 
 OnMessage(0x7B, "WM_CONTEXTMENU")
 OnMessage(0xA1, "WM_NCLBUTTONDOWN")
 OnMessage(0x6, "WM_ACTIVATE")
@@ -366,9 +369,12 @@ Menu, Help, Add, % name := "About", % oMenu.Help[name] := "Sys_Help"
 Menu, Help, Add, % name := "About english", % oMenu.Help[name] := "Sys_Help"
 Menu, Sys, Add, Help, :Help
 
+
 Menu, Script, Add, % name := "Open script dir", % oMenu.Script[name] := "Help_OpenScriptDir"
 Menu, Script, Add, % name := "Open user dir", % oMenu.Script[name] := "Help_OpenUserDir"
 Menu, Script, Add
+Menu, Script, Add, % name := "Active script allow change", % oMenu.Script[name] := "_ActiveScriptAllowChange"
+Menu, Script, % ActiveScriptAllowChange ? "Check" : "UnCheck", % name 
 Menu, Script, Add, % name := "Escape button to minimize", % oMenu.Script[name] := "_MinimizeEscape"
 Menu, Script, % MinimizeEscape ? "Check" : "UnCheck", % name 
 Menu, Script, Add
@@ -414,12 +420,16 @@ If !UpdRegister
 WinSet, TransParent, 255, ahk_id %hGui%
 DllCall("RedrawWindow", "Ptr", hGui, "Uint", 0, "Uint", 0, "Uint", 0x1|0x4)
 
-
 ; MsgBox % oDoc.documentMode  "`n" oDoc.compatMode  "`n" oDoc.designMode := "On"
 Return
 
 	;; _________________________________________________ Hotkey`s _________________________________________________
 
+
+#If isAhkSpy && Sleep != 1 && OnlyShiftTab && !ActiveNoPause && !isPaused && ThisMode != "Hotkey" && IsHwndUnderMouse(hColorProgress)
+
++RButton:: SetTimer(Func("WM_RBUTTONDOWN").Bind(0, 0, 0, hColorProgress), "-" 1)  ; WM_RBUTTONDOWN(0, 0, 0, hColorProgress)
+	
 #If Shift_Tab_Work
 
 +Tab:: Return
@@ -543,11 +553,12 @@ Esc::
 
 #If isAhkSpy && Sleep != 1 && IsIEFocus() && (oDoc.selection.createRange().parentElement.isContentEditable)
 
-~^+vk41:: oDoc.execCommand("SelectAll")							;;  Ctrl+Shift+A
-
-~^vk41:: oBody.createTextRange().select()						;;  Ctrl+A
+^+vk41:: oDoc.execCommand("SelectAll")							;;  Ctrl+Shift+A
 
 #If isAhkSpy && Sleep != 1 && IsIEFocus()
+
+^vk41:: R := oBody.createTextRange(), R.moveToElementText(oDivNew), R.select()		;;  Ctrl+A
+; ^vk41:: oBody.createTextRange().select()										;;  Ctrl+A
 
 ^vk5A:: oDoc.execCommand("Undo")							;;  Ctrl+Z
 
@@ -632,6 +643,11 @@ RButton::
 IsAhkSpyUnderMouse(Byref hc) {
 	MouseGetPos, , , hw, hc, 2
 	Return (hw = hGui)
+}
+
+IsHwndUnderMouse(hwnd) {
+	MouseGetPos, , , , hc, 2
+	Return (hc = hwnd)
 }
 	;; _________________________________________________ Mode_Win _________________________________________________
 	
@@ -888,7 +904,7 @@ Mode_Control:
 	If isFindView
 		FindNewText()
 
-Loop_Control: 
+Loop_Control:
 	If (WinActive("ahk_id" hGui) && !ActiveNoPause) || Sleep = 1
 		GoTo Repeat_Loop_Control
 	If !OnlyShiftTab && Spot_Control()
@@ -1004,12 +1020,12 @@ Spot_Control(NotHTML = 0) {
 	MouseGetPos, , , h
 	If (h = hGui || h = oOther.hZoom || h = oOther.hZoomLW)
 		Return HideAllMarkers()
-	
-	If UseUIA && exUIASub.ElementFromPoint(MXS, MYS)
+		
+	If UseUIA && (1, ObjRelease(exUIASub.pElement)) && exUIASub.ElementFromPoint(MXS, MYS)
 	{ 
 		UIAPID := exUIASub.CurrentProcessId
 		CurrentControlTypeIndex := Format("0x{:X}", exUIASub.CurrentControlType)
-		CurrentControlTypeName := exUIASub.ControlType(CurrentControlTypeIndex)
+		CurrentControlTypeName := exUIASub.__ControlType(CurrentControlTypeIndex)
 		CurrentAutomationId := exUIASub.CurrentAutomationId  
 		CurrentLocalizedControlType := exUIASub.CurrentLocalizedControlType
 		UIAHWND := exUIASub.CurrentNativeWindowHandle
@@ -1480,27 +1496,35 @@ WBGet(hwnd) {
 	;;  http://www.autohotkey.com/board/topic/77888-accessible-info-viewer-alpha-release-2012-09-20/
 	   
 AccInfoUnderMouse(mx, my, wx, wy, cx, cy, caX, caY, WinID, ControlID) {
-	Static h, WM_GETOBJECT := 0x003D 
-	Global AccObj
-	If Not h
-		h := DllCall("LoadLibrary", "Str", "oleacc", "Ptr")
+	Static hLibrary, AccObj, WM_GETOBJECT := 0x003D  
+	
+	If (WinID = "") { 
+		AccObj := ""
+		Return
+	}
+	If !hLibrary
+		hLibrary := DllCall("LoadLibrary", "Str", "oleacc", "Ptr")
+
+	AccObj := ""
+	If (oOther.AccCLOAKEDWinID != oPubObj.Acc.WinID)
+		ObjRelease(oPubObj.Acc.pAccObj)
 		
 		;;  https://docs.microsoft.com/en-us/windows/win32/api/oleacc/nf-oleacc-accessibleobjectfrompoint
 	If DllCall("oleacc\AccessibleObjectFromPoint"
-		, "Int64", mx&0xFFFFFFFF|my<<32, "Ptr*", pAccObj
-		, "Ptr", VarSetCapacity(varChild,8+2*A_PtrSize,0)*0+&varChild) = 0
+		, "Int64", mx & 0xFFFFFFFF | my << 32, "Ptr*", pAccObj
+		, "Ptr", VarSetCapacity(varChild, 8 + 2 * A_PtrSize, 0) * 0 + &varChild) = 0
 		
-		;;  http://forum.script-coding.com/viewtopic.php?pid=139109#p139109
-		
-		; Acc := ComObjEnwrap(9, pacc, 1), child := NumGet(varChild,8,"UInt")
-		AccObj := ComObject(9, pAccObj, 1)
-		ObjAddRef(pAccObj) 
-		child := NumGet(varChild, 8, "UInt")
-
+	; http://forum.script-coding.com/viewtopic.php?pid=139109#p139109
+	; Acc := ComObjEnwrap(9, pacc, 1), child := NumGet(varChild,8,"UInt")
+	AccObj := ComObject(9, pAccObj, 1)
+	
 	If !IsObject(AccObj)
-		Return 
-		
-	SendMessage, WM_GETOBJECT, 0, 1, , ahk_id %ControlID%
+		Return
+	
+	ObjAddRef(pAccObj) 
+	child := NumGet(varChild, 8, "UInt")
+
+	SendMessage, WM_GETOBJECT, 0, 1, , % "ahk_id" ControlID ? ControlID : WinID
 	
 	oPubObj.Acc := {AccObj: Object(AccObj), child: child, WinID: WinID, ControlID: ControlID, pAccObj: pAccObj} 
 	
@@ -1598,34 +1622,30 @@ AccInfoUnderMouse(mx, my, wx, wy, cx, cy, caX, caY, WinID, ControlID) {
 	If (role != "" && irole != "")
 		, code .= _T1 " id='P__Focus__Role_Acc'" _T1P "> ( Focus - Role ) </span>" _T2 _PRE1 "<span name='MS:'>" TransformHTML(role) "</span>"
 		. _DP "<span class='param' name='MS:N'>code: </span><span name='MS:'>" irole "</span>" _PRE2 
-	
-	ObjRelease(pAccObj)
+	 
 	Return code
-} 
-
-CL() {
-	If !oPubObj.Acc.CLOAKED
-		Return 
-	Exit
 }
 
-EVENT_OBJECT_CLOAKED(hWinEventHook, event, hwnd, idObject, idChild) {
-	Global AccObj
+EVENT_OBJECT_CLOAKED(hWinEventHook, event, hwnd, idObject, idChild) { 
 	Critical
 	If (idObject || idChild) || (hwnd != oPubObj.Acc.WinID)
 		Return
 	; ToolTip % ComObjType(AccObj, "Name") "`n" A_ThisFunc
-	AccObj := ""
 	oPubObj.Acc.CLOAKED := 1 
+	AccInfoUnderMouse("", "", "", "", "", "", "", "", "", "")
+	oOther.AccCLOAKEDpAccObj := oPubObj.Acc.pAccObj
+	oOther.AccCLOAKEDWinID := oPubObj.Acc.WinID
 }
 
 EVENT_OBJECT_UNCLOAKED(hWinEventHook, event, hwnd, idObject, idChild) {
 	Critical
-	If (idObject || idChild) || (hwnd != oPubObj.Acc.WinID)
+	If (idObject || idChild) || (hwnd != oOther.AccCLOAKEDWinID)
 		Return 
-	; ToolTip % "`n" A_ThisFunc
-	ObjRelease(oPubObj.Acc.pAccObj)
+	; ToolTip % hwnd "`n" oOther.AccCLOAKEDpAccObj "`n" A_ThisFunc
+	ObjRelease(oOther.AccCLOAKEDpAccObj)
 	oPubObj.Acc.CLOAKED := 0
+	oOther.AccCLOAKEDpAccObj := ""
+	oOther.AccCLOAKEDWinID := ""
 }
  
 accDoDefaultAction() { 
@@ -1798,7 +1818,6 @@ Acc_ObjectFromPoint(ByRef _idChild_ = "", x = "", y = "") {
 		, "Ptr*", pacc, "Ptr", VarSetCapacity(varChild,8+2*A_PtrSize,0)*0+&varChild)=0
 		Return ComObjEnwrap(9,pacc,1), _idChild_:=NumGet(varChild,8,"UInt")
 }
-
 Acc_ObjectFromWindow(hWnd, idObject = 0) {
 	If DllCall("oleacc\AccessibleObjectFromWindow", "Ptr", hWnd, "UInt", idObject&=0xFFFFFFFF
 		, "Ptr", -VarSetCapacity(IID,16)+NumPut(idObject==0xFFFFFFF0?0x46000000000000C0:0x719B3800AA000C81
@@ -1819,43 +1838,39 @@ Acc_Query(Acc) {
 
 	;; _________________________________________________ UIA _________________________________________________
 
-class UIASub {
+Class UIASub {
 	__New() { 
 		Try this.pUIA := ComObjCreate("{ff48dba4-60ef-4201-aa87-54103eef594e}","{30cbe57d-d9d0-452a-ab13-7ac5ac4825ee}")
 		Catch	
 			Return 0
 	}
 	__Get(member) {
-		If !this.Properties(member, PropI, PropW)
+		If !this.__Properties(member, PropI, PropW)
 			Return 0
-		If this.Hr(DllCall(this.__Vt(PropI, this.pElement), "ptr", this.pElement, "ptr*", out))
-			Return PropW = "BSTR" ? StrGet(out) : out  
-		Return 0
+		If !this.__Hr(DllCall(this.__Vt(PropI, this.pElement), "ptr", this.pElement, "ptr*", out))
+			Return 0
+		Return PropW = "BSTR" ? StrGet(out) : out  
 	}
-	ElementFromPoint(x = "", y = "") {  
-		If this.Hr(DllCall(this.__Vt(7, this.pUIA), "ptr", this.pUIA, "int64"
-			, x = "" ? 0 * DllCall("GetCursorPos", "Int64*", pt) + pt : x & 0xFFFFFFFF | y << 32, "ptr*", pElement))
-			Return this.pElement := pElement
-		Else 
-			Return 0, this.pElement := ""
-	}	
+	__Delete() {
+		ObjRelease(this.pUIA)
+	}
 	__Vt(n, p) {
 		Return NumGet(NumGet(p + 0, "ptr") + n * A_PtrSize, "ptr")
 	}
-	Hr(hr) {
-		; http://blogs.msdn.com/b/eldar/archive/2007/04/03/a-lot-of-hresult-codes.aspx
-		; Static err:={0x8000FFFF:"Catastrophic failure.",0x80004001:"Not implemented.",0x8007000E:"Out of memory."
-		; ,0x80070057:"One or more arguments are not valid.",0x80004002:"Interface not supported.",0x80004003:"Pointer not valid."
-		; ,0x80070006:"Handle not valid.",0x80004004:"Operation aborted.",0x80004005:"Unspecified error.",0x80070005:"General access denied."
-		; ,0x800401E5:"The object identified by this moniker could not be found.",0x80040201:"UIA_E_ELEMENTNOTAVAILABLE"
-		; ,0x80040200:"UIA_E_ELEMENTNOTENABLED",0x80131509:"UIA_E_INVALIDOPERATION",0x80040202:"UIA_E_NOCLICKABLEPOINT"
-		; ,0x80040204:"UIA_E_NOTSUPPORTED",0x80040203:"UIA_E_PROXYASSEMBLYNOTLOADED"} ; //not completed
+	__Hr(hr) {
+		;~ http://blogs.msdn.com/b/eldar/archive/2007/04/03/a-lot-of-hresult-codes.aspx
+		Static err:={0x8000FFFF:"Catastrophic failure.",0x80004001:"Not implemented.",0x8007000E:"Out of memory."
+		,0x80070057:"One or more arguments are not valid.",0x80004002:"Interface not supported.",0x80004003:"Pointer not valid."
+		,0x80070006:"Handle not valid.",0x80004004:"Operation aborted.",0x80004005:"Unspecified error.",0x80070005:"General access denied."
+		,0x800401E5:"The object identified by this moniker could not be found.",0x80040201:"UIA_E_ELEMENTNOTAVAILABLE"
+		,0x80040200:"UIA_E_ELEMENTNOTENABLED",0x80131509:"UIA_E_INVALIDOPERATION",0x80040202:"UIA_E_NOCLICKABLEPOINT"
+		,0x80040204:"UIA_E_NOTSUPPORTED",0x80040203:"UIA_E_PROXYASSEMBLYNOTLOADED"} ; //not completed
 		if hr && (hr &= 0xFFFFFFFF) {
 			Return 0
 		}
 		Return !hr
 	}
-	Properties(name, byref index, byref word) {
+	__Properties(name, byref index, byref word) {
 		Static properties1 := {CurrentProcessId: [20,"int"],CurrentControlType: [21,"CONTROLTYPEID"],CurrentLocalizedControlType: [22,"BSTR"]
 		,CurrentName: [23,"BSTR"],CurrentAcceleratorKey: [24,"BSTR"],CurrentAccessKey: [25,"BSTR"],CurrentHasKeyboardFocus: [26,"BOOL"]
 		,CurrentIsKeyboardFocusable: [27,"BOOL"],CurrentIsEnabled: [28,"BOOL"],CurrentAutomationId: [29,"BSTR"],CurrentClassName: [30,"BSTR"]
@@ -1883,13 +1898,20 @@ class UIASub {
 		If properties2.HasKey(name)
 			Return 1, index := properties2[name][1], word := properties2[name][2] 
 	}
-	ControlType(n) {
+	__ControlType(n) {
 		Static name := {50000:"Button",50001:"Calendar",50002:"CheckBox",50003:"ComboBox",50004:"Edit",50005:"Hyperlink",50006:"Image"
 		,50007:"ListItem",50008:"List",50009:"Menu",50010:"MenuBar",50011:"MenuItem",50012:"ProgressBar",50013:"RadioButton"
 		,50014:"ScrollBar",50015:"Slider",50016:"Spinner",50017:"StatusBar",50018:"Tab",50019:"TabItem",50020:"Text",50021:"ToolBar"
 		,50022:"ToolTip",50023:"Tree",50024:"TreeItem",50025:"Custom",50026:"Group",50027:"Thumb",50028:"DataGrid",50029:"DataItem"
 		,50030:"Document",50031:"SplitButton",50032:"Window",50033:"Pane",50034:"Header",50035:"HeaderItem",50036:"Table",50037:"TitleBar",50038:"Separator"}
 		Return name[n]
+	}
+	ElementFromPoint(x = "", y = "") {  
+		Return this.pElement := this.__Hr(DllCall(this.__Vt(7, this.pUIA), "ptr", this.pUIA, "int64"
+			, x = "" ? 0 * DllCall("GetCursorPos", "Int64*", pt) + pt : x & 0xFFFFFFFF | y << 32, "ptr*", pElement)) ? pElement : 0 
+	}
+	ElementFromHandle(hwnd) {
+		Return this.pElement := this.__Hr(DllCall(this.__Vt(6, this.pUIA), "ptr", this.pUIA, "ptr", hwnd, "ptr*", pElement)) ? pElement : 0 
 	}
 }
 
@@ -2426,6 +2448,12 @@ _DarkTheme:
 	, % oOther.MenuItemExist ? oOther.ThisMenuItem : A_ThisMenuItem
 	Return
 	
+_ActiveScriptAllowChange: 
+	IniWrite(ActiveScriptAllowChange := !ActiveScriptAllowChange, "ActiveScriptAllowChange")
+	Menu, Script, % ActiveScriptAllowChange ? "Check" : "UnCheck"
+	, % oOther.MenuItemExist ? oOther.ThisMenuItem : A_ThisMenuItem
+	Return
+	
 _FontBold: 
 	IniWrite(FontBold := !FontBold, "FontBold")
 	Menu, View, % FontBold ? "Check" : "UnCheck"
@@ -2762,6 +2790,7 @@ Exit() {
 		IniWrite(ThisMode, "LastMode")  
 	oDoc := ""
 	DllCall("ReleaseDC", "UPtr", 0, "UPtr", hDCMarkerInvert)
+	ActiveScriptAllow(1)
 	ExitApp
 }
 
@@ -2796,6 +2825,31 @@ WM_NCLBUTTONDOWN(wp) {
 	}
 }
 
+WM_RBUTTONDOWN(wp, lp, msg, hwnd) { 
+	If (hwnd = hColorProgress && !ActiveNoPause && !isPaused)
+	{ 
+		ToolTip("Spot", 300) 
+		ZoomMsg(7, 0) 
+		ActiveNoPause := 1
+		OnlyShiftTab := 0
+		ZoomMsg(12, 0)
+		SetTimer, Loop_%ThisMode%, -1 
+		SetTimer, RButton_Up_Wait, -1
+	}
+}
+
+RButton_Up_Wait:
+	If GetKeyState("RButton", "P") {
+		SetTimer, %A_ThisLabel%, -30
+		Return
+	}
+	ActiveNoPause := 0
+	OnlyShiftTab := 1
+	ZoomMsg(12, 1)
+	SetTimer, Loop_%ThisMode%, Off
+	SetTimer, ShiftUpHide, -300 
+	Return
+		
 WM_LBUTTONDOWN(wp, lp, msg, hwnd) {
 	If (hwnd = hFindGui)
 	{
@@ -2823,9 +2877,9 @@ WM_LBUTTONDOWN(wp, lp, msg, hwnd) {
 		}
 	}
 }
-
+ 
 OnlyShiftTab_LButton_Up_Wait:
-	KeyWait, LButton
+	KeyWait, LButton 
 	OnlyShiftTab := 1
 	ZoomMsg(12, 1)
 	SetTimer, Loop_%ThisMode%, Off
@@ -3029,6 +3083,23 @@ FixIE() {
 	RegRead, value, HKCU, %Key%, %ExeName%
 	If (value != ver)
 		RegWrite, REG_DWORD, HKCU, %Key%, %ExeName%, %ver%
+}
+
+ActiveScriptAllow(Off = 0) {
+	Static keyInternet := "Software\Microsoft\Windows\CurrentVersion\Internet Settings\Zones\3", IsAllow := 1
+	If !ActiveScriptAllowChange
+		Return
+	If !Off
+	{
+		RegRead, value, HKCU, %KEYInternet%, 1400
+		If (value = 0)   ; Включено
+			Return 
+		IsAllow := 0 
+		RegWrite, REG_DWORD, HKCU, %KEYInternet%, 1400, 0   ; Включить
+		Return
+	}
+	Else If !IsAllow 
+		RegWrite, REG_DWORD, HKCU, %KEYInternet%, 1400, 3   ; Выключить
 }
 
 ObjRegisterActive(Object, CLSID, Flags := 0) {
@@ -4983,20 +5054,21 @@ html =
 	background: none;
 	font-family: %FontFamily%;
 	font-weight: %FontWeight%;
-	color: #%ColorFont%;
+	color: #%ColorFont%; 
+	// word-spacing: 0.5em;
 }
 body {  
 	overflow: hidden;
 }
 .divwork { 
-	position: absolute;
+	position: absolute; 
 	top: 5px;
 	left: 5px;
 	right: 1px;
 	bottom: 1px; 
 	font-size: %FontSize%px;
 	visibility: hidden;
-	overflow: auto;   
+	overflow: auto;
 	scrollbar-face-color: #%ColorScrollFace%;			/* Цвет ползунка  */
     scrollbar-arrow-color: #%ColorScrollArrows%;		/* Цвет стрелок */
     scrollbar-base-color: #%ColorScrollBack%; 	/* Цвет полосы */
@@ -5226,7 +5298,7 @@ Class Events {  ;;	http://forum.script-coding.com/viewtopic.php?pid=82283#p82283
 			Hotkey_Hook(1)
 	}
 	ondblclick() {
-		Static wordchar := "[_#\.\w]"
+		Static wordchar := "(*UCP)[_²#\.\w]"
 		oevent := oDoc.parentWindow.event.srcElement
 		
 		If (oevent.className = "button" || oevent.tagname = "button")
@@ -5240,8 +5312,9 @@ Class Events {  ;;	http://forum.script-coding.com/viewtopic.php?pid=82283#p82283
 				: (rng.moveEnd("character", -1), len := StrLen(rng.text))) 
 			} 
 			While !b {
-				rng.moveStart("character", -1), (SubStr(rng.text, 1, 1) ~= wordchar ? 0
-					: (rng.moveStart("character", 1), b := 1)) 
+				rng.moveStart("character", -1) 
+				(SubStr(rng.text, 1, 1) ~= wordchar ? 0
+				: (rng.moveStart("character", 1), b := 1)) 
 			}
 			sel := rng.text, rng.moveEnd("character", StrLen(RTrim(sel)) - StrLen(sel)), rng.select()   
 		}
@@ -6400,6 +6473,14 @@ CreateCompatibleDC(hdc=0) {
 	Return DllCall("CreateCompatibleDC", "UPtr", hdc)
 }
 
+
+/*
+
+4.22 > 4.30
+https://github.com/serzh82saratov/AhkSpy/commit/ce7c5109e827576ba4e4b74b0b31d3ccffe611fa#diff-1d3a42ff250882b23a486cbb14edea43
+
+
+*/
 	;; _________________________________________________ End _________________________________________________
 
 	;;)
