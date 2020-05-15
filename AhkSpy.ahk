@@ -27,7 +27,7 @@
 */
 
 
-Global AhkSpyVersion := 4.37
+Global AhkSpyVersion := 4.38
 
 	;; _________________________________________________ Caption _________________________________________________
 
@@ -139,7 +139,7 @@ Global ThisMode := IniRead("StartMode", "Control"), LastModeSave := (ThisMode = 
 , WordWrap := IniRead("WordWrap", 0), PreMaxHeightStr := IniRead("MaxHeightOverFlow", "1 / 3"), UpdRegister := IniRead("UpdRegister2", 0)
 , UseUIA := IniRead("UseUIA", 0), UIAAlienDetect := IniRead("UIAAlienDetect", 0), MinimizeEscape := IniRead("MinimizeEscape", 0)
 , DetectHiddenText := IniRead("DetectHiddenText", "on"), MoveTitles := IniRead("MoveTitles", 1), DynamicAccPath := IniRead("DynamicAccPath", 0)
-, DynamicControlPath := IniRead("DynamicControlPath", 0), ActiveScriptAllowChange := IniRead("ActiveScriptAllowChange", 0)
+, DynamicControlPath := IniRead("DynamicControlPath", 0), ActiveScriptAllowChange := IniRead("ActiveScriptAllowChange", 1)
 
 
 , UpdRegisterLink := "https://u.to/zeONFA", testvar, oDivOld, oDivNew, DivWorkIndex := 2, oDivWork1, oDivWork2
