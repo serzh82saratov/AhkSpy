@@ -27,7 +27,7 @@
 */
 
 
-Global AhkSpyVersion := 4.36
+Global AhkSpyVersion := 4.37
 
 	;; _________________________________________________ Caption _________________________________________________
 
@@ -212,12 +212,12 @@ CreateMarkerInvert()
 ShowMarkersCreate("oShowAccMarkers", "26419F")  
 ShowMarkersCreate("oShowMarkers", "E14B30")
 
-
 Gui, +AlwaysOnTop +HWNDhGui +ReSize -DPIScale +Owner%hMarkerGui% +E%WS_EX_APPWINDOW% ;   +E%WS_EX_NOACTIVATE%
 Gui, Color, %ColorBgPaused%
 Gui, Add, ActiveX, Border voDoc HWNDhActiveX x0 y+0, HTMLFile
-  ;;	https://docs.microsoft.com/en-us/dotnet/api/system.windows.forms.htmlwindow?view=netframework-4.8
-  ;;	https://developer.mozilla.org/en-US/docs/Web/API/Document_Object_Model
+;	https://docs.microsoft.com/en-us/dotnet/api/system.windows.forms.htmlwindow?view=netframework-4.8
+;	https://developer.mozilla.org/en-US/docs/Web/API/Document_Object_Model
+
 
 LoadJScript()
 oBody := oDoc.body 
@@ -225,6 +225,7 @@ oJScript := oDoc.Script
 oJScript.WordWrap := WordWrap
 oJScript.MoveTitles := MoveTitles
 ComObjConnect(oDoc, Events)
+ActiveScriptAllow(1)
 
 OnMessage(0x133, "WM_CTLCOLOREDIT")
 OnMessage(0x201, "WM_LBUTTONDOWN")
@@ -304,19 +305,6 @@ Menu, Startmode, Add, % name := "Button", % oMenu.Startmode[name] := "_SelStartM
 Menu, Startmode, Add
 Menu, Startmode, Add, % name := "Last Mode", % oMenu.Startmode[name] := "_SelStartMode"
 
-Menu, View, Add, % name := "Remember position", % oMenu.View[name] := "_MemoryPos"
-Menu, View, % MemoryPos ? "Check" : "UnCheck", % name
-Menu, View, Add, % name := "Remember size", % oMenu.View[name] := "_MemorySize"
-Menu, View, % MemorySize ? "Check" : "UnCheck", % name
-Menu, View, Add, % name := "Remember font size", % oMenu.View[name] := "_MemoryFontSize"
-Menu, View, % MemoryFontSize ? "Check" : "UnCheck", % name
-Menu, View, Add, % name := "Remember state zoom", % oMenu.View[name] := "_MemoryStateZoom"
-Menu, View, % MemoryStateZoom ? "Check" : "UnCheck", % name
-Menu, View, Add, % name := "Remember zoom size", % oMenu.View[name] := "_MemoryZoomSize"
-Menu, View, % MemoryZoomSize ? "Check" : "UnCheck", % name
-Menu, View, Add, % name := "Remember anchor", % oMenu.View[name] := "_MemoryAnchor"
-Menu, View, % MemoryAnchor ? "Check" : "UnCheck", % name
-Menu, View, Add
 Menu, View, Add, % name := "Dynamic control path (low speed)", % oMenu.View[name] := "_DynamicControlPath"
 Menu, View, % DynamicControlPath ? "Check" : "UnCheck", % name
 Menu, View, Add, % name := "Dynamic accesible path (low speed, not recommended)", % oMenu.View[name] := "_DynamicAccPath"
@@ -360,16 +348,19 @@ Menu, View, Add, Big text overflow hide, :Overflow
 Menu, Sys, Add, Start mode, :Startmode
 Menu, Startmode, Check, % {"Win":"Window","Control":"Control","Hotkey":"Button","LastMode":"Last Mode"}[IniRead("StartMode", "Control")]
 
-If FileExist(SubStr(A_AhkPath,1,InStr(A_AhkPath,"\",,0,1)) "AutoHotkey.chm")
-	Menu, Help, Add, % name := "AutoHotKey help file", % oMenu.Help[name] := "LaunchHelp"
-Menu, Help, Add, % name := "AutoHotKey official help online", % oMenu.Help[name] := "Sys_Help"
-Menu, Help, Add, % name := "AutoHotKey russian help online", % oMenu.Help[name] := "Sys_Help"
-Menu, Help, Add
-Menu, Help, Add, % name := "About", % oMenu.Help[name] := "Sys_Help"
-Menu, Help, Add, % name := "About english", % oMenu.Help[name] := "Sys_Help"
-Menu, Sys, Add, Help, :Help
-
-
+Menu, Script, Add, % name := "Remember position", % oMenu.Script[name] := "_MemoryPos"
+Menu, Script, % MemoryPos ? "Check" : "UnCheck", % name
+Menu, Script, Add, % name := "Remember size", % oMenu.Script[name] := "_MemorySize"
+Menu, Script, % MemorySize ? "Check" : "UnCheck", % name
+Menu, Script, Add, % name := "Remember font size", % oMenu.Script[name] := "_MemoryFontSize"
+Menu, Script, % MemoryFontSize ? "Check" : "UnCheck", % name
+Menu, Script, Add, % name := "Remember state zoom", % oMenu.Script[name] := "_MemoryStateZoom"
+Menu, Script, % MemoryStateZoom ? "Check" : "UnCheck", % name
+Menu, Script, Add, % name := "Remember zoom size", % oMenu.Script[name] := "_MemoryZoomSize"
+Menu, Script, % MemoryZoomSize ? "Check" : "UnCheck", % name
+Menu, Script, Add, % name := "Remember anchor", % oMenu.Script[name] := "_MemoryAnchor"
+Menu, Script, % MemoryAnchor ? "Check" : "UnCheck", % name
+Menu, Script, Add
 Menu, Script, Add, % name := "Open script dir", % oMenu.Script[name] := "Help_OpenScriptDir"
 Menu, Script, Add, % name := "Open user dir", % oMenu.Script[name] := "Help_OpenUserDir"
 Menu, Script, Add
@@ -381,6 +372,15 @@ Menu, Script, Add
 Menu, Script, Add, Reload, Reload
 Menu, Script, Add, Exit, Exit
 Menu, Sys, Add, Script, :Script
+
+If FileExist(SubStr(A_AhkPath,1,InStr(A_AhkPath,"\",,0,1)) "AutoHotkey.chm")
+	Menu, Help, Add, % name := "AutoHotKey help file", % oMenu.Help[name] := "LaunchHelp"
+Menu, Help, Add, % name := "AutoHotKey official help online", % oMenu.Help[name] := "Sys_Help"
+Menu, Help, Add, % name := "AutoHotKey russian help online", % oMenu.Help[name] := "Sys_Help"
+Menu, Help, Add
+Menu, Help, Add, % name := "About", % oMenu.Help[name] := "Sys_Help"
+Menu, Help, Add, % name := "About english", % oMenu.Help[name] := "Sys_Help"
+Menu, Sys, Add, Help, :Help
 
 Menu, Sys, Add
 Menu, Sys, Add, % name := "Pause", % oMenu.Sys[name] := "_PausedScript"
@@ -2036,7 +2036,8 @@ Write_HotkeyHTML(K, scroll = 0) {
 	. "`n<span name='MS:P'>        </span>" _PRE2
 
 	. _T1 "> ( Key ) </span>" _BT1 " id='numlock'> num " _BT2  _DB  _BT1 " id='locale_change'> locale " _BT2  
-		. _DB  _BT1 " id='hook_reload'> hook reload " _BT2  _DB  _BT1 " id='b_DecimalCode'> " s_DecimalCode " " _BT2  _T2 
+		. _DB  _BT1 " id='hook_reload'> hook reload " _BT2  _DB  _BT1 " id='b_DecimalCode'> " s_DecimalCode " " _BT2
+		. _DB  _BT1 " id='hotkey_clip_cursor'> clip cursor " _BT2  _T2 
 		
 	. _PRE1 "<br><span name='MS:'>" ThisKey "</span>   " _DP "   <span name='MS:'>" VKCode  SCCode "</span>" ThisKeySC 
 	
@@ -2491,7 +2492,7 @@ _MemoryAnchor:
 	If MemoryAnchor
 		IniWrite(oOther.anchor["Win_text"], "Win_Anchor")
 		, IniWrite(oOther.anchor["Control_text"], "Control_Anchor")
-	Menu, View, % MemoryAnchor ? "Check" : "UnCheck", Remember anchor
+	Menu, Script, % MemoryAnchor ? "Check" : "UnCheck", Remember anchor
 	Return
 
 _AnchorFullScroll:
@@ -2594,26 +2595,26 @@ _Spot_Together:
 
 _MemoryPos:
 	IniWrite(MemoryPos := !MemoryPos, "MemoryPos")
-	Menu, View, % MemoryPos ? "Check" : "UnCheck", Remember position
+	Menu, Script, % MemoryPos ? "Check" : "UnCheck", Remember position
 	SavePos()
 	Return
 
 _MemorySize:
 	IniWrite(MemorySize := !MemorySize, "MemorySize")
-	Menu, View, % MemorySize ? "Check" : "UnCheck", Remember size
+	Menu, Script, % MemorySize ? "Check" : "UnCheck", Remember size
 	SaveSize()
 	Return
 
 _MemoryFontSize:
 	IniWrite(MemoryFontSize := !MemoryFontSize, "MemoryFontSize")
-	Menu, View, % MemoryFontSize ? "Check" : "UnCheck", Remember font size
+	Menu, Script, % MemoryFontSize ? "Check" : "UnCheck", Remember font size
 	If MemoryFontSize
 		IniWrite(FontSize, "FontSize")
 	Return
 
 _MemoryZoomSize:
 	IniWrite(MemoryZoomSize := !MemoryZoomSize, "MemoryZoomSize")
-	Menu, View, % MemoryZoomSize ? "Check" : "UnCheck", Remember zoom size
+	Menu, Script, % MemoryZoomSize ? "Check" : "UnCheck", Remember zoom size
 	ZoomMsg(4, MemoryZoomSize)
 	Return
 	
@@ -2640,7 +2641,7 @@ _MarkerInvertFrame:
 
 _MemoryStateZoom:
 	IniWrite(MemoryStateZoom := !MemoryStateZoom, "MemoryStateZoom")
-	Menu, View, % MemoryStateZoom ? "Check" : "UnCheck", Remember state zoom
+	Menu, Script, % MemoryStateZoom ? "Check" : "UnCheck", Remember state zoom
 	IniWrite(oOther.ZoomShow, "ZoomShow")
 	Return
 
@@ -2790,7 +2791,6 @@ Exit() {
 		IniWrite(ThisMode, "LastMode")  
 	oDoc := ""
 	DllCall("ReleaseDC", "UPtr", 0, "UPtr", hDCMarkerInvert)
-	ActiveScriptAllow(1)
 	ExitApp
 }
 
@@ -3745,6 +3745,24 @@ HighLight(elements, time = 500) {
 	Return 1, SetTimer(ot := Func(A_ThisFunc).Bind(0), "-" time)
 }
 
+Hotkey_ClipCursor() { 
+	Static lpRect, _ := VarSetCapacity(lpRect, 16, 0)  
+	DllCall("GetClipCursor", "Ptr", &lpRect) 
+	
+	If NumGet(lpRect, 0, "uint") > 0xffff
+	{ 
+		; WinGetPos, WinX, WinY, WinWidth, WinHeight, % "ahk_id" hActiveX 
+		CoordMode, Mouse, Screen
+		MouseGetPos, X, Y
+		NumPut(X, lpRect, 0, "uint")
+		NumPut(Y, lpRect, 4, "uint")
+		NumPut(X, lpRect, 8, "uint")
+		NumPut(Y, lpRect, 12, "uint") 
+		DllCall("ClipCursor", "Ptr", &lpRect + 0) 
+	}
+	Else
+		DllCall("ClipCursor", "Ptr", 0) 
+}
 	;; _________________________________________________ Command as function _________________________________________________
 
 IniRead(Key, Error := " ") {
@@ -5540,6 +5558,8 @@ ButtonClick(oevent) {
 		Suspend Off
 		bool := Hotkey_Arr("Hook"), Hotkey_SetHook(0), Hotkey_SetHook(1), Hotkey_Arr("Hook", bool), ToolTip("Ok", 300)
 	}
+	Else If thisid = hotkey_clip_cursor
+		Hotkey_ClipCursor()
 	Else If thisid = pause_button
 		Gosub, PausedScript
 	Else If (thisid = "infolder" || thisid = "command_line_infolder")
