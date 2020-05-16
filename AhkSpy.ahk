@@ -27,7 +27,7 @@
 */
 
 
-Global AhkSpyVersion := 4.38
+Global AhkSpyVersion := 4.39
 
 	;; _________________________________________________ Caption _________________________________________________
 
@@ -203,7 +203,6 @@ If MemoryAnchor
 
 
 	
-ActiveScriptAllow()
 FixIE()
 SeDebugPrivilege() 
 OnExit("Exit")
@@ -214,10 +213,12 @@ ShowMarkersCreate("oShowMarkers", "E14B30")
 
 Gui, +AlwaysOnTop +HWNDhGui +ReSize -DPIScale +Owner%hMarkerGui% +E%WS_EX_APPWINDOW% ;   +E%WS_EX_NOACTIVATE%
 Gui, Color, %ColorBgPaused%
+ActiveScriptAllow()
 Gui, Add, ActiveX, Border voDoc HWNDhActiveX x0 y+0, HTMLFile
+ActiveScriptAllow(1)
+
 ;	https://docs.microsoft.com/en-us/dotnet/api/system.windows.forms.htmlwindow?view=netframework-4.8
 ;	https://developer.mozilla.org/en-US/docs/Web/API/Document_Object_Model
-
 
 LoadJScript()
 oBody := oDoc.body 
@@ -225,7 +226,6 @@ oJScript := oDoc.Script
 oJScript.WordWrap := WordWrap
 oJScript.MoveTitles := MoveTitles
 ComObjConnect(oDoc, Events)
-ActiveScriptAllow(1)
 
 OnMessage(0x133, "WM_CTLCOLOREDIT")
 OnMessage(0x201, "WM_LBUTTONDOWN")
@@ -424,7 +424,6 @@ DllCall("RedrawWindow", "Ptr", hGui, "Uint", 0, "Uint", 0, "Uint", 0x1|0x4)
 Return
 
 	;; _________________________________________________ Hotkey`s _________________________________________________
-
 
 #If isAhkSpy && Sleep != 1 && OnlyShiftTab && !ActiveNoPause && !isPaused && ThisMode != "Hotkey" && IsHwndUnderMouse(hColorProgress)
 
@@ -1020,8 +1019,8 @@ Spot_Control(NotHTML = 0) {
 	MouseGetPos, , , h
 	If (h = hGui || h = oOther.hZoom || h = oOther.hZoomLW)
 		Return HideAllMarkers()
-		
-	If UseUIA && (1, ObjRelease(exUIASub.pElement)) && exUIASub.ElementFromPoint(MXS, MYS)
+		 
+	If UseUIA && exUIASub.Release() && exUIASub.ElementFromPoint(MXS, MYS)
 	{ 
 		UIAPID := exUIASub.CurrentProcessId
 		CurrentControlTypeIndex := Format("0x{:X}", exUIASub.CurrentControlType)
@@ -1042,7 +1041,7 @@ Spot_Control(NotHTML = 0) {
 		. _PRE1 "<div " bc "><span class='param' name='MS:N'>PID:</span>  <span name='MS:'>" UIAPID "</span>" 
 		
 		. (UIAHWND ? _DP "<span class='param' name='MS:N'>HWND:</span>  <span name='MS:'>" Format("0x{:x}", UIAHWND) "</span>"
-		. _DP "<span class='param' name='MS:N'>ControlClass:</span>  <span name='MS:'>" TransformHTML(exUIASub.CurrentClassName) "</span>" : _DP "HWND undefined")
+		. _DP "<span class='param' name='MS:N'>ClassName:</span>  <span name='MS:'>" TransformHTML(exUIASub.CurrentClassName) "</span>" : _DP "HWND undefined")
 		
 		. _DN (CurrentAutomationId != "" ? "<span class='param' name='MS:N'>AutomationId:</span>  <span name='MS:'>" CurrentAutomationId "</span>" : "AutomationId undefined")
 			. _DP (CurrentControlTypeIndex != "" ? "<span class='param' name='MS:N'>ControlType:</span>  <span name='MS:'>" CurrentControlTypeName "</span>"
@@ -1838,18 +1837,25 @@ Acc_Query(Acc) {
 
 	;; _________________________________________________ UIA _________________________________________________
 
-Class UIASub {
+class UIASub {
 	__New() { 
 		Try this.pUIA := ComObjCreate("{ff48dba4-60ef-4201-aa87-54103eef594e}","{30cbe57d-d9d0-452a-ab13-7ac5ac4825ee}")
 		Catch	
 			Return 0
 	}
-	__Get(member) {
+	__Get(member) { 
 		If !this.__Properties(member, PropI, PropW)
 			Return 0
+		If (PropW = "RECT")
+			Return (this.__Hr(DllCall(this.__Vt(PropI, this.pElement), "ptr", this.pElement
+			, "ptr", &(rect, VarSetCapacity(rect, 16)))) ? this.__RectToObject(&rect) : 0), VarSetCapacity(rect, 0)
 		If !this.__Hr(DllCall(this.__Vt(PropI, this.pElement), "ptr", this.pElement, "ptr*", out))
 			Return 0
-		Return PropW = "BSTR" ? StrGet(out) : out  
+		Return PropW = "BSTR" ? StrGet(out) : out   
+	}
+	__RectToObject(prect) { 
+		Return {left: NumGet(prect + 0, 0, "Int"), top: NumGet(prect + 0, 4, "Int"), right: NumGet(prect + 0, 8, "Int"), bottom: NumGet(prect + 0, 12, "Int")
+			, width: NumGet(prect + 0, 8, "Int") - NumGet(prect + 0, 0, "Int") + 0, height: NumGet(prect + 0, 12, "Int") - NumGet(prect + 0, 4, "Int") + 0}
 	}
 	__Delete() {
 		ObjRelease(this.pUIA)
@@ -1859,12 +1865,12 @@ Class UIASub {
 	}
 	__Hr(hr) {
 		;~ http://blogs.msdn.com/b/eldar/archive/2007/04/03/a-lot-of-hresult-codes.aspx
-		Static err:={0x8000FFFF:"Catastrophic failure.",0x80004001:"Not implemented.",0x8007000E:"Out of memory."
-		,0x80070057:"One or more arguments are not valid.",0x80004002:"Interface not supported.",0x80004003:"Pointer not valid."
-		,0x80070006:"Handle not valid.",0x80004004:"Operation aborted.",0x80004005:"Unspecified error.",0x80070005:"General access denied."
-		,0x800401E5:"The object identified by this moniker could not be found.",0x80040201:"UIA_E_ELEMENTNOTAVAILABLE"
-		,0x80040200:"UIA_E_ELEMENTNOTENABLED",0x80131509:"UIA_E_INVALIDOPERATION",0x80040202:"UIA_E_NOCLICKABLEPOINT"
-		,0x80040204:"UIA_E_NOTSUPPORTED",0x80040203:"UIA_E_PROXYASSEMBLYNOTLOADED"} ; //not completed
+		; Static err:={0x8000FFFF:"Catastrophic failure.",0x80004001:"Not implemented.",0x8007000E:"Out of memory."
+		; ,0x80070057:"One or more arguments are not valid.",0x80004002:"Interface not supported.",0x80004003:"Pointer not valid."
+		; ,0x80070006:"Handle not valid.",0x80004004:"Operation aborted.",0x80004005:"Unspecified error.",0x80070005:"General access denied."
+		; ,0x800401E5:"The object identified by this moniker could not be found.",0x80040201:"UIA_E_ELEMENTNOTAVAILABLE"
+		; ,0x80040200:"UIA_E_ELEMENTNOTENABLED",0x80131509:"UIA_E_INVALIDOPERATION",0x80040202:"UIA_E_NOCLICKABLEPOINT"
+		; ,0x80040204:"UIA_E_NOTSUPPORTED",0x80040203:"UIA_E_PROXYASSEMBLYNOTLOADED"} ; //not completed
 		if hr && (hr &= 0xFFFFFFFF) {
 			Return 0
 		}
@@ -1876,17 +1882,16 @@ Class UIASub {
 		,CurrentIsKeyboardFocusable: [27,"BOOL"],CurrentIsEnabled: [28,"BOOL"],CurrentAutomationId: [29,"BSTR"],CurrentClassName: [30,"BSTR"]
 		,CurrentHelpText: [31,"BSTR"],CurrentCulture: [32,"int"],CurrentIsControlElement: [33,"BOOL"],CurrentIsContentElement: [34,"BOOL"]
 		,CurrentIsPassword: [35,"BOOL"],CurrentNativeWindowHandle: [36,"UIA_HWND"],CurrentItemType: [37,"BSTR"],CurrentIsOffscreen: [38,"BOOL"]
-		,CurrentOrientation: [39,"OrientationType"],CurrentFrameworkId: [40,"BSTR"],CurrentIsRequiredForForm: [41,"BOOL"]
-		,CurrentItemStatus: [42,"BSTR"],CurrentBoundingRectangle: [43,"RECT"],CurrentLabeledBy: [44,"IUIAutomationElement"]
-		,CurrentAriaRole: [45,"BSTR"],CurrentAriaProperties: [46,"BSTR"],CurrentIsDataValidForForm: [47,"BOOL"]
-		,CurrentControllerFor: [48,"IUIAutomationElementArray"],CurrentDescribedBy: [49,"IUIAutomationElementArray"]}
+		,CurrentOrientation: [39,"OrientationType"],CurrentFrameworkId: [40,"BSTR"],CurrentIsRequiredForForm: [41,"BOOL"],CurrentItemStatus: [42,"BSTR"]
+		,CurrentBoundingRectangle: [43,"RECT"],CurrentLabeledBy: [44,"IUIAutomationElement"],CurrentAriaRole: [45,"BSTR"]
+		,CurrentAriaProperties: [46,"BSTR"],CurrentIsDataValidForForm: [47,"BOOL"],CurrentControllerFor: [48,"IUIAutomationElementArray"]
+		,CurrentDescribedBy: [49,"IUIAutomationElementArray"], CurrentFlowsTo: [50,"IUIAutomationElementArray"],CurrentProviderDescription: [51,"BSTR"]}
 		
-		Static properties2 := {CurrentFlowsTo: [50,"IUIAutomationElementArray"],CurrentProviderDescription: [51,"BSTR"],CachedProcessId: [52,"int"]
-		,CachedControlType: [53,"CONTROLTYPEID"],CachedLocalizedControlType: [54,"BSTR"],CachedName: [55,"BSTR"],CachedAcceleratorKey: [56,"BSTR"]
-		,CachedAccessKey: [57,"BSTR"],CachedHasKeyboardFocus: [58,"BOOL"],CachedIsKeyboardFocusable: [59,"BOOL"],CachedIsEnabled: [60,"BOOL"]
-		,CachedAutomationId: [61,"BSTR"],CachedClassName: [62,"BSTR"],CachedHelpText: [63,"BSTR"],CachedCulture: [64,"int"]
-		,CachedIsControlElement: [65,"BOOL"],CachedIsContentElement: [66,"BOOL"],CachedIsPassword: [67,"BOOL"]
-		,CachedNativeWindowHandle: [68,"UIA_HWND"],CachedItemType: [69,"BSTR"],CachedIsOffscreen: [70,"BOOL"]
+		Static properties2 := {CachedProcessId: [52,"int"],CachedControlType: [53,"CONTROLTYPEID"],CachedLocalizedControlType: [54,"BSTR"]
+		,CachedName: [55,"BSTR"],CachedAcceleratorKey: [56,"BSTR"],CachedAccessKey: [57,"BSTR"],CachedHasKeyboardFocus: [58,"BOOL"]
+		,CachedIsKeyboardFocusable: [59,"BOOL"],CachedIsEnabled: [60,"BOOL"],CachedAutomationId: [61,"BSTR"],CachedClassName: [62,"BSTR"]
+		,CachedHelpText: [63,"BSTR"],CachedCulture: [64,"int"],CachedIsControlElement: [65,"BOOL"],CachedIsContentElement: [66,"BOOL"]
+		,CachedIsPassword: [67,"BOOL"],CachedNativeWindowHandle: [68,"UIA_HWND"],CachedItemType: [69,"BSTR"],CachedIsOffscreen: [70,"BOOL"]
 		,CachedOrientation: [71,"OrientationType"],CachedFrameworkId: [72,"BSTR"],CachedIsRequiredForForm: [73,"BOOL"]
 		,CachedItemStatus: [74,"BSTR"],CachedBoundingRectangle: [75,"RECT"],CachedLabeledBy: [76,"IUIAutomationElement"]
 		,CachedAriaRole: [77,"BSTR"],CachedAriaProperties: [78,"BSTR"],CachedIsDataValidForForm: [79,"BOOL"]
@@ -1906,6 +1911,9 @@ Class UIASub {
 		,50030:"Document",50031:"SplitButton",50032:"Window",50033:"Pane",50034:"Header",50035:"HeaderItem",50036:"Table",50037:"TitleBar",50038:"Separator"}
 		Return name[n]
 	}
+	Release() {
+		Return 1, this.pElement && ObjRelease(this.pElement), this.pElement := 0
+	} 
 	ElementFromPoint(x = "", y = "") {  
 		Return this.pElement := this.__Hr(DllCall(this.__Vt(7, this.pUIA), "ptr", this.pUIA, "int64"
 			, x = "" ? 0 * DllCall("GetCursorPos", "Int64*", pt) + pt : x & 0xFFFFFFFF | y << 32, "ptr*", pElement)) ? pElement : 0 
@@ -2848,6 +2856,7 @@ RButton_Up_Wait:
 	ZoomMsg(12, 1)
 	SetTimer, Loop_%ThisMode%, Off
 	SetTimer, ShiftUpHide, -300 
+	ToolTip("Stop", 300) 
 	Return
 		
 WM_LBUTTONDOWN(wp, lp, msg, hwnd) {
@@ -2869,6 +2878,7 @@ WM_LBUTTONDOWN(wp, lp, msg, hwnd) {
 			ZoomMsg(7, 0)
 			If (OnlyShiftTab && !isPaused)
 			{
+				ToolTip("Spot", 300) 
 				OnlyShiftTab := 0
 				ZoomMsg(12, 0)
 				SetTimer, Loop_%ThisMode%, -1
@@ -2884,6 +2894,7 @@ OnlyShiftTab_LButton_Up_Wait:
 	ZoomMsg(12, 1)
 	SetTimer, Loop_%ThisMode%, Off
 	SetTimer, ShiftUpHide, -300
+	ToolTip("Stop", 300) 
 	return
 
    ;;  http://forum.script-coding.com/viewtopic.php?pid=131490#p131490
@@ -5078,7 +5089,7 @@ html =
 body {  
 	overflow: hidden;
 }
-.divwork { 
+.divwork {
 	position: absolute; 
 	top: 5px;
 	left: 5px;
