@@ -27,7 +27,7 @@
 */
 
 
-Global AhkSpyVersion := 4.39
+Global AhkSpyVersion := 4.40
 
 	;; _________________________________________________ Caption _________________________________________________
 
@@ -963,7 +963,7 @@ Spot_Control(NotHTML = 0) {
 		ControlGetText, CtrlText, , ahk_id %ControlID%
 		If CtrlText !=
 			CtrlText := _T1 " id='__Control_Text'> ( Control Text ) </span><a></a>" _BT1 " id='settext_button' value=`" ControlID "`> set " _BT2 
-				. _DB _BT1 " id='copy_button'> copy " _BT2  _T2 _LPRE ">" TransformHTML(CtrlText) _PRE2
+				. _DB  _BT1 " id='paste_Control_Text'> paste " _BT2 _DB _BT1 " id='copy_button'> copy " _BT2  _T2  _LPRE " id='content_Control_Text'>" TransformHTML(CtrlText) _PRE2
 		
 		ControlGet, CtrlStyle, Style,,, ahk_id %ControlID%
 		ControlGet, CtrlExStyle, ExStyle,,, ahk_id %ControlID%
@@ -1027,10 +1027,13 @@ Spot_Control(NotHTML = 0) {
 		CurrentControlTypeName := exUIASub.__ControlType(CurrentControlTypeIndex)
 		CurrentAutomationId := exUIASub.CurrentAutomationId  
 		CurrentLocalizedControlType := exUIASub.CurrentLocalizedControlType
+		CurrentHelpText := exUIASub.CurrentHelpText
 		UIAHWND := exUIASub.CurrentNativeWindowHandle
+		
 		
 		WinGet, UIAProcessName, ProcessName, ahk_pid %UIAPID%
 		WinGet, UIAProcessPath, ProcessPath, ahk_pid %UIAPID%
+		
 		Loop, %UIAProcessPath%
 			UIAProcessPath = %A_LoopFileLongPath%
 			
@@ -1049,8 +1052,12 @@ Spot_Control(NotHTML = 0) {
 			. (CurrentLocalizedControlType != "" ? _DP
 			. "<span class='param' name='MS:N'>LocalizedControlType:</span>  <span name='MS:'>" CurrentLocalizedControlType "</span>" : _DP "LocalizedControlType undefined")
 		
-		. _DN "<span class='param' name='MS:N'>ProcessName:</span>  <span name='MS:'>" TransformHTML(UIAProcessName) "</span>"
-		. _DP "<span class='param' name='MS:N'>ProcessPath:</span>  <span name='MS:'>" TransformHTML(UIAProcessPath) "</span></div>" _PRE2
+		. (CurrentHelpText != "" ? _DN "<span class='param' name='MS:N'>HelpText:</span>  <span name='MS:'>" CurrentHelpText "</span>" : "")
+		
+		. (UIAProcessName != ""
+			? _DN "<span class='param' name='MS:N'>ProcessName:</span>  <span name='MS:'>" TransformHTML(UIAProcessName) "</span>"
+			. _DP "<span class='param' name='MS:N'>ProcessPath:</span>  <span name='MS:'>" TransformHTML(UIAProcessPath) "</span>" : "")
+		. "</div>" _PRE2
 	}
 	PixelGetColor, ColorBGR, %MXS%, %MYS%
 	ColorRGB := Format("0x{:06X}", (ColorBGR & 0xFF) << 16 | (ColorBGR & 0xFF00) | (ColorBGR >> 16))
@@ -1515,6 +1522,7 @@ AccInfoUnderMouse(mx, my, wx, wy, cx, cy, caX, caY, WinID, ControlID) {
 		
 	; http://forum.script-coding.com/viewtopic.php?pid=139109#p139109
 	; Acc := ComObjEnwrap(9, pacc, 1), child := NumGet(varChild,8,"UInt")
+	
 	AccObj := ComObject(9, pAccObj, 1)
 	
 	If !IsObject(AccObj)
@@ -1522,8 +1530,8 @@ AccInfoUnderMouse(mx, my, wx, wy, cx, cy, caX, caY, WinID, ControlID) {
 	
 	ObjAddRef(pAccObj) 
 	child := NumGet(varChild, 8, "UInt")
-
-	SendMessage, WM_GETOBJECT, 0, 1, , % "ahk_id" ControlID ? ControlID : WinID
+	
+	SendMessage, WM_GETOBJECT, 0, 1, , % "ahk_id" (ControlID ? ControlID : WinID) 
 	
 	oPubObj.Acc := {AccObj: Object(AccObj), child: child, WinID: WinID, ControlID: ControlID, pAccObj: pAccObj} 
 	
@@ -2856,6 +2864,7 @@ RButton_Up_Wait:
 	ZoomMsg(12, 1)
 	SetTimer, Loop_%ThisMode%, Off
 	SetTimer, ShiftUpHide, -300 
+	Sleep 100
 	ToolTip("Stop", 300) 
 	Return
 		
@@ -2894,6 +2903,7 @@ OnlyShiftTab_LButton_Up_Wait:
 	ZoomMsg(12, 1)
 	SetTimer, Loop_%ThisMode%, Off
 	SetTimer, ShiftUpHide, -300
+	Sleep 100
 	ToolTip("Stop", 300) 
 	return
 
@@ -5087,7 +5097,7 @@ html =
 	// word-spacing: 0.5em;
 }
 body {  
-	overflow: hidden;
+	overflow: hidden; 
 }
 .divwork {
 	position: absolute; 
@@ -5174,7 +5184,7 @@ pre {
 
 </head>
 
-<body id='body'> 
+<body contenteditable='false' id='body'>
 	<div id='divwork1' class='divwork' onscroll='scrolldiv(this)' onresize='resizediv(this)'></div>
 	<div id='divwork2' class='divwork' onscroll='scrolldiv(this)' onresize='resizediv(this)'></div>
 </body>
@@ -5513,10 +5523,12 @@ ButtonClick(oevent) {
 		HighLight([pre_menutext]), preclone := ""
 	}
 	Else If (thisid = "copy_button")
-		o := oDoc.all.item(oevent.sourceIndex + 2)
-		, GetKeyState("Shift") ? ClipAdd(o.OuterText, 1) : (Clipboard := o.OuterText), HighLight([o])
+	{
+		o := oDoc.all.item(oevent.sourceIndex + 2) 
+		GetKeyState("Shift") ? ClipAdd(o.OuterText, 1) : (Clipboard := o.OuterText), HighLight([o])
+	}
 	Else If (thisid = "settext_button")
-		ControlSetText, , % oDoc.all.item(oevent.sourceIndex + 4).OuterText, % "ahk_id" oevent.value 
+		ControlSetText, , % oDoc.getElementById("content_Control_Text").OuterText, % "ahk_id" oevent.value 
 	Else If thisid = copy_alltitle
 	{
 		HighLight([oDoc.getElementById("wintitle1")
@@ -5616,6 +5628,8 @@ ButtonClick(oevent) {
 		Events.clean_command_line()
 	Else If thisid = paste_command_line
 		oDoc.getElementById("c_command_line").innerHTML := TransformHTML(Clipboard)
+	Else If thisid = paste_Control_Text
+		oDoc.getElementById("content_Control_Text").innerText := Clipboard
 	Else If (thisid = "process_close" && (oOther.WinPID || !ToolTip("Invalid parametrs", 500)) && ConfirmAction("Process close?"))
 		Process, Close, % oOther.WinPID
 	Else If (thisid = "win_close" && (oOther.WinPID || !ToolTip("Invalid parametrs", 500)) && ConfirmAction("Window close?"))
