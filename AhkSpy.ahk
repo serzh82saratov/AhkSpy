@@ -27,7 +27,7 @@
 */
 
 
-Global AhkSpyVersion := 4.40
+Global AhkSpyVersion := 4.41
 
 	;; _________________________________________________ Caption _________________________________________________
 
@@ -213,7 +213,7 @@ ShowMarkersCreate("oShowMarkers", "E14B30")
 
 Gui, +AlwaysOnTop +HWNDhGui +ReSize -DPIScale +Owner%hMarkerGui% +E%WS_EX_APPWINDOW% ;   +E%WS_EX_NOACTIVATE%
 Gui, Color, %ColorBgPaused%
-ActiveScriptAllow()
+ActiveScriptAllow() 
 Gui, Add, ActiveX, Border voDoc HWNDhActiveX x0 y+0, HTMLFile
 ActiveScriptAllow(1)
 
@@ -1145,7 +1145,7 @@ HTML_Control:
 		. _DP "#<span name='MS:'>" sInvert_RGB "</span>" _DP "<span style='background-color: #" sInvert_RGB "'>          </span>" _PRE2 
 	
 	. _T1 " id='__Window'> ( Window ) </span>" _BT1 " id='flash_ctrl_window'> flash " _BT2  _T2 
-	
+	 
 	. _PRE1 "<span><span class='param' name='MS:S'>ahk_class</span> <span name='MS:'>" WinClass "</span></span> "
 		. "<span><span class='param' name='MS:S'>ahk_exe</span> <span name='MS:'>" ProcessName "</span></span> "
 		. "<span><span class='param' name='MS:S'>ahk_id</span> <span name='MS:'>" WinID "</span></span> "
@@ -1848,7 +1848,7 @@ Acc_Query(Acc) {
 class UIASub {
 	__New() { 
 		Try this.pUIA := ComObjCreate("{ff48dba4-60ef-4201-aa87-54103eef594e}","{30cbe57d-d9d0-452a-ab13-7ac5ac4825ee}")
-		Catch	
+		Catch
 			Return 0
 	}
 	__Get(member) { 
@@ -3106,6 +3106,7 @@ FixIE() {
 		RegWrite, REG_DWORD, HKCU, %Key%, %ExeName%, %ver%
 }
 
+; так не работает  https://docs.microsoft.com/en-us/previous-versions/windows/internet-explorer/ie-developer/platform-apis/ms537169%28v%3dvs.85%29
 ActiveScriptAllow(Off = 0) {
 	Static keyInternet := "Software\Microsoft\Windows\CurrentVersion\Internet Settings\Zones\3", IsAllow := 1
 	If !ActiveScriptAllowChange
@@ -3770,7 +3771,7 @@ Hotkey_ClipCursor() {
 	Static lpRect, _ := VarSetCapacity(lpRect, 16, 0)  
 	DllCall("GetClipCursor", "Ptr", &lpRect) 
 	
-	If NumGet(lpRect, 0, "uint") > 0xffff
+	If NumGet(lpRect, 0, "uint") > 0xffff || NumGet(lpRect, 0, "uint") = 0
 	{ 
 		; WinGetPos, WinX, WinY, WinWidth, WinHeight, % "ahk_id" hActiveX 
 		CoordMode, Mouse, Screen
@@ -3779,10 +3780,17 @@ Hotkey_ClipCursor() {
 		NumPut(Y, lpRect, 4, "uint")
 		NumPut(X, lpRect, 8, "uint")
 		NumPut(Y, lpRect, 12, "uint") 
-		DllCall("ClipCursor", "Ptr", &lpRect + 0) 
+		DllCall("ClipCursor", "Ptr", &lpRect + 0)   
+		ToolTip2("Cancel press down and up lbutton, and press lbutton 2 seconds, else Ctrl+Alt+Delete", -1, 0, -100, 2)
 	}
-	Else
-		DllCall("ClipCursor", "Ptr", 0) 
+	Else  
+	{
+		KeyWait LButton
+		KeyWait LButton, D
+		KeyWait LButton, T2
+		If ErrorLevel
+			DllCall("ClipCursor", "Ptr", 0), ToolTip2("", -1, , , 2)
+	}
 }
 	;; _________________________________________________ Command as function _________________________________________________
 
@@ -3823,7 +3831,8 @@ ToolTip(text, time = 500) {
 	CoordMode, ToolTip
 	MouseGetPos, X, Y
 	ToolTip, %text%, X-10, Y-45
-	SetTimer, HideToolTip, -%time%
+	If (time > 0)
+		SetTimer, HideToolTip, -%time%
 	Return 1
 
 	HideToolTip:
@@ -3831,6 +3840,25 @@ ToolTip(text, time = 500) {
 		Return
 }
 
+ToolTip2(text, time = 500, x = 0, y = 0, ex = 1, CoordMode = "Mouse") {
+	If CoordMode = Mouse
+	{
+		CoordMode, Mouse
+		CoordMode, ToolTip
+		MouseGetPos, mX, mY
+		X+=mX, Y+=mY
+	}
+	Else 
+		CoordMode, ToolTip, %CoordMode%  ;	Screen, Window, Client  (if omitted, it defaults to Screen)
+	ToolTip, %text%, x, y, ex
+	If (time > 0)
+		SetTimer, HideToolTip2, -%time%
+	Return 1
+
+	HideToolTip2:
+		ToolTip
+		Return
+}
 	;; _________________________________________________ Update _________________________________________________
 
 UpdateAhkSpy(in = 1) {
@@ -4221,16 +4249,24 @@ GetStyle_Button(Style, hWnd)  {
 	Return Res
 }
 
-GetStyle_Edit(Style, hWnd)  {
-	;;	https://www.autohotkey.com/boards/viewtopic.php?p=25848#p25848
-	;;	https://docs.microsoft.com/en-us/windows/desktop/controls/edit-control-styles
-	Static oStyles
+GetStyle_Edit(Style, hWnd, byref ResEx)  {
+	; https://www.autohotkey.com/boards/viewtopic.php?p=25848#p25848
+	; https://docs.microsoft.com/en-us/windows/desktop/controls/edit-control-styles
+	; https://docs.microsoft.com/en-us/windows/win32/controls/edit-control-window-extended-styles
+	
+	Static oStyles, oExStyles, EM_GETEXTENDEDSTYLE := 0x1500 + 11
 	If !oStyles
 		oStyles := {"ES_CENTER":"0x0001","ES_RIGHT":"0x0002","ES_MULTILINE":"0x0004"
 		,"ES_UPPERCASE":"0x0008","ES_LOWERCASE":"0x0010","ES_PASSWORD":"0x0020","ES_AUTOVSCROLL":"0x0040"
 		,"ES_AUTOHSCROLL":"0x0080","ES_NOHIDESEL":"0x0100","ES_OEMCONVERT":"0x0400","ES_READONLY":"0x0800"
 		,"ES_WANTRETURN":"0x1000","ES_NUMBER":"0x2000"}
+		
+		, oExStyles := {"ES_EX_ALLOWEOL_CR":"0x0001","ES_EX_ALLOWEOL_LF":"0x0002"
+		,"ES_EX_CONVERT_EOL_ON_PASTE":"0x0004","ES_EX_ZOOMABLE":"0x0010"}
 
+	SendMessage, EM_GETEXTENDEDSTYLE, 0, 0, , ahk_id %hWnd%
+	ExStyle := sExStyle := ErrorLevel
+	
 	Style := sStyle := Style & 0xffff
 	For K, V In oStyles
 		If ((Style & V) = V) && (%K% := 1, Style -= V)
@@ -4245,6 +4281,21 @@ GetStyle_Edit(Style, hWnd)  {
 		Ret .= QStyleRest(4, Style)
 	If Ret !=
 		Res .= _T1 " id='__Styles_Control'>" QStyleTitle("Styles", "Edit", 4, sStyle) "</span>" _T2 _PRE1 Ret _PRE2
+
+	IF ExStyle
+	{ 
+		For K, V In oExStyles
+			If ((ExStyle & V) = V) && (%K% := 1, ExStyle -= V)
+				RetEx .= QStyle(K, V)  
+		
+		If (sExStyle & 3)
+			RetEx .= QStyle("ES_EX_ALLOWEOL_ALL", "0x0003", "(ES_EX_ALLOWEOL_CR && ES_EX_ALLOWEOL_LF)")  
+		IF ExStyle
+			RetEx .= QStyleRest(4, ExStyle)
+		
+		If RetEx !=
+			ResEx := _T1 " id='__ExStyles_Control'>" QStyleTitle("ExStyles", "Edit", 4, sExStyle) "</span>" _T2 _PRE1 RetEx _PRE2
+	} 
 	
 	Return Res
 }
@@ -5387,7 +5438,7 @@ Class Events {  ;;	http://forum.script-coding.com/viewtopic.php?pid=82283#p82283
 						IniWrite("", ThisMode "_Anchor")
 					Return oOther.anchor[ThisMode] := 0, oOther.anchor[ThisMode "_text"] := "" 
 				}
-			} 
+			}
 			
 			oOther.anchor[ThisMode] := 1
 			oOther.anchor[ThisMode "_text"] := _text
