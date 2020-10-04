@@ -27,7 +27,7 @@
 */
 
 
-Global AhkSpyVersion := 4.41
+Global AhkSpyVersion := 4.42
 
 	;; _________________________________________________ Caption _________________________________________________
 
@@ -1531,7 +1531,8 @@ AccInfoUnderMouse(mx, my, wx, wy, cx, cy, caX, caY, WinID, ControlID) {
 	ObjAddRef(pAccObj) 
 	child := NumGet(varChild, 8, "UInt")
 	
-	SendMessage, WM_GETOBJECT, 0, 1, , % "ahk_id" (ControlID ? ControlID : WinID) 
+	; SendMessage, WM_GETOBJECT, 0, 1, , % "ahk_id" (ControlID ? ControlID : WinID) 
+	SendMessage, WM_GETOBJECT, 0, 1, Chrome_RenderWidgetHostHWND1, % "ahk_id " WinID
 	
 	oPubObj.Acc := {AccObj: Object(AccObj), child: child, WinID: WinID, ControlID: ControlID, pAccObj: pAccObj} 
 	
@@ -1728,7 +1729,10 @@ AddSpace(c) {
 
 GetAccPath() { 
 	if !Acc_GetPath(arr)
-		Return 0
+		Return 0  
+	If !CompareAcc(Acc_Get("Object", arr[1].Path, 0, "ahk_id " arr[1].hWnd), Object(oPubObj.Acc.AccObj))
+		Return ""
+		
 	for k, v in arr
 	{ 
 		tree .= AddSpace(k - 1) "<span><span name='MS:'>" v.Path "</span>" _DP  "<span name='MS:'>" v.Hwnd "</span>" 
@@ -1773,20 +1777,25 @@ GetEnumIndex(Acc) {
 		Return -1
 	For Each, child in Acc_Children(Acc_Parent(Acc))
 	{ 
-		if IsObject(child) 
-		&& (Acc_Location(child) = Acc_Location(Acc))
-		&& (child.accDefaultAction(0) = Acc.accDefaultAction(0)) 	
-		&& (child.accDescription(0) = Acc.accDescription(0)) 	
-		&& (child.accHelp(0) = Acc.accHelp(0)) 	
-		&& (child.accKeyboardShortcut(0) = Acc.accKeyboardShortcut(0)) 
-		
-		&& (child.accChildCount = Acc.accChildCount) 
-		&& (child.accName(0) = Acc.accName(0)) 	
-		&& (child.accRole(0) = Acc.accRole(0)) 	
-		&& (child.accState(0) = Acc.accState(0)) 
-		&& (child.accValue(0) = Acc.accValue(0))
+		if CompareAcc(child, Acc) 
 			return A_Index
 	}
+}
+
+CompareAcc(Acc1, Acc2) { 
+	if IsObject(Acc1) && IsObject(Acc2)
+	&& (Acc_Location(Acc1) = Acc_Location(Acc2))
+	&& (Acc1.accDefaultAction(0) = Acc2.accDefaultAction(0)) 	
+	&& (Acc1.accDescription(0) = Acc2.accDescription(0)) 	
+	&& (Acc1.accHelp(0) = Acc2.accHelp(0)) 	
+	&& (Acc1.accKeyboardShortcut(0) = Acc.accKeyboardShortcut(0)) 
+	
+	&& (Acc1.accChildCount = Acc2.accChildCount) 
+	&& (Acc1.accName(0) = Acc2.accName(0)) 	
+	&& (Acc1.accRole(0) = Acc2.accRole(0)) 	
+	&& (Acc1.accState(0) = Acc2.accState(0)) 
+	&& (Acc1.accValue(0) = Acc2.accValue(0))
+		return 1
 }
 
 Acc_Children(Acc) {
@@ -1841,6 +1850,90 @@ Acc_Parent(Acc) {
 }
 Acc_Query(Acc) {
 	try return ComObj(9, ComObjQuery(Acc, "{618736e0-3c3d-11cf-810c-00aa00389b71}"), 1)
+}
+Acc_Error(p="") {
+	static setting:=0
+	return p=""?setting:setting:=p
+}
+Acc_Role(Acc, ChildId=0) {
+	try return ComObjType(Acc,"Name")="IAccessible"?Acc_GetRoleText(Acc.accRole(ChildId)):"invalid object"
+}
+Acc_GetRoleText(nRole)
+{
+	nSize := DllCall("oleacc\GetRoleText", "Uint", nRole, "Ptr", 0, "Uint", 0)
+	VarSetCapacity(sRole, (A_IsUnicode?2:1)*nSize)
+	DllCall("oleacc\GetRoleText", "Uint", nRole, "str", sRole, "Uint", nSize+1)
+	Return	sRole
+}
+Acc_ChildrenByRole(Acc, Role) {
+	if ComObjType(Acc,"Name")!="IAccessible"
+		ErrorLevel := "Invalid IAccessible Object"
+	else {
+		cChildren:=Acc.accChildCount, Children:=[]
+		if DllCall("oleacc\AccessibleChildren", "Ptr",ComObjValue(Acc), "Int",0, "Int",cChildren, "Ptr",VarSetCapacity(varChildren,cChildren*(8+2*A_PtrSize),0)*0+&varChildren, "Int*",cChildren)=0 {
+			Loop %cChildren% {
+				i:=(A_Index-1)*(A_PtrSize*2+8)+8, child:=NumGet(varChildren,i)
+				if NumGet(varChildren,i-8)=9
+					AccChild:=Acc_Query(child), ObjRelease(child), Acc_Role(AccChild)=Role?Children.Insert(AccChild):
+				else
+					Acc_Role(Acc, child)=Role?Children.Insert(child):
+			}
+			return Children.MaxIndex()?Children:, ErrorLevel:=0
+		} else
+			ErrorLevel := "AccessibleChildren DllCall Failed"
+	}
+	if Acc_Error()
+		throw Exception(ErrorLevel,-1)
+}
+Acc_Get(Cmd, ChildPath="", ChildID=0, WinTitle="", WinText="", ExcludeTitle="", ExcludeText="") {
+	static properties := {Action:"DefaultAction", DoAction:"DoDefaultAction", Keyboard:"KeyboardShortcut"}
+	AccObj :=   IsObject(WinTitle)? WinTitle
+			:   Acc_ObjectFromWindow( WinExist(WinTitle, WinText, ExcludeTitle, ExcludeText), 0 )
+	if ComObjType(AccObj, "Name") != "IAccessible"
+		ErrorLevel := "Could not access an IAccessible Object"
+	else {
+		StringReplace, ChildPath, ChildPath, _, %A_Space%, All
+		AccError:=Acc_Error(), Acc_Error(true)
+		Loop Parse, ChildPath, ., %A_Space%
+			try {
+				if A_LoopField is digit
+					Children:=Acc_Children(AccObj), m2:=A_LoopField ; mimic "m2" output in else-statement
+				else
+					RegExMatch(A_LoopField, "(\D*)(\d*)", m), Children:=Acc_ChildrenByRole(AccObj, m1), m2:=(m2?m2:1)
+				if Not Children.HasKey(m2)
+					throw
+				AccObj := Children[m2]
+			} catch {
+				ErrorLevel:="Cannot access ChildPath Item #" A_Index " -> " A_LoopField, Acc_Error(AccError)
+				if Acc_Error()
+					throw Exception("Cannot access ChildPath Item", -1, "Item #" A_Index " -> " A_LoopField)
+				return   ; Acc_Error
+			}
+		Acc_Error(AccError)
+		StringReplace, Cmd, Cmd, %A_Space%, , All
+		properties.HasKey(Cmd)? Cmd:=properties[Cmd]:
+		try {
+			if (Cmd = "Location")
+				AccObj.accLocation(ComObj(0x4003,&x:=0), ComObj(0x4003,&y:=0), ComObj(0x4003,&w:=0), ComObj(0x4003,&h:=0), ChildId)
+			  , ret_val := "x" NumGet(x,0,"int") " y" NumGet(y,0,"int") " w" NumGet(w,0,"int") " h" NumGet(h,0,"int")
+			else if (Cmd = "Object")
+				ret_val := AccObj
+			else if Cmd in Role,State
+				ret_val := Acc_%Cmd%(AccObj, ChildID+0)
+			else if Cmd in ChildCount,Selection,Focus
+				ret_val := AccObj["acc" Cmd]
+			else
+				ret_val := AccObj["acc" Cmd](ChildID+0)
+		} catch {
+			ErrorLevel := """" Cmd """ Cmd Not Implemented"
+			if Acc_Error()
+				throw Exception("Cmd Not Implemented", -1, Cmd)
+			return
+		}
+		return ret_val, ErrorLevel:=0
+	}
+	if Acc_Error()
+		throw Exception(ErrorLevel,-1)
 }
 
 	;; _________________________________________________ UIA _________________________________________________
@@ -4253,7 +4346,7 @@ GetStyle_Edit(Style, hWnd, byref ResEx)  {
 	; https://www.autohotkey.com/boards/viewtopic.php?p=25848#p25848
 	; https://docs.microsoft.com/en-us/windows/desktop/controls/edit-control-styles
 	; https://docs.microsoft.com/en-us/windows/win32/controls/edit-control-window-extended-styles
-	
+	; https://docs.microsoft.com/en-us/windows/win32/controls/em-setextendedstyle
 	Static oStyles, oExStyles, EM_GETEXTENDEDSTYLE := 0x1500 + 11
 	If !oStyles
 		oStyles := {"ES_CENTER":"0x0001","ES_RIGHT":"0x0002","ES_MULTILINE":"0x0004"
@@ -5884,7 +5977,7 @@ acc_path_func(manual) {
 	If !b
 	{
 		oDoc.getElementById("acc_path_error").innerHTML := "<span style='color:#" ColorErrorAccPath "'>  "
-			. (oPubObj.Acc.CLOAKED ? "CLOAKED" : "path not found")  "  </span>" 
+			. (oPubObj.Acc.CLOAKED ? "CLOAKED" : (b = 0 ? "path not found" : "path not correct"))  "  </span>" 
 		oDoc.getElementById("acc_path_value").innerHTML := ""
 	}
 	Else 
@@ -6571,7 +6664,17 @@ CreateCompatibleDC(hdc=0) {
 
 
 /*
+Change
 
+4.41  16:12 23.06.2020
+	EM_GETEXTENDEDSTYLE
+	
+	
+	
+	
+	
+	
+	
 4.22 > 4.30
 https://github.com/serzh82saratov/AhkSpy/commit/ce7c5109e827576ba4e4b74b0b31d3ccffe611fa#diff-1d3a42ff250882b23a486cbb14edea43
 
