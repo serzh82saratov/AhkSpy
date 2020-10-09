@@ -27,7 +27,7 @@
 */
 
 
-Global AhkSpyVersion := 4.42
+Global AhkSpyVersion := 4.43
 
 	;; _________________________________________________ Caption _________________________________________________
 
@@ -176,7 +176,7 @@ Global _S1 := "<span>", _S2 := "</span>", _DB := "<span style='position: relativ
 , _LPRE := "<pre contenteditable='true' class='lpre'"
 , _DP := "  <span style='color: #" ColorDelimiter "'>&#9642</span>  "
 , _StIf := "    <span class='QStyle1'>&#9642</span>    <span class='QStyle2' name='MS:'>"
-, _BR := "<p class='br'></p>", _DN := "`n"  
+, _BR := "<p class='br'></p>", _DN := "`n", _DN2 := "<div style='height: 0.50em`;'></div>" 
 
 , _PreOverflowHideCSS := ".lpre {max-width: 99`%; max-height: " PreMaxHeight "px; overflow: auto; border: 1px solid #" ColorPreOverflowHide ";}"
 
@@ -689,7 +689,7 @@ Repeat_Loop_Win:
 	Return
 
 Spot_Win(NotHTML = 0) {
-	Static PrWinPID, ComLine, ProcessBitSize, IsAdmin, WinProcessPath, WinProcessName
+	Static PrWinPID, ComLine, _ComLine, ProcessBitSize, IsAdmin, WinProcessPath, WinProcessName
 	
 	If NotHTML
 		GoTo HTML_Win
@@ -706,8 +706,8 @@ Spot_Win(NotHTML = 0) {
 	oOther.WinClass := WinClass
 	WinGet, WinPID, PID, ahk_id %WinID%
 	If (WinPID != PrWinPID) {
-		GetCommandLineProc(WinPID, ComLine, ProcessBitSize, IsAdmin)
-		ComLine := TransformHTML(ComLine), PrWinPID := WinPID
+		GetCommandLineProc(WinPID, _ComLine, ProcessBitSize, IsAdmin)
+		ComLine := TransformHTML(_ComLine), PrWinPID := WinPID
 		WinGet, WinProcessPath, ProcessPath, ahk_id %WinID%
 		Loop, %WinProcessPath%
 			WinProcessPath = %A_LoopFileLongPath%
@@ -773,8 +773,31 @@ Spot_Win(NotHTML = 0) {
 	PixelGetColor, ColorRGB, %WinXS%, %WinYS%, RGB
 	GuiControl, TB: -Redraw, ColorProgress
 	GuiControl, % "TB: +c" SubStr(ColorRGB, 3), ColorProgress
-	GuiControl, TB: +Redraw, ColorProgress 
-	
+	GuiControl, TB: +Redraw, ColorProgress
+	If WinExist("ahk_class AutoHotkey ahk_pid" WinPID)
+	{
+		IsAhkScript := 1
+		RegExMatch(StrReplace(_ComLine, WinProcessPath), "(.:[^:]+\\([^""]+))", m)
+		If (m1 != "")
+			AhkScriptPAth := m1
+		Else 
+			AhkScriptPAth := WinProcessPath, IsAhkScriptExe := 1 
+			
+		AhkScriptStringCode := _T1 " id='__ahkscript'> ( AutoHotkey script " (IsAhkScriptExe ? "compiled" : "") ") </span>" _T2   
+			. "<div>" _DN2 _BP1 " id='ahkscript_edit'> edit " _BP2 _DP
+			. _BP1 " id='ahkscript_folder'> in folder " _BP2 _DP
+			. _BP1 " id='ahkscript_copypath'> copy as file " _BP2 _DP
+			. _BP1 " id='ahkscript_run'> run " _BP2 _DN2
+			. _BP1 " id='ahkscript_suspend'> suspend " _BP2 _DP
+			. _BP1 " id='ahkscript_pause'> pause " _BP2 _DP
+			. _BP1 " id='ahkscript_reload'> reload " _BP2 _DP
+			. _BP1 " id='ahkscript_exit'> exit " _BP2 _DN2
+			. _BP1 " id='ahkscript_lines'> lines " _BP2 _DP
+			. _BP1 " id='ahkscript_variables'> variables " _BP2 _DP
+			. _BP1 " id='ahkscript_hotkeys'> hotkeys " _BP2 _DP
+			. _BP1 " id='ahkscript_keyhistory'> key history " _BP2 _DN2 "</div>"
+			. _PRE1 "<span id='ahkscriptpath' name='MS:'>" TransformHTML(AhkScriptPAth) "</span>" _PRE2
+	}
 	If (hParent := DllCall("GetAncestor", "Ptr", WinID, Uint, 1)) && (hParent != WinID)
 	{
 		WinGet, ParentProcessName, ProcessName, ahk_id %hParent% 
@@ -810,6 +833,8 @@ HTML_Win:
 		. _BT1 " id='paste_command_line'> paste " _BT2  _DB  _BT1 " id='clean_command_line'> clean " _BT2  _DB  _BT1 " id='command_line_infolder'> in folder " _BT2  _T2 
 	
 	. _PRE1 "<span id='c_command_line' name='MS:'>" ComLine "</span>" _PRE2
+	
+	. AhkScriptStringCode
 	
 	. _T1 " id='__Position'> ( Position ) </span>" _T2 
 	
@@ -3651,7 +3676,72 @@ SelectFilePath(FilePath) {
 		}
 	}
 	Run, %A_WinDir%\explorer.exe /select`, "%FilePath%", , UseErrorLevel
+	Return 1
 }
+
+FileToClipboard(PathToCopy,Method="copy") {
+	FileCount:=0
+	PathLength:=0
+
+	; Count files and total string length
+	Loop,Parse,PathToCopy,`n,`r
+	{
+		FileCount++
+		PathLength+=StrLen(A_LoopField)
+	}
+
+	pid:=DllCall("GetCurrentProcessId","uint")
+	hwnd:=WinExist("ahk_pid " . pid)
+	; 0x42 = GMEM_MOVEABLE(0x2) | GMEM_ZEROINIT(0x40)
+	hPath := DllCall("GlobalAlloc","uint",0x42,"uint",20 + (PathLength + FileCount + 1) * 2,"UPtr")
+	pPath := DllCall("GlobalLock","UPtr",hPath)
+	NumPut(20,pPath+0),pPath += 16 ; DROPFILES.pFiles = offset of file list
+	NumPut(1,pPath+0),pPath += 4 ; fWide = 0 -->ANSI,fWide = 1 -->Unicode
+	Offset:=0
+	Loop,Parse,PathToCopy,`n,`r ; Rows are delimited by linefeeds (`r`n).
+		offset += StrPut(A_LoopField,pPath+offset,StrLen(A_LoopField)+1,"UTF-16") * 2
+
+	DllCall("GlobalUnlock","UPtr",hPath)
+	DllCall("OpenClipboard","UPtr",hwnd)
+	DllCall("EmptyClipboard")
+	DllCall("SetClipboardData","uint",0xF,"UPtr",hPath) ; 0xF = CF_HDROP
+
+	; Write Preferred DropEffect structure to clipboard to switch between copy/cut operations
+	; 0x42 = GMEM_MOVEABLE(0x2) | GMEM_ZEROINIT(0x40)
+	mem := DllCall("GlobalAlloc","uint",0x42,"uint",4,"UPtr")
+	str := DllCall("GlobalLock","UPtr",mem)
+
+	if (Method="copy")
+		DllCall("RtlFillMemory","UPtr",str,"uint",1,"UChar",0x05)
+	else if (Method="cut")
+		DllCall("RtlFillMemory","UPtr",str,"uint",1,"UChar",0x02)
+	else
+	{
+		DllCall("CloseClipboard")
+		return
+	}
+
+	DllCall("GlobalUnlock","UPtr",mem)
+
+	cfFormat := DllCall("RegisterClipboardFormat","Str","Preferred DropEffect")
+	DllCall("SetClipboardData","uint",cfFormat,"UPtr",mem)
+	DllCall("CloseClipboard") 
+}
+
+ExecCommandAutoHotkey(Command, PID) {
+    Static WM_COMMAND := 0x111
+     , Commands := {"Reload Script": 65400
+           , "Edit Script": 65401
+           , "Suspend Hotkeys": 65404
+           , "Pause Script": 65403
+           , "Exit Script": 65405
+           , "Recent Lines": 65406
+           , "Variables": 65407
+           , "Hotkeys": 65408
+           , "Key history": 65409
+           , "AHK User Manual": 65411}
+	PostMessage WM_COMMAND, % Commands[Command],,, % "ahk_class AutoHotkey ahk_pid" . PID   
+} 
 
 GetCLSIDExplorer(hwnd) {
 	for window in ComObjCreate("Shell.Application").Windows
@@ -5942,6 +6032,41 @@ ButtonClick(oevent) {
 		acc_path_func(1)
 	Else If thisid = control_path 
 		control_path_func()
+		
+	Else If InStr(thisid, "ahkscript_")
+	{
+		ToolTip("Ok", 300)
+		ahkscriptpath := oDoc.getElementById("ahkscriptpath").innerText 
+		If (thisid = "ahkscript_folder")
+			SelectFilePath(ahkscriptpath) ? Minimize() : ToolTip("Invalide path", 500)
+		Else If (thisid = "ahkscript_copypath")
+			FileToClipboard(ahkscriptpath) 
+		Else If (thisid = "ahkscript_run")
+			RunRealPath(ahkscriptpath) 
+		Else 
+		{ 
+			If !WinExist("ahk_class AutoHotkey ahk_pid" . oOther.WinPID)	  
+				Return ToolTip("Script not found!", 500)
+			If (thisid = "ahkscript_suspend")
+				ExecCommandAutoHotkey("Suspend Hotkeys", oOther.WinPID)
+			Else If (thisid = "ahkscript_pause")
+				ExecCommandAutoHotkey("Pause Script", oOther.WinPID)
+			Else If (thisid = "ahkscript_reload")
+				ExecCommandAutoHotkey("Reload Script", oOther.WinPID)
+			Else If (thisid = "ahkscript_exit")
+				ExecCommandAutoHotkey("Exit Script", oOther.WinPID)
+			Else If (thisid = "ahkscript_lines")
+				ExecCommandAutoHotkey("Recent Lines", oOther.WinPID)
+			Else If (thisid = "ahkscript_variables")
+				ExecCommandAutoHotkey("Variables", oOther.WinPID)
+			Else If (thisid = "ahkscript_hotkeys")
+				ExecCommandAutoHotkey("Hotkeys", oOther.WinPID)
+			Else If (thisid = "ahkscript_keyhistory")
+				ExecCommandAutoHotkey("Key history", oOther.WinPID)
+			Else If (thisid = "ahkscript_edit")
+				ExecCommandAutoHotkey("Edit Script", oOther.WinPID) 
+		}
+	}  
 }
 
 control_path_func() {
