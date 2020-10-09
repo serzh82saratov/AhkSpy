@@ -27,7 +27,7 @@
 */
 
 
-Global AhkSpyVersion := 4.44
+Global AhkSpyVersion := 4.45
 
 	;; _________________________________________________ Caption _________________________________________________
 
@@ -776,7 +776,6 @@ Spot_Win(NotHTML = 0) {
 	GuiControl, TB: +Redraw, ColorProgress
 	If WinExist("ahk_class AutoHotkey ahk_pid" WinPID)
 	{
-		IsAhkScript := 1
 		RegExMatch(StrReplace(_ComLine, WinProcessPath), "(.:[^:]+\\([^""]+))", m)
 		If (m1 != "")
 			AhkScriptPAth := m1
@@ -2963,7 +2962,7 @@ WM_NCLBUTTONDOWN(wp) {
 WM_RBUTTONDOWN(wp, lp, msg, hwnd) { 
 	If (hwnd = hColorProgress && !ActiveNoPause && !isPaused)
 	{ 
-		ToolTip("Spot", 300) 
+		ToolTip("Spot", 300)
 		ZoomMsg(7, 0) 
 		ActiveNoPause := 1
 		OnlyShiftTab := 0
@@ -5716,6 +5715,7 @@ Class Events {  ;;	http://forum.script-coding.com/viewtopic.php?pid=82283#p82283
 		StringReplace, cl, cl, ", , 1 
 		process := oDoc.getElementById("copy_processpath").OuterText
 		cl := RegExReplace(cl, "i)\Q" process "\E(.*)", "$1", , 1)
+		StringReplace, cl, cl, /CP65001, , 1  
 		cl := Trim(cl, " ")
 		oDoc.getElementById("c_command_line").innerText :=  RegExReplace(cl, "i)\Q" process "\E(.*)", "$1", , 1)
 	}
@@ -6038,12 +6038,16 @@ ButtonClick(oevent) {
 	{
 		ToolTip("Ok", 300)
 		ahkscriptpath := oDoc.getElementById("ahkscriptpath").innerText 
+		If !FileExist(ahkscriptpath)
+			Return ToolTip("File not exist!", 500)
 		If (thisid = "ahkscript_folder")
 			SelectFilePath(ahkscriptpath) ? Minimize() : ToolTip("Invalide path", 500)
 		Else If (thisid = "ahkscript_copypath")
 			FileToClipboard(ahkscriptpath) 
 		Else If (thisid = "ahkscript_run")
 			RunRealPath(ahkscriptpath) 
+		Else If (thisid = "ahkscript_edit")
+			RunRealPath("*Edit " ahkscriptpath) 
 		Else 
 		{ 
 			If !WinExist("ahk_class AutoHotkey ahk_pid" . oOther.WinPID)	  
