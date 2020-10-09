@@ -27,7 +27,7 @@
 */
 
 
-Global AhkSpyVersion := 4.43
+Global AhkSpyVersion := 4.44
 
 	;; _________________________________________________ Caption _________________________________________________
 
@@ -784,7 +784,8 @@ Spot_Win(NotHTML = 0) {
 			AhkScriptPAth := WinProcessPath, IsAhkScriptExe := 1 
 			
 		AhkScriptStringCode := _T1 " id='__ahkscript'> ( AutoHotkey script " (IsAhkScriptExe ? "compiled" : "") ") </span>" _T2   
-			. "<div>" _DN2 _BP1 " id='ahkscript_edit'> edit " _BP2 _DP
+			. "<div>" _DN2 
+			. (!IsAhkScriptExe ? _BP1 " id='ahkscript_edit'> edit " _BP2 _DP : "")
 			. _BP1 " id='ahkscript_folder'> in folder " _BP2 _DP
 			. _BP1 " id='ahkscript_copypath'> copy as file " _BP2 _DP
 			. _BP1 " id='ahkscript_run'> run " _BP2 _DN2
