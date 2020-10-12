@@ -27,7 +27,7 @@
 */
 
 
-Global AhkSpyVersion := 4.45
+Global AhkSpyVersion := 4.46
 
 	;; _________________________________________________ Caption _________________________________________________
 
@@ -106,12 +106,12 @@ Else
 	, ColorSelMouseHover := "FDE182"										;;  Цвет фона элемента при наведении мыши     96C3DC F9D886 8FC5FC AEC7E1
 	, ColorSelMouseHoverText := "000000"									;;  Цвет текста элемента при наведении мыши     96C3DC F9D886 8FC5FC AEC7E1
 	, ColorSelButton := "693C23"											;;  Цвет фона при нажатии на кнопки
-	, ColorSelAnchor := "E14B30"											;;  Цвет фона заголовка для якоря
+	, ColorSelAnchor := "E8BD7D"											;;  Цвет фона заголовка для якоря   E14B30
 	, ColorHighLightBckg := "001F1F"										;;  Цвет фона некоторых абзацев
 	, ColorDelimiter := "1EB4CF"											;;  Цвет шрифта разделителя заголовков и параметров
-	, ColorTitle := "D8BE64"												;;  Цвет шрифта заголовка
+	, ColorTitle := "6BB1E7"												;;  Цвет шрифта заголовка   D8BE64
 	, ColorLineTitles := "00FFFF"											;;  Цвет линии заголовка
-	, ColorParam := "E76DFF"												;;  Цвет шрифта параметров
+	, ColorParam := "8EC461"												;;  Цвет шрифта параметров   E76DFF
 	, ColorErrorAccPath := "00FFFF"
 	, ColorErrorAccMarquee := "0033FF"
 	, ColorErrorAccMarquee := "0033FF"
@@ -784,17 +784,17 @@ Spot_Win(NotHTML = 0) {
 			
 		AhkScriptStringCode := _T1 " id='__ahkscript'> ( AutoHotkey script " (IsAhkScriptExe ? "compiled" : "") ") </span>" _T2   
 			. "<div>" _DN2 
-			. (!IsAhkScriptExe ? _BP1 " id='ahkscript_edit'> edit " _BP2 _DP : "")
-			. _BP1 " id='ahkscript_folder'> in folder " _BP2 _DP
-			. _BP1 " id='ahkscript_copypath'> copy as file " _BP2 _DP
+			. (!IsAhkScriptExe ? _BP1 " id='ahkscript_edit'> edit " _BP2 _DB : "")
+			. _BP1 " id='ahkscript_folder'> in folder " _BP2 _DB
+			. _BP1 " id='ahkscript_copypath'> copy as file " _BP2 _DB
 			. _BP1 " id='ahkscript_run'> run " _BP2 _DN2
-			. _BP1 " id='ahkscript_suspend'> suspend " _BP2 _DP
-			. _BP1 " id='ahkscript_pause'> pause " _BP2 _DP
-			. _BP1 " id='ahkscript_reload'> reload " _BP2 _DP
+			. _BP1 " id='ahkscript_suspend'> suspend " _BP2 _DB
+			. _BP1 " id='ahkscript_pause'> pause " _BP2 _DB
+			. _BP1 " id='ahkscript_reload'> reload " _BP2 _DB
 			. _BP1 " id='ahkscript_exit'> exit " _BP2 _DN2
-			. _BP1 " id='ahkscript_lines'> lines " _BP2 _DP
-			. _BP1 " id='ahkscript_variables'> variables " _BP2 _DP
-			. _BP1 " id='ahkscript_hotkeys'> hotkeys " _BP2 _DP
+			. _BP1 " id='ahkscript_lines'> lines " _BP2 _DB
+			. _BP1 " id='ahkscript_variables'> variables " _BP2 _DB
+			. _BP1 " id='ahkscript_hotkeys'> hotkeys " _BP2 _DB
 			. _BP1 " id='ahkscript_keyhistory'> key history " _BP2 _DN2 "</div>"
 			. _PRE1 "<span id='ahkscriptpath' name='MS:'>" TransformHTML(AhkScriptPAth) "</span>" _PRE2
 	}
@@ -6047,7 +6047,7 @@ ButtonClick(oevent) {
 		Else If (thisid = "ahkscript_run")
 			RunRealPath(ahkscriptpath) 
 		Else If (thisid = "ahkscript_edit")
-			RunRealPath("*Edit " ahkscriptpath) 
+			RunRealPath("*Edit " ahkscriptpath)
 		Else 
 		{ 
 			If !WinExist("ahk_class AutoHotkey ahk_pid" . oOther.WinPID)	  
