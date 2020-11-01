@@ -27,7 +27,7 @@
 */
 
 
-Global AhkSpyVersion := 4.46
+Global AhkSpyVersion := 4.47
 
 	;; _________________________________________________ Caption _________________________________________________
 
@@ -128,7 +128,7 @@ Global ColorBgOriginal := ColorBg
 
 
 Global ThisMode := IniRead("StartMode", "Control"), LastModeSave := (ThisMode = "LastMode")
-, ThisMode := ThisMode = "LastMode" ? IniRead("LastMode", "Control") : ThisMode
+, ThisMode := ThisMode = "LastMode" ? IniRead("LastMode", "Control") : ThisMode, CheckAhkNewVersion := IniRead("CheckAhkNewVersion", 0) 
 , ActiveNoPause := IniRead("ActiveNoPause", 0), MemoryPos := IniRead("MemoryPos", 0), MemorySize := IniRead("MemorySize", 0)
 , MemoryZoomSize := IniRead("MemoryZoomSize", 0), MemoryStateZoom := IniRead("MemoryStateZoom", 0), StateLight := IniRead("StateLight", 1)
 , StateLightAcc := IniRead("StateLightAcc", 1), SendCode := IniRead("SendCode", "vk"), StateLightMarker := IniRead("StateLightMarker", 1)
@@ -202,7 +202,7 @@ If MemoryAnchor
 ; ObjRegisterActive(oPubObj, oPubObjGUID := CreateGUID())
 
 
-	
+
 FixIE()
 SeDebugPrivilege() 
 OnExit("Exit")
@@ -373,6 +373,11 @@ Menu, Script, Add, Reload, Reload
 Menu, Script, Add, Exit, Exit
 Menu, Sys, Add, Script, :Script
 
+Menu, Help, Add, % name := "Check updates AutoHotkey", % oMenu.Help[name] := "_CheckAhkNewVersion"
+Menu, Help, % CheckAhkNewVersion ? "Check" : "UnCheck", % name
+If CheckAhkNewVersion
+	SetTimer, CheckAhkNewVersion, -3000 
+Menu, Help, Add
 If FileExist(SubStr(A_AhkPath,1,InStr(A_AhkPath,"\",,0,1)) "AutoHotkey.chm")
 	Menu, Help, Add, % name := "AutoHotKey help file", % oMenu.Help[name] := "LaunchHelp"
 Menu, Help, Add, % name := "AutoHotKey official help online", % oMenu.Help[name] := "Sys_Help"
@@ -424,6 +429,10 @@ DllCall("RedrawWindow", "Ptr", hGui, "Uint", 0, "Uint", 0, "Uint", 0x1|0x4)
 Return
 
 	;; _________________________________________________ Hotkey`s _________________________________________________
+
+#If !WinActive("ahk_id" hGui) && isAhkSpy && Sleep != 1 && OnlyShiftTab && !ActiveNoPause && !isPaused && ThisMode != "Hotkey" && IsHwndUnderMouse(hColorProgress)
+
+MButton:: SetTimer(Func("WM_RBUTTONDOWN").Bind(0, 0, 0, hColorProgress), "-" 1)  ; WM_RBUTTONDOWN(0, 0, 0, hColorProgress)
 
 #If isAhkSpy && Sleep != 1 && OnlyShiftTab && !ActiveNoPause && !isPaused && ThisMode != "Hotkey" && IsHwndUnderMouse(hColorProgress)
 
@@ -2701,16 +2710,23 @@ _Suspend:
 	Return
 
 _CheckUpdate:
+	SetTimer, UpdateAhkSpy, Off
+	SetTimer, Upd_Verifi, Off
 	StateUpdate := IniWrite(!StateUpdate, "StateUpdate")
 	Menu, Sys, % (StateUpdate ? "Check" : "UnCheck"), Check updates
 	If StateUpdate
-		SetTimer, UpdateAhkSpy, -1
-	Else
-	{
-		SetTimer, UpdateAhkSpy, Off
-		SetTimer, Upd_Verifi, Off
-	}
+		SetTimer, UpdateAhkSpy, -1 
 	Return
+	
+_CheckAhkNewVersion:
+	SetTimer, CheckAhkNewVersion, Off
+	SetTimer, lCheckAhkNewVersion, Off
+	CheckAhkNewVersion := IniWrite(!CheckAhkNewVersion, "CheckAhkNewVersion")
+	Menu, Help, % (CheckAhkNewVersion ? "Check" : "UnCheck"), Check updates AutoHotkey
+	If CheckAhkNewVersion
+		SetTimer, CheckAhkNewVersion, -1 
+	Return
+
 
 _Sys_Acclight:
 	StateLightAcc := IniWrite(!StateLightAcc, "StateLightAcc"), HideAccMarker()
@@ -2973,7 +2989,7 @@ WM_RBUTTONDOWN(wp, lp, msg, hwnd) {
 }
 
 RButton_Up_Wait:
-	If GetKeyState("RButton", "P") {
+	If GetKeyState("RButton", "P") || GetKeyState("MButton", "P") {
 		SetTimer, %A_ThisLabel%, -30
 		Return
 	}
@@ -4096,6 +4112,35 @@ UpdRegister() {
 			SetTimer, UpdRegister_Verifi, -2000
 		Return
 }
+
+CheckAhkNewVersion() {
+	Static req, att := 0
+	req := ComObjCreate("WinHttp.WinHttpRequest.5.1")
+	req.Option(6) := 0
+	req.open("GET", "https://www.autohotkey.com/download/", 1)
+	req.send()
+	SetTimer, lCheckAhkNewVersion, -3000
+	Return
+
+	lCheckAhkNewVersion:
+		++att
+		If (req.Status = 200)
+		{ 
+			; RegExMatch(req.responseText, "O)<!--update-->v(.*?) - ", m), ver := m[1]
+			ver := RegExReplace(req.responseText, "s).*?<!--update-->v(.*?) - .*", "$1")
+			If StrReplace(ver, ".") <= StrReplace(A_AhkVersion, ".")
+				Return
+			MsgBox, % 4+32+262144+8192, AhkSpy, AutoHotkey new version!`nFor update v%A_AhkVersion% to v%Ver%, need to go autohotkey.com?
+			IfMsgBox, No
+				Return
+			Run https://www.autohotkey.com/download/
+			Return
+		}
+		If (att <= 3)
+			SetTimer, lCheckAhkNewVersion, -2000
+		Return 
+}
+
 
 	;; _________________________________________________ WindowStyles _________________________________________________
 
