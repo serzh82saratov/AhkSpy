@@ -27,7 +27,7 @@
 */
 
 
-Global AhkSpyVersion := 4.48
+Global AhkSpyVersion := 4.49
 
 	;; _________________________________________________ Caption _________________________________________________
 
@@ -6347,7 +6347,7 @@ ZoomCreate() {
 	Gui, ZoomTB: Add, Button, hwndhChangeMark gChangeMark x+10 yp hp w52, % oZoom.Mark
 	Gui, ZoomTB: Font, % "s" FontSize + 4
 	Gui, ZoomTB: Add, Button, hwndhZoomHideBut gZoomHide x+10 yp hp w22, % Chr(0x00D7)
-	Gui, ZoomTB: Add, Button, gZoomHide x+10 yp hp w22, % Chr(0x2261)
+	; Gui, ZoomTB: Add, Button, gZoomHide x+10 yp hp w22, % Chr(0x2261)
 	Gui, ZoomTB: Show, NA x0 y0
 
 	Gui, Zoom: Show, % "NA Hide w" GuiW " h" GuiH, AhkSpyZoom
