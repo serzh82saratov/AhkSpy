@@ -785,6 +785,7 @@ Spot_Win(NotHTML = 0) {
 	MouseGetPos, WinXS, WinYS, h
 	If (h = hGui || h = oOther.hZoom || h = oOther.hZoomLW)
 		Return 0, HideAllMarkers()
+	SetPosObject("Window", [WinX, WinY, WinWidth, WinHeight]) 
 	If !StateAllwaysSpot 
 	{
 		oObjActive.ScreenX := WinXS, oObjActive.ScreenY := WinYS
@@ -1071,7 +1072,10 @@ Spot_Control(NotHTML = 0) {
 	MouseGetPos, , , h
 	If (h = hGui || h = oOther.hZoom || h = oOther.hZoomLW)
 		Return 0, HideAllMarkers()
-		 
+		
+	If !isIE
+		SetPosObject("Control", [CtrlSCX, CtrlSCY, CtrlW, CtrlH])  
+	
 	If UseUIA && exUIASub.Release() && exUIASub.ElementFromPoint(MXS, MYS)
 	{ 
 		UIAPID := exUIASub.CurrentProcessId
@@ -1528,7 +1532,8 @@ GetInfo_InternetExplorer_Server(hwnd) {
 		WinGetPos, sX, sY, , , ahk_id %hwnd%
 		StateLightMarker ? ShowMarker(sX + x1, sY + y1, x2 - x1, y2 - y1) : 0
 		StateLightAcc ? ShowAccMarker(AccCoord[1], AccCoord[2], AccCoord[3], AccCoord[4]) : 0
-	}
+	} 
+	SetPosObject("Control", [sX + x1, sY + y1, x2 - x1, y2 - y1])  
 	If (pelt.TagName)
 		Info := _T1 " id='P__Tag_name' name='MS:N'> ( Tag name: <span name='MS:' style='color: #" ColorFont ";'>"
 		. pelt.TagName "</span>" (Frame ? " - (in frame)" : "") " ) </span>" _T2
@@ -1608,8 +1613,9 @@ AccInfoUnderMouse(mx, my, wx, wy, cx, cy, caX, caY, WinID, ControlID) {
 	code := _PRE1 "<span class='param'>Type:</span>  " Var pathbutton _PRE2 "<span id='acc_path_value'>" acc_path_value "</span>"
 
 	AccGetLocation(AccObj, child)
-	x := AccCoord[1], y := AccCoord[2], w := AccCoord[3], h := AccCoord[4]
-
+	x := AccCoord[1], y := AccCoord[2], w := AccCoord[3], h := AccCoord[4] 
+	SetPosObject("accesible", [x, y, w, h])  
+	
 	code .= _T1 " id='P__Position_relative_Acc'" _T1P "> ( Position relative ) </span>" _T2 _PRE1 "<span class='param'>Screen: </span>"
 		. "<span name='MS:'>x" x " y" y "</span>"
 		. _DP "<span name='MS:'>x&sup2;" x + w - 1 " y&sup2;" y + h - 1 "</span>"
@@ -3030,7 +3036,7 @@ Mod_Up_Wait_And_TransParent:
 	}
 	; ZoomMsg(3) 
 	HideAllMarkers()
-	oObjActive.Magnify.Call(2)  
+	oObjActive.Magnify.Call(2)
 	oObjActive.Redraw.Call()   
 	TransParent("Off")
 	Return
@@ -3260,7 +3266,7 @@ ZoomMsg(wParam = -1, lParam = -1) {  ;;	отправляет
 
 AhkSpyZoomShow() {
 	If !oPubObjGUID
-		ObjRegisterActive(oObjActive, oPubObjGUID := CreateGUID())  
+		ObjRegisterActive(oObjActive, oPubObjGUID := CreateGUID())
 	If !WinExist("ahk_id" oOther.hZoom) {
 		Hotkey := ThisMode = "Hotkey"
 		Suspend := !isAhkSpy
@@ -3275,6 +3281,12 @@ AhkSpyZoomShow() {
 	Else
 		ZoomMsg(1)
 }
+
+SetPosObject(Name, arr) {
+	If !oOther.ZoomShow
+		Return
+	oObjActive["Coords" Name] := arr
+} 
 
 SavePos() {
 	If FullScreenMode || !MemoryPos
@@ -4102,6 +4114,12 @@ SetTimer(funcorlabel, time = -500) {
 
 GuiControl(SubCommand, ControlID = "", Value = "") { 
 	GuiControl, %SubCommand%, %ControlID%, %Value%
+}
+
+MouseMoveScreen(x, y) {
+	CoordMode, Mouse, Screen
+	SetMouseDelay, 0, 0
+	SendEvent {Click %x%, %y%, 0}  
 }
 
 ToolTip(text, time = 500) {
@@ -6063,17 +6081,16 @@ ButtonClick(oevent) {
 	}
 	Else If thisid = set_button_focus_ctrl
 	{
-		hWnd := oOther.ControlID
+		hWnd := oOther.ControlID 
 		ControlFocus, , ahk_id %hWnd%
 		WinGetPos, X, Y, W, H, ahk_id %hWnd%
 		FlashArea(x, y, w, h)
-		If GetKeyState("Shift") && (X + Y != "")
-			DllCall("SetCursorPos", "Uint", X + W // 2, "Uint", Y + H // 2)
+		If GetKeyState("Shift") && (X + Y != "") 
+			MouseMoveScreen(X + W // 2, Y + H // 2)
 	}
 	Else If thisid = set_pos
 	{ 
 		thisbutton := oevent.OuterText
-		
 		If thisbutton != Screen:
 		{
 			hWnd := oOther.MouseWinID
@@ -6089,16 +6106,16 @@ ButtonClick(oevent) {
 			RegExMatch(oDoc.all.item(oevent.sourceIndex + 1).OuterText, "(-*\d+[\.\d+]*).*\s+.*?(-*\d+[\.\d+]*)", p)
 			If (p1 + 0 = "" || p2 + 0 = "")
 				Return ToolTip("Invalid parametrs", 500)
-			BlockInput, MouseMove
-			DllCall("SetCursorPos", "Uint", X + Round(W * p1), "Uint", Y + Round(H * p2))
+			BlockInput, MouseMove  
+			MouseMoveScreen(X + Round(W * p1), Y + Round(H * p2))
 		}
 		Else If thisbutton = Relative client:
 		{
 			RegExMatch(oDoc.all.item(oevent.sourceIndex + 1).OuterText, "(-*\d+[\.\d+]*).*\s+.*?(-*\d+[\.\d+]*)", p)
 			If (p1 + 0 = "" || p2 + 0 = "")
 				Return ToolTip("Invalid parametrs", 500)
-			GetClientPos(hWnd, caX, caY, caW, caH)
-			DllCall("SetCursorPos", "Uint", X + Round(caW * p1) + caX, "Uint", Y + Round(caH * p2) + caY)
+			GetClientPos(hWnd, caX, caY, caW, caH) 
+			MouseMoveScreen(X + Round(caW * p1) + caX, Y + Round(caH * p2) + caY)
 		}
 		Else
 		{
@@ -6106,22 +6123,22 @@ ButtonClick(oevent) {
 			If (p1 + 0 = "" || p2 + 0 = "")
 				Return ToolTip("Invalid parametrs", 500)
 			BlockInput, MouseMove
-			If thisbutton = Screen:
-				DllCall("SetCursorPos", "Uint", p1, "Uint", p2)
-			Else If thisbutton = Window:
-				DllCall("SetCursorPos", "Uint", X + p1, "Uint", Y + p2)
+			If thisbutton = Screen:  
+				MouseMoveScreen(p1, p2)
+			Else If thisbutton = Window:  
+				MouseMoveScreen(X + p1, Y + p2)
 			Else If thisbutton = Mouse relative control:
 			{
 				hWnd := oOther.ControlID
 				If !WinExist("ahk_id " hwnd)
 					Return ToolTip("Control not exist", 500)
-				WinGetPos, X, Y, W, H, ahk_id %hWnd%
-				DllCall("SetCursorPos", "Uint", X + p1, "Uint", Y + p2)
+				WinGetPos, X, Y, W, H, ahk_id %hWnd%  
+				MouseMoveScreen(X + p1, Y + p2)
 			}
 			Else If thisbutton = Client:
 			{
-				GetClientPos(hWnd, caX, caY, caW, caH)
-				DllCall("SetCursorPos", "Uint", X + p1 + caX, "Uint", Y + p2 + caY)
+				GetClientPos(hWnd, caX, caY, caW, caH)  
+				MouseMoveScreen(X + p1 + caX, Y + p2 + caY) 
 			}
 		}
 		If isPaused
@@ -6351,6 +6368,10 @@ Send_AhkSpy(3, oZoom.hLW)
 WinGet, Min, MinMax, % "ahk_id " hAhkSpy
 If Min != -1
 	ZoomShow()
+	
+Menu, Zoom, Add, Select window, gMenuZoom
+Menu, Zoom, Add, Select control, gMenuZoom
+Menu, Zoom, Add, Select accesible, gMenuZoom 
 Return
  
 #If isZoom && oZoom.Show && oZoom.Crop && UnderRender()
@@ -6783,8 +6804,21 @@ CropChangeControls() {
 	GuiControl("ZoomTB:Show" oZoom.Crop, oZoom.vCropHeight) 
 } 
 
-ZoomMenu() {
-	MsgBox % z
+ZoomMenu() { 
+	Menu, Zoom, Show 
+}
+
+gMenuZoom() {
+	; SetPosObject
+	p := ObjActive["Coords" SubStr(A_ThisMenuItem, 8)]
+	If p[1] = "" || p[2] = "" || p[3] = "" || p[4] = ""
+		Return ToolTip("Coordinates not found!", 500)  
+	oZoom.Crop := 1
+	oZoom.nXOriginSrc := p[1] - oZoom.VSX, oZoom.nYOriginSrc := p[2] - oZoom.VSY
+	oZoom.CropX := p[1] + p[3] - 1 - oZoom.VSX, oZoom.CropY := p[2] + p[4] - 1 - oZoom.VSY
+	Redraw()
+	CropChangeControls()
+	SendCoords()
 }
 
 CoupCrop() {
@@ -6906,7 +6940,7 @@ Magnify(one = 0) {
 		{ 
 			oZoom.NewSpot := 1, oZoom.MouseX := ObjActive.ScreenX, oZoom.MouseY := ObjActive.ScreenY
 			If oZoom.Crop
-				oZoom.Crop := 0
+				oZoom.Crop := 0, CropChangeControls()
 			UpdateWindow(oZoom.hdcSrc, oZoom.MouseX - oZoom.nXOriginSrcOffset, oZoom.MouseY - oZoom.nYOriginSrcOffset)
 		}
 	}
@@ -6924,6 +6958,8 @@ Redraw() {
 Memory() {
 	SysGet, VSX, 76
 	SysGet, VSY, 77
+	oZoom.VSX := VSX
+	oZoom.VSY := VSY
 	SysGet, VirtualScreenWidth, 78
 	SysGet, VirtualScreenHeight, 79
 	oZoom.nXOriginSrc := oZoom.sXOriginSrc := oZoom.MouseX - VSX
