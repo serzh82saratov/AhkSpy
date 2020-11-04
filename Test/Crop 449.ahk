@@ -549,9 +549,17 @@ F6::
 
 F7:: AnchorScroll()
 
-F11:: FullScreenMode()
+F11:: 
+	If oOther.ZoomShow && UnderControl(oOther.hZoomLW)
+		Return
+	FullScreenMode()
+	Return
 
-F12:: MouseGetPosScreen(x, y), ShowSys(x + 5, y + 5)
+F12:: 
+	If oOther.ZoomShow && UnderControl(oOther.hZoomLW)
+		Return
+	MouseGetPosScreen(x, y), ShowSys(x + 5, y + 5)
+	Return
 
 !Space:: SetTimer, ShowSys, -1
 
@@ -3920,6 +3928,11 @@ MsgConfirm(Info, Title, hWnd) {
 		Return
 }
 
+UnderControl(h) { 
+	MouseGetPos, , , Control, , 2
+	Return (Control = h)
+}
+
 MouseStep(x, y) {
 	MouseMove, x, y, 0, R
 	If (WinActive("ahk_id" hGui) && !ActiveNoPause) || OnlyShiftTab
@@ -6356,7 +6369,7 @@ SetWinEventHook("EVENT_OBJECT_DESTROY", 0x8001)
 SetWinEventHook("EVENT_SYSTEM_MINIMIZESTART", 0x0016)
 SetWinEventHook("EVENT_SYSTEM_MINIMIZEEND", 0x0017)
 SetWinEventHook("EVENT_SYSTEM_MOVESIZESTART", 0x000A)
-SetWinEventHook("EVENT_SYSTEM_MOVESIZEEND", 0x000B)
+SetWinEventHook("EVENT_SYSTEM_MOVESIZEEND", 0x000B)			
 
 ObjActive.Magnify := Func("Magnify")
 ObjActive.Redraw := Func("Redraw") 
@@ -6372,18 +6385,27 @@ If Min != -1
 Menu, Zoom, Add, Select window, gMenuZoom
 Menu, Zoom, Add, Select control, gMenuZoom
 Menu, Zoom, Add, Select accesible, gMenuZoom 
-Return
- 
+Return 
+
 #If isZoom && oZoom.Show && oZoom.Crop && UnderRender()
 MButton:: CoupCrop()
++MButton:: CircleCoupCrop()
 #If isZoom && oZoom.Show && UnderRender()
 PgUp::
 PgDn::
 WheelUp::
 WheelDown:: ChangeZoom(FastZoom(InStr(A_ThisHotKey, "Up")))
 
-#If
+Tab::
+F1::
+F11:: ZoomMaximize()
 
+F12:: ZoomMenu()
+
+#If isZoom && oZoom.Show && GetMinMax(oZoom.hGui) = 1
+Esc:: ZoomMaximize() 
+#If
+	
 ZoomCreate() {
 	oZoom.Zoom := IniRead("MagnifyZoom", 4)
 	oZoom.Mark := IniRead("MagnifyMark", "Cross")
@@ -6398,8 +6420,8 @@ ZoomCreate() {
 	Gui, Zoom: -Caption -DPIScale +Border +LabelZoomOn +HWNDhGui +AlwaysOnTop +E%WS_EX_NOACTIVATE%    ;;	+Owner%hAhkSpy%
 	Gui, Zoom: Color, %GuiColor%
 	Gui, Zoom: Add, Text, hwndhStatic +Border
-	DllCall("SetClassLong", "Ptr", hGui, "int", -26
-	, "int", DllCall("GetClassLong", "Ptr", hGui, "int", -26) | 0x20000)
+	; DllCall("SetClassLong", "Ptr", hGui, "int", -26
+	; , "int", DllCall("GetClassLong", "Ptr", hGui, "int", -26) | 0x20000)
 
 	Gui, LW: -Caption +E%WS_EX_LAYERED% +AlwaysOnTop +ToolWindow +HWNDhLW +E%WS_EX_NOACTIVATE% +Owner%hGui% ;;	++E%WS_EX_NOACTIVATE% +E%WS_EX_TRANSPARENT%
 
@@ -6415,7 +6437,8 @@ ZoomCreate() {
 	Gui, ZoomTB: Add, Text, % "hwndhCropHeight hidden Border c" TextColor " xs y+0 wp hp"
 	Gui, ZoomTB: Font, % "s" FontSize + 4
 	Gui, ZoomTB: Add, Button, hwndhZoomHideBut gZoomHide x+10 ys h%h% w22, % Chr(0x00D7)
-	Gui, ZoomTB: Add, Button, gZoomMenu x+10 yp hp w22, % Chr(0x2261)
+	Gui, ZoomTB: Add, Button, gZoomMenu x+10 yp hp wp, % Chr(0x2261)
+	Gui, ZoomTB: Add, Button, gZoomMaximize x+10 yp hp wp, % Chr(0x1F791) 
 	Gui, ZoomTB: Show, NA x0 y0
 
 	Gui, Zoom: Show, % "NA Hide w" GuiW " h" GuiH, AhkSpyZoom
@@ -6624,6 +6647,25 @@ ZoomOnSize() {
 	Redraw()
 }
 
+ZoomMaximize() { 
+	WinGet, Min, MinMax, % "ahk_id " oZoom.hGui
+	If Min = 1
+		WinRestore, % "ahk_id " oZoom.hGui
+	Else 
+		WinMaximize, % "ahk_id " oZoom.hGui   
+	WinGetPos, WinX, WinY, WinW, WinH, % "ahk_id " oZoom.hGui 
+	oZoom.GuiWidth := WinW
+	oZoom.GuiHeight := WinH
+	SetSize()
+	oZoom.LWWidth := oZoom.GuiWidth - 6
+	oZoom.LWHeight := oZoom.GuiHeight - 51 
+	oZoom.LWX := WinX + 1, oZoom.LWY := WinY + 46 
+	Gui,  LW: Show, % "NA x" oZoom.LWX " y" oZoom.LWY " w" oZoom.LWWidth " h" oZoom.LWHeight  
+	Redraw() 
+	If Min = 1
+		WinActivate, % "ahk_id " hAhkSpy
+}
+
 ZoomOnClose() {
 	ReleaseDC(oZoom.hdcSrc)
 	DeleteDC(oZoom.hdcSrc)
@@ -6805,14 +6847,14 @@ CropChangeControls() {
 } 
 
 ZoomMenu() { 
+	WinActivate, % "ahk_id " oZoom.hGui
 	Menu, Zoom, Show 
 }
 
-gMenuZoom() {
-	; SetPosObject
-	p := ObjActive["Coords" SubStr(A_ThisMenuItem, 8)]
+gMenuZoom() { 
+	p := ObjActive["Coords" SubStr(A_ThisMenuItem, 8)]	; SetPosObject
 	If p[1] = "" || p[2] = "" || p[3] = "" || p[4] = ""
-		Return ToolTip("Coordinates not found!", 500)  
+		Return ToolTip("Coordinates not found!", 500)
 	oZoom.Crop := 1
 	oZoom.nXOriginSrc := p[1] - oZoom.VSX, oZoom.nYOriginSrc := p[2] - oZoom.VSY
 	oZoom.CropX := p[1] + p[3] - 1 - oZoom.VSX, oZoom.CropY := p[2] + p[4] - 1 - oZoom.VSY
@@ -6820,6 +6862,24 @@ gMenuZoom() {
 	CropChangeControls()
 	SendCoords()
 }
+
+CircleCoupCrop() {
+	If oZoom.CropWidth = 1 && oZoom.CropHeight = 1
+		Return
+	x := oZoom.CropX, y := oZoom.CropY
+	If oZoom.nXOriginSrc > oZoom.CropX && oZoom.nYOriginSrc > oZoom.CropY ; RD - текущее правее и ниже диагонали Crop
+		oZoom.CropX := oZoom.nXOriginSrc, oZoom.nXOriginSrc := x
+	Else If oZoom.nXOriginSrc < oZoom.CropX && oZoom.nYOriginSrc > oZoom.CropY ; LD
+		oZoom.CropY := oZoom.nYOriginSrc, oZoom.nYOriginSrc := y
+	Else If oZoom.nXOriginSrc < oZoom.CropX && oZoom.nYOriginSrc < oZoom.CropY ; LU 
+		oZoom.CropX := oZoom.nXOriginSrc, oZoom.nXOriginSrc := x
+	Else If oZoom.nXOriginSrc > oZoom.CropX && oZoom.nYOriginSrc < oZoom.CropY ; RU
+		oZoom.CropY := oZoom.nYOriginSrc, oZoom.nYOriginSrc := y
+	Else
+		Return CoupCrop()
+	Redraw()
+	SendCoords()
+} 
 
 CoupCrop() {
 	x := oZoom.CropX, y := oZoom.CropY
@@ -6886,6 +6946,11 @@ LimitsOriginSrc() {
 UnderRender() { 
 	MouseGetPos, , , Control, , 2
 	Return (Control = oZoom.hLW)
+}
+
+GetMinMax(h) {
+	WinGet, Min, MinMax, % "ahk_id " h
+	Return Min
 }
 
 Sizing() {
@@ -7013,8 +7078,10 @@ CropRender() {
 	For k, v In oZoom.oMarkers["CropCross"]
 		StretchBlt(oZoom.hDCBuf, v.x, v.y, v.w, v.h, oZoom.hDCBuf, v.x, v.y, v.w, v.h, 0x5A0049)	;; PATINVERT
 	
-	GuiControl("ZoomTB:", oZoom.vCropWidth, "W: " Abs(oZoom.nXOriginSrc - oZoom.CropX) + 1)
-	GuiControl("ZoomTB:", oZoom.vCropHeight, "H: " Abs(oZoom.nYOriginSrc - oZoom.CropY) + 1) 
+	oZoom.CropWidth := Abs(oZoom.nXOriginSrc - oZoom.CropX) + 1
+	oZoom.CropHeight := Abs(oZoom.nYOriginSrc - oZoom.CropY) + 1
+	GuiControl("ZoomTB:", oZoom.vCropWidth, "W: " oZoom.CropWidth)
+	GuiControl("ZoomTB:", oZoom.vCropHeight, "H: " oZoom.CropHeight) 
 }
 
 GdipStartup() {
