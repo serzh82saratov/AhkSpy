@@ -3274,7 +3274,7 @@ ZoomMsg(wParam = -1, lParam = -1) {  ;;	отправляет
 
 AhkSpyZoomShow() {
 	If !oPubObjGUID
-		ObjRegisterActive(oObjActive, oPubObjGUID := CreateGUID())
+		ObjRegisterActive(oObjActive, oPubObjGUID := CreateGUID()), oObjActive.AhkSpy_Minimize := Func("Minimize")
 	If !WinExist("ahk_id" oOther.hZoom) {
 		Hotkey := ThisMode = "Hotkey"
 		Suspend := !isAhkSpy
@@ -6382,6 +6382,11 @@ WinGet, Min, MinMax, % "ahk_id " hAhkSpy
 If Min != -1
 	ZoomShow()
 	
+Menu, Zoom, Add, Save to temp file and open, gSave_to_file
+Menu, Zoom, Add, Save to file, gSave_to_file
+Menu, Zoom, Add, Save to file and open, gSave_to_file
+Menu, Zoom, Add, Save to clipboard, gSave_to_Clipboard 
+Menu, Zoom, Add
 Menu, Zoom, Add, Select window, gMenuZoom
 Menu, Zoom, Add, Select control, gMenuZoom
 Menu, Zoom, Add, Select accesible, gMenuZoom 
@@ -6431,13 +6436,14 @@ ZoomCreate() {
 	Gui, ZoomTB: Add, Slider, % "hwndhSliderZoom gSliderZoom x8 Range1-50 w152 y" (44-h)/2 " h" h " Center AltSubmit NoTicks", % oZoom.Zoom
 	Gui, ZoomTB: Font, % "s" FontSize + 2
 	Gui, ZoomTB: Add, Text, hwndhTextZoom +0x201 x+10 yp w36 hp c%TextColor%, % oZoom.Zoom
+	Gui, ZoomTB: Font, % "s" FontSize + 4
+	Gui, ZoomTB: Add, Button, hwndhZoomHideBut gZoomHide x+10 ys h%h% w22, % Chr(0x00D7)
 	Gui, ZoomTB: Font, % "s" FontSize - 2
 	Gui, ZoomTB: Add, Button, hwndhChangeMark gChangeMark x+10 yp hp w62, % oZoom.Mark
 	Gui, ZoomTB: Add, Text, % "hwndhCropWidth hidden Border Section c" TextColor " xp yp wp h" h / 2
 	Gui, ZoomTB: Add, Text, % "hwndhCropHeight hidden Border c" TextColor " xs y+0 wp hp"
 	Gui, ZoomTB: Font, % "s" FontSize + 4
-	Gui, ZoomTB: Add, Button, hwndhZoomHideBut gZoomHide x+10 ys h%h% w22, % Chr(0x00D7)
-	Gui, ZoomTB: Add, Button, gZoomMenu x+10 yp hp wp, % Chr(0x2261)
+	Gui, ZoomTB: Add, Button, gZoomMenu x+10 ys h%h% w22, % Chr(0x2261)
 	Gui, ZoomTB: Add, Button, gZoomMaximize x+10 yp hp wp, % Chr(0x1F791) 
 	Gui, ZoomTB: Show, NA x0 y0
 
@@ -6628,11 +6634,13 @@ ShowZoom(Show) {
 		Gui,  Zoom: Show, % "NA Hide x" WinX + WinW " y" WinY
 		Gui,  LW: Show, % "NA x" oZoom.LWX " y" oZoom.LWY " w" 0 " h" 0
 		Gui,  Zoom: Show, NA
-		try Gui, LW: Show, % "NA x" oZoom.LWX " y" oZoom.LWY " w" oZoom.LWWidth " h" oZoom.LWHeight
-		Return
+		try Gui, LW: Show, % "NA x" oZoom.LWX " y" oZoom.LWY " w" oZoom.LWWidth " h" oZoom.LWHeight 
 	}
-	Gui,  LW: Show, % "NA w" 0 " h" 0  ;;	нельзя применять Hide, иначе после появления и ресайза остаётся прозрачный след
-	Gui,  Zoom: Show, NA Hide
+	Else 
+	{
+		Gui,  LW: Show, % "NA w" 0 " h" 0  ;;	нельзя применять Hide, иначе после появления и ресайза остаётся прозрачный след
+		Gui,  Zoom: Show, NA Hide
+	}
 }
 
 	;; _________________________________________________ Zoom Events _________________________________________________
@@ -6854,13 +6862,59 @@ ZoomMenu() {
 gMenuZoom() { 
 	p := ObjActive["Coords" SubStr(A_ThisMenuItem, 8)]	; SetPosObject
 	If p[1] = "" || p[2] = "" || p[3] = "" || p[4] = ""
-		Return ToolTip("Coordinates not found!", 500)
+		Return ToolTip("Coordinates not found!", 800)
 	oZoom.Crop := 1
 	oZoom.nXOriginSrc := p[1] - oZoom.VSX, oZoom.nYOriginSrc := p[2] - oZoom.VSY
 	oZoom.CropX := p[1] + p[3] - 1 - oZoom.VSX, oZoom.CropY := p[2] + p[4] - 1 - oZoom.VSY
 	Redraw()
 	CropChangeControls()
 	SendCoords()
+}
+
+gSave_to_Clipboard() { 
+	If !pBitmap := GetBitmap()
+		Return 
+	SetBitmapToClipboard(pBitmap) 
+	DllCall("gdiplus\GdipDisposeImage", "UPtr", pBitmap) 
+	ToolTip("Copy clipboard", 800)
+}
+
+
+gSave_to_file() { 
+	If !pBitmap := GetBitmap()
+		Return 
+	file := (A_ThisMenuItem = "Save to temp file and open") ? A_Temp "\AhkSpy picture.png" : GetNameFile(A_Desktop, "AhkSpy picture ", "png")
+	SaveBitmapToFile(pBitmap, file)
+	DllCall("gdiplus\GdipDisposeImage", "UPtr", pBitmap)
+	If (A_ThisMenuItem = "Save to file and open") || (A_ThisMenuItem = "Save to temp file and open")
+	{ 
+		If GetMinMax(oZoom.hGui) = 1
+			ZoomMaximize()
+		ObjActive.AhkSpy_Minimize()
+		Run %file%
+	} 
+	Else
+		ToolTip("Save file to desktop", 800)
+}
+
+GetBitmap() {
+	If oZoom.Crop
+		w := oZoom.CropWidth, h := oZoom.CropHeight
+		, sx := Min(oZoom.CropX, oZoom.nXOriginSrc)
+		, sy := Min(oZoom.CropY, oZoom.nYOriginSrc)
+	Else
+		w := oZoom.VirtualScreenWidth
+		, h := oZoom.VirtualScreenHeight
+		, sx := 0, sy := 0
+	
+	chdc := CreateCompatibleDC()
+	hbm := CreateDIBSection(w, h, chdc)
+	obm := SelectObject(chdc, hbm)
+	DllCall("BitBlt", "Ptr", chdc, "int", 0, "int", 0, "int", w, "int", h
+			, "Ptr", oZoom.hdcMemory, "int", sx, "int", sy, "Uint", 0x00CC0020) 
+	DllCall("gdiplus\GdipCreateBitmapFromHBITMAP", "UPtr", hbm, "UPtr", 0, "UPtr*", pBitmap)
+	SelectObject(chdc, obm), DeleteObject(hbm), DeleteDC(chdc)
+	return pBitmap
 }
 
 CircleCoupCrop() {
@@ -7099,6 +7153,15 @@ GdipShutdown(pToken) {
 	Return 0
 }
 
+SelectObject(hdc, hgdiobj) {
+   Ptr := A_PtrSize ? "UPtr" : "UInt"
+   return DllCall("SelectObject", Ptr, hdc, Ptr, hgdiobj)
+} 
+
+DeleteObject(hObject) {
+   return DllCall("DeleteObject", A_PtrSize ? "UPtr" : "UInt", hObject)
+}
+
 UpdateLayeredWindow(hwnd, hdc, w, h) {
 	Return DllCall("UpdateLayeredWindow"
 					, UPtr, hwnd
@@ -7172,6 +7235,106 @@ DeleteDC(hdc) {
 
 CreateCompatibleDC(hdc=0) {
 	Return DllCall("CreateCompatibleDC", "UPtr", hdc)
+}
+
+CreateHBITMAPFromBitmap(pBitmap, Background:=0xffffffff) {
+; background should be zero, to not alter the semi-transparent areas of the image
+   hBitmap := 0
+   DllCall("gdiplus\GdipCreateHBITMAPFromBitmap", A_PtrSize ? "UPtr" : "UInt", pBitmap, A_PtrSize ? "UPtr*" : "uint*", hBitmap, "int", Background)
+   return hBitmap
+}
+
+SetBitmapToClipboard(pBitmap) {
+; modified by Marius Șucan to have this function report errors
+
+   Ptr := A_PtrSize ? "UPtr" : "UInt"
+   off1 := A_PtrSize = 8 ? 52 : 44
+   off2 := A_PtrSize = 8 ? 32 : 24
+   r1 := DllCall("OpenClipboard", Ptr, 0)
+   If !r1
+      Return -1
+
+   hBitmap := CreateHBITMAPFromBitmap(pBitmap, 0)
+   If !hBitmap
+   {
+      DllCall("CloseClipboard")
+      Return -3
+   }
+
+   r2 := DllCall("EmptyClipboard")
+   If !r2
+   {
+      DeleteObject(hBitmap)
+      DllCall("CloseClipboard")
+      Return -2
+   }
+
+   DllCall("GetObject", Ptr, hBitmap, "int", VarSetCapacity(oi, A_PtrSize = 8 ? 104 : 84, 0), Ptr, &oi)
+   hdib := DllCall("GlobalAlloc", "uint", 2, Ptr, 40+NumGet(oi, off1, "UInt"), Ptr)
+   pdib := DllCall("GlobalLock", Ptr, hdib, Ptr)
+   DllCall("RtlMoveMemory", Ptr, pdib, Ptr, &oi+off2, Ptr, 40)
+   DllCall("RtlMoveMemory", Ptr, pdib+40, Ptr, NumGet(oi, off2 - (A_PtrSize ? A_PtrSize : 4), Ptr), Ptr, NumGet(oi, off1, "UInt"))
+   DllCall("GlobalUnlock", Ptr, hdib)
+   DeleteObject(hBitmap)
+   r3 := DllCall("SetClipboardData", "uint", 8, Ptr, hdib) ; CF_DIB = 8
+   DllCall("CloseClipboard")
+   DllCall("GlobalFree", Ptr, hdib)
+   E := r3 ? 0 : -4    ; 0 - success
+   Return E
+}
+
+SaveBitmapToFile(pBitmap, sOutput, Quality=75)  {
+	SplitPath, sOutput,,, Extension
+	if Extension not in BMP,DIB,RLE,JPG,JPEG,JPE,JFIF,GIF,TIF,TIFF,PNG
+		return -1
+
+	DllCall("gdiplus\GdipGetImageEncodersSize", UIntP, nCount, UIntP, nSize)
+	VarSetCapacity(ci, nSize)
+	DllCall("gdiplus\GdipGetImageEncoders", UInt, nCount, UInt, nSize, Ptr, &ci)
+	if !(nCount && nSize)
+		return -2
+
+	Loop, % nCount  {
+	sString := StrGet(NumGet(ci, (idx := (48+7*A_PtrSize)*(A_Index-1))+32+3*A_PtrSize), "UTF-16")
+	if !InStr(sString, "*." Extension)
+		continue
+
+	pCodec := &ci+idx
+	break
+	}
+
+	if !pCodec
+		return -3
+
+	if RegExMatch(Extension, "i)^J(PG|PEG|PE|FIF)$") && Quality != 75  {
+		DllCall("gdiplus\GdipGetEncoderParameterListSize", Ptr, pBitmap, Ptr, pCodec, UintP, nSize)
+		VarSetCapacity(EncoderParameters, nSize, 0)
+		DllCall("gdiplus\GdipGetEncoderParameterList", Ptr, pBitmap, Ptr, pCodec, UInt, nSize, Ptr, &EncoderParameters)
+		Loop, % NumGet(EncoderParameters, "UInt")  {
+			elem := (24+A_PtrSize)*(A_Index-1) + 4 + (pad := A_PtrSize = 8 ? 4 : 0)
+			if (NumGet(EncoderParameters, elem+16, "UInt") = 1) && (NumGet(EncoderParameters, elem+20, "UInt") = 6)  {
+				p := elem+&EncoderParameters-pad-4
+				NumPut(Quality, NumGet(NumPut(4, NumPut(1, p+0)+20, "UInt")), "UInt")
+				break
+			}
+		}      
+	}
+
+	if A_IsUnicode
+		pOutput := &sOutput
+	else  {
+		VarSetCapacity(wOutput, StrPut(sOutput, "UTF-16")*2, 0)
+		StrPut(sOutput, &wOutput, "UTF-16")
+		pOutput := &wOutput
+	}
+	E := DllCall("gdiplus\GdipSaveImageToFile", Ptr, pBitmap, Ptr, pOutput, Ptr, pCodec, UInt, p ? p : 0)
+	return E ? -5 : 0
+}
+
+GetNameFile(Folder, Name = "Myfile ", Ext = "txt", i = 1) {
+	While FileExist(Folder "\" Name "(" i ")." Ext)
+		i := A_Index
+	Return Folder "\" Name "(" i ")." Ext
 }
 
 
@@ -7252,6 +7415,33 @@ https://github.com/serzh82saratov/AhkSpy/commit/ce7c5109e827576ba4e4b74b0b31d3cc
 		Redraw()
 	Return
 */
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
