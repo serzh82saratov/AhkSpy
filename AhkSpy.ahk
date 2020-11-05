@@ -27,7 +27,7 @@
 */
 
 
-Global AhkSpyVersion := 4.51
+Global AhkSpyVersion := 4.52
 
 	;; _________________________________________________ Caption _________________________________________________
 
@@ -3013,21 +3013,6 @@ WM_NCLBUTTONDOWN(wp) {
 	}
 }
 
-WM_RBUTTONDOWN(wp, lp, msg, hwnd) { 
-	If (hwnd = hColorProgress && !ActiveNoPause && !isPaused)
-	{
-		If GetKeyState("Shift")
-			TransParent(0)
-		ToolTip("Spot", 300)
-		ZoomMsg(7, 0) 
-		ActiveNoPause := 1
-		OnlyShiftTab := 0
-		ZoomMsg(12, 0)
-		SetTimer, Loop_%ThisMode%, -1 
-		SetTimer, RButton_Up_Wait, -1
-	}
-}
-
 WM_MBUTTONUP(wp) {
 	If (A_GuiControl = "ColorProgress")
 		Return 0, ToolTip("Zoom", 300), AhkSpyZoomShow()
@@ -3054,21 +3039,38 @@ Mod_Up_Wait_And_TransParent:
 	oObjActive.Redraw.Call()   
 	TransParent("Off")
 	Return
-	
+
+WM_RBUTTONDOWN(wp, lp, msg, hwnd) { 
+	If (hwnd = hColorProgress && !ActiveNoPause && !isPaused)
+	{
+		If GetKeyState("Shift")
+			TransParent(0)
+		ToolTip("Spot", 300)
+		ZoomMsg(7, 0) 
+		ActiveNoPause := 1
+		If OnlyShiftTab 
+			OnlyShiftTab := 0, oOther.OnlyShiftTabReset := 1
+		ZoomMsg(12, 0)
+		SetTimer, Loop_%ThisMode%, -1 
+		SetTimer, RButton_Up_Wait, -1
+	}
+}
+
 RButton_Up_Wait:
 	If GetKeyState("RButton", "P") || GetKeyState("MButton", "P") {
 		SetTimer, %A_ThisLabel%, -30
 		Return
 	}
-	ActiveNoPause := 0
-	OnlyShiftTab := 1
+	ActiveNoPause := 0 
+	If oOther.OnlyShiftTabReset
+		OnlyShiftTab := 1, oOther.OnlyShiftTabReset := 0
 	ZoomMsg(12, 1)
 	SetTimer, Loop_%ThisMode%, Off
 	SetTimer, ShiftUpHide, -300 
 	Sleep 100
 	ToolTip("Stop", 300) 
 	If oOther.TransParent
-		TransParent("Off")
+		TransParent("Off") 
 	Return
 		
 WM_LBUTTONDOWN(wp, lp, msg, hwnd) {
