@@ -6340,7 +6340,7 @@ DetectHiddenWindows On
 CoordMode, Mouse, Screen
 CoordMode, ToolTip, Screen
 
-Global ObjActive := ComObjActive(GUID), oZoom := {}, isZoom := 1, hAhkSpy
+Global ObjActive := ComObjActive(GUID), oZoom := {}, isZoom := 1, hAhkSpy, oMenu := {}, oOther := {}
 , MsgAhkSpyZoom, ActiveNoPause, SpyActive, GuiColor, TextColor, GuiColorDisp
 If IniRead("DarkTheme", 0)
 	GuiColor := "0A0A0A", TextColor := "F5F5F5", GuiColorDisp := "263FA4"
@@ -6358,6 +6358,7 @@ Z_MsgZoom(7, !!WinActive("ahk_id" hAhkSpy))
 Z_MsgZoom(10, Hotkey)
 Z_MsgZoom(12, OnlyShiftTab)
 
+oZoom.CurrentProcessId := DllCall("GetCurrentProcessId")
 OnMessage(MsgAhkSpyZoom := DllCall("RegisterWindowMessage", "Str", "MsgAhkSpyZoom"), "Z_MsgZoom")
 OnMessage(0x0020, "WM_SETCURSOR")
 OnExit("ZoomOnClose")
@@ -6381,15 +6382,20 @@ Send_AhkSpy(3, oZoom.hLW)
 WinGet, Min, MinMax, % "ahk_id " hAhkSpy
 If Min != -1
 	ZoomShow()
-	
-Menu, Zoom, Add, Save to temp file and open, gSave_to_file
-Menu, Zoom, Add, Save to file, gSave_to_file
-Menu, Zoom, Add, Save to file and open, gSave_to_file
-Menu, Zoom, Add, Save to clipboard, gSave_to_Clipboard 
-Menu, Zoom, Add
-Menu, Zoom, Add, Select window, gMenuZoom
-Menu, Zoom, Add, Select control, gMenuZoom
-Menu, Zoom, Add, Select accesible, gMenuZoom 
+
+MenuAdd("Zoom", "Save to temp file and edit", "gSave_to_file")
+MenuAdd("Zoom", "Save to clipboard", "gSave_to_Clipboard")
+MenuAdd("Zoom")
+MenuAdd("Zoom", "Save to file", "gSave_to_file")
+MenuAdd("Zoom", "Save to file and edit", "gSave_to_file")
+MenuAdd("Zoom")
+MenuAdd("Zoom", "Select window", "_gMenuZoom")
+MenuAdd("Zoom", "Select control", "_gMenuZoom")
+MenuAdd("Zoom", "Select accesible", "_gMenuZoom")
+
+MenuAdd(MenuName, Name = "", Label = "") {
+	Menu, %MenuName%, Add, %Name%, % oMenu.Zoom[Name] := Label
+}
 Return 
 
 #If isZoom && oZoom.Show && oZoom.Crop && UnderRender()
@@ -6856,11 +6862,13 @@ CropChangeControls() {
 
 ZoomMenu() { 
 	WinActivate, % "ahk_id " oZoom.hGui
+	DllCall("SetTimer", "Ptr", A_ScriptHwnd, "Ptr", 1, "UInt",222, "Ptr", RegisterCallback("ZoomMenuCheck", "Fast"))
 	Menu, Zoom, Show 
 }
 
-gMenuZoom() { 
-	p := ObjActive["Coords" SubStr(A_ThisMenuItem, 8)]	; SetPosObject
+_gMenuZoom() { 
+	ThisMenuItem := oOther.MenuItemExist ? oOther.ThisMenuItem : A_ThisMenuItem
+	p := ObjActive["Coords" SubStr(ThisMenuItem, 8)]	; SetPosObject
 	If p[1] = "" || p[2] = "" || p[3] = "" || p[4] = ""
 		Return ToolTip("Coordinates not found!", 800)
 	oZoom.Crop := 1
@@ -6869,6 +6877,30 @@ gMenuZoom() {
 	Redraw()
 	CropChangeControls()
 	SendCoords()
+} 
+
+ZoomMenuCheck()  {
+	DllCall("KillTimer", "Ptr", A_ScriptHwnd, "Ptr", 1) 
+	If !WinExist("ahk_class #32768 ahk_pid " oZoom.CurrentProcessId)
+		Return
+	If GetKeyState("RButton")
+	{
+		MouseGetPos, , , WinID
+		Menu := MenuGetName(GetMenuForMenu(WinID)) 
+		If Menu && (F := oMenu[Menu][oOther.ThisMenuItem := AccUnderMouse(WinID, Id).accName(Id)])
+		{
+			oOther.MenuItemExist := 1
+			If  !(F ~= "^_")
+				WinClose % "ahk_id " WinID
+			If IsLabel(F)
+				GoSub, % F
+			Else
+				%F%()
+			oOther.MenuItemExist := 0
+		}
+		KeyWait, RButton
+	}
+	DllCall("SetTimer", "Ptr", A_ScriptHwnd, "Ptr", 1, "UInt", 64, "Ptr", RegisterCallback("ZoomMenuCheck", "Fast"))
 }
 
 gSave_to_Clipboard() { 
@@ -6883,15 +6915,16 @@ gSave_to_Clipboard() {
 gSave_to_file() { 
 	If !pBitmap := GetBitmap()
 		Return 
-	file := (A_ThisMenuItem = "Save to temp file and open") ? A_Temp "\AhkSpy picture.png" : GetNameFile(A_Desktop, "AhkSpy picture ", "png")
+	ThisMenuItem := oOther.MenuItemExist ? oOther.ThisMenuItem : A_ThisMenuItem
+	file := (ThisMenuItem = "Save to temp file and edit") ? A_Temp "\AhkSpy picture.png" : GetNameFile(A_Desktop, "AhkSpy picture ", "png")
 	SaveBitmapToFile(pBitmap, file)
 	DllCall("gdiplus\GdipDisposeImage", "UPtr", pBitmap)
-	If (A_ThisMenuItem = "Save to file and open") || (A_ThisMenuItem = "Save to temp file and open")
+	If (ThisMenuItem = "Save to file and edit") || (ThisMenuItem = "Save to temp file and edit")
 	{ 
 		If GetMinMax(oZoom.hGui) = 1
 			ZoomMaximize()
 		ObjActive.AhkSpy_Minimize()
-		Run %file%
+		Run edit %file%
 	} 
 	Else
 		ToolTip("Save file to desktop", 800)
