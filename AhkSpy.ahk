@@ -27,7 +27,7 @@
 */
 
 
-Global AhkSpyVersion := 4.50
+Global AhkSpyVersion := 4.51
 
 	;; _________________________________________________ Caption _________________________________________________
 
@@ -6391,12 +6391,14 @@ If Min != -1
 
 MenuAdd("Zoom", "Save to temp file and edit", "gSave_to_file")
 MenuAdd("Zoom", "Save to clipboard", "gSave_to_Clipboard")
+MenuAdd("Zoom", "Save to clipboard as Base64", "gSave_as_Base64") 
 MenuAdd("Zoom")
 MenuAdd("Zoom", "Save to file", "gSave_to_file")
 MenuAdd("Zoom", "Save to file and edit", "gSave_to_file") 
 MenuAdd("Zoom", "Select window", "_gMenuZoom", "+BarBreak")
 MenuAdd("Zoom", "Select control", "_gMenuZoom")
 MenuAdd("Zoom", "Select accesible", "_gMenuZoom")
+MenuAdd("Zoom")
 Return 
 
 #If isZoom && oZoom.Show && oZoom.Crop && UnderRender()
@@ -6916,9 +6918,18 @@ gSave_to_Clipboard() {
 		Return ToolTip("Bitmap not found!", 800)
 	SetBitmapToClipboard(pBitmap) 
 	DllCall("gdiplus\GdipDisposeImage", "UPtr", pBitmap) 
-	ToolTip("Copy clipboard", 800)
+	ToolTip("Copy to clipboard", 800)
 }
 
+gSave_as_Base64() { 
+	If !pBitmap := GetBitmap()
+		Return ToolTip("Bitmap not found!", 800) 
+	If BitmapToBase64(pBitmap, Base64)
+		Return DllCall("gdiplus\GdipDisposeImage", "UPtr", pBitmap) 
+	Clipboard := Base64
+	DllCall("gdiplus\GdipDisposeImage", "UPtr", pBitmap) 
+	ToolTip("Copy to clipboard as Base64", 800)
+}
 
 gSave_to_file() { 
 	If !pBitmap := GetBitmap()
@@ -6926,7 +6937,7 @@ gSave_to_file() {
 	ThisMenuItem := oOther.MenuItemExist ? oOther.ThisMenuItem : A_ThisMenuItem
 	
 	file := (ThisMenuItem = "Save to temp file and edit") 
-	? A_Temp "\AhkSpy picture.png" 
+	? A_Temp "\AhkSpy picture.png"
 	: A_Desktop "\AhkSpy picture " A_YYYY "-" A_MM "-" A_DD " " A_Hour "." A_Min "." A_Sec ".png"
 	
 	; GetNameFile(A_Desktop, "AhkSpy picture ", "png")
@@ -7376,6 +7387,46 @@ SaveBitmapToFile(pBitmap, sOutput, Quality=75)  {
 	}
 	E := DllCall("gdiplus\GdipSaveImageToFile", Ptr, pBitmap, Ptr, pOutput, Ptr, pCodec, UInt, p ? p : 0)
 	return E ? -5 : 0
+}
+
+BitmapToBase64(pBitmap, byref Base64) {  
+	DllCall("gdiplus\GdipGetImageEncodersSize", UintP, nCount, UintP, nSize) 
+	VarSetCapacity(ci, nSize)
+	DllCall("gdiplus\GdipGetImageEncoders", UInt, nCount, UInt, nSize, Ptr, &ci)
+	if !(nCount && nSize)
+		return -2 
+	Loop, % nCount  {
+		sString := StrGet(NumGet(ci, (idx := (48+7*A_PtrSize)*(A_Index-1))+32+3*A_PtrSize), "UTF-16")
+		if !InStr(sString, "*." Extension)
+			continue
+		pCodec := &ci+idx
+		break
+	} 
+	if !pCodec
+		return -3  
+	DllCall( "ole32\CreateStreamOnHGlobal", UInt, 0, Int, 1, PtrP, pStream )
+	if !E := DllCall( "gdiplus\GdipSaveImageToStream", Ptr, pBitmap, Ptr, pStream, Ptr, pCodec, UInt, 0)  {
+		DllCall( "ole32\GetHGlobalFromStream", Ptr, pStream, PtrP, hData )
+		pData := DllCall( "GlobalLock", Ptr, hData, Ptr )
+		nSize := DllCall( "GlobalSize", Ptr, hData, Ptr )
+		VarSetCapacity( buff, 0), VarSetCapacity( buff, nSize, 0 )
+		DllCall( "RtlMoveMemory", Ptr, &buff, Ptr, pData, UInt, nSize )
+		DllCall( "GlobalUnlock", Ptr, hData )
+		DllCall( "GlobalFree", Ptr, hData )
+	}
+	ObjRelease(pStream)  
+	Base64 := CryptBinaryToStringBASE64(&buff, nSize, true)
+	return 0
+}  
+
+CryptBinaryToStringBASE64(pData, Bytes, NOCRLF = "")  {
+   static CRYPT_STRING_BASE64 := 1, CRYPT_STRING_NOCRLF := 0x40000000
+   CRYPT := CRYPT_STRING_BASE64 | (NOCRLF ? CRYPT_STRING_NOCRLF : 0)
+   
+   DllCall("Crypt32\CryptBinaryToString", Ptr, pData, UInt, Bytes, UInt, CRYPT, Ptr, 0, UIntP, Chars)
+   VarSetCapacity(OutData, Chars * (A_IsUnicode ? 2 : 1))
+   DllCall("Crypt32\CryptBinaryToString", Ptr, pData, UInt, Bytes, UInt, CRYPT, Str, OutData, UIntP, Chars)
+   Return OutData
 }
 
 
