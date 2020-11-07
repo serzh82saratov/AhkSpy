@@ -27,7 +27,7 @@
 */
 
 
-Global AhkSpyVersion := 4.55
+Global AhkSpyVersion := 4.56
 
 	;; _________________________________________________ Caption _________________________________________________
 
@@ -6434,12 +6434,12 @@ WinGet, Min, MinMax, % "ahk_id " hAhkSpy
 If Min != -1
 	ZoomShow()
 
-MenuAdd("Zoom", "Save to temp file and edit", "gSave_to_file")
-MenuAdd("Zoom", "Save to clipboard", "gSave_to_Clipboard")
-MenuAdd("Zoom", "Save to clipboard as Base64", "gSave_as_Base64") 
+MenuAdd("Zoom", "Save to temp file and edit", "_gSave_to_file")
+MenuAdd("Zoom", "Save to clipboard", "_gSave_to_Clipboard")
+MenuAdd("Zoom", "Save to clipboard as Base64", "_gSave_as_Base64") 
 MenuAdd("Zoom")
-MenuAdd("Zoom", "Save to file", "gSave_to_file")
-MenuAdd("Zoom", "Save to file and edit", "gSave_to_file") 
+MenuAdd("Zoom", "Save to file", "_gSave_to_file")
+MenuAdd("Zoom", "Save to file and edit", "_gSave_to_file") 
 MenuAdd("Zoom", "Select window", "_gMenuZoom", "+BarBreak")
 MenuAdd("Zoom", "Select control", "_gMenuZoom")
 MenuAdd("Zoom", "Select accesible", "_gMenuZoom")
@@ -6966,7 +6966,7 @@ _gMenuZoom() {
 	SendCoords()
 }
 
-gSave_to_Clipboard() { 
+_gSave_to_Clipboard() { 
 	If !pBitmap := GetBitmap()
 		Return ToolTip("Bitmap not found!", 800)
 	SetBitmapToClipboard(pBitmap) 
@@ -6974,7 +6974,7 @@ gSave_to_Clipboard() {
 	ToolTip("Copy to clipboard", 800)
 }
 
-gSave_as_Base64() { 
+_gSave_as_Base64() { 
 	If !pBitmap := GetBitmap()
 		Return ToolTip("Bitmap not found!", 800) 
 	If BitmapToBase64(pBitmap, Base64)
@@ -6984,7 +6984,7 @@ gSave_as_Base64() {
 	ToolTip("Copy to clipboard as Base64", 800)
 }
 
-gSave_to_file() { 
+_gSave_to_file() { 
 	If !pBitmap := GetBitmap()
 		Return ToolTip("Bitmap not found!", 800)
 	ThisMenuItem := oOther.MenuItemExist ? oOther.ThisMenuItem : A_ThisMenuItem
@@ -6999,6 +6999,7 @@ gSave_to_file() {
 	DllCall("gdiplus\GdipDisposeImage", "UPtr", pBitmap)
 	If (ThisMenuItem = "Save to file and edit") || (ThisMenuItem = "Save to temp file and edit")
 	{ 
+		WinClose % "ahk_class #32768 ahk_pid " oZoom.CurrentProcessId
 		If GetMinMax(oZoom.hGui) = 1
 			ZoomMaximize()
 		Run edit %file%
