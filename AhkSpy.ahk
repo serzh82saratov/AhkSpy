@@ -27,7 +27,7 @@
 */
 
 
-Global AhkSpyVersion := 4.54
+Global AhkSpyVersion := 4.55
 
 	;; _________________________________________________ Caption _________________________________________________
 
@@ -3064,13 +3064,13 @@ RButton_Up_Wait:
 		SetTimer, Loop_%ThisMode%, Off 
 	SetTimer, ShiftUpHide, -300
 	Sleep 100
-	ToolTip("Stop", 300)  
 	If GetKeyState("LShift", "P")
 	{ 
 		HideAllMarkers()
 		oObjActive.Magnify.Call(2)
 		oObjActive.Redraw.Call()
 	}  
+	ToolTip("Stop", 300)  
 	If oOther.TransParent
 		TransParent("Off")  
 	If !OnlyShiftTab  
@@ -3097,6 +3097,7 @@ Mod_Up_Wait_And_TransParent:
 		WinActivate ahk_id %hGui%
 		GuiControl, 1:Focus, oDoc 
 	} 
+	ToolTip("Stop", 300)  
 	Return
 		
 WM_LBUTTONDOWN(wp, lp, msg, hwnd) {
