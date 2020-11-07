@@ -27,7 +27,7 @@
 */
 
 
-Global AhkSpyVersion := 4.52
+Global AhkSpyVersion := 4.53
 
 	;; _________________________________________________ Caption _________________________________________________
 
@@ -434,7 +434,7 @@ Return
 
 	;; _________________________________________________ Hotkey`s _________________________________________________
 
-#If !WinActive("ahk_id" hGui) && isAhkSpy && Sleep != 1 && OnlyShiftTab && !ActiveNoPause && !isPaused && ThisMode != "Hotkey" && IsHwndUnderMouse(hColorProgress)
+#If isAhkSpy && Sleep != 1 && OnlyShiftTab && !ActiveNoPause && !isPaused && ThisMode != "Hotkey" && IsHwndUnderMouse(hColorProgress)!WinActive("ahk_id" hGui) && 
 
 MButton:: SetTimer(Func("WM_RBUTTONDOWN").Bind(0, 0, 0, hColorProgress), "-" 1)  ; WM_RBUTTONDOWN(0, 0, 0, hColorProgress)
 
@@ -453,6 +453,8 @@ MButton:: SetTimer(Func("WM_RBUTTONDOWN").Bind(0, 0, 0, hColorProgress), "-" 1) 
 #If (isAhkSpy && Sleep != 1 && !isPaused && ThisMode != "Hotkey")
 
 ^Tab:: 
+	If OnlyShiftTab 
+		OnlyShiftTab := 0, oOther.OnlyShiftTabReset := 1 
 	TransParent(0) 
 	SetTimer, Mod_Up_Wait_And_TransParent, -1
 +Tab:: 
@@ -465,7 +467,7 @@ SpotProc2:
 		Spot_Control() && (Write_Control(), (StateAllwaysSpot ? Spot_Win() : 0))
 	Else 
 		Spot_Win() && (Write_Win(), (StateAllwaysSpot ? Spot_Control() : 0))
-	If (!WinActive("ahk_id" hGui) && A_ThisLabel != "SpotProc2" && !OnlyShiftTab)
+	If (!WinActive("ahk_id" hGui) && A_ThisLabel != "SpotProc2" && !OnlyShiftTab && !oOther.OnlyShiftTabReset)
 	{
 		WinActivate ahk_id %hGui%
 		GuiControl, 1:Focus, oDoc
@@ -793,7 +795,11 @@ Spot_Win(NotHTML = 0) {
 	MouseGetPos, WinXS, WinYS, h
 	If (h = hGui || h = oOther.hZoom || h = oOther.hZoomLW)
 		Return 0, HideAllMarkers()
+		
 	SetPosObject("Window", [WinX, WinY, WinWidth, WinHeight]) 
+	WinGetPos, WinX, WinY, WinW, WinH, % "ahk_id " hGui
+	SetPosObject("AhkSpy", [WinX, WinY, WinW, WinH])  
+	
 	If !StateAllwaysSpot 
 	{
 		oObjActive.ScreenX := WinXS, oObjActive.ScreenY := WinYS
@@ -965,8 +971,8 @@ Loop_Control:
 		Write_Control(), StateAllwaysSpot ? Spot_Win() : 0
 		
 Repeat_Loop_Control:
-	If (!isPaused && ThisMode = "Control" && !OnlyShiftTab)
-		SetTimer, Loop_Control, -%RangeTimer%
+	If (!isPaused && ThisMode = "Control" && !OnlyShiftTab) 
+		SetTimer, Loop_Control, -%RangeTimer%  
 	Return
 
 Spot_Control(NotHTML = 0) {
@@ -1083,6 +1089,9 @@ Spot_Control(NotHTML = 0) {
 		
 	If !isIE
 		SetPosObject("Control", [CtrlSCX, CtrlSCY, CtrlW, CtrlH])  
+
+	WinGetPos, WinX, WinY, WinW, WinH, % "ahk_id " hGui
+	SetPosObject("AhkSpy", [WinX, WinY, WinW, WinH])  
 	
 	If UseUIA && exUIASub.Release() && exUIASub.ElementFromPoint(MXS, MYS)
 	{ 
@@ -1624,6 +1633,7 @@ AccInfoUnderMouse(mx, my, wx, wy, cx, cy, caX, caY, WinID, ControlID) {
 	x := AccCoord[1], y := AccCoord[2], w := AccCoord[3], h := AccCoord[4] 
 	SetPosObject("accesible", [x, y, w, h])  
 	
+	
 	code .= _T1 " id='P__Position_relative_Acc'" _T1P "> ( Position relative ) </span>" _T2 _PRE1 "<span class='param'>Screen: </span>"
 		. "<span name='MS:'>x" x " y" y "</span>"
 		. _DP "<span name='MS:'>x&sup2;" x + w - 1 " y&sup2;" y + h - 1 "</span>"
@@ -2117,7 +2127,7 @@ Mode_Hotkey:
 	TitleText := (TitleTextP1 := "AhkSpy - Button") . TitleTextP2
 	SendMessage, 0xC, 0, &TitleText, , ahk_id %hGui%
 	GuiControl, TB: -0x0001, But3
-	;; WinActivate ahk_id %hGui%
+	; WinActivate ahk_id %hGui%
 	GuiControl, 1:Focus, oDoc
 	If isFindView
 		FindNewText()
@@ -3026,21 +3036,9 @@ TransParent(v) {
 		WinHide, % "ahk_id" oOther.hZoomLW
 	Else
 		WinShow, % "ahk_id" oOther.hZoomLW
-}
-
-Mod_Up_Wait_And_TransParent:
-	If GetKeyState("LShift", "P") || GetKeyState("LControl", "P") {
-		SetTimer, %A_ThisLabel%, -50
-		Return
-	}
-	; ZoomMsg(3) 
-	HideAllMarkers()
-	oObjActive.Magnify.Call(2)
-	oObjActive.Redraw.Call()   
-	TransParent("Off")
-	Return
-
-WM_RBUTTONDOWN(wp, lp, msg, hwnd) { 
+} 
+		
+WM_RBUTTONDOWN(wp, lp, msg, hwnd, tp = 0) { 
 	If (hwnd = hColorProgress && !ActiveNoPause && !isPaused)
 	{
 		If GetKeyState("Shift")
@@ -3049,12 +3047,12 @@ WM_RBUTTONDOWN(wp, lp, msg, hwnd) {
 		ZoomMsg(7, 0) 
 		ActiveNoPause := 1
 		If OnlyShiftTab 
-			OnlyShiftTab := 0, oOther.OnlyShiftTabReset := 1
-		ZoomMsg(12, 0)
+			OnlyShiftTab := 0, oOther.OnlyShiftTabReset := 1, ZoomMsg(12, 0)
+		
 		SetTimer, Loop_%ThisMode%, -1 
 		SetTimer, RButton_Up_Wait, -1
 	}
-}
+} 
 
 RButton_Up_Wait:
 	If GetKeyState("RButton", "P") || GetKeyState("MButton", "P") {
@@ -3063,14 +3061,38 @@ RButton_Up_Wait:
 	}
 	ActiveNoPause := 0 
 	If oOther.OnlyShiftTabReset
-		OnlyShiftTab := 1, oOther.OnlyShiftTabReset := 0
-	ZoomMsg(12, 1)
-	SetTimer, Loop_%ThisMode%, Off
-	SetTimer, ShiftUpHide, -300 
+		OnlyShiftTab := 1, oOther.OnlyShiftTabReset := 0, ZoomMsg(12, 1)
+	If OnlyShiftTab
+		SetTimer, Loop_%ThisMode%, Off 
+	SetTimer, ShiftUpHide, -300
 	Sleep 100
 	ToolTip("Stop", 300) 
 	If oOther.TransParent
-		TransParent("Off") 
+		TransParent("Off")  
+	If !OnlyShiftTab  
+	{
+		WinActivate ahk_id %hGui%
+		GuiControl, 1:Focus, oDoc
+	}
+	Return
+
+Mod_Up_Wait_And_TransParent:
+	If GetKeyState("LShift", "P") || GetKeyState("LControl", "P") {
+		SetTimer, %A_ThisLabel%, -50
+		Return
+	}
+	; ZoomMsg(3) 
+	If oOther.OnlyShiftTabReset
+		OnlyShiftTab := 1, oOther.OnlyShiftTabReset := 0, ZoomMsg(12, 1)
+	HideAllMarkers()
+	oObjActive.Magnify.Call(2)
+	oObjActive.Redraw.Call()   
+	TransParent("Off")
+	If !OnlyShiftTab || oOther.OnlyShiftTabReset
+	{
+		WinActivate ahk_id %hGui%
+		GuiControl, 1:Focus, oDoc 
+	} 
 	Return
 		
 WM_LBUTTONDOWN(wp, lp, msg, hwnd) {
@@ -3280,9 +3302,19 @@ ZoomMsg(wParam = -1, lParam = -1) {  ;;	отправляет
 		SendMessage, % MsgAhkSpyZoom, wParam, lParam, , % "ahk_id" oOther.hZoom
 }
 
+ZoomSleep() {
+	Sleep := 1
+}
+ZoomNoSleep() {
+	Sleep := 0
+}
+
 AhkSpyZoomShow() {
 	If !oPubObjGUID
-		ObjRegisterActive(oObjActive, oPubObjGUID := CreateGUID()), oObjActive.AhkSpy_Minimize := Func("Minimize")
+		ObjRegisterActive(oObjActive, oPubObjGUID := CreateGUID())
+		, oObjActive.AhkSpy_Minimize := Func("Minimize")
+		, oObjActive.ZoomSleep := Func("ZoomSleep")
+		, oObjActive.ZoomNoSleep := Func("ZoomNoSleep")
 	If !WinExist("ahk_id" oOther.hZoom) {
 		Hotkey := ThisMode = "Hotkey"
 		Suspend := !isAhkSpy
@@ -6384,6 +6416,7 @@ ObjActive.Magnify := Func("Magnify")
 ObjActive.Redraw := Func("Redraw") 
 
 ZoomCreate() 
+hGui := hAhkSpy
 Send_AhkSpy(0, oZoom.hGui)  
 Send_AhkSpy(3, oZoom.hLW) 
 
@@ -6401,6 +6434,7 @@ MenuAdd("Zoom", "Select window", "_gMenuZoom", "+BarBreak")
 MenuAdd("Zoom", "Select control", "_gMenuZoom")
 MenuAdd("Zoom", "Select accesible", "_gMenuZoom")
 MenuAdd("Zoom")
+MenuAdd("Zoom", "Select AhkSpy", "_gMenuZoom") 
 Return 
 
 #If isZoom && oZoom.Show && oZoom.Crop && UnderRender()
@@ -6433,15 +6467,15 @@ ZoomCreate() {
 		GuiW := IniRead("MemoryZoomSizeW", oZoom.GuiMinW), GuiH := IniRead("MemoryZoomSizeH", oZoom.GuiMinH)
 	Else
 		GuiW := oZoom.GuiMinW, GuiH := oZoom.GuiMinH
-	Gui, Zoom: -Caption -DPIScale +Border +LabelZoomOn +HWNDhGui +AlwaysOnTop +E%WS_EX_NOACTIVATE%    ;;	+Owner%hAhkSpy%
+	Gui, Zoom: -Caption -DPIScale +Border +LabelZoomOn +HWNDhGuiZoom +AlwaysOnTop +E%WS_EX_NOACTIVATE%    ;;	+Owner%hAhkSpy%
 	Gui, Zoom: Color, %GuiColor%
 	Gui, Zoom: Add, Text, hwndhStatic +Border
-	; DllCall("SetClassLong", "Ptr", hGui, "int", -26
-	; , "int", DllCall("GetClassLong", "Ptr", hGui, "int", -26) | 0x20000)
+	; DllCall("SetClassLong", "Ptr", hGuiZoom, "int", -26
+	; , "int", DllCall("GetClassLong", "Ptr", hGuiZoom, "int", -26) | 0x20000)
 
-	Gui, LW: -Caption +E%WS_EX_LAYERED% +AlwaysOnTop +ToolWindow +HWNDhLW +E%WS_EX_NOACTIVATE% +Owner%hGui% ;;	++E%WS_EX_NOACTIVATE% +E%WS_EX_TRANSPARENT%
+	Gui, LW: -Caption +E%WS_EX_LAYERED% +AlwaysOnTop +ToolWindow +HWNDhLW +E%WS_EX_NOACTIVATE% +Owner%hGuiZoom% ;;	++E%WS_EX_NOACTIVATE% +E%WS_EX_TRANSPARENT%
 
-	Gui, ZoomTB: +HWNDhTBGui -Caption -DPIScale +Parent%hGui% +E%WS_EX_NOACTIVATE% +%WS_CHILDWINDOW% -%WS_POPUP%
+	Gui, ZoomTB: +HWNDhTBGui -Caption -DPIScale +Parent%hGuiZoom% +E%WS_EX_NOACTIVATE% +%WS_CHILDWINDOW% -%WS_POPUP%
 	Gui, ZoomTB: Color, %GuiColor%
 	h := 32
 	Gui, ZoomTB: Add, Slider, % "hwndhSliderZoom gSliderZoom x8 Range1-50 w152 y" (44-h)/2 " h" h " Center AltSubmit NoTicks", % oZoom.Zoom
@@ -6461,13 +6495,13 @@ ZoomCreate() {
 	Gui, Zoom: Show, % "NA Hide w" GuiW " h" GuiH, AhkSpyZoom
 	Gui, Zoom: +MinSize
 	
-	WinSet, TransParent, 255, ahk_id %hGui%
+	WinSet, TransParent, 255, ahk_id %hGuiZoom%
 	
 	oZoom.hdcSrc := DllCall("GetDC", "UPtr", 0, "UPtr")
 	oZoom.hDCBuf := CreateCompatibleDC()
 	oZoom.hdcMemory := CreateCompatibleDC()
 
-	oZoom.hGui := hGui
+	oZoom.hGui := hGuiZoom
 	oZoom.hStatic := hStatic
 	oZoom.hTBGui := hTBGui
 	oZoom.hLW := hLW
@@ -6753,7 +6787,7 @@ ZoomRules(Rule, value) {
 	StrPut(!!value, &Rules + Arr[Rule] - 1, 1, "CP0")
 	If oZoom.Work := !(StrGet(&Rules, Len, "CP0") + 0)
 		SetTimer, Magnify, -1
-	;; ToolTip % Rule "`n" Arr[Rule] "`n" value "`n`n`n"  (StrGet(&Rules, Len, "CP0")) "`n123456789" "`n" oZoom.Work,4,55,6
+	; ToolTip % Rule "`n" Arr[Rule] "`n" value "`n`n`n"  (StrGet(&Rules, Len, "CP0")) "`n123456789" "`n" oZoom.Work,4,55,6
 }
 
 EVENT_OBJECT_DESTROY(hWinEventHook, event, hwnd, idObject, idChild) {
@@ -6873,9 +6907,13 @@ CropChangeControls() {
 } 
 
 ZoomMenu() { 
+	ObjActive.ZoomSleep()
 	WinActivate, % "ahk_id " oZoom.hGui
 	DllCall("SetTimer", "Ptr", A_ScriptHwnd, "Ptr", 1, "UInt", 333, "Ptr", RegisterCallback("ZoomMenuCheck", "Fast"))
-	Menu, Zoom, Show 
+	WinGetPos, WinX, WinY, WinW, WinH, % "ahk_id " oZoom.vZoomMenu 
+	CoordMode, Menu, Screen
+	Menu, Zoom, Show, % WinX - 200, % WinY + WinH
+	ObjActive.ZoomNoSleep()
 }
 
 ZoomMenuCheck()  {
@@ -6890,7 +6928,10 @@ ZoomMenuCheck()  {
 		{
 			oOther.MenuItemExist := 1
 			If  !(F ~= "^_")
+			{
+				KeyWait, RButton
 				WinClose % "ahk_id " WinID
+			}
 			If IsLabel(F)
 				GoSub, % F
 			Else
@@ -6903,7 +6944,7 @@ ZoomMenuCheck()  {
 }
 
 _gMenuZoom() { 
-	ThisMenuItem := oOther.MenuItemExist ? oOther.ThisMenuItem : A_ThisMenuItem
+	ThisMenuItem := oOther.MenuItemExist ? oOther.ThisMenuItem : A_ThisMenuItem 
 	p := ObjActive["Coords" SubStr(ThisMenuItem, 8)]	; SetPosObject
 	If p[1] = "" || p[2] = "" || p[3] = "" || p[4] = ""
 		Return ToolTip("Coordinates not found!", 800)
@@ -6950,8 +6991,8 @@ gSave_to_file() {
 	{ 
 		If GetMinMax(oZoom.hGui) = 1
 			ZoomMaximize()
-		ObjActive.AhkSpy_Minimize()
 		Run edit %file%
+		ObjActive.AhkSpy_Minimize()
 	}
 	Else
 		ToolTip("Save file to desktop", 800)
