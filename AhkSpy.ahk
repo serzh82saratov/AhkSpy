@@ -27,7 +27,7 @@
 */
 
 
-Global AhkSpyVersion := 4.53
+Global AhkSpyVersion := 4.54
 
 	;; _________________________________________________ Caption _________________________________________________
 
@@ -796,9 +796,8 @@ Spot_Win(NotHTML = 0) {
 	If (h = hGui || h = oOther.hZoom || h = oOther.hZoomLW)
 		Return 0, HideAllMarkers()
 		
-	SetPosObject("Window", [WinX, WinY, WinWidth, WinHeight]) 
-	WinGetPos, WinX, WinY, WinW, WinH, % "ahk_id " hGui
-	SetPosObject("AhkSpy", [WinX, WinY, WinW, WinH])  
+	SetPosObject("Window", [WinX, WinY, WinWidth, WinHeight])   
+	SetPosObject("AhkSpy", WinGetPosToArray(hGui))
 	
 	If !StateAllwaysSpot 
 	{
@@ -906,7 +905,7 @@ HTML_Win:
 	oOther.WinID := WinID
 	oOther.ChildID := hChild
 	If StateLightMarker && (ThisMode = "Win") && (StateLight = 1 || (StateLight = 3 && GetKeyState("Shift")))
-		ShowMarker(WinX, WinY, WinWidth, WinHeight, 5)
+		ShowMarker(WinX, WinY, WinWidth, WinHeight, 5) 
 	Return 1
 }
 
@@ -1089,9 +1088,8 @@ Spot_Control(NotHTML = 0) {
 		
 	If !isIE
 		SetPosObject("Control", [CtrlSCX, CtrlSCY, CtrlW, CtrlH])  
-
-	WinGetPos, WinX, WinY, WinW, WinH, % "ahk_id " hGui
-	SetPosObject("AhkSpy", [WinX, WinY, WinW, WinH])  
+ 
+	SetPosObject("AhkSpy", WinGetPosToArray(hGui)) 
 	
 	If UseUIA && exUIASub.Release() && exUIASub.ElementFromPoint(MXS, MYS)
 	{ 
@@ -3066,7 +3064,13 @@ RButton_Up_Wait:
 		SetTimer, Loop_%ThisMode%, Off 
 	SetTimer, ShiftUpHide, -300
 	Sleep 100
-	ToolTip("Stop", 300) 
+	ToolTip("Stop", 300)  
+	If GetKeyState("LShift", "P")
+	{ 
+		HideAllMarkers()
+		oObjActive.Magnify.Call(2)
+		oObjActive.Redraw.Call()
+	}  
 	If oOther.TransParent
 		TransParent("Off")  
 	If !OnlyShiftTab  
@@ -4132,6 +4136,11 @@ Hotkey_ClipCursor() {
 	}
 }
 	;; _________________________________________________ Command as function _________________________________________________
+ 
+WinGetPosToArray(h) {
+	WinGetPos, WinX, WinY, WinW, WinH, % "ahk_id " h
+	return [WinX, WinY, WinW, WinH] 
+}
 
 IniRead(Key, Error := " ") {
 	IniRead, Value, %A_AppData%\AhkSpy\Settings.ini, AhkSpy, %Key%, %Error%
@@ -6460,7 +6469,7 @@ ZoomCreate() {
 	oZoom.Zoom := IniRead("MagnifyZoom", 4)
 	oZoom.Mark := IniRead("MagnifyMark", "Cross")
 	oZoom.MemoryZoomSize := IniRead("MemoryZoomSize", 0)
-	oZoom.GuiMinW := 316
+	oZoom.GuiMinW := 380
 	oZoom.GuiMinH := 351
 	FontSize := {96:12,120:10,144:8,168:6}[A_ScreenDPI]
 	If oZoom.MemoryZoomSize
