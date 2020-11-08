@@ -27,7 +27,7 @@
 */
 
 
-Global AhkSpyVersion := 4.60
+Global AhkSpyVersion := 4.61
 
 	;; _________________________________________________ Caption _________________________________________________
 
@@ -7016,29 +7016,40 @@ _gSave_to_Clipboard() {
 
 _gSave_as_Base64() {
 	If GetKeyState("Control", "P")
-		Control := 1
+		tovar := 1
+	If GetKeyState("Shift", "P")
+		nocrlf := 1
 	If !pBitmap := GetBitmap()
 		Return ToolTip("Bitmap not found!", 800)  
 		
-	; If BitmapToBase64(pBitmap, Base64)
-		; Return DllCall("gdiplus\GdipDisposeImage", "UPtr", pBitmap) 
-		
-	File := A_Temp "\AhkSpy picture for Base64.png"
-	SaveBitmapToFile(pBitmap, File) 
+	If BitmapToBase64(pBitmap, tovar || nocrlf ? 1 : 0, Base64) != 0
+		Return DllCall("gdiplus\GdipDisposeImage", "UPtr", pBitmap), ToolTip("Error BitmapToBase64!", 1200) 
+
 	DllCall("gdiplus\GdipDisposeImage", "UPtr", pBitmap) 
-	FileGetSize, nSize, %File%
-	FileRead, buff, *c %File% 
-	If Control
-		Base64 := CryptBinaryToStringBASE64(&buff, nSize, 1)
-		, Base64 := FormatBase64ToVaribles(Base64, "Base64", 128) 
-	Else
-		Base64 := CryptBinaryToStringBASE64(&buff, nSize, 0)
-	VarSetCapacity(buff, 0)
 	DllCall("OpenClipboard", Ptr, 0)
 	DllCall("EmptyClipboard")
 	DllCall("CloseClipboard")
+	If tovar
+		Base64 := FormatBase64ToVaribles(Base64, "Base64", nocrlf ? 16000 : 128) 
 	Clipboard := Base64
-	ToolTip("Copy to clipboard as Base64" (Control ? " and format AHK variable" : ""), 800)
+	ToolTip("Copy to clipboard as Base64" (tovar ? " and format AHK variable" : "") (nocrlf ? " and no CRLF" : ""), 800)
+		
+	; File := A_Temp "\AhkSpy picture for Base64.png"
+	; SaveBitmapToFile(pBitmap, File) 
+	; DllCall("gdiplus\GdipDisposeImage", "UPtr", pBitmap) 
+	; FileGetSize, nSize, %File%
+	; FileRead, buff, *c %File% 
+	; If Control
+		; Base64 := CryptBinaryToStringBASE64(&buff, nSize, 1)
+		; , Base64 := FormatBase64ToVaribles(Base64, "Base64", 128) 
+	; Else
+		; Base64 := CryptBinaryToStringBASE64(&buff, nSize, 0)
+	; VarSetCapacity(buff, 0)
+	; DllCall("OpenClipboard", Ptr, 0)
+	; DllCall("EmptyClipboard")
+	; DllCall("CloseClipboard")
+	; Clipboard := Base64
+	; ToolTip("Copy to clipboard as Base64" (Control ? " and format AHK variable" : ""), 800)
 }  
 
 _gSave_to_file() { 
@@ -7500,7 +7511,7 @@ SaveBitmapToFile(pBitmap, sOutput, Quality=75)  {
 	return E ? -5 : 0
 }
 
-BitmapToBase64(pBitmap, byref Base64) {  
+BitmapToBase64(pBitmap, NOCRLF, byref Base64) {  
 	DllCall("gdiplus\GdipGetImageEncodersSize", UintP, nCount, UintP, nSize) 
 	VarSetCapacity(ci, nSize)
 	DllCall("gdiplus\GdipGetImageEncoders", UInt, nCount, UInt, nSize, Ptr, &ci)
@@ -7508,7 +7519,7 @@ BitmapToBase64(pBitmap, byref Base64) {
 		return -2 
 	Loop, % nCount  {
 		sString := StrGet(NumGet(ci, (idx := (48+7*A_PtrSize)*(A_Index-1))+32+3*A_PtrSize), "UTF-16")
-		if !InStr(sString, "*." Extension)
+		if !InStr(sString, "*." "PNG")
 			continue
 		pCodec := &ci+idx
 		break
@@ -7526,7 +7537,7 @@ BitmapToBase64(pBitmap, byref Base64) {
 		DllCall( "GlobalFree", Ptr, hData )
 	}
 	ObjRelease(pStream)  
-	Base64 := CryptBinaryToStringBASE64(&buff, nSize, 0)
+	Base64 := CryptBinaryToStringBASE64(&buff, nSize, NOCRLF)
 	return 0
 }  
  
