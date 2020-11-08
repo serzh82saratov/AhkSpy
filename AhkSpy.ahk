@@ -27,7 +27,7 @@
 */
 
 
-Global AhkSpyVersion := 4.62
+Global AhkSpyVersion := 4.63
 
 	;; _________________________________________________ Caption _________________________________________________
 
@@ -7542,12 +7542,11 @@ BitmapToBase64(pBitmap, NOCRLF, byref Base64) {
 }  
  
 FormatBase64ToVaribles(Base64, Name, LenRow = 128) {
-	DATALen := StrLen(Base64), Step := 0, Pos := 1 
+	DATALen := StrLen(Base64)
 	RowLen := !LenRow ? 16000 : LenRow
-	If (RowLen = 16000)
-		Return DataToVarExp(Base64, Name)
-	If (RowLen >= DATALen)
-		Return Name " = " Base64
+	If (RowLen = 16000) || (RowLen >= DATALen)
+		Return DataToVarExp(Base64, Name, DATALen)
+	Step := 0, Pos := 1  
 	If !LenRow
 	{
 		Loop % Ceil(DATALen / RowLen)
@@ -7569,16 +7568,15 @@ FormatBase64ToVaribles(Base64, Name, LenRow = 128) {
 	Return Name " = `n(`n" Str
 }	
 
-DataToVarExp(Base64, Name) {
-	DATALen := StrLen(Base64), Pos := 1  
-	If (16000 >= DATALen)
+DataToVarExp(Base64, Name, DATALen) {
+	RowLen := 16000, Pos := 1   
+	If (RowLen >= DATALen)
 		Return Name " := """ Base64 """"
-	Loop % Ceil(DATALen / 16000)
+	Loop % Ceil(DATALen / RowLen)
 	{
-		p := SubStr(Base64, Pos, 16000) 
-		Pos += 16000
-		If (Pos < DATALen)
-			Str .= "`n" Name " .= """ p """"
+		p := SubStr(Base64, Pos, RowLen) 
+		Pos += RowLen
+		Str .= "`n" Name " .= """ p """"
 	}
 	Return StrReplace(Str, " .= """, " := """, , 1) 
 }	
