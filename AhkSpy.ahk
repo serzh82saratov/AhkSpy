@@ -7019,6 +7019,7 @@ _gSave_as_Base64() {
 		Control := 1
 	If !pBitmap := GetBitmap()
 		Return ToolTip("Bitmap not found!", 800)  
+		
 	; If BitmapToBase64(pBitmap, Base64)
 		; Return DllCall("gdiplus\GdipDisposeImage", "UPtr", pBitmap) 
 		
@@ -7033,7 +7034,7 @@ _gSave_as_Base64() {
 	Else
 		Base64 := CryptBinaryToStringBASE64(&buff, nSize, 0)
 	VarSetCapacity(buff, 0)
-	ToolTip % DllCall("OpenClipboard", Ptr, 0)
+	DllCall("OpenClipboard", Ptr, 0)
 	DllCall("EmptyClipboard")
 	DllCall("CloseClipboard")
 	Clipboard := Base64
