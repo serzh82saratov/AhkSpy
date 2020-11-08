@@ -27,7 +27,7 @@
 */
 
 
-Global AhkSpyVersion := 4.56
+Global AhkSpyVersion := 4.57
 
 	;; _________________________________________________ Caption _________________________________________________
 
@@ -797,7 +797,7 @@ Spot_Win(NotHTML = 0) {
 		Return 0, HideAllMarkers()
 		
 	SetPosObject("Window", [WinX, WinY, WinWidth, WinHeight])   
-	SetPosObject("AhkSpy", WinGetPosToArray(hGui))
+	SetPosObject("AhkSpy", WinGetPosToArray(hActiveX))
 	
 	If !StateAllwaysSpot 
 	{
@@ -1089,7 +1089,7 @@ Spot_Control(NotHTML = 0) {
 	If !isIE
 		SetPosObject("Control", [CtrlSCX, CtrlSCY, CtrlW, CtrlH])  
  
-	SetPosObject("AhkSpy", WinGetPosToArray(hGui)) 
+	SetPosObject("AhkSpy", WinGetPosToArray(hActiveX)) 
 	
 	If UseUIA && exUIASub.Release() && exUIASub.ElementFromPoint(MXS, MYS)
 	{ 
@@ -6143,7 +6143,8 @@ ButtonClick(oevent) {
 		ControlClick, % oDoc.getElementById("coord_win").innerText, % "ahk_id" oOther.MouseWinID, , , , Pos
 	}
 	Else If thisid = set_button_focus_ctrl
-	{
+	{ 
+		WinActivate, % "ahk_id " oOther.WinID
 		hWnd := oOther.ControlID 
 		ControlFocus, , ahk_id %hWnd%
 		WinGetPos, X, Y, W, H, ahk_id %hWnd%
@@ -6447,10 +6448,23 @@ MenuAdd("Zoom")
 MenuAdd("Zoom", "Select AhkSpy", "_gMenuZoom") 
 Return 
 
+#If isZoom && oZoom.Show && UnderRender()
+Up::MoveStep(0, -1)
+Down::MoveStep(0, 1)
+Left::MoveStep(-1, 0)
+Right::MoveStep(1, 0)
++Up::MoveStep(0, -10)
++Down::MoveStep(0, 10)
++Left::MoveStep(-10, 0)
++Right::MoveStep(10, 0)
+
 #If isZoom && oZoom.Show && oZoom.Crop && UnderRender()
+Home::
 MButton:: CoupCrop()
++Home::
 +MButton:: CircleCoupCrop()
 #If isZoom && oZoom.Show && UnderRender()
+End::CropToggle()
 PgUp::
 PgDn::
 WheelUp::
@@ -6638,6 +6652,12 @@ FastZoom(Add) {
 
 MagnifyZoomSave() {
 	IniWrite(oZoom.Zoom, "MagnifyZoom")
+}
+
+MoveStep(StepX, StepY) { 
+	oZoom.nXOriginSrc += StepX
+	oZoom.nYOriginSrc += StepY
+	LimitsOriginSrc(), Redraw(), SendCoords()
 }
 
 ChangeMark()  {
@@ -6900,13 +6920,17 @@ RBUTTONDOWN(W, L, M, H) {
 		Return ZoomMenu()
 	If !(H = oZoom.hLW)
 		Return
+	CropToggle()
+}
+
+CropToggle() {
 	If !oZoom.Crop
 		oZoom.Crop := 1, oZoom.CropX := oZoom.nXOriginSrc, oZoom.CropY := oZoom.nYOriginSrc
 		, oZoom.Mark := "Cross", ChangeMarker()
 	Else 
 		oZoom.Crop := 0
 	Redraw()
-	CropChangeControls()
+	CropChangeControls() 
 }
 
 CropChangeControls() { 
@@ -6920,9 +6944,17 @@ ZoomMenu() {
 	ObjActive.ZoomSleep()
 	WinActivate, % "ahk_id " oZoom.hGui
 	DllCall("SetTimer", "Ptr", A_ScriptHwnd, "Ptr", 1, "UInt", 333, "Ptr", RegisterCallback("ZoomMenuCheck", "Fast"))
-	WinGetPos, WinX, WinY, WinW, WinH, % "ahk_id " oZoom.vZoomMenu 
-	CoordMode, Menu, Screen
-	Menu, Zoom, Show, % WinX - 200, % WinY + WinH
+	CoordMode, Menu, Screen 
+	If A_GuiControl =
+	{
+		MouseGetPosScreen(x, y)
+		Menu, Zoom, Show, % x - 200, % y + 20
+	}
+	Else 
+	{ 
+		WinGetPos, WinX, WinY, WinW, WinH, % "ahk_id " oZoom.vZoomMenu  
+		Menu, Zoom, Show, % WinX - 200, % WinY + WinH
+	}
 	ObjActive.ZoomNoSleep()
 }
 
