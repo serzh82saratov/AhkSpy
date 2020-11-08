@@ -27,7 +27,7 @@
 */
 
 
-Global AhkSpyVersion := 4.58
+Global AhkSpyVersion := 4.59
 
 	;; _________________________________________________ Caption _________________________________________________
 
@@ -3087,6 +3087,7 @@ Mod_Up_Wait_And_TransParent:
 		SetTimer, %A_ThisLabel%, -50
 		Return
 	}
+	Sleep := 1
 	; ZoomMsg(3) 
 	If oOther.OnlyShiftTabReset
 		OnlyShiftTab := 1, oOther.OnlyShiftTabReset := 0, ZoomMsg(12, 1)
@@ -3102,6 +3103,7 @@ Mod_Up_Wait_And_TransParent:
 	} 
 	ToolTip("Stop", 300)  
 	ZoomMsg(2, 0)
+	Sleep := 0
 	Return
 		
 WM_LBUTTONDOWN(wp, lp, msg, hwnd) {
@@ -6948,6 +6950,7 @@ CropChangeControls() {
 ZoomMenu() { 
 	ObjActive.ZoomSleep()
 	WinActivate, % "ahk_id " oZoom.hGui
+	ZoomRules("Win", 0)
 	DllCall("SetTimer", "Ptr", A_ScriptHwnd, "Ptr", 1, "UInt", 333, "Ptr", RegisterCallback("ZoomMenuCheck", "Fast"))
 	CoordMode, Menu, Screen 
 	If A_GuiControl =
