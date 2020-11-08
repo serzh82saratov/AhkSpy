@@ -27,7 +27,7 @@
 */
 
 
-Global AhkSpyVersion := 4.59
+Global AhkSpyVersion := 4.60
 
 	;; _________________________________________________ Caption _________________________________________________
 
@@ -7014,15 +7014,31 @@ _gSave_to_Clipboard() {
 	ToolTip("Copy to clipboard", 800)
 }
 
-_gSave_as_Base64() { 
+_gSave_as_Base64() {
+	If GetKeyState("Control", "P")
+		Control := 1
 	If !pBitmap := GetBitmap()
-		Return ToolTip("Bitmap not found!", 800) 
-	If BitmapToBase64(pBitmap, Base64)
-		Return DllCall("gdiplus\GdipDisposeImage", "UPtr", pBitmap) 
-	Clipboard := Base64
+		Return ToolTip("Bitmap not found!", 800)  
+	; If BitmapToBase64(pBitmap, Base64)
+		; Return DllCall("gdiplus\GdipDisposeImage", "UPtr", pBitmap) 
+		
+	File := A_Temp "\AhkSpy picture for Base64.png"
+	SaveBitmapToFile(pBitmap, File) 
 	DllCall("gdiplus\GdipDisposeImage", "UPtr", pBitmap) 
-	ToolTip("Copy to clipboard as Base64", 800)
-}
+	FileGetSize, nSize, %File%
+	FileRead, buff, *c %File% 
+	If Control
+		Base64 := CryptBinaryToStringBASE64(&buff, nSize, 1)
+		, Base64 := FormatBase64ToVaribles(Base64, "Base64", 128) 
+	Else
+		Base64 := CryptBinaryToStringBASE64(&buff, nSize, 0)
+	VarSetCapacity(buff, 0)
+	ToolTip % DllCall("OpenClipboard", Ptr, 0)
+	DllCall("EmptyClipboard")
+	DllCall("CloseClipboard")
+	Clipboard := Base64
+	ToolTip("Copy to clipboard as Base64" (Control ? " and format AHK variable" : ""), 800)
+}  
 
 _gSave_to_file() { 
 	If !pBitmap := GetBitmap()
@@ -7509,9 +7525,35 @@ BitmapToBase64(pBitmap, byref Base64) {
 		DllCall( "GlobalFree", Ptr, hData )
 	}
 	ObjRelease(pStream)  
-	Base64 := CryptBinaryToStringBASE64(&buff, nSize, true)
+	Base64 := CryptBinaryToStringBASE64(&buff, nSize, 0)
 	return 0
 }  
+ 
+FormatBase64ToVaribles(Base64, Name, LenRow = 128) {
+	DATALen := StrLen(Base64), Step := 0, Pos := 1 
+	RowLen := !LenRow ? 16000 : LenRow
+	If (RowLen >= DATALen)
+		Return Name " = " Base64
+	If !LenRow
+	{
+		Loop % Ceil(DATALen / RowLen)
+		{
+			Str .= SubStr(Base64, Pos, RowLen)
+			Pos += RowLen
+			If (Pos < DATALen)
+				Str .= "`n" Name " = %" Name "%"
+		}
+		Return Name " = " Str
+	} 
+	Loop % Ceil(DATALen / RowLen)
+	{   
+		Str .= SubStr(Base64, Pos, RowLen) "`n" 
+		Pos += RowLen, ++Step
+		If (Pos >= DATALen || Step * RowLen >= 16000)
+			Step := 0, Str .= ")" . (Pos < DATALen ? "`n" Name " = %" Name "%`n(`n" : "")
+	}
+	Return Name " = `n(`n" Str
+}	
 
 CryptBinaryToStringBASE64(pData, Bytes, NOCRLF = "")  {
    static CRYPT_STRING_BASE64 := 1, CRYPT_STRING_NOCRLF := 0x40000000
