@@ -6474,7 +6474,8 @@ Tab::
 F1::
 F11:: ZoomMaximize()
 
-F12:: ZoomMenu()
+F12:: 
+AppsKey::ZoomMenu()
 
 #If isZoom && oZoom.Show && GetMinMax(oZoom.hGui) = 1
 Esc:: ZoomMaximize() 
