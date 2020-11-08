@@ -27,7 +27,7 @@
 */
 
 
-Global AhkSpyVersion := 4.61
+Global AhkSpyVersion := 4.62
 
 	;; _________________________________________________ Caption _________________________________________________
 
@@ -7030,7 +7030,7 @@ _gSave_as_Base64() {
 	DllCall("EmptyClipboard")
 	DllCall("CloseClipboard")
 	If tovar
-		Base64 := FormatBase64ToVaribles(Base64, "Base64", nocrlf ? 16000 : 128) 
+		Base64 := FormatBase64ToVaribles(Base64, "Base64", nocrlf ? 0 : 128) 
 	Clipboard := Base64
 	ToolTip("Copy to clipboard as Base64" (tovar ? " and format AHK variable" : "") (nocrlf ? " and no CRLF" : ""), 800)
 		
@@ -7544,6 +7544,8 @@ BitmapToBase64(pBitmap, NOCRLF, byref Base64) {
 FormatBase64ToVaribles(Base64, Name, LenRow = 128) {
 	DATALen := StrLen(Base64), Step := 0, Pos := 1 
 	RowLen := !LenRow ? 16000 : LenRow
+	If (RowLen = 16000)
+		Return DataToVarExp(Base64, Name)
 	If (RowLen >= DATALen)
 		Return Name " = " Base64
 	If !LenRow
@@ -7565,6 +7567,20 @@ FormatBase64ToVaribles(Base64, Name, LenRow = 128) {
 			Step := 0, Str .= ")" . (Pos < DATALen ? "`n" Name " = %" Name "%`n(`n" : "")
 	}
 	Return Name " = `n(`n" Str
+}	
+
+DataToVarExp(Base64, Name) {
+	DATALen := StrLen(Base64), Pos := 1  
+	If (16000 >= DATALen)
+		Return Name " := """ Base64 """"
+	Loop % Ceil(DATALen / 16000)
+	{
+		p := SubStr(Base64, Pos, 16000) 
+		Pos += 16000
+		If (Pos < DATALen)
+			Str .= "`n" Name " .= """ p """"
+	}
+	Return StrReplace(Str, " .= """, " := """, , 1) 
 }	
 
 CryptBinaryToStringBASE64(pData, Bytes, NOCRLF = "")  {
