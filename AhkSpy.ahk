@@ -27,7 +27,7 @@
 */
 
 
-Global AhkSpyVersion := 4.65
+Global AhkSpyVersion := 4.66
 
 	;; _________________________________________________ Caption _________________________________________________
 
@@ -6973,11 +6973,11 @@ CropToggle() {
 	CropChangeControls() 
 }
 
-CropMarkToggle() {
-	If (oZoom.Crop && oZoom.Mark != "Cross")
-		oZoom.CropPrMark := oZoom.Mark, oZoom.Mark := "Cross", ChangeMarker()
+CropMarkToggle() { 
+	If (oZoom.Crop && (oZoom.CropPrMark := oZoom.Mark) && oZoom.Mark != "Cross")
+		oZoom.Mark := "Cross", ChangeMarker()
 	Else If (!oZoom.Crop && oZoom.Mark != oZoom.CropPrMark)
-		oZoom.Mark := oZoom.CropPrMark, ChangeMarker()
+		oZoom.Mark := oZoom.CropPrMark, ChangeMarker()  
 }
 
 CropChangeControls() { 
