@@ -27,7 +27,7 @@
 */
 
 
-Global AhkSpyVersion := 4.63
+Global AhkSpyVersion := 4.64
 
 	;; _________________________________________________ Caption _________________________________________________
 
@@ -38,7 +38,10 @@ Global WS_EX_APPWINDOW := 0x40000, WS_CHILDWINDOW := 0x40000000, WS_EX_LAYERED :
 
 p1 = %1%
 If (p1 = "Zoom")
-	GoTo ShowZoom
+{  
+	Gosub ShowZoom 
+	Return
+}
 
 SingleInstance()
 #NoEnv
@@ -65,18 +68,20 @@ Global MemoryFontSize := IniRead("MemoryFontSize", 0)
 	, FontSize := MemoryFontSize ? IniRead("FontSize", "15") : 15			;;  Размер шрифта
 	, FontFamily :=  "Arial"												;;  Шрифт - Times New Roman | Georgia | Myriad Pro | Arial
 	, FontWeight := FontBold ? 900 : 500									;;  Насыщенность шрифта
-	, HeigtButton := 32														;;  Высота кнопок
+	, HeigtButton := 30														;;  Высота кнопок
 	, RangeTimer := 100														;;  Период опроса данных, увеличьте на слабом ПК
 	HeightStart := 530														;;  Высота окна при старте
-	wKey := 142																;;  Ширина кнопок
+	wKey := 136																;;  Ширина кнопок
 	wColor := wKey // 2														;;  Ширина цветного фрагмента
 
 DarkTheme := IniRead("DarkTheme", 0)
 If !DarkTheme
 {
 	Global ColorFont := "000000"											;;  Цвет шрифта
-	, ColorBg := "FFFFFF"								;;  Цвет фона          "F0F0F0" E4E4E4     F8F8F8
+	, ColorBg := "FFFFFF"													;;  Цвет фона          "F0F0F0" E4E4E4     F8F8F8
 	, ColorBgPaused := "f7f7f7"												;;  Цвет фона при паузе     F0F0F0
+	, ColorBgModeButton := "f7f7f7"											;;  E1E1E1
+	, ColorSelModeButton := "FEF0C7"										;;  Цвет фона кнопки текущего режима
 	, ColorSelMouseHover := "3399FF"										;;  Цвет фона элемента при наведении мыши  3399FF   96C3DC F9D886 8FC5FC AEC7E1
 	, ColorSelMouseHoverText := ColorBg										;;  Цвет текста элемента при наведении мыши     96C3DC F9D886 8FC5FC AEC7E1
 	, ColorSelButton := "96C3DC"											;;  Цвет фона при нажатии на кнопки
@@ -84,7 +89,7 @@ If !DarkTheme
 	, ColorHighLightBckg := "FFE0E0"										;;  Цвет фона некоторых абзацев
 	, ColorDelimiter := "E14B30"											;;  Цвет шрифта разделителя заголовков и параметров
 	, ColorTitle := "27419B"												;;  Цвет шрифта заголовка
-	, ColorLineTitles := "ff0000"											;;  Цвет линии заголовка
+	, ColorLineTitles := "444499"											;;  Цвет линии заголовка
 	, ColorParam := "189200"												;;  Цвет шрифта параметров
 	, ColorErrorAccPath := "ff0000"
 	, ColorErrorAccMarquee := "ffcc00"
@@ -101,8 +106,10 @@ If !DarkTheme
 Else 
 {
 	Global ColorFont := "FFFFFF"											;;  Цвет шрифта
-	, ColorBg := "000000"								;;  Цвет фона          "F0F0F0" E4E4E4     F8F8F8
+	, ColorBg := "000000"													;;  Цвет фона          "F0F0F0" E4E4E4     F8F8F8  
 	, ColorBgPaused := "080808"												;;  Цвет фона при паузе     F0F0F0
+	, ColorBgModeButton := "000000"											;;  000000
+	, ColorSelModeButton := "469EE1"										;;  Цвет фона кнопки текущего режима
 	, ColorSelMouseHover := "FDE182"										;;  Цвет фона элемента при наведении мыши     96C3DC F9D886 8FC5FC AEC7E1
 	, ColorSelMouseHoverText := "000000"									;;  Цвет текста элемента при наведении мыши     96C3DC F9D886 8FC5FC AEC7E1
 	, ColorSelButton := "693C23"											;;  Цвет фона при нажатии на кнопки
@@ -126,7 +133,6 @@ Else
 }
 Global ColorBgOriginal := ColorBg
 
-
 Global ThisMode := IniRead("StartMode", "Control"), LastModeSave := (ThisMode = "LastMode")
 , ThisMode := ThisMode = "LastMode" ? IniRead("LastMode", "Control") : ThisMode, CheckAhkNewVersion := IniRead("CheckAhkNewVersion", 0) 
 , ActiveNoPause := IniRead("ActiveNoPause", 0), MemoryPos := IniRead("MemoryPos", 0), MemorySize := IniRead("MemorySize", 0)
@@ -140,7 +146,6 @@ Global ThisMode := IniRead("StartMode", "Control"), LastModeSave := (ThisMode = 
 , UseUIA := IniRead("UseUIA", 0), UIAAlienDetect := IniRead("UIAAlienDetect", 0), MinimizeEscape := IniRead("MinimizeEscape", 0)
 , DetectHiddenText := IniRead("DetectHiddenText", "on"), MoveTitles := IniRead("MoveTitles", 1), DynamicAccPath := IniRead("DynamicAccPath", 0)
 , DynamicControlPath := IniRead("DynamicControlPath", 0), ActiveScriptAllowChange := IniRead("ActiveScriptAllowChange", 1)
-
 
 , UpdRegisterLink := "https://u.to/zeONFA", testvar, oDivOld, oDivNew, DivWorkIndex := 2, oDivWork1, oDivWork2
 
@@ -231,8 +236,7 @@ oJScript.MoveTitles := MoveTitles
 ComObjConnect(oDoc, Events)
 
 OnMessage(0x133, "WM_CTLCOLOREDIT")
-OnMessage(0x201, "WM_LBUTTONDOWN")
-OnMessage(0x208, "WM_MBUTTONUP")
+OnMessage(0x201, "WM_LBUTTONDOWN") 
 OnMessage(0x204, "WM_RBUTTONDOWN") 
 OnMessage(0x7B, "WM_CONTEXTMENU")
 OnMessage(0xA1, "WM_NCLBUTTONDOWN")
@@ -245,17 +249,29 @@ OnMessage(0x4a, "WM_COPYDATA")
 ;; OnMessage(WM_MOVE := 0x03, "WM_WINDOWPOSCHANGED")
 
 OnMessage(MsgAhkSpyZoom := DllCall("RegisterWindowMessage", "Str", "MsgAhkSpyZoom"), "MsgZoom")
-DllCall("PostMessage", "Ptr", A_ScriptHWND, "UInt", 0x50, "UInt", 0, "UInt", 0x409) ;; eng layout
+DllCall("PostMessage", "Ptr", A_ScriptHWND, "UInt", 0x50, "UInt", 0,	 "UInt", 0x409) ;; eng layout
 SetWinEventHook("EVENT_OBJECT_CLOAKED", 0x8017)
 SetWinEventHook("EVENT_OBJECT_UNCLOAKED", 0x8018) 
 
 Gui, TB: +HWNDhTBGui -Caption -DPIScale +Parent%hGui% +%WS_CHILDWINDOW% -%WS_POPUP% +E%WS_EX_NOACTIVATE%
+Gui, TB: Color, %ColorBg%
 Gui, TB: Font, % " s" FontDPI, Verdana
-Gui, TB: Add, Button, x0 y0 h%HeigtButton% w%wKey% vBut1 gMode_Win hwndhButtonWindow, Window
-Gui, TB: Add, Button, x+0 yp hp wp vBut2 gMode_Control hwndhButtonControl, Control
-Gui, TB: Add, Progress, x+0 yp hp w%wColor% vColorProgress HWNDhColorProgress c%ColorBgOriginal%, 100
-Gui, TB: Add, Button, x+0 yp hp w%wKey% vBut3 gMode_Hotkey hwndhButtonButton, Button
-Gui, TB: Show, % "x0 y0 NA h" HeigtButton " w" widthTB := wKey*3+wColor
+
+Gui, TB: Add, Progress, % "Border  x1 y0 h" HeigtButton " w" wKey "  vColor_Window Background" ColorBgModeButton  
+Gui, TB: Add, Text, % "hwndhButtonWindow +0x201 c" ColorFont " BackGroundTrans xp yp h" HeigtButton " wp" "    ", Window
+
+Gui, TB: Add, Progress, % "Border x+1 y0 h" HeigtButton " w" wKey " vColor_Control Background" ColorBgModeButton  
+Gui, TB: Add, Text, % "hwndhButtonControl +0x201 c" ColorFont " BackGroundTrans xp yp h" HeigtButton  " wp"    "    ", Control
+
+Gui, TB: Add, Progress, % "Border  x+1 y0 h" HeigtButton " w" HeigtButton " vColor_Zoom Background" ColorBgModeButton  
+Gui, TB: Add, Text, % "hwndhButtonZoom +0x201 c" ColorFont " BackGroundTrans xp yp hp wp", % Chr("0x1F50D") ; 🔍
+
+Gui, TB: Add, Progress, % "x+1 y0 h" HeigtButton " w" wColor " vColorProgress HWNDhColorProgress c" ColorBgOriginal, 100
+
+Gui, TB: Add, Progress, % "Border  x+1 y0 h" HeigtButton " w" wKey " vColor_Button Background" ColorBgModeButton  
+Gui, TB: Add, Text, % "hwndhButtonButton +0x201 c" ColorFont " BackGroundTrans xp yp h" HeigtButton   " wp"    "    ", Button
+
+Gui, TB: Show, % "x0 y0 NA h" HeigtButton " w" widthTB := wKey * 3 + wColor + HeigtButton + 7
 
 Gui, F: +HWNDhFindGui -Caption -DPIScale +Parent%hGui% +%WS_CHILDWINDOW% -%WS_POPUP%
 Gui, F: Color, %ColorBgPaused%
@@ -412,10 +428,10 @@ If ThisMode = Hotkey
 Gosub, Mode_%ThisMode%
 
 Hotkey_Init("Write_HotkeyHTML", "MLRJ")
-
+ 
 If (MemoryStateZoom && IniRead("ZoomShow", 0))
 	AhkSpyZoomShow()
-
+	
 WinGetPos, WinX, WinY, WinWidth, WinHeight, ahk_id %hGui%
 If !DllCall("WindowFromPoint", "Int64", WinX & 0xFFFFFFFF | WinY << 32)
 && !DllCall("WindowFromPoint", "Int64", (WinX + WinWidth) & 0xFFFFFFFF | (WinY) << 32)
@@ -430,16 +446,18 @@ WinSet, TransParent, 255, ahk_id %hGui%
 DllCall("RedrawWindow", "Ptr", hGui, "Uint", 0, "Uint", 0, "Uint", 0x1|0x4)
 
 ; MsgBox % oDoc.documentMode  "`n" oDoc.compatMode  "`n" oDoc.designMode := "On"
-Return
+Return 
 
 	;; _________________________________________________ Hotkey`s _________________________________________________
 
-#If isAhkSpy && Sleep != 1 && OnlyShiftTab && !ActiveNoPause && !isPaused && ThisMode != "Hotkey" && IsHwndUnderMouse(hColorProgress)!WinActive("ahk_id" hGui) && 
+#If isAhkSpy && Sleep != 1 && OnlyShiftTab && !ActiveNoPause && !isPaused && ThisMode != "Hotkey" && IsHwndUnderMouse(hColorProgress) && !WinActive("ahk_id" hGui)
 
 MButton:: SetTimer(Func("WM_RBUTTONDOWN").Bind(0, 0, 0, hColorProgress), "-" 1)  ; WM_RBUTTONDOWN(0, 0, 0, hColorProgress)
 
 #If isAhkSpy && Sleep != 1 && OnlyShiftTab && !ActiveNoPause && !isPaused && ThisMode != "Hotkey" && IsHwndUnderMouse(hColorProgress)
 
+MButton::
++MButton::
 +RButton:: SetTimer(Func("WM_RBUTTONDOWN").Bind(0, 0, 0, hColorProgress), "-" 1)  ; WM_RBUTTONDOWN(0, 0, 0, hColorProgress)
 	
 #If Shift_Tab_Work
@@ -654,15 +672,16 @@ RButton::
 
 #If !WinActive("ahk_id" hGui) && IsAhkSpyUnderMouse(hc)
 
-+LButton::
++LButton::  
 	If (hc = hButtonButton)
-		SetTimer, Mode_Hotkey, -1
+		SetTimer("Mode_Hotkey", -1)
 	Else If (hc = hButtonControl)
-		SetTimer, Mode_Control, -1
+		SetTimer("Mode_Control", -1)
 	Else If (hc = hButtonWindow)
-		SetTimer, Mode_Win, -1
-	Return
-
+		SetTimer("Mode_Win", -1) 
+	Else If (hc = hButtonZoom) 
+		SetTimer("AhkSpyZoomShow", -1) 
+	Return 
 #If
 
 IsAhkSpyUnderMouse(Byref hc) {
@@ -676,12 +695,13 @@ IsHwndUnderMouse(hwnd) {
 }
 	;; _________________________________________________ Mode_Win _________________________________________________
 	
-Mode_Win:
+Mode_Win: 
 	If A_GuiControl
 		GuiControl, 1:Focus, oDoc
 	ZoomMsg(10, 0)
-	; oBody.createTextRange().execCommand("RemoveFormat")
-	GuiControl, TB: -0x0001, But1 
+	; oBody.createTextRange().execCommand("RemoveFormat")   
+	ColorButton("Window") 
+	
 	If (ThisMode = "Hotkey")
 		Hotkey_Hook(0)
 		
@@ -848,7 +868,7 @@ HTML_Win:
 		WinStyles := GetStyles(WinClass, WinStyle, WinExStyle, WinID)
 		 
 	HTML_Win := ""
-	. _T1 " id='__Title'> ( Title ) </span>" _BT1 " id='pause_button'> pause " _BT2  _DB  _DB  _BT1 " id='run_zoom'> zoom " _BT2  _T2  _BR 
+	. _T1 " id='__Title'> ( Title ) </span>" _BT1 " id='pause_button'> pause " _BT2 _T2  _BR 
 	
 	. _PRE1 "<span id='wintitle1' name='MS:'>" WinTitle "</span>" _PRE2 
 	
@@ -939,7 +959,7 @@ Mode_Control:
 		GuiControl, 1:Focus, oDoc
 	ZoomMsg(10, 0)
 	; oBody.createTextRange().execCommand("RemoveFormat")
-	GuiControl, TB: -0x0001, But2
+	ColorButton("Control") 
 	If (ThisMode = "Hotkey")
 		Hotkey_Hook(0)
 		
@@ -1196,7 +1216,7 @@ HTML_Control:
 	} 
 	
 	HTML_Control := ""
-	. _T1 " id='__Mouse'> ( Mouse ) </span>" _BT1 " id='pause_button'> pause " _BT2  _DB  _DB  _BT1 " id='run_zoom'> zoom " _BT2  _T2 
+	. _T1 " id='__Mouse'> ( Mouse ) </span>" _BT1 " id='pause_button'> pause " _BT2 _T2 
 	
 	. _PRE1  _BP1 " id='set_pos'>Screen:" _BP2 "  <span name='MS:' id='coord_screen'>x" MXS " y" MYS "</span>" _DP  _BP1 " id='set_pos'>Window:" _BP2 
 		. "  <span name='MS:' id='coord_win'>x" RWinX " y" RWinY "</span>" _DP  _BP1 " id='set_pos'>Client:" _BP2 
@@ -2104,6 +2124,7 @@ Mode_Hotkey:
 	Try SetTimer, Loop_%ThisMode%, Off
 	ZoomMsg(10, 1) 
 	ShowMarker ? (HideAllMarkers()) : 0
+	ColorButton("Button") 
 	; oBody.createTextRange().execCommand("RemoveFormat")
 	
 	ScrollPos[ThisMode, 1] := oDivNew.scrollLeft
@@ -2123,10 +2144,10 @@ Mode_Hotkey:
 		Write_Hotkey(prNotThisMode)
 	
 	TitleText := (TitleTextP1 := "AhkSpy - Button") . TitleTextP2
-	SendMessage, 0xC, 0, &TitleText, , ahk_id %hGui%
-	GuiControl, TB: -0x0001, But3
-	; WinActivate ahk_id %hGui%
-	GuiControl, 1:Focus, oDoc
+	SendMessage, 0xC, 0, &TitleText, , ahk_id %hGui% 
+	; WinActivate ahk_id %hGui%  
+	If A_GuiControl
+		GuiControl, 1:Focus, oDoc
 	If isFindView
 		FindNewText()
 	Return
@@ -3019,12 +3040,7 @@ WM_NCLBUTTONDOWN(wp) {
 		SetTimer, Minimize, -10
 		Return 0
 	}
-}
-
-WM_MBUTTONUP(wp) {
-	If (A_GuiControl = "ColorProgress")
-		Return 0, ToolTip("Zoom", 300), AhkSpyZoomShow()
-}
+} 
 
 TransParent(v) {
 	oOther.TransParent := !v
@@ -3037,7 +3053,7 @@ TransParent(v) {
 } 
 		
 WM_RBUTTONDOWN(wp, lp, msg, hwnd, tp = 0) { 
-	If (hwnd = hColorProgress && !ActiveNoPause && !isPaused)
+	If (hwnd = hColorProgress && !ActiveNoPause && !isPaused && ThisMode != "Hotkey")
 	{
 		If GetKeyState("Shift")
 			TransParent(0)
@@ -3046,7 +3062,6 @@ WM_RBUTTONDOWN(wp, lp, msg, hwnd, tp = 0) {
 		ActiveNoPause := 1
 		If OnlyShiftTab 
 			OnlyShiftTab := 0, oOther.OnlyShiftTabReset := 1, ZoomMsg(12, 0)
-		
 		SetTimer, Loop_%ThisMode%, -1 
 		SetTimer, RButton_Up_Wait, -1
 	}
@@ -3105,16 +3120,34 @@ Mod_Up_Wait_And_TransParent:
 	ZoomMsg(2, 0)
 	Sleep := 0
 	Return
-		
-WM_LBUTTONDOWN(wp, lp, msg, hwnd) {
-	If (hwnd = hFindGui)
+
+
+ColorButton(name) {
+	for k, v in ["Window", "Control", "Button"]
+		ColorProgress("Color_" v, v = name ? ColorSelModeButton : ColorBgModeButton) 
+}
+
+ColorProgress(name, color) {  
+	GuiControl, % "TB: +Background" color, %name% 
+	Gui, TB: Color, %ColorBg%
+}
+
+WM_LBUTTONDOWN(wp, lp, msg, hwnd) { 
+	If (A_GuiControl = "Color_Window")   
+		Gosub Mode_Win
+	Else If (A_GuiControl = "Color_Control")  
+		Gosub Mode_Control
+	Else If (A_GuiControl = "Color_Button")  
+		Gosub Mode_Hotkey
+	Else If (A_GuiControl = "Color_Zoom")  
+		AhkSpyZoomShow() 
+	Else If (hwnd = hFindGui)
 	{
 		MouseGetPos, , , , hControl, 2
 		If (hControl = hFindAllText)
-			SetTimer, FindAll, -250
-		Return
+			SetTimer, FindAll, -250 
 	}
-	If A_GuiControl = ColorProgress
+	Else If A_GuiControl = ColorProgress
 	{
 		If ThisMode = Hotkey
 			oDoc.execCommand("Paste"), ToolTip("Paste", 300)
@@ -3338,8 +3371,10 @@ AhkSpyZoomShow() {
 	Else If DllCall("IsWindowVisible", "Ptr", oOther.hZoom)
 		ZoomMsg(0)
 	Else
-		ZoomMsg(1)
-}
+		ZoomMsg(1) 
+	SetTimer(Func("ColorProgress").Bind("Color_Zoom", ColorSelModeButton), "-" 1)
+	SetTimer(Func("ColorProgress").Bind("Color_Zoom", ColorBgModeButton), "-" 150)
+} 
 
 SetPosObject(Name, arr) {
 	If !oOther.ZoomShow
@@ -4007,13 +4042,13 @@ NextLink(s = "") {
 	If (!curpos && s = "-")
 		Return
 	While (pos := oDoc.getElementsByTagName("a").item(A_Index-1).getBoundingClientRect().top) != ""
-		(s 1) * pos > 0 && (!res || abs(res) > abs(pos)) ? res := pos : ""       ;; http://forum.script-coding.com/viewtopic.php?pid=82360#p82360
+		(s 1) * pos - 12 > 0 && (!res || abs(res) > abs(pos)) ? res := pos : ""       ;; http://forum.script-coding.com/viewtopic.php?pid=82360#p82360
 	If (res = "" && s = "")
 		Return
 	st := !res ? -curpos : res, co := abs(st) > 150 ? 20 : 10
 	Loop % co
-		oDivNew.scrollTop := curpos + (st*(A_Index/co))
-	oDivNew.scrollTop := curpos + res
+		oDivNew.scrollTop := curpos + (st*(A_Index/co))  
+	oDivNew.scrollTop := curpos + res - 6
 }  
 
 AnchorColor() {
@@ -6222,9 +6257,7 @@ ButtonClick(oevent) {
 		BlockInput, MouseMoveOff
 		If !Shift
 			Sleep(500), HideAllMarkers(), CheckHideMarker()
-	}
-	Else If thisid = run_zoom
-		AhkSpyZoomShow()
+	} 
 	Else If thisid = b_DecimalCode
 	{
 		oDoc.getElementById("b_DecimalCode").innerText := (DecimalCode := !DecimalCode) ? " dec " : " hex "
@@ -6383,7 +6416,6 @@ ShowZoom:
 hAhkSpy = %2%
 If !WinExist("ahk_id" hAhkSpy)
 	ExitApp
-
 ActiveNoPause = %3%
 AhkSpyPause = %4%
 Suspend = %5%
@@ -6432,8 +6464,7 @@ SetWinEventHook("EVENT_SYSTEM_MOVESIZEEND", 0x000B)
 ObjActive.Magnify := Func("Magnify")
 ObjActive.Redraw := Func("Redraw") 
 
-ZoomCreate() 
-hGui := hAhkSpy
+ZoomCreate()  
 Send_AhkSpy(0, oZoom.hGui)  
 Send_AhkSpy(3, oZoom.hLW) 
 
@@ -6485,9 +6516,9 @@ AppsKey::ZoomMenu()
 
 #If isZoom && oZoom.Show && GetMinMax(oZoom.hGui) = 1
 Esc:: ZoomMaximize() 
-#If
-	
-ZoomCreate() {
+#If 
+
+ZoomCreate() { 
 	oZoom.Zoom := IniRead("MagnifyZoom", 4)
 	oZoom.Mark := IniRead("MagnifyMark", "Cross")
 	oZoom.MemoryZoomSize := IniRead("MemoryZoomSize", 0)
@@ -6522,7 +6553,6 @@ ZoomCreate() {
 	Gui, ZoomTB: Add, Button, gZoomMenu hwndhZoomMenu x+10 ys h%h% w22, % Chr(0x2261)
 	Gui, ZoomTB: Add, Button, gZoomMaximize x+10 yp hp wp, % Chr(0x1F791) 
 	Gui, ZoomTB: Show, NA x0 y0
-
 	Gui, Zoom: Show, % "NA Hide w" GuiW " h" GuiH, AhkSpyZoom
 	Gui, Zoom: +MinSize
 	
@@ -6932,12 +6962,18 @@ RBUTTONDOWN(W, L, M, H) {
 
 CropToggle() {
 	If !oZoom.Crop
-		oZoom.Crop := 1, oZoom.CropX := oZoom.nXOriginSrc, oZoom.CropY := oZoom.nYOriginSrc
-		, oZoom.Mark := "Cross", ChangeMarker()
+		oZoom.Crop := 1, oZoom.CropX := oZoom.nXOriginSrc, oZoom.CropY := oZoom.nYOriginSrc, CropMarkToggle()
 	Else 
-		oZoom.Crop := 0
+		oZoom.Crop := 0, CropMarkToggle()
 	Redraw()
 	CropChangeControls() 
+}
+
+CropMarkToggle() {
+	If (oZoom.Crop && oZoom.Mark != "Cross")
+		oZoom.CropPrMark := oZoom.Mark, oZoom.Mark := "Cross", ChangeMarker()
+	Else If (!oZoom.Crop && oZoom.Mark != oZoom.CropPrMark)
+		oZoom.Mark := oZoom.CropPrMark, ChangeMarker()
 }
 
 CropChangeControls() { 
@@ -7001,6 +7037,7 @@ _gMenuZoom() {
 	oZoom.Crop := 1
 	oZoom.nXOriginSrc := p[1] - oZoom.VSX, oZoom.nYOriginSrc := p[2] - oZoom.VSY
 	oZoom.CropX := p[1] + p[3] - 1 - oZoom.VSX, oZoom.CropY := p[2] + p[4] - 1 - oZoom.VSY
+	CropMarkToggle()
 	Redraw()
 	CropChangeControls()
 	SendCoords()
@@ -7463,43 +7500,25 @@ SetBitmapToClipboard(pBitmap) {
    Return E
 }
 
-SaveBitmapToFile(pBitmap, sOutput, Quality=75)  {
+SaveBitmapToFile(pBitmap, sOutput)  {
 	SplitPath, sOutput,,, Extension
-	if Extension not in BMP,DIB,RLE,JPG,JPEG,JPE,JFIF,GIF,TIF,TIFF,PNG
+	if Extension not in PNG
 		return -1
-
 	DllCall("gdiplus\GdipGetImageEncodersSize", UIntP, nCount, UIntP, nSize)
 	VarSetCapacity(ci, nSize)
 	DllCall("gdiplus\GdipGetImageEncoders", UInt, nCount, UInt, nSize, Ptr, &ci)
 	if !(nCount && nSize)
-		return -2
-
+		return -2 
 	Loop, % nCount  {
-	sString := StrGet(NumGet(ci, (idx := (48+7*A_PtrSize)*(A_Index-1))+32+3*A_PtrSize), "UTF-16")
-	if !InStr(sString, "*." Extension)
-		continue
+		sString := StrGet(NumGet(ci, (idx := (48+7*A_PtrSize)*(A_Index-1))+32+3*A_PtrSize), "UTF-16")
+		if !InStr(sString, "*." Extension)
+			continue
 
-	pCodec := &ci+idx
-	break
-	}
-
+		pCodec := &ci+idx
+		break
+	} 
 	if !pCodec
 		return -3
-
-	if RegExMatch(Extension, "i)^J(PG|PEG|PE|FIF)$") && Quality != 75  {
-		DllCall("gdiplus\GdipGetEncoderParameterListSize", Ptr, pBitmap, Ptr, pCodec, UintP, nSize)
-		VarSetCapacity(EncoderParameters, nSize, 0)
-		DllCall("gdiplus\GdipGetEncoderParameterList", Ptr, pBitmap, Ptr, pCodec, UInt, nSize, Ptr, &EncoderParameters)
-		Loop, % NumGet(EncoderParameters, "UInt")  {
-			elem := (24+A_PtrSize)*(A_Index-1) + 4 + (pad := A_PtrSize = 8 ? 4 : 0)
-			if (NumGet(EncoderParameters, elem+16, "UInt") = 1) && (NumGet(EncoderParameters, elem+20, "UInt") = 6)  {
-				p := elem+&EncoderParameters-pad-4
-				NumPut(Quality, NumGet(NumPut(4, NumPut(1, p+0)+20, "UInt")), "UInt")
-				break
-			}
-		}      
-	}
-
 	if A_IsUnicode
 		pOutput := &sOutput
 	else  {
@@ -7507,7 +7526,7 @@ SaveBitmapToFile(pBitmap, sOutput, Quality=75)  {
 		StrPut(sOutput, &wOutput, "UTF-16")
 		pOutput := &wOutput
 	}
-	E := DllCall("gdiplus\GdipSaveImageToFile", Ptr, pBitmap, Ptr, pOutput, Ptr, pCodec, UInt, p ? p : 0)
+	E := DllCall("gdiplus\GdipSaveImageToFile", Ptr, pBitmap, Ptr, pOutput, Ptr, pCodec, UInt, 0)
 	return E ? -5 : 0
 }
 
