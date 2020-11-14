@@ -27,7 +27,7 @@
 */
 
 
-Global AhkSpyVersion := 4.64
+Global AhkSpyVersion := 4.65
 
 	;; _________________________________________________ Caption _________________________________________________
 
@@ -257,21 +257,21 @@ Gui, TB: +HWNDhTBGui -Caption -DPIScale +Parent%hGui% +%WS_CHILDWINDOW% -%WS_POP
 Gui, TB: Color, %ColorBg%
 Gui, TB: Font, % " s" FontDPI, Verdana
 
-Gui, TB: Add, Progress, % "Border  x1 y0 h" HeigtButton " w" wKey "  vColor_Window Background" ColorBgModeButton  
-Gui, TB: Add, Text, % "hwndhButtonWindow +0x201 c" ColorFont " BackGroundTrans xp yp h" HeigtButton " wp" "    ", Window
+Gui, TB: Add, Progress, % "  x1 y0 h" HeigtButton-1 " w" wKey "  vColor_Window Background" ColorBgModeButton  
+Gui, TB: Add, Text, % "Border hwndhButtonWindow +0x201 c" ColorFont " BackGroundTrans xp yp hp wp", Window
 
-Gui, TB: Add, Progress, % "Border x+1 y0 h" HeigtButton " w" wKey " vColor_Control Background" ColorBgModeButton  
-Gui, TB: Add, Text, % "hwndhButtonControl +0x201 c" ColorFont " BackGroundTrans xp yp h" HeigtButton  " wp"    "    ", Control
+Gui, TB: Add, Progress, % "x+1 y0 h" HeigtButton-1 " w" wKey " vColor_Control Background" ColorBgModeButton  
+Gui, TB: Add, Text, % "Border hwndhButtonControl +0x201 c" ColorFont " BackGroundTrans xp yp hp wp", Control
 
-Gui, TB: Add, Progress, % "Border  x+1 y0 h" HeigtButton " w" HeigtButton " vColor_Zoom Background" ColorBgModeButton  
-Gui, TB: Add, Text, % "hwndhButtonZoom +0x201 c" ColorFont " BackGroundTrans xp yp hp wp", % Chr("0x1F50D") ; 🔍
+Gui, TB: Add, Progress, % "x+1 y0 h" HeigtButton-1 " w" HeigtButton " vColor_Zoom Background" ColorBgModeButton  
+Gui, TB: Add, Text, % "Border hwndhButtonZoom +0x201 c" ColorFont " BackGroundTrans xp yp hp wp", % Chr("0x1F50D") ; 🔍
 
-Gui, TB: Add, Progress, % "x+1 y0 h" HeigtButton " w" wColor " vColorProgress HWNDhColorProgress c" ColorBgOriginal, 100
+Gui, TB: Add, Progress, % "x+1 y0 h" HeigtButton-1 " w" wColor " vColorProgress HWNDhColorProgress c" ColorBgOriginal, 100
 
-Gui, TB: Add, Progress, % "Border  x+1 y0 h" HeigtButton " w" wKey " vColor_Button Background" ColorBgModeButton  
-Gui, TB: Add, Text, % "hwndhButtonButton +0x201 c" ColorFont " BackGroundTrans xp yp h" HeigtButton   " wp"    "    ", Button
+Gui, TB: Add, Progress, % "x+1 y0 h" HeigtButton-1 " w" wKey " vColor_Button Background" ColorBgModeButton  
+Gui, TB: Add, Text, % "Border hwndhButtonButton +0x201 c" ColorFont " BackGroundTrans xp yp hp wp", Button
 
-Gui, TB: Show, % "x0 y0 NA h" HeigtButton " w" widthTB := wKey * 3 + wColor + HeigtButton + 7
+Gui, TB: Show, % "x0 y0 NA h" HeigtButton " w" widthTB := wKey * 3 + wColor + HeigtButton + 6
 
 Gui, F: +HWNDhFindGui -Caption -DPIScale +Parent%hGui% +%WS_CHILDWINDOW% -%WS_POPUP%
 Gui, F: Color, %ColorBgPaused%
@@ -6516,7 +6516,11 @@ AppsKey::ZoomMenu()
 
 #If isZoom && oZoom.Show && GetMinMax(oZoom.hGui) = 1
 Esc:: ZoomMaximize() 
-#If 
+#If
+
+; 1::Gui, Zoom: +Caption  -E%WS_EX_NOACTIVATE%   
+
+; 2::Gui, Zoom: -Caption +E%WS_EX_NOACTIVATE%
 
 ZoomCreate() { 
 	oZoom.Zoom := IniRead("MagnifyZoom", 4)
