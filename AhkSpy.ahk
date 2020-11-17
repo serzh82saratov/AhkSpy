@@ -27,7 +27,7 @@
 */
 
 
-Global AhkSpyVersion := 4.66
+Global AhkSpyVersion := 4.67
 
 	;; _________________________________________________ Caption _________________________________________________
 
@@ -1643,14 +1643,14 @@ AccInfoUnderMouse(mx, my, wx, wy, cx, cy, caX, caY, WinID, ControlID) {
 		Else 
 			error := "<span style='color:#" ColorErrorAccPath "'>  path not found</span>"
 	}
-	pathbutton := _DP _BP1 " id='acc_path'> Get path " _BP2 "</span><span id='acc_path_error'>" error "</span>"
-
-	code := _PRE1 "<span class='param'>Type:</span>  " Var pathbutton _PRE2 "<span id='acc_path_value'>" acc_path_value "</span>"
+	pathbutton := _DP _BP1 " id='acc_path'> Get path " _BP2 "</span><span id='acc_path_error'>" error "</span>" 
+	code := _PRE1 "<span class='param'>Type:</span>  " Var pathbutton 
+	. _DP _BP1 " id='acc_DoDefaultAction2'> DoDefaultAction " _BP2 "</span>"
+	. _PRE2 "<span id='acc_path_value'>" acc_path_value "</span>" 
 
 	AccGetLocation(AccObj, child)
 	x := AccCoord[1], y := AccCoord[2], w := AccCoord[3], h := AccCoord[4] 
 	SetPosObject("accesible", [x, y, w, h])  
-	
 	
 	code .= _T1 " id='P__Position_relative_Acc'" _T1P "> ( Position relative ) </span>" _T2 _PRE1 "<span class='param'>Screen: </span>"
 		. "<span name='MS:'>x" x " y" y "</span>"
@@ -5560,12 +5560,11 @@ LoadJScript() {
 	BodyWrap_ := WordWrap ? _BodyWrapCSS : ""
 html =
 (
-<head>
+<head> 
 	<style id='css_ColorBg' type="text/css">body, .title, .button, .divwork {background-color: #%ColorBg%;}</style>
 	<style id='css_PreOverflowHide' type="text/css">%PreOver_%</style>
 	<style id='css_Body' type="text/css">%BodyWrap_%</style>
 	<style id='css_Test' type="text/css"></style>
-	
 <style>
 
 * {
@@ -6266,7 +6265,7 @@ ButtonClick(oevent) {
 		str := oDoc.getElementById("v_VKDHCode").innerText
 		oDoc.getElementById("v_VKDHCode").innerText := (DecimalCode) ? Format("{:d}", str) : Format("0x{:X}", str)
 	}
-	Else If thisid = acc_DoDefaultAction
+	Else If (thisid = "acc_DoDefaultAction" || thisid = "acc_DoDefaultAction2")
 		accDoDefaultAction()  
 	Else If thisid = b_hwnd_flash
 	{ 
@@ -6960,15 +6959,16 @@ RBUTTONDOWN(W, L, M, H) {
 	If (H = oZoom.vZoomMenu)
 		Return ZoomMenu()
 	If !(H = oZoom.hLW)
-		Return
-	CropToggle()
+		Return 
+	SetTimer CropToggle, -100
 }
 
 CropToggle() {
 	If !oZoom.Crop
-		oZoom.Crop := 1, oZoom.CropX := oZoom.nXOriginSrc, oZoom.CropY := oZoom.nYOriginSrc, CropMarkToggle()
+		oZoom.Crop := 1, oZoom.CropX := oZoom.nXOriginSrc, oZoom.CropY := oZoom.nYOriginSrc
 	Else 
-		oZoom.Crop := 0, CropMarkToggle()
+		oZoom.Crop := 0
+	CropMarkToggle()
 	Redraw()
 	CropChangeControls() 
 }
