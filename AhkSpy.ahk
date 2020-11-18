@@ -27,7 +27,7 @@
 */
 
 
-Global AhkSpyVersion := 4.67
+Global AhkSpyVersion := 4.68
 
 	;; _________________________________________________ Caption _________________________________________________
 
@@ -3363,9 +3363,9 @@ AhkSpyZoomShow() {
 		Hotkey := ThisMode = "Hotkey"
 		Suspend := !isAhkSpy
 		If A_IsCompiled
-			Run "%A_ScriptFullPath%" "Zoom" "%hGui%" "%ActiveNoPause%" "%isPaused%" "%Suspend%" "%Hotkey%" "%OnlyShiftTab%" "%oPubObjGUID%", , , PID
+			Run "%A_ScriptFullPath%" "Zoom" "%hGui%" "%ActiveNoPause%" "%isPaused%" "%Suspend%" "%Hotkey%" "%OnlyShiftTab%" "%oPubObjGUID%" "%HeigtButton%", , , PID
 		Else
-			Run "%A_AHKPath%" "%A_ScriptFullPath%" "Zoom" "%hGui%" "%ActiveNoPause%" "%isPaused%" "%Suspend%" "%Hotkey%" "%OnlyShiftTab%" "%oPubObjGUID%", , , PID
+			Run "%A_AHKPath%" "%A_ScriptFullPath%" "Zoom" "%hGui%" "%ActiveNoPause%" "%isPaused%" "%Suspend%" "%Hotkey%" "%OnlyShiftTab%" "%oPubObjGUID%" "%HeigtButton%", , , PID
 		WinWait, % "ahk_pid" PID, , 1
 	}
 	Else If DllCall("IsWindowVisible", "Ptr", oOther.hZoom)
@@ -6421,6 +6421,7 @@ Suspend = %5%
 Hotkey = %6%
 OnlyShiftTab = %7%
 GUID = %8%
+HeigtButton = %9%
 
 ListLines Off
 SetBatchLines,-1
@@ -6429,7 +6430,7 @@ CoordMode, Mouse, Screen
 CoordMode, ToolTip, Screen
 
 Global ObjActive := ComObjActive(GUID), oZoom := {}, isZoom := 1, hAhkSpy, oMenu := {}, oOther := {}
-, MsgAhkSpyZoom, ActiveNoPause, SpyActive, GuiColor, TextColor, GuiColorDisp
+, MsgAhkSpyZoom, ActiveNoPause, SpyActive, GuiColor, TextColor, GuiColorDisp, HeigtButton
 If IniRead("DarkTheme", 0)
 	GuiColor := "0A0A0A", TextColor := "F5F5F5", GuiColorDisp := "263FA4"
 Else 
@@ -7039,8 +7040,11 @@ _gMenuZoom() {
 	If p[1] = "" || p[2] = "" || p[3] = "" || p[4] = ""
 		Return ToolTip("Coordinates not found!", 800)
 	oZoom.Crop := 1
-	oZoom.nXOriginSrc := p[1] - oZoom.VSX, oZoom.nYOriginSrc := p[2] - oZoom.VSY
-	oZoom.CropX := p[1] + p[3] - 1 - oZoom.VSX, oZoom.CropY := p[2] + p[4] - 1 - oZoom.VSY
+	x := p[1] + 0, y := p[2] + 0, w := p[3] + 0, h := p[4] + 0
+	If ThisMenuItem = Select AhkSpy
+		y -= HeigtButton, h += HeigtButton
+	oZoom.nXOriginSrc := x - oZoom.VSX, oZoom.nYOriginSrc := y - oZoom.VSY
+	oZoom.CropX := x + w - 1 - oZoom.VSX, oZoom.CropY := y + h - 1 - oZoom.VSY
 	CropMarkToggle()
 	Redraw()
 	CropChangeControls()
