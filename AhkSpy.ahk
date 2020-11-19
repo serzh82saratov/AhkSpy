@@ -27,7 +27,7 @@
 */
 
 
-Global AhkSpyVersion := 4.68
+Global AhkSpyVersion := 4.69
 
 	;; _________________________________________________ Caption _________________________________________________
 
@@ -1568,7 +1568,8 @@ GetInfo_InternetExplorer_Server(hwnd) {
 		StateLightMarker ? ShowMarker(sX + x1, sY + y1, x2 - x1, y2 - y1) : 0
 		StateLightAcc ? ShowAccMarker(AccCoord[1], AccCoord[2], AccCoord[3], AccCoord[4]) : 0
 	} 
-	SetPosObject("Control", [sX + x1, sY + y1, x2 - x1, y2 - y1])  
+	; SetPosObject("Control", [Round(sX + x1), Round(sY + y1), Round(x2 - x1), Round(y2 - y1)])  
+	SetPosObject("Control", [Format("{:d}", sX + x1), Format("{:d}", sY + y1), Format("{:d}", x2 - x1), Format("{:d}", y2 - y1)])  
 	If (pelt.TagName)
 		Info := _T1 " id='P__Tag_name' name='MS:N'> ( Tag name: <span name='MS:' style='color: #" ColorFont ";'>"
 		. pelt.TagName "</span>" (Frame ? " - (in frame)" : "") " ) </span>" _T2
@@ -7044,7 +7045,7 @@ _gMenuZoom() {
 	If ThisMenuItem = Select AhkSpy
 		y -= HeigtButton, h += HeigtButton
 	oZoom.nXOriginSrc := x - oZoom.VSX, oZoom.nYOriginSrc := y - oZoom.VSY
-	oZoom.CropX := x + w - 1 - oZoom.VSX, oZoom.CropY := y + h - 1 - oZoom.VSY
+	oZoom.CropX := x + w - 1 - oZoom.VSX, oZoom.CropY := y + h - 1 - oZoom.VSY 
 	CropMarkToggle()
 	Redraw()
 	CropChangeControls()
