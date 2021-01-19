@@ -27,7 +27,7 @@
 */
 
 
-Global AhkSpyVersion := 4.72
+Global AhkSpyVersion := 4.73
 
 	; ___________________________ Caption _________________________________________________
 
@@ -66,31 +66,31 @@ If !InStr(FileExist(Path_User), "D")
 Global MemoryFontSize := IniRead("MemoryFontSize", 0)
 	, FontBold := IniRead("FontBold", 0)
 	, FontSize := MemoryFontSize ? IniRead("FontSize", "15") : 15			;;  Размер шрифта
-	, FontFamily :=  "Arial"												;;  Шрифт - Times New Roman | Georgia | Myriad Pro | Arial
-	, FontWeight := FontBold ? 900 : 500									;;  Насыщенность шрифта
-	, HeigtButton := 30														;;  Высота кнопок
-	, RangeTimer := 100														;;  Период опроса данных, увеличьте на слабом ПК
-	HeightStart := 530														;;  Высота окна при старте
-	wKey := 136																;;  Ширина кнопок
-	wColor := wKey // 2														;;  Ширина цветного фрагмента
+	, FontFamily :=  "Arial"				;;  Шрифт - Times New Roman | Georgia | Myriad Pro | Arial
+	, FontWeight := FontBold ? 900 : 500	;;  Насыщенность шрифта
+	, HeigtButton := 30						;;  Высота кнопок
+	, RangeTimer := 100						;;  Период опроса данных, увеличьте на слабом ПК
+	HeightStart := 530						;;  Высота окна при старте
+	wKey := 136								;;  Ширина кнопок
+	wColor := wKey // 2						;;  Ширина цветного фрагмента
 
 DarkTheme := IniRead("DarkTheme", 0)
 If !DarkTheme
 {
-	Global ColorFont := "000000"											;;  Цвет шрифта
-	, ColorBg := "FFFFFF"													;;  Цвет фона          "F0F0F0" E4E4E4     F8F8F8
-	, ColorBgPaused := "f7f7f7"												;;  Цвет фона при паузе     F0F0F0
-	, ColorBgModeButton := "f7f7f7"											;;  E1E1E1
-	, ColorSelModeButton := "FEF0C7"										;;  Цвет фона кнопки текущего режима
-	, ColorSelMouseHover := "3399FF"										;;  Цвет фона элемента при наведении мыши  3399FF   96C3DC F9D886 8FC5FC AEC7E1
-	, ColorSelMouseHoverText := ColorBg										;;  Цвет текста элемента при наведении мыши     96C3DC F9D886 8FC5FC AEC7E1
-	, ColorSelButton := "96C3DC"											;;  Цвет фона при нажатии на кнопки
-	, ColorSelAnchor := "FFFF80"											;;  Цвет фона заголовка для якоря
-	, ColorHighLightBckg := "FFE0E0"										;;  Цвет фона некоторых абзацев
-	, ColorDelimiter := "E14B30"											;;  Цвет шрифта разделителя заголовков и параметров
-	, ColorTitle := "27419B"												;;  Цвет шрифта заголовка
-	, ColorLineTitles := "444499"											;;  Цвет линии заголовка
-	, ColorParam := "189200"												;;  Цвет шрифта параметров
+	Global ColorFont := "000000"			;;  Цвет шрифта
+	, ColorBg := "FFFFFF"					;;  Цвет фона          "F0F0F0" E4E4E4     F8F8F8
+	, ColorBgPaused := "f7f7f7"				;;  Цвет фона при паузе     F0F0F0
+	, ColorBgModeButton := "f7f7f7"			;;  E1E1E1
+	, ColorSelModeButton := "9BCEDA"		;;  Цвет фона кнопки текущего режима
+	, ColorSelMouseHover := "3399FF"		;;  Цвет фона элемента при наведении мыши  3399FF   96C3DC F9D886 8FC5FC AEC7E1
+	, ColorSelMouseHoverText := ColorBg		;;  Цвет текста элемента при наведении мыши     96C3DC F9D886 8FC5FC AEC7E1
+	, ColorSelButton := "96C3DC"			;;  Цвет фона при нажатии на кнопки
+	, ColorSelAnchor := "FFFF80"			;;  Цвет фона заголовка для якоря
+	, ColorHighLightBckg := "FFE0E0"		;;  Цвет фона некоторых абзацев
+	, ColorDelimiter := "E14B30"			;;  Цвет шрифта разделителя заголовков и параметров
+	, ColorTitle := "27419B"				;;  Цвет шрифта заголовка
+	, ColorLineTitles := "444499"			;;  Цвет линии заголовка
+	, ColorParam := "189200"				;;  Цвет шрифта параметров
 	, ColorErrorAccPath := "ff0000"
 	, ColorErrorAccMarquee := "ffcc00"
 	, ColorErrorAccMarquee := "ffcc00"
@@ -105,20 +105,20 @@ If !DarkTheme
 }
 Else 
 {
-	Global ColorFont := "FFFFFF"											;;  Цвет шрифта
-	, ColorBg := "000000"													;;  Цвет фона          "F0F0F0" E4E4E4     F8F8F8  
-	, ColorBgPaused := "080808"												;;  Цвет фона при паузе     F0F0F0
-	, ColorBgModeButton := "000000"											;;  000000
-	, ColorSelModeButton := "469EE1"										;;  Цвет фона кнопки текущего режима
-	, ColorSelMouseHover := "FDE182"										;;  Цвет фона элемента при наведении мыши     96C3DC F9D886 8FC5FC AEC7E1
-	, ColorSelMouseHoverText := "000000"									;;  Цвет текста элемента при наведении мыши     96C3DC F9D886 8FC5FC AEC7E1
-	, ColorSelButton := "693C23"											;;  Цвет фона при нажатии на кнопки
-	, ColorSelAnchor := "E8BD7D"											;;  Цвет фона заголовка для якоря   E14B30
-	, ColorHighLightBckg := "001F1F"										;;  Цвет фона некоторых абзацев
-	, ColorDelimiter := "1EB4CF"											;;  Цвет шрифта разделителя заголовков и параметров
-	, ColorTitle := "6BB1E7"												;;  Цвет шрифта заголовка   D8BE64
-	, ColorLineTitles := "00FFFF"											;;  Цвет линии заголовка
-	, ColorParam := "8EC461"												;;  Цвет шрифта параметров   E76DFF
+	Global ColorFont := "FFFFFF"			;;  Цвет шрифта
+	, ColorBg := "000000"					;;  Цвет фона          "F0F0F0" E4E4E4     F8F8F8  
+	, ColorBgPaused := "080808"				;;  Цвет фона при паузе     F0F0F0
+	, ColorBgModeButton := "000000"			;;  000000
+	, ColorSelModeButton := "469EE1"		;;  Цвет фона кнопки текущего режима
+	, ColorSelMouseHover := "FDE182"		;;  Цвет фона элемента при наведении мыши     96C3DC F9D886 8FC5FC AEC7E1
+	, ColorSelMouseHoverText := "000000"	;;  Цвет текста элемента при наведении мыши     96C3DC F9D886 8FC5FC AEC7E1
+	, ColorSelButton := "693C23"			;;  Цвет фона при нажатии на кнопки
+	, ColorSelAnchor := "E8BD7D"			;;  Цвет фона заголовка для якоря   E14B30
+	, ColorHighLightBckg := "001F1F"		;;  Цвет фона некоторых абзацев
+	, ColorDelimiter := "1EB4CF"			;;  Цвет шрифта разделителя заголовков и параметров
+	, ColorTitle := "6BB1E7"				;;  Цвет шрифта заголовка   D8BE64
+	, ColorLineTitles := "00FFFF"			;;  Цвет линии заголовка
+	, ColorParam := "8EC461"				;;  Цвет шрифта параметров   E76DFF
 	, ColorErrorAccPath := "00FFFF"
 	, ColorErrorAccMarquee := "0033FF"
 	, ColorErrorAccMarquee := "0033FF"
@@ -7657,3 +7657,23 @@ CryptBinaryToStringBASE64(pData, Bytes, NOCRLF = "")  {
 	; ___________________________ End _________________________________________________
 
 	;;)
+
+
+
+/*
+Change
+
+4.41  16:12 23.06.2020
+	EM_GETEXTENDEDSTYLE
+	
+	
+	
+	
+	
+	
+	
+4.22 > 4.30
+https://github.com/serzh82saratov/AhkSpy/commit/ce7c5109e827576ba4e4b74b0b31d3ccffe611fa#diff-1d3a42ff250882b23a486cbb14edea43
+
+
+*/
