@@ -27,7 +27,7 @@
 */
 
 
-Global AhkSpyVersion := 4.74
+Global AhkSpyVersion := 4.75
 
 	; ___________________________ Caption _________________________________________________
 
@@ -6309,7 +6309,9 @@ ButtonClick(oevent) {
 		control_path_func()
 	Else If thisid = b_CASend
 	{  
-		h := (oOther.ControlID ? oOther.ControlID : oOther.MouseWinID)  
+		h := (oOther.ControlID ? oOther.ControlID : oOther.MouseWinID)
+		If !WinExist("ahk_id " h)
+			Return ToolTip("Window not found!", 500)
 		ControlSend, , % oOther.ControlSend, ahk_id %h%
 		ToolTip("send to " . (oOther.ControlID ? "control: " oOther.CtrlClass : "window: " oOther.MouseWinClass), 700)
 	} 
