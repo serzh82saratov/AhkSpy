@@ -27,9 +27,9 @@
 */
 
 
-Global AhkSpyVersion := 4.69
+Global AhkSpyVersion := 4.70
 
-	;; _________________________________________________ Caption _________________________________________________
+	; ___________________________ Caption _________________________________________________
 
 ComObjError(false)
 
@@ -288,7 +288,7 @@ Gui, F: Add, Text, x+10 yp hp +0x201 gFindOption c%ColorFont%, % " whole word "
 Gui, F: Add, Button, % "+0x300 +0xC00 yp hp w20 gFindHide x" widthTB - 21 c%ColorFont%, X   
 Gui, F: Add, Text, x+10 yp hp +0x201 w152 vFindMatches Left HWNDhFindAllText c%ColorFont%
 
-	;; _________________________________________________ Menu Create _________________________________________________
+	; ___________________________ Menu Create _________________________________________________
 
 Menu, Sys, Add, % name := "Backlight allways", % oMenu.Sys[name] := "_Sys_Backlight"
 Menu, Sys, Add, % name := "Backlight hold shift button", % oMenu.Sys[name] := "_Sys_Backlight"
@@ -368,6 +368,12 @@ Menu, View, Add, Big text overflow hide, :Overflow
 Menu, Sys, Add, Start mode, :Startmode
 Menu, Startmode, Check, % {"Win":"Window","Control":"Control","Hotkey":"Button","LastMode":"Last Mode"}[IniRead("StartMode", "Control")]
 
+Menu, Script, Add, Reload, Reload
+Menu, Script, Add, Exit, Exit
+Menu, Script, Add
+Menu, Script, Add, % name := "Open script dir", % oMenu.Script[name] := "Help_OpenScriptDir"
+Menu, Script, Add, % name := "Open user dir", % oMenu.Script[name] := "Help_OpenUserDir"
+Menu, Script, Add
 Menu, Script, Add, % name := "Remember position", % oMenu.Script[name] := "_MemoryPos"
 Menu, Script, % MemoryPos ? "Check" : "UnCheck", % name
 Menu, Script, Add, % name := "Remember size", % oMenu.Script[name] := "_MemorySize"
@@ -381,16 +387,10 @@ Menu, Script, % MemoryZoomSize ? "Check" : "UnCheck", % name
 Menu, Script, Add, % name := "Remember anchor", % oMenu.Script[name] := "_MemoryAnchor"
 Menu, Script, % MemoryAnchor ? "Check" : "UnCheck", % name
 Menu, Script, Add
-Menu, Script, Add, % name := "Open script dir", % oMenu.Script[name] := "Help_OpenScriptDir"
-Menu, Script, Add, % name := "Open user dir", % oMenu.Script[name] := "Help_OpenUserDir"
-Menu, Script, Add
 Menu, Script, Add, % name := "Active script allow change", % oMenu.Script[name] := "_ActiveScriptAllowChange"
 Menu, Script, % ActiveScriptAllowChange ? "Check" : "UnCheck", % name 
 Menu, Script, Add, % name := "Escape button to minimize", % oMenu.Script[name] := "_MinimizeEscape"
 Menu, Script, % MinimizeEscape ? "Check" : "UnCheck", % name 
-Menu, Script, Add
-Menu, Script, Add, Reload, Reload
-Menu, Script, Add, Exit, Exit
 Menu, Sys, Add, Script, :Script
 
 Menu, Help, Add, % name := "Check updates AutoHotkey", % oMenu.Help[name] := "_CheckAhkNewVersion"
@@ -448,7 +448,7 @@ DllCall("RedrawWindow", "Ptr", hGui, "Uint", 0, "Uint", 0, "Uint", 0x1|0x4)
 ; MsgBox % oDoc.documentMode  "`n" oDoc.compatMode  "`n" oDoc.designMode := "On"
 Return 
 
-	;; _________________________________________________ Hotkey`s _________________________________________________
+	; ___________________________ Hotkey`s _________________________________________________
 
 #If isAhkSpy && Sleep != 1 && OnlyShiftTab && !ActiveNoPause && !isPaused && ThisMode != "Hotkey" && IsHwndUnderMouse(hColorProgress) && !WinActive("ahk_id" hGui)
 
@@ -693,7 +693,7 @@ IsHwndUnderMouse(hwnd) {
 	MouseGetPos, , , , hc, 2
 	Return (hc = hwnd)
 }
-	;; _________________________________________________ Mode_Win _________________________________________________
+	; ___________________________ Mode_Win _________________________________________________
 	
 Mode_Win: 
 	If A_GuiControl
@@ -829,7 +829,7 @@ Spot_Win(NotHTML = 0) {
 	}
 	If WinExist("ahk_class AutoHotkey ahk_pid" WinPID)
 	{
-		RegExMatch(StrReplace(_ComLine, WinProcessPath), "(.:[^:]+\\([^""]+))", m)
+		RegExMatch(StrReplace(_ComLine, WinProcessPath), "(.:\\([^""]+))", m)  ; "(.:[^:]+\\([^""]+))", m) 
 		If (m1 != "")
 			AhkScriptPAth := m1
 		Else 
@@ -861,7 +861,7 @@ Spot_Win(NotHTML = 0) {
 	DllCall("GetWindowBand", "ptr", WinID, "uint*", band) 
 	WindowBand := _DP "<span class='param'>WindowBand:</span>  <span name='MS:Q'>" oZBID[band] " := <span class='param' name='MS:'>" band "</span></span>"	
 
-	;; _________________________________________________ HTML_Win _________________________________________________
+	; ___________________________ HTML_Win _________________________________________________
 
 HTML_Win:
 	If w_ShowStyles
@@ -952,7 +952,7 @@ Write_Win(scroll = 0) {
 	Return 1 
 }
 
-	;; _________________________________________________ Mode_Control _________________________________________________
+	; ___________________________ Mode_Control _________________________________________________
 
 Mode_Control:
 	If A_GuiControl
@@ -1048,8 +1048,8 @@ Spot_Control(NotHTML = 0) {
 		
 		ControlGetText, CtrlText, , ahk_id %ControlID%
 		If CtrlText !=
-			CtrlText := _T1 " id='__Control_Text'> ( Control Text ) </span><a></a>" _BT1 " id='settext_button' value=`" ControlID "`> set " _BT2 
-				. _DB  _BT1 " id='paste_Control_Text'> paste " _BT2 _DB _BT1 " id='copy_button'> copy " _BT2  _T2  _LPRE " id='content_Control_Text'>" TransformHTML(CtrlText) _PRE2
+			CtrlText := _T1 " id='__Control_Text'> ( Control Text ) </span><a></a>" _BT1 " id='copy_button_CtrlText'> copy " _BT2 _DB _BT1 " id='settext_button' value=`" ControlID "`> set " _BT2 
+				. _DB  _BT1 " id='paste_Control_Text'> paste " _BT2  _T2  _LPRE " id='content_Control_Text'>" TransformHTML(CtrlText) _PRE2
 		
 		ControlGet, CtrlStyle, Style,,, ahk_id %ControlID%
 		ControlGet, CtrlExStyle, ExStyle,,, ahk_id %ControlID%
@@ -1174,7 +1174,7 @@ Spot_Control(NotHTML = 0) {
 	Else 
 		CaretPosStr = <span class='error'>Caret position undefined</span>
 	
-	;; _________________________________________________ HTML_Control _________________________________________________
+	; ___________________________ HTML_Control _________________________________________________
  
 HTML_Control:
 
@@ -1284,7 +1284,7 @@ Write_Control(scroll = 0) {
 	Return 1
 }
 
-	;; _________________________________________________ Get Menu _________________________________________________
+	; ___________________________ Get Menu _________________________________________________
 
 GetMenu(hWnd) {
 	;; Static prhWnd, MenuText
@@ -1330,7 +1330,7 @@ AddTab(c) {
 	Return Tab
 }
 
-	;; _________________________________________________ Get Info Control _________________________________________________
+	; ___________________________ Get Info Control _________________________________________________
 
 ;; Scintilla,Edit,SysListView,SysTreeView,ListBox,ComboBox,CtrlNotfySink,msctls_progress
 ;; ,msctls_trackbar,msctls_updown,SysTabControl,ToolbarWindow,AtlAxWin,InternetExplorer_Server
@@ -1469,7 +1469,7 @@ GetInfo_ToolbarWindow(hwnd) {
 	Return	"<span class='param' name='MS:N'>Button count:</span> <span name='MS:'>" BUTTONCOUNT "</span>"
 }
 
-	;; _________________________________________________ Get Internet Explorer Info _________________________________________________
+	; ___________________________ Get Internet Explorer Info _________________________________________________
 
 	;;  http://www.autohotkey.com/board/topic/84258-iwb2-learner-iwebbrowser2/
 
@@ -1590,12 +1590,12 @@ WBGet(hwnd) {
 	Return ComObj(9, ComObjQuery(pdoc, IID_IHTMLWindow2, IID_IHTMLWindow2), 1), ObjRelease(pdoc)
 }
 
-	;; _________________________________________________ Get Acc Info _________________________________________________
+	; ___________________________ Get Acc Info _________________________________________________
 
 	;;  http://www.autohotkey.com/board/topic/77888-accessible-info-viewer-alpha-release-2012-09-20/
 	   
 AccInfoUnderMouse(mx, my, wx, wy, cx, cy, caX, caY, WinID, ControlID) {
-	Static hLibrary, AccObj, WM_GETOBJECT := 0x003D  
+	Static hLibrary, AccObj, WM_GETOBJECT := 0x003D, OBJID_CARET := 0xFFFFFFF8
 	
 	If (WinID = "") { 
 		AccObj := ""
@@ -1652,8 +1652,9 @@ AccInfoUnderMouse(mx, my, wx, wy, cx, cy, caX, caY, WinID, ControlID) {
 	AccGetLocation(AccObj, child)
 	x := AccCoord[1], y := AccCoord[2], w := AccCoord[3], h := AccCoord[4] 
 	SetPosObject("accesible", [x, y, w, h])  
-	
-	code .= _T1 " id='P__Position_relative_Acc'" _T1P "> ( Position relative ) </span>" _T2 _PRE1 "<span class='param'>Screen: </span>"
+
+	code .= _T1 " id='P__Position_relative_Acc'" _T1P "> ( Position relative ) </span>" _T2
+		. _PRE1 "<span class='param'>Screen: </span>"
 		. "<span name='MS:'>x" x " y" y "</span>"
 		. _DP "<span name='MS:'>x&sup2;" x + w - 1 " y&sup2;" y + h - 1 "</span>"
 		. _DP "<span class='param'>Size: </span><span name='MS:'>w" w " h" h "</span>"
@@ -1668,6 +1669,19 @@ AccInfoUnderMouse(mx, my, wx, wy, cx, cy, caX, caY, WinID, ControlID) {
 		. (cx != "" ? _DP "<span class='param'>Control: </span><span name='MS:'>x" (x - wx - cx) " y" (y - wy - cy) "</span>"
 		. _DP "<span name='MS:'>x&sup2;" (x - wx - cx) + w - 1 " y&sup2;" (y - wy - cy) + h - 1 "</span>" : "")  _PRE2
 
+	CaretPos := AccGetLocationToObj(Acc_ObjectFromWindow(WinID, OBJID_CARET))
+	If (CaretPos.x != 0  && CaretPos.y != 0)
+	{ 
+		code .= _T1 " id='P__CaretPos_Acc'" _T1P "> ( Caret position relative ) </span>" _T2
+			. _PRE1 "<span class='param'>Screen: </span>"
+			. "<span name='MS:'>x" CaretPos.x " y" CaretPos.y "</span>"
+			. _DP "<span class='param'>Window: </span>"
+			. "<span name='MS:'>x" (CaretPos.x - wx) " y" (CaretPos.y - wy) "</span>"
+			. _DP "<span class='param'>Client: </span>"
+			. "<span name='MS:'>x" (CaretPos.x - wx - caX) " y" (CaretPos.y - wy - caY) "</span>"
+			. _DP "<span class='param'>Size: </span>"
+			. "<span name='MS:'>w" CaretPos.w " h" CaretPos.h "</span>" . _PRE2
+	} 
 	If ((Hwnd := AccWindowFromObject(pAccObj)) != ControlID && Hwnd != WinID) {   ;	можно Acc вместо pAccObj, then ComObjValue
 		WinGetClass, CtrlClass, ahk_id %Hwnd%
 		WinGet, WinProcess, ProcessName, ahk_id %Hwnd%
@@ -1728,6 +1742,7 @@ AccInfoUnderMouse(mx, my, wx, wy, cx, cy, caX, caY, WinID, ControlID) {
 	 
 	Return code
 }
+
 
 EVENT_OBJECT_CLOAKED(hWinEventHook, event, hwnd, idObject, idChild) { 
 	Critical
@@ -1919,6 +1934,11 @@ AccGetLocation(Acc, ChildId=0) {
 	try Acc.accLocation(ComObj(0x4003,&x), ComObj(0x4003,&y), ComObj(0x4003,&w), ComObj(0x4003,&h), ChildId)
 	AccCoord[1]:=NumGet(x,0,"int"), AccCoord[2]:=NumGet(y,0,"int"), AccCoord[3]:=NumGet(w,0,"int"), AccCoord[4]:=NumGet(h,0,"int")
 }
+AccGetLocationToObj(Acc, ChildId=0) {
+	Static x := 0, y := 0, w := 0, h := 0
+	try Acc.accLocation(ComObj(0x4003,&x), ComObj(0x4003,&y), ComObj(0x4003,&w), ComObj(0x4003,&h), ChildId)
+	Return {"x":NumGet(x,0,"int"),"y":NumGet(y,0,"int"),"w":NumGet(w,0,"int"),"h":NumGet(h,0,"int")}
+} 
 Acc_Location(Acc, ChildId=0) {
 	Static x := 0, y := 0, w := 0, h := 0
 	try Acc.accLocation(ComObj(0x4003,&x), ComObj(0x4003,&y), ComObj(0x4003,&w), ComObj(0x4003,&h), ChildId)
@@ -1935,6 +1955,7 @@ Acc_ObjectFromWindow(hWnd, idObject = 0) {
 		,NumPut(idObject==0xFFFFFFF0?0x0000000000020400:0x11CF3C3D618736E0,IID,"Int64"),"Int64"), "Ptr*", pacc)=0
 		Return ComObjEnwrap(9,pacc,1)
 }
+
 Acc_WindowFromObject(pacc) {
 	If DllCall("oleacc\WindowFromAccessibleObject", "Ptr", IsObject(pacc) ? ComObjValue(pacc) : pacc, "Ptr*", hWnd)=0
 		Return	hWnd
@@ -2031,7 +2052,7 @@ Acc_Get(Cmd, ChildPath="", ChildID=0, WinTitle="", WinText="", ExcludeTitle="", 
 		throw Exception(ErrorLevel,-1)
 }
 
-	;; _________________________________________________ UIA _________________________________________________
+	; ___________________________ UIA _________________________________________________
 
 class UIASub {
 	__New() { 
@@ -2119,7 +2140,7 @@ class UIASub {
 	}
 }
 
-	;; _________________________________________________ Mode_Hotkey _________________________________________________
+	; ___________________________ Mode_Hotkey _________________________________________________
 
 Mode_Hotkey:
 	Try SetTimer, Loop_%ThisMode%, Off
@@ -2319,7 +2340,7 @@ Write_Hotkey(scroll = 0) {
 	Return 1
 }
 
-	;; _________________________________________________ Hotkey Functions _________________________________________________
+	; ___________________________ Hotkey Functions _________________________________________________
 
 	;;  http://forum.script-coding.com/viewtopic.php?pid=69765#p69765
 
@@ -2590,7 +2611,7 @@ GetScanCode(id) {
 }
 
 
-	;; _________________________________________________ Menu Labels _________________________________________________
+	; ___________________________ Menu Labels _________________________________________________
 
 ShowSys(x, y) {
 ShowSys:
@@ -2913,7 +2934,7 @@ Help_OpenScriptDir:
 	Minimize()
 	Return
 
-	;; _________________________________________________ Functions _________________________________________________
+	; ___________________________ Functions _________________________________________________
 
 WM_ACTIVATE(wp, lp) {
 	Critical
@@ -3855,9 +3876,13 @@ GetClientPos(hwnd, ByRef left, ByRef top, ByRef w, ByRef h) {
 
 	;;  http://forum.script-coding.com/viewtopic.php?pid=81833#p81833
 
-SelectFilePath(FilePath) {
+SelectFilePath(FilePath) { 
+	FilePath := TRim(FilePath)
+	FilePath := RegExReplace(FilePath, "(^""|""$)")
+	FilePath := TRim(FilePath)
+	
 	If !FileExist(FilePath)
-		Return
+		Return 0
 	SplitPath, FilePath,, Dir
 	for window in ComObjCreate("Shell.Application").Windows  {
 		ShellFolderView := window.Document
@@ -3870,7 +3895,7 @@ SelectFilePath(FilePath) {
 				Continue
 			ShellFolderView.SelectItem(item, 1|4|8|16)
 			WinActivate, % "ahk_id" window.hwnd
-			Return
+			Return 1
 		}
 	}
 	Run, %A_WinDir%\explorer.exe /select`, "%FilePath%", , UseErrorLevel
@@ -4178,7 +4203,7 @@ Hotkey_ClipCursor() {
 			DllCall("ClipCursor", "Ptr", 0), ToolTip2("", -1, , , 2)
 	}
 }
-	;; _________________________________________________ Command as function _________________________________________________
+	; ___________________________ Command as function _________________________________________________
  
 WinGetPosToArray(h) {
 	WinGetPos, WinX, WinY, WinW, WinH, % "ahk_id " h
@@ -4260,7 +4285,7 @@ ToolTip2(text, time = 500, x = 0, y = 0, ex = 1, CoordMode = "Mouse") {
 		ToolTip
 		Return
 }
-	;; _________________________________________________ Update _________________________________________________
+	; ___________________________ Update _________________________________________________
 
 UpdateAhkSpy(in = 1) {
 	Static att, Ver, req
@@ -4344,7 +4369,7 @@ CheckAhkNewVersion() {
 }
 
 
-	;; _________________________________________________ WindowStyles _________________________________________________
+	; ___________________________ WindowStyles _________________________________________________
 
 ViewStylesWin(update = 0) {  ;;
 	
@@ -4542,7 +4567,7 @@ QStyleRest(F, V) {
 QStyle(k, v, q = "") {
 	Return "<span name='MS:Q'>" k " := <span class='param' name='MS:'>" v "</span></span>" . (q != "" ? _StIf q "</span>`n" : "`n")
 }
-	;; _________________________________________________ ControlStyles _________________________________________________
+	; ___________________________ ControlStyles _________________________________________________
 
 /*
 	Added:
@@ -5315,7 +5340,7 @@ GetStyle_ToolbarWindow32(Style, hWnd, byref ResEx)  {
 */
 }
 
-	;; _________________________________________________ FullScreen _________________________________________________
+	; ___________________________ FullScreen _________________________________________________
 
 FullScreenMode() {
 	Static Max, hFunc
@@ -5369,7 +5394,7 @@ WinSetNormalPos(hwnd, x, y, w, h) {
 	DllCall("SetWindowPlacement", "Ptr", hWnd, "Ptr", &wp)
 }
 
-	;; _________________________________________________ Find _________________________________________________
+	; ___________________________ Find _________________________________________________
 
 _FindView() {
 	If isFindView
@@ -5492,7 +5517,7 @@ FindSearch(New, Back = 0) {
 			SetEditColor(hFindEdit, "0x" ColorBgOriginal, "0x" ColorFont)
 	}
 }
-	;; _________________________________________________ Mouse hover selection _________________________________________________
+	; ___________________________ Mouse hover selection _________________________________________________
 
 MS_Cancel() {
 	If !oMS.ELSel
@@ -5549,7 +5574,7 @@ MS_Select(EL) {
 	; ToolTip % oMS.ELSel.all.length "`n" oMS.TextColor2.OuterText "`n" EL.Name "`n" el.style.color 
 }
  
-	;; _________________________________________________ Load JScripts _________________________________________________
+	; ___________________________ Load JScripts _________________________________________________
  
 ChangeCSS(id, css) {	;;  https://webo.in/articles/habrahabr/68-fast-dynamic-css/ 
 	oDoc.getElementById(id).styleSheet.cssText := css
@@ -5792,7 +5817,7 @@ oDivWork2 := oDoc.getElementById("divwork2")
 ComObjConnect(ontooltip := oDoc.getElementById("tooltipevent"), "tooltip_") 
 } 
 
-	;; _________________________________________________ Doc Events _________________________________________________
+	; ___________________________ Doc Events _________________________________________________
 
 tooltip_onclick() {
 	ToolTip(oJScript.key1, 500)
@@ -6008,6 +6033,11 @@ ButtonClick(oevent) {
 		o := oDoc.all.item(oevent.sourceIndex + 2) 
 		GetKeyState("Shift") ? ClipAdd(o.OuterText, 1) : (Clipboard := o.OuterText), HighLight([o])
 	}
+	Else If (thisid = "copy_button_CtrlText")
+	{
+		o := oDoc.all.item(oevent.sourceIndex + 6) 
+		GetKeyState("Shift") ? ClipAdd(o.OuterText, 1) : (Clipboard := o.OuterText), HighLight([o])
+	} 
 	Else If (thisid = "settext_button")
 		ControlSetText, , % oDoc.getElementById("content_Control_Text").OuterText, % "ahk_id" oevent.value 
 	Else If thisid = copy_alltitle
@@ -6072,11 +6102,8 @@ ButtonClick(oevent) {
 			FilePath := oDoc.getElementById("c_command_line").OuterText
 		Else 
 			FilePath := oDoc.getElementById("copy_processpath").OuterText
-			
-		If FileExist(FilePath)
-			SelectFilePath(FilePath), Minimize()
-		Else
-			ToolTip("File not exist", 500)
+
+		SelectFilePath(FilePath) ? Minimize() : ToolTip("File not exist", 500)		 
 	}
 	Else If (thisid = "flash_window" || thisid = "flash_control" || thisid = "flash_ctrl_window")
 	{
@@ -6363,7 +6390,7 @@ acc_path_func(manual) {
 	HTML_Control := oDivNew.innerHTML
 }
 
-	;; _________________________________________________ SingleInstance _________________________________________________
+	; ___________________________ SingleInstance _________________________________________________
 
 SingleInstance(Icon = 0) {
 	#NoTrayIcon
@@ -6408,9 +6435,9 @@ SingleInstance(Icon = 0) {
 		Menu, Tray, Icon
 }
 
-	;; ________________________________________________________________________________________________________
-	;; _________________________________________________ Zoom _________________________________________________
-	;; ________________________________________________________________________________________________________
+	; __________________________________________________________________________________
+	; ___________________________ Zoom _________________________________________________
+	; __________________________________________________________________________________
 
 ShowZoom:
 hAhkSpy = %2%
@@ -6765,7 +6792,7 @@ MenuAdd(MenuName, Name = "", Label = "", Options = "") {
 	Menu, %MenuName%, Add, %Name%, % oMenu.Zoom[Name] := Label, %Options%
 }
 
-	;; _________________________________________________ Zoom Events _________________________________________________
+	; ___________________________ Zoom Events _________________________________________________
 
 ZoomOnSize() {
 	Critical
@@ -6910,7 +6937,7 @@ EVENT_SYSTEM_MOVESIZEEND(hWinEventHook, event, hwnd, idObject, idChild) {
 	ZoomRules("MOVE", 0)
 }
 
-	;; _________________________________________________ Zoom Sizing _________________________________________________
+	; ___________________________ Zoom Sizing _________________________________________________
 
   ;;	https://docs.microsoft.com/en-us/windows/win32/api/winuser/nf-winuser-loadcursora
 WM_SETCURSOR(W, L, M, H) {
@@ -7275,7 +7302,7 @@ Send_WM_COPYDATA(ByRef WParam, ByRef StringToSend, ByRef hwnd) {
     return ErrorLevel
 }
 
-	;; _________________________________________________ Zoom Magnify _________________________________________________
+	; ___________________________ Zoom Magnify _________________________________________________
 
 Magnify(one = 0) { 
 	If (a := oZoom.Work) || one
@@ -7318,7 +7345,7 @@ Memory() {
 		Gui, Zoom: Color, %GuiColor% 
 } 		
 
-	;; _________________________________________________ Zoom Gdip _________________________________________________
+	; ___________________________ Zoom Gdip _________________________________________________
 
 UpdateWindow(Src, X, Y) {
 	hbm := CreateDIBSection(oZoom.nWidthDest, oZoom.nHeightDest, oZoom.hDCBuf)
@@ -7637,6 +7664,6 @@ https://github.com/serzh82saratov/AhkSpy/commit/ce7c5109e827576ba4e4b74b0b31d3cc
 
 
 */
-	;; _________________________________________________ End _________________________________________________
+	; ___________________________ End _________________________________________________
 
 	;;)
