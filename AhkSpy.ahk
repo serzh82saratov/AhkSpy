@@ -18,8 +18,7 @@
     Автор - serzh82saratov
     E-Mail: serzh82saratov@mail.ru
 
-    Спасибо Malcev и wisgest за помощь в создании HTML интерфейса
-    Также благодарность Malcev, teadrinker, YMP, Irbis за их решения
+    Благодарность Malcev, teadrinker, YMP, Irbis за их решения
     Описание - http://forum.script-coding.com/viewtopic.php?pid=72459#p72459
     Обсуждение - http://forum.script-coding.com/viewtopic.php?pid=72244#p72244
     Обсуждение на офф. форуме- https://autohotkey.com/boards/viewtopic.php?f=6&t=52872
@@ -27,7 +26,7 @@
 */
 
 
-Global AhkSpyVersion := 4.75
+Global AhkSpyVersion := 4.76
 
 	; ___________________________ Caption _________________________________________________
 
@@ -81,7 +80,7 @@ If !DarkTheme
 	, ColorBg := "FFFFFF"					;;  Цвет фона          "F0F0F0" E4E4E4     F8F8F8
 	, ColorBgPaused := "f7f7f7"				;;  Цвет фона при паузе     F0F0F0
 	, ColorBgModeButton := "f7f7f7"			;;  E1E1E1
-	, ColorSelModeButton := "9BCEDA"		;;  Цвет фона кнопки текущего режима
+	, ColorSelModeButton := "A9D186"		;;  Цвет фона кнопки текущего режима
 	, ColorSelMouseHover := "3399FF"		;;  Цвет фона элемента при наведении мыши  3399FF   96C3DC F9D886 8FC5FC AEC7E1
 	, ColorSelMouseHoverText := ColorBg		;;  Цвет текста элемента при наведении мыши     96C3DC F9D886 8FC5FC AEC7E1
 	, ColorSelButton := "96C3DC"			;;  Цвет фона при нажатии на кнопки
@@ -7657,4 +7656,4 @@ CryptBinaryToStringBASE64(pData, Bytes, NOCRLF = "")  {
 }
 	; ___________________________ End _________________________________________________
 
-	;;)
+	;;)			01:58 20.01.2021
