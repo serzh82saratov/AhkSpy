@@ -27,7 +27,7 @@
 */
 
 
-Global AhkSpyVersion := 4.70
+Global AhkSpyVersion := 4.71
 
 	; ___________________________ Caption _________________________________________________
 
@@ -1253,10 +1253,10 @@ HTML_Control:
 
 	. "`n" CtrlInfo CtrlText UseUIAStr AccText "<a></a>" _T0
 	
-
 	oOther.ControlID := ControlID
 	oOther.MouseWinID := WinID
 	oOther.CtrlClass := CtrlClass
+	oOther.MouseWinClass := WinClass
 	Return 1
 }
 
@@ -1670,7 +1670,7 @@ AccInfoUnderMouse(mx, my, wx, wy, cx, cy, caX, caY, WinID, ControlID) {
 		. _DP "<span name='MS:'>x&sup2;" (x - wx - cx) + w - 1 " y&sup2;" (y - wy - cy) + h - 1 "</span>" : "")  _PRE2
 
 	CaretPos := AccGetLocationToObj(Acc_ObjectFromWindow(WinID, OBJID_CARET))
-	If (CaretPos.x != 0  && CaretPos.y != 0)
+	If (CaretPos.x != 0 || CaretPos.y != 0)
 	{ 
 		code .= _T1 " id='P__CaretPos_Acc'" _T1P "> ( Caret position relative ) </span>" _T2
 			. _PRE1 "<span class='param'>Screen: </span>"
@@ -2213,8 +2213,11 @@ Write_HotkeyHTML(K, scroll = 0) {
 
 	SendHotkey := Hotkey
 
-	ControlSend := DUMods = "" ? "{" SendHotkey "}" : DUMods
+	oOther.ControlSend := (DUMods = "" ? "{" SendHotkey "}" : DUMods)
 
+	If (oOther.ControlID || oOther.MouseWinID)
+		CASend := _DP  _BP1 " id='b_CASend'> send to " (oOther.ControlID ? "control" : "window") " " _BP2  
+  
 	VKCode_ := "0x" SubStr(VKCode, 3)
 	SCCode_ := "0x" SubStr(SCCode, 3)
 
@@ -2247,7 +2250,7 @@ Write_HotkeyHTML(K, scroll = 0) {
 
 	. "`n<span name='MS:P'>        </span>"
 
-	. "`n<span><span name='MS:'>ControlSend, ahk_parent, <span name='MS:'>" ControlSend "</span>, WinTitle</span>" Comment "</span>"
+	. "`n<span><span name='MS:'>ControlSend, ahk_parent, <span name='MS:'>" oOther.ControlSend "</span>, WinTitle</span>" Comment . CASend "</span>"
 
 	. "`n<span name='MS:P'>        </span>"
 	
@@ -6304,7 +6307,13 @@ ButtonClick(oevent) {
 		acc_path_func(1)
 	Else If thisid = control_path 
 		control_path_func()
-		
+	Else If thisid = b_CASend
+	{  
+		h := (oOther.ControlID ? oOther.ControlID : oOther.MouseWinID)  
+		ControlSend, , % oOther.ControlSend, ahk_id %h%
+		ToolTip("send to " . (oOther.ControlID ? "control: " oOther.CtrlClass : "window: " oOther.MouseWinClass), 700)
+		oDoc.getElementById("b_CASend").innerText := " send to " (oOther.ControlID ? "control" : "window")
+	} 
 	Else If InStr(thisid, "ahkscript_")
 	{
 		ToolTip("Ok", 300)
