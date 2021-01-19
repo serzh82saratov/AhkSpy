@@ -2164,7 +2164,6 @@ Mode_Hotkey:
 		Write_HotkeyHTML({Mods:"Waiting pushed buttons..."}, 1)
 	Else 
 		Write_Hotkey(prNotThisMode)
-	
 	TitleText := (TitleTextP1 := "AhkSpy - Button") . TitleTextP2
 	SendMessage, 0xC, 0, &TitleText, , ahk_id %hGui% 
 	; WinActivate ahk_id %hGui%  
@@ -2172,6 +2171,7 @@ Mode_Hotkey:
 		GuiControl, 1:Focus, oDoc
 	If isFindView
 		FindNewText()
+	oDoc.getElementById("b_CASend").innerText := " send to " (oOther.ControlID ? "control" : "window")
 	Return
 
 Write_HotkeyHTML(K, scroll = 0) {
@@ -6312,7 +6312,6 @@ ButtonClick(oevent) {
 		h := (oOther.ControlID ? oOther.ControlID : oOther.MouseWinID)  
 		ControlSend, , % oOther.ControlSend, ahk_id %h%
 		ToolTip("send to " . (oOther.ControlID ? "control: " oOther.CtrlClass : "window: " oOther.MouseWinClass), 700)
-		oDoc.getElementById("b_CASend").innerText := " send to " (oOther.ControlID ? "control" : "window")
 	} 
 	Else If InStr(thisid, "ahkscript_")
 	{
