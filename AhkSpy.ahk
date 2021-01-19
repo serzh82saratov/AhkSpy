@@ -27,7 +27,7 @@
 */
 
 
-Global AhkSpyVersion := 4.73
+Global AhkSpyVersion := 4.74
 
 	; ___________________________ Caption _________________________________________________
 
@@ -2171,7 +2171,8 @@ Mode_Hotkey:
 	If A_GuiControl
 		GuiControl, 1:Focus, oDoc
 	If isFindView
-		FindNewText()
+		FindNewText()		
+	oDoc.getElementById("b_CASend").innerText := " send to " (oOther.ControlID ? "control" : "window")
 	Return
 
 Write_HotkeyHTML(K, scroll = 0) {
@@ -2232,7 +2233,6 @@ Write_HotkeyHTML(K, scroll = 0) {
 		. _DP "   <span name='MS:' id='v_VKDHCode'>" VKCode_ "</span>   " _DP "   <span name='MS:' id='v_SCDHCode'>" SCCode_ "</span>"
 	Else
 		ThisKeySC := "   " _DP "   <span name='MS:' id='v_VKDHCode'>" VKCode_ "</span>"
-	
 	
 	
 	HTML_Hotkey := ""
@@ -6312,7 +6312,6 @@ ButtonClick(oevent) {
 		h := (oOther.ControlID ? oOther.ControlID : oOther.MouseWinID)  
 		ControlSend, , % oOther.ControlSend, ahk_id %h%
 		ToolTip("send to " . (oOther.ControlID ? "control: " oOther.CtrlClass : "window: " oOther.MouseWinClass), 700)
-		oDoc.getElementById("b_CASend").innerText := " send to " (oOther.ControlID ? "control" : "window")
 	} 
 	Else If InStr(thisid, "ahkscript_")
 	{
@@ -7657,23 +7656,3 @@ CryptBinaryToStringBASE64(pData, Bytes, NOCRLF = "")  {
 	; ___________________________ End _________________________________________________
 
 	;;)
-
-
-
-/*
-Change
-
-4.41  16:12 23.06.2020
-	EM_GETEXTENDEDSTYLE
-	
-	
-	
-	
-	
-	
-	
-4.22 > 4.30
-https://github.com/serzh82saratov/AhkSpy/commit/ce7c5109e827576ba4e4b74b0b31d3ccffe611fa#diff-1d3a42ff250882b23a486cbb14edea43
-
-
-*/
