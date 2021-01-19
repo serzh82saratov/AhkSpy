@@ -27,7 +27,7 @@
 */
 
 
-Global AhkSpyVersion := 4.71
+Global AhkSpyVersion := 4.72
 
 	; ___________________________ Caption _________________________________________________
 
@@ -2164,6 +2164,7 @@ Mode_Hotkey:
 		Write_HotkeyHTML({Mods:"Waiting pushed buttons..."}, 1)
 	Else 
 		Write_Hotkey(prNotThisMode)
+	
 	TitleText := (TitleTextP1 := "AhkSpy - Button") . TitleTextP2
 	SendMessage, 0xC, 0, &TitleText, , ahk_id %hGui% 
 	; WinActivate ahk_id %hGui%  
@@ -2171,7 +2172,6 @@ Mode_Hotkey:
 		GuiControl, 1:Focus, oDoc
 	If isFindView
 		FindNewText()
-	oDoc.getElementById("b_CASend").innerText := " send to " (oOther.ControlID ? "control" : "window")
 	Return
 
 Write_HotkeyHTML(K, scroll = 0) {
@@ -4592,7 +4592,7 @@ GetStyle_#32770(Style, hWnd)  {
 		If ((Style & V) = V) && (1, Style -= V)
 			Ret .= QStyle(K, V)   
 	IF Style
-		Ret .= GetStyle_CommonСontrol(Style, Style)
+		Ret .= GetStyle_CommonControl(Style, Style)
 	IF Style
 		Ret .= QStyleRest(4, Style)
 	If Ret !=
@@ -4614,7 +4614,7 @@ GetStyle_tooltips_class32(Style, hWnd)  {
 		If ((Style & V) = V) && (1, Style -= V)
 			Ret .= QStyle(K, V)   
 	IF Style
-		Ret .= GetStyle_CommonСontrol(Style, Style)
+		Ret .= GetStyle_CommonControl(Style, Style)
 	IF Style
 		Ret .= QStyleRest(4, Style)
 	If Ret !=
@@ -4653,7 +4653,7 @@ GetStyle_Static(Style, hWnd)  {
 	IF !SS_CENTER && !SS_RIGHT  ;;	SS_LEFT
 		Ret .= QStyle("SS_LEFT", "0x0000", "!(SS_CENTER | SS_RIGHT)")
 	IF Style
-		Ret .= GetStyle_CommonСontrol(Style, Style)
+		Ret .= GetStyle_CommonControl(Style, Style)
 	IF Style
 		Ret .= QStyleRest(4, Style)
 	If Ret !=
@@ -4698,7 +4698,7 @@ GetStyle_Button(Style, hWnd)  {
 		Ret .= QStyle("BS_PUSHBUTTON", "0x0000", "!(BS_DEFPUSHBUTTON | BS_CHECKBOX | BS_AUTOCHECKBOX | BS_RADIOBUTTON | BS_GROUPBOX | BS_AUTORADIOBUTTON)")
 
 	IF Style
-		Ret .= GetStyle_CommonСontrol(Style, Style)
+		Ret .= GetStyle_CommonControl(Style, Style)
 	IF Style
 		Ret .= QStyleRest(4, Style)
 	If Ret !=
@@ -4734,7 +4734,7 @@ GetStyle_Edit(Style, hWnd, byref ResEx)  {
 		Ret .= QStyle("ES_LEFT", "0x0000", "!(ES_CENTER | ES_RIGHT)")
 
 	IF Style
-		Ret .= GetStyle_CommonСontrol(Style, Style)
+		Ret .= GetStyle_CommonControl(Style, Style)
 	IF Style
 		Ret .= QStyleRest(4, Style)
 	If Ret !=
@@ -4784,7 +4784,7 @@ GetStyle_ListBox(Style, hWnd)  {
 		Ret .= QStyle("LBS_STANDARD", "0xA00003", "(LBS_NOTIFY | LBS_SORT | WS_VSCROLL | WS_BORDER)")
 
 	IF Style
-		Ret .= GetStyle_CommonСontrol(Style, Style)
+		Ret .= GetStyle_CommonControl(Style, Style)
 	IF Style
 		Ret .= QStyleRest(4, Style)
 	If Ret !=
@@ -4804,7 +4804,7 @@ GetStyle_SysAnimate32(Style, hWnd)  {
 		If ((Style & V) = V) && (1, Style -= V)
 			Ret .= QStyle(K, V)  
 	IF Style
-		Ret .= GetStyle_CommonСontrol(Style, Style)
+		Ret .= GetStyle_CommonControl(Style, Style)
 	IF Style
 		Ret .= QStyleRest(4, Style)
 	If Ret !=
@@ -4826,7 +4826,7 @@ GetStyle_SysPager(Style, hWnd)  {
 		If ((Style & V) = V) && (1, Style -= V)
 			Ret .= QStyle(K, V)
 	IF Style
-		Ret .= GetStyle_CommonСontrol(Style, Style)
+		Ret .= GetStyle_CommonControl(Style, Style)
 	IF Style
 		Ret .= QStyleRest(4, Style)  
 	If Ret !=
@@ -4848,7 +4848,7 @@ GetStyle_msctls_updown32(Style, hWnd)  {
 		If ((Style & V) = V) && (1, Style -= V) 
 			Ret .= QStyle(K, V) 
 	IF Style
-		Ret .= GetStyle_CommonСontrol(Style, Style)
+		Ret .= GetStyle_CommonControl(Style, Style)
 	IF Style
 		Ret .= QStyleRest(4, Style)  
 	If Ret !=
@@ -4873,7 +4873,7 @@ GetStyle_SysDateTimePick32(Style, hWnd)  {
 		Ret .= QStyle("DTS_SHORTDATEFORMAT", "0x0000", "!(DTS_LONGDATEFORMAT)")
 
 	IF Style
-		Ret .= GetStyle_CommonСontrol(Style, Style)
+		Ret .= GetStyle_CommonControl(Style, Style)
 	IF Style
 		Ret .= QStyleRest(4, Style)  
 	If Ret !=
@@ -4895,7 +4895,7 @@ GetStyle_SysMonthCal32(Style, hWnd)  {
 		If ((Style & V) = V) && (1, Style -= V)
 			Ret .= QStyle(K, V) 
 	IF Style
-		Ret .= GetStyle_CommonСontrol(Style, Style)
+		Ret .= GetStyle_CommonControl(Style, Style)
 	IF Style
 		Ret .= QStyleRest(4, Style) 
 	If Ret !=
@@ -4936,7 +4936,7 @@ GetStyle_msctls_trackbar32(Style, hWnd)  {
 			Ret .= QStyle("TBS_RIGHT", "0x0000", "!(TBS_LEFT) && (TBS_VERT)")
 	}
 	IF Style
-		Ret .= GetStyle_CommonСontrol(Style, Style)
+		Ret .= GetStyle_CommonControl(Style, Style)
 	IF Style
 		Ret .= QStyleRest(4, Style)  
 	If Ret !=
@@ -4957,7 +4957,7 @@ GetStyle_msctls_statusbar32(Style, hWnd)  {
 		If ((Style & V) = V) && (1, Style -= V)
 			Ret .= QStyle(K, V)
 	IF Style
-		Ret .= GetStyle_CommonСontrol(Style, Style)
+		Ret .= GetStyle_CommonControl(Style, Style)
 	IF Style
 		Ret .= QStyleRest(4, Style)  
 	If Ret !=
@@ -4978,7 +4978,7 @@ GetStyle_msctls_progress32(Style, hWnd)  {
 		If ((Style & V) = V) && (1, Style -= V) 
 			Ret .= QStyle(K, V) 
 	IF Style
-		Ret .= GetStyle_CommonСontrol(Style, Style)
+		Ret .= GetStyle_CommonControl(Style, Style)
 	IF Style
 		Ret .= QStyleRest(4, Style)  
 	If Ret !=
@@ -5002,7 +5002,7 @@ GetStyle_SysHeader32(Style, hWnd)  {
 		If ((Style & V) = V) && (1, Style -= V)
 			Ret .= QStyle(K, V)
 	IF Style
-		Ret .= GetStyle_CommonСontrol(Style, Style)
+		Ret .= GetStyle_CommonControl(Style, Style)
 	IF Style
 		Ret .= QStyleRest(4, Style)  
 	If Ret !=
@@ -5024,7 +5024,7 @@ GetStyle_SysLink(Style, hWnd) {
 		If ((Style & V) = V) && (1, Style -= V)
 			Ret .= QStyle(K, V)
 	IF Style
-		Ret .= GetStyle_CommonСontrol(Style, Style)
+		Ret .= GetStyle_CommonControl(Style, Style)
 	IF Style
 		Ret .= QStyleRest(4, Style) 
 	If Ret !=
@@ -5046,7 +5046,7 @@ GetStyle_ReBarWindow32(Style, hWnd) {
 		If ((Style & V) = V) && (1, Style -= V)
 			Ret .= QStyle(K, V)
 	IF Style
-		Ret .= GetStyle_CommonСontrol(Style, Style)
+		Ret .= GetStyle_CommonControl(Style, Style)
 	IF Style
 		Ret .= QStyleRest(4, Style)  
 	If Ret !=
@@ -5054,7 +5054,7 @@ GetStyle_ReBarWindow32(Style, hWnd) {
 	Return Res
 }
 
-GetStyle_CommonСontrol(Style, ByRef NewStyle) {   ;;	Остаток от стилей контролов
+GetStyle_CommonControl(Style, ByRef NewStyle) {   ;;	Остаток от стилей контролов
 	;;	https://www.autohotkey.com/boards/viewtopic.php?p=25846#p25846
 	Static oStyles, oEx
 	If !oStyles
@@ -5130,7 +5130,7 @@ GetStyle_SysListView32(Style, hWnd, byref ResEx)  {
 		Ret .= QStyle("LVS_NOCOLUMNHEADER", "0x4000")
 
 	IF Style
-		Ret .= GetStyle_CommonСontrol(Style, Style)
+		Ret .= GetStyle_CommonControl(Style, Style)
 	IF Style
 		Ret .= QStyleRest(4, Style)  
 	If Ret !=
@@ -5171,7 +5171,7 @@ GetStyle_SysTreeView32(Style, hWnd, byref ResEx)  {
 			Ret .= QStyle(K, V)
 
 	IF Style
-		Ret .= GetStyle_CommonСontrol(Style, Style)
+		Ret .= GetStyle_CommonControl(Style, Style)
 	IF Style
 		Ret .= QStyleRest(4, Style)  
 	If Ret !=
@@ -5223,7 +5223,7 @@ GetStyle_SysTabControl32(Style, hWnd, byref ResEx)  {
 			Ret .= QStyle("TCS_BOTTOM", "0x0002", "!(TCS_VERTICAL)")
 	}
 	IF Style
-		Ret .= GetStyle_CommonСontrol(Style, Style)
+		Ret .= GetStyle_CommonControl(Style, Style)
 	IF Style
 		Ret .= QStyleRest(4, Style)  
 	If Ret !=
@@ -5276,7 +5276,7 @@ GetStyle_ComboBox(Style, hWnd, byref ResEx)  {
 		If ((Style & V) = V) && (1, Style -= V)
 			Ret .= QStyle(K, V)
 	IF Style
-		Ret .= GetStyle_CommonСontrol(Style, Style)
+		Ret .= GetStyle_CommonControl(Style, Style)
 	IF Style
 		Ret .= QStyleRest(4, Style) 
 	If Ret !=
@@ -5310,7 +5310,7 @@ GetStyle_ToolbarWindow32(Style, hWnd, byref ResEx)  {
 			Ret .= QStyle(K, V)
 
 	IF Style
-		Ret .= GetStyle_CommonСontrol(Style, Style)
+		Ret .= GetStyle_CommonControl(Style, Style)
 	IF Style
 		Ret .= QStyleRest(8, Style)   
 	If Ret !=
@@ -6312,6 +6312,7 @@ ButtonClick(oevent) {
 		h := (oOther.ControlID ? oOther.ControlID : oOther.MouseWinID)  
 		ControlSend, , % oOther.ControlSend, ahk_id %h%
 		ToolTip("send to " . (oOther.ControlID ? "control: " oOther.CtrlClass : "window: " oOther.MouseWinClass), 700)
+		oDoc.getElementById("b_CASend").innerText := " send to " (oOther.ControlID ? "control" : "window")
 	} 
 	Else If InStr(thisid, "ahkscript_")
 	{
@@ -7653,25 +7654,6 @@ CryptBinaryToStringBASE64(pData, Bytes, NOCRLF = "")  {
    DllCall("Crypt32\CryptBinaryToString", Ptr, pData, UInt, Bytes, UInt, CRYPT, Str, OutData, UIntP, Chars)
    Return OutData
 }
-
-
-/*
-Change
-
-4.41  16:12 23.06.2020
-	EM_GETEXTENDEDSTYLE
-	
-	
-	
-	
-	
-	
-	
-4.22 > 4.30
-https://github.com/serzh82saratov/AhkSpy/commit/ce7c5109e827576ba4e4b74b0b31d3ccffe611fa#diff-1d3a42ff250882b23a486cbb14edea43
-
-
-*/
 	; ___________________________ End _________________________________________________
 
 	;;)
