@@ -26,7 +26,7 @@
 */
 
 
-Global AhkSpyVersion := 4.76
+Global AhkSpyVersion := 4.80
 
 	; ___________________________ Caption _________________________________________________
 
@@ -141,6 +141,7 @@ Global ThisMode := IniRead("StartMode", "Control"), LastModeSave := (ThisMode = 
 , AnchorFullScroll := IniRead("AnchorFullScroll", 1), MemoryAnchor := IniRead("MemoryAnchor", 1), MenuIdView := IniRead("MenuIdView", 0)
 , StateAllwaysSpot := IniRead("AllwaysSpot", 0), w_ShowStyles := IniRead("w_ShowStyles", 0), MarkerInvertFrame := IniRead("MarkerInvertFrame", 1)
 , c_ShowStyles := IniRead("c_ShowStyles", 0), ViewStrPos := IniRead("ViewStrPos", 0), OnlyShiftTab := IniRead("OnlyShiftTab", 0)
+, view_control_child := IniRead("view_control_child", 0) 
 , WordWrap := IniRead("WordWrap", 0), PreMaxHeightStr := IniRead("MaxHeightOverFlow", "1 / 3"), UpdRegister := IniRead("UpdRegister2", 0)
 , UseUIA := IniRead("UseUIA", 0), UIAAlienDetect := IniRead("UIAAlienDetect", 0), MinimizeEscape := IniRead("MinimizeEscape", 0)
 , DetectHiddenText := IniRead("DetectHiddenText", "on"), MoveTitles := IniRead("MoveTitles", 1), DynamicAccPath := IniRead("DynamicAccPath", 0)
@@ -177,7 +178,7 @@ Global _S1 := "<span>", _S2 := "</span>", _DB := "<span style='position: relativ
 , _T1P := " style='color: #" ColorParam "' "
 , _T0 := "<span class='box'><span class='hr'></span></span><span id='id_T0' style='position: absolute'></span>"
 , _PRE1 := "<pre contenteditable='true'>", _PRE2 := "</pre>"
-, _LPRE := "<pre contenteditable='true' class='lpre'"
+, _LPRE := "<pre contenteditable='true' class='lpre'", _PRE := "<pre contenteditable='true' "
 , _DP := "  <span style='color: #" ColorDelimiter "'>&#9642</span>  "
 , _StIf := "    <span class='QStyle1'>&#9642</span>    <span class='QStyle2' name='MS:'>"
 , _BR := "<p class='br'></p>", _DN := "`n", _DN2 := "<div style='height: 0.50em`;'></div>" 
@@ -218,7 +219,7 @@ CreateMarkerInvert()
 ShowMarkersCreate("oShowAccMarkers", "26419F")  
 ShowMarkersCreate("oShowMarkers", "E14B30")
 
-Gui, +AlwaysOnTop +HWNDhGui +ReSize -DPIScale +Owner%hMarkerGui% +E%WS_EX_APPWINDOW% ;   +E%WS_EX_NOACTIVATE%
+Gui, +AlwaysOnTop +HWNDhGui +ReSize -DPIScale +E%WS_EX_APPWINDOW%  ;   +E%WS_EX_NOACTIVATE%;  +Owner%hMarkerGui%
 Gui, Color, %ColorBgPaused%
 ActiveScriptAllow() 
 Gui, Add, ActiveX, Border voDoc HWNDhActiveX x0 y+0, HTMLFile
@@ -540,7 +541,7 @@ _PausedScript:
 ^WheelUp::
 ^WheelDown::
 	FontSize := InStr(A_ThisHotkey, "Up") ? ++FontSize : --FontSize
-	FontSize := FontSize < 10 ? 10 : FontSize > 24 ? 24 : FontSize 
+	FontSize := FontSize < 10 ? 10 : FontSize > 64 ? 64 : FontSize 
 	oDivWork1.Style.fontSize := FontSize "px"
 	oDivWork2.Style.fontSize := FontSize "px"
 	TitleText("FontSize: " FontSize)
@@ -722,6 +723,7 @@ Mode_Win:
 	SendMessage, 0xC, 0, &TitleText, , ahk_id %hGui%
 	If isFindView
 		FindNewText()
+	
 
 Loop_Win:
 	If ((WinActive("ahk_id" hGui) && !ActiveNoPause) || Sleep = 1)
@@ -734,7 +736,7 @@ Repeat_Loop_Win:
 	Return
 
 Spot_Win(NotHTML = 0) {
-	Static PrWinPID, ComLine, _ComLine, ProcessBitSize, IsAdmin, WinProcessPath, WinProcessName
+	Static PrWinPID, ComLine, _ComLine, ProcessBitSize, IsAdmin, WinProcessPath, WinProcessName, ProcessUserName
 	
 	If NotHTML
 		GoTo HTML_Win
@@ -752,6 +754,7 @@ Spot_Win(NotHTML = 0) {
 	WinGet, WinPID, PID, ahk_id %WinID%
 	If (WinPID != PrWinPID) {
 		GetCommandLineProc(WinPID, _ComLine, ProcessBitSize, IsAdmin)
+		ProcessUserName := GetProcessOwner(WinPID, "user")
 		ComLine := TransformHTML(_ComLine), PrWinPID := WinPID
 		WinGet, WinProcessPath, ProcessPath, ahk_id %WinID%
 		Loop, %WinProcessPath%
@@ -807,8 +810,10 @@ Spot_Win(NotHTML = 0) {
 
 	If ViewStrPos
 		ViewStrPos1 := _DP "<span name='MS:'>" WinX ", " WinY ", " WinX2 ", " WinY2 "</span>" _DP "<span name='MS:'>" WinX ", " WinY ", " WinWidth ", " WinHeight "</span>"
-
-	IsWindowUnicodeStr := _DP "<span class='param'>Is unicode:</span>  <span>" (DllCall("user32\IsWindowUnicode", "Ptr", WinID) ? "True" : "False") "</span>"
+ 
+	IsWindowUnicodeStr := _DP "<span class='param' name='MS:N'>Is unicode:</span>  <span name='MS:'>" (DllCall("user32\IsWindowUnicode", "Ptr", WinID) ? "true" : "false") "</span>"
+	If (ProcessUserName != "")
+		ProcessUserNameStr := _DP "<span class='param' name='MS:N'>User name:</span>  <span name='MS:'>" ProcessUserName "</span>"
 
 	CoordMode, Mouse
 	MouseGetPos, WinXS, WinYS, h
@@ -903,22 +908,27 @@ HTML_Win:
 	. _T1 " id='__Other'> ( Other ) </span>" _BT1 " id='flash_window'> flash " _BT2  _ButWindow_Detective  _T2 
 
 	. _PRE1 "<span class='param' name='MS:N'>PID:</span>  <span name='MS:'>" WinPID "</span>" 
-		. _DP  ProcessBitSize  IsAdmin "<span class='param'>Window count:</span> " WinCountProcess  
+		. _DP  ProcessBitSize _BP1 " id='view_WindowCount'>Window count:" _BP2 "  <span name='MS:'>" WinCountProcess "</span>"    
 		. _DP  _BB1 " id='process_close'> process close " _BB2 
 		. _DP "<span class='param'>Create info time:  </span><span name='MS:'>" A_Hour ":" A_Min ":" A_Sec 
 		. ".<span class='param' style='font-size: 0.75em'>" A_MSec "</span></span>"
 		
 	. "`n<span class='param' name='MS:N'>HWND:</span>  <span name='MS:'>" WinID "</span>" _DP  _BB1 " id='window_show_hide'> show / hide " _BB2
-		. _DP  _BB1 " id='win_close'> close " _BB2  _DP "<span class='param'>Control count:</span>  "
-		. CountControl IsWindowUnicodeStr WindowBand _ParentWindow EX1Str CLSID 
-
+		. _DP  _BB1 " id='win_close'> close " _BB2  _DP _BP1 " id='view_ControlCount'>Control count:" _BP2 "  <span name='MS:'>" CountControl "</span>" 
+	
+	. "`n<span class='param' name='MS:N'>IsAdmin:</span>  <span name='MS:'>" IsAdmin "</span>"
+		. IsWindowUnicodeStr ProcessUserNameStr WindowBand 
+		. _ParentWindow EX1Str CLSID 
+  
 	. "`n<span class='param'>Style:  </span><span id='w_Style' name='MS:'>" WinStyle "</span>" 
 		. _DP "<span class='param'>ExStyle:  </span><span id='w_ExStyle' name='MS:'>" WinExStyle "</span>" 
 		. _DP _BB1 " id='get_styles_w'> " (!w_ShowStyles ? "show" : "hide" ) " styles " _BB2
 		. _DP _BB1 " id='update_styles_w'> update styles " _BB2 _PRE2 
 
-	. "`n<span id=WinStyles>" WinStyles "</span>" SBText  WinText  MenuText "<a></a>" _T0 
- 
+	. "`n<span id=WinStyles>" WinStyles "</span>" 
+	. "`n<span id='view_WindowCount_value'></span>"
+	. "`n<span id='view_ControlCount_value'></span>"
+	. SBText  WinText  MenuText "<a></a>" _T0  
  
 	oOther.WinPID := WinPID
 	oOther.WinID := WinID
@@ -956,7 +966,7 @@ Write_Win(scroll = 0) {
 Mode_Control:
 	If A_GuiControl
 		GuiControl, 1:Focus, oDoc
-	ZoomMsg(10, 0)
+	ZoomMsg(10, 0) 
 	; oBody.createTextRange().execCommand("RemoveFormat")
 	ColorButton("Control") 
 	If (ThisMode = "Hotkey")
@@ -969,6 +979,8 @@ Mode_Control:
 	
 	If ThisMode != Control
 		HTML_%ThisMode% := oDivNew.innerHTML, prNotThisMode := 1
+	Else 
+		ZoomMsg(13)
 		
 	ThisMode := "Control"
 	
@@ -980,7 +992,7 @@ Mode_Control:
 	TitleText := (TitleTextP1 := "AhkSpy - Control") . TitleTextP2
 	SendMessage, 0xC, 0, &TitleText, , ahk_id %hGui%
 	If isFindView
-		FindNewText()
+		FindNewText() 
 
 Loop_Control:
 	If (WinActive("ahk_id" hGui) && !ActiveNoPause) || Sleep = 1
@@ -1067,6 +1079,8 @@ Spot_Control(NotHTML = 0) {
 		
 		If DynamicControlPath
 			ChildToPath(ControlID), control_path_value := SaveChildPath()
+		If (0 && view_control_child && ChildList(ControlID) = 1)
+			control_child_value := oOther.ChildList
 	} 
 	If ControlNN !=
 	{
@@ -1112,7 +1126,7 @@ Spot_Control(NotHTML = 0) {
 	
 	If UseUIA && exUIASub.Release() && exUIASub.ElementFromPoint(MXS, MYS)
 	{ 
-		UIAPID := exUIASub.CurrentProcessId
+		UIAPID := exUIASub.CurrentProcessId 
 		CurrentControlTypeIndex := Format("0x{:X}", exUIASub.CurrentControlType)
 		CurrentControlTypeName := exUIASub.__ControlType(CurrentControlTypeIndex)
 		CurrentAutomationId := exUIASub.CurrentAutomationId  
@@ -1201,7 +1215,8 @@ HTML_Control:
 		. "`n" _BP1 " id='set_pos'>Mouse relative control:" _BP2 "  <span name='MS:'>x" rmCtrlX " y" rmCtrlY "</span>" WithRespectControl 
 		
 		. "`n<span class='param'>HWND:</span>  <span name='MS:'>" ControlID "</span>" _DP  _BB1 " id='control_show_hide'> show / hide " _BB2 
-			. _DP  _BB1 " id='control_destroy'> close " _BB2  _DP  _BP1 " id='control_path'> Get path " _BP2 
+			. _DP  _BB1 " id='control_destroy'> close " _BB2  _DP  _BP1 " id='control_child'> Get child " _BP2 
+			.   _DP  _BP1 " id='control_path'> Get parent " _BP2 
 			. "<span id='control_path_error'></span>" _ParentControl 
 			
 		. "`n<span class='param'>Style:</span>  <span id='c_Style' name='MS:'>" CtrlStyle "</span>" 
@@ -1209,7 +1224,9 @@ HTML_Control:
 			. _DP _BB1 " id='get_styles_c'> " (!c_ShowStyles ? "show styles" : "hide styles") " " _BB2
 			. _DP _BB1 " id='update_styles_c'> update styles " _BB2   _PRE2
 		
-		. "`n<span id='control_path_value'>" control_path_value "</span>"
+		. "`n<span id='control_path_value'>" control_path_value "</span>" 
+		
+		. "`n<span id='control_child_value'>" control_child_value "</span>"
 		
 		. "`n<span id=ControlStyles>" ControlStyles "</span>" 
 	} 
@@ -1255,6 +1272,7 @@ HTML_Control:
 	oOther.ControlID := ControlID
 	oOther.MouseWinID := WinID
 	oOther.CtrlClass := CtrlClass
+	oOther.ControlNN := ControlNN
 	oOther.MouseWinClass := WinClass
 	Return 1
 }
@@ -1365,6 +1383,7 @@ GetInfo_ComboBox(hwnd, ListBox = 0) {
 	SendMessage, (ListBox ? 0x188 : 0x147), 0, 0, , ahk_id %hwnd%   ;; 0x188 - LB_GETCURSEL, 0x147 - CB_GETCURSEL
 	SelPos := ErrorLevel
 	SelPos := SelPos = 0xffffffff || SelPos < 0 ? "NoSelect" : SelPos + 1
+	; SendMessage, 0x146, 0, 0, , ahk_id %hwnd%   ; CB_GETCOUNT 
 	RegExReplace(ListText, "m`a)$", "", RowCount)
 	Return	"<span class='param' name='MS:N'>Row count:</span> <span name='MS:'>" RowCount "</span>" _DP
 			. "<span class='param' name='MS:N'>Row selected:</span> <span name='MS:'>" SelPos "</span>" _PRE2
@@ -1513,7 +1532,7 @@ GetInfo_InternetExplorer_Server(hwnd) {
 			Frame .= "`n<span class='param' name='MS:N'>ID:  </span><span name='MS:'>" TransformHTML(Var) "</span>"
 		If ((Var := pelt.className) != "")
 			Frame .= "`n<span class='param' name='MS:N'>Class:  </span><span name='MS:'>" TransformHTML(Var) "</span>"
-		If ((Var := pelt.sourceIndex) != "")
+		If ((Var := pelt.sourceIndex - 1) != "")
 			Frame .= "`n<span class='param' name='MS:N'>Index:  </span><span name='MS:'>" TransformHTML(Var) "</span>"
 		If ((Var := pelt.name) != "")
 			Frame .= "`n<span class='param' name='MS:N'>Name:  </span><span name='MS:'>" TransformHTML(Var) "</span>"
@@ -1547,7 +1566,7 @@ GetInfo_InternetExplorer_Server(hwnd) {
 		Info .= "`n<span class='param' name='MS:N'>ID:  </span><span name='MS:'>" Var "</span>"
 	If ((Var := pelt.className) != "")
 		Info .= "`n<span class='param' name='MS:N'>Class:  </span><span name='MS:'>" Var "</span>"
-	If ((Var := pelt.sourceIndex) != "")
+	If ((Var := pelt.sourceIndex - 1) != "")
 		Info .= "`n<span class='param' name='MS:N'>Index:  </span><span name='MS:'>" Var "</span>"
 	If ((Var := pelt.name) != "")
 		Info .= "`n<span class='param' name='MS:N'>Name:  </span><span name='MS:'>" TransformHTML(Var) "</span>"
@@ -1769,9 +1788,10 @@ accDoDefaultAction() {
 	If oPubObj.Acc.CLOAKED
 		Return 0, ToolTip("CLOAKED", 500)
 	Acc := Object(oPubObj.Acc.AccObj) 
-	Acc.accDoDefaultAction(oPubObj.Acc.child)
-}
-
+	Acc.accDoDefaultAction(oPubObj.Acc.child) 
+	; Acc.accSelect(0x00000002, oPubObj.Acc.child) 
+} 
+	
 	;;	https://docs.microsoft.com/ru-ru/windows/desktop/WinAuto/object-state-constants
 	;;	http://forum.script-coding.com/viewtopic.php?pid=130762#p130762
 AccState(Acc, child, byref style, byref str, i := 1) {
@@ -2059,7 +2079,7 @@ class UIASub {
 		Catch
 			Return 0
 	}
-	__Get(member) { 
+	__Get(member) {  
 		If !this.__Properties(member, PropI, PropW)
 			Return 0
 		If (PropW = "RECT")
@@ -2178,13 +2198,15 @@ Write_HotkeyHTML(K, scroll = 0) {
 	Static PrHK1, PrHK2, Name
 
 	Mods := K.Mods, KeyName := K.Name
-	Prefix := K.Pref
+	Prefix := K.Pref 
 	Hotkey := K.HK = "" ? K.TK : K.HK
+	K.IsCode := (SendCode != "name") ; 03:15 07.02.2021
+	If (K.HK = "") && (K.IsCode) ; 03:15 07.02.2021
+		Hotkey := K[SendCode]  ; 03:15 07.02.2021
 	LRMods := K.LRMods, LRPref := TransformHTML(K.LRPref)
 	ThisKey := K.TK, VKCode := K.VK, SCCode := K.SC
 	If (K.NFP && Mods KeyName != "")
 		NotPhysical	:= " " _DP "<span style='color:#" ColorDelimiter "'> Emulated</span>"
-
 	HK1 := K.IsCode ? Hotkey : ThisKey
 	HK2 := HK1 = PrHK1 ? PrHK2 : PrHK1, PrHK1 := HK1, PrHK2 := HK2
 	HKComm1 := "    `;  """ (StrLen(Name := GetKeyName(HK2)) = 1 ? Format("{:U}", Name) : Name)
@@ -2217,6 +2239,7 @@ Write_HotkeyHTML(K, scroll = 0) {
 
 	If (oOther.ControlID || oOther.MouseWinID)
 		CASend := _DP  _BP1 " id='b_CASend'> send to " (oOther.ControlID ? "control" : "window") " " _BP2  
+	CtrlClass := (oOther.ControlID ? oOther.ControlNN : "ahk_parent")
   
 	VKCode_ := "0x" SubStr(VKCode, 3)
 	SCCode_ := "0x" SubStr(SCCode, 3)
@@ -2249,7 +2272,7 @@ Write_HotkeyHTML(K, scroll = 0) {
 
 	. "`n<span name='MS:P'>        </span>"
 
-	. "`n<span><span name='MS:'>ControlSend, ahk_parent, <span name='MS:'>" oOther.ControlSend "</span>, WinTitle</span>" Comment . CASend "</span>"
+	. "`n<span><span name='MS:'>ControlSend, " CtrlClass ", <span name='MS:'>" oOther.ControlSend "</span>, WinTitle</span>" Comment "</span>" . CASend
 
 	. "`n<span name='MS:P'>        </span>"
 	
@@ -2391,14 +2414,15 @@ Hotkey_Main(In) {
 		Return !!(K.PCtrl K.PShift K.PAlt K.PWin)
 	Else If (In = "LButton")
 		GoTo, Hotkey_PressLButton
-
+	
 	K.UP := In.UP, K.IsJM := 0, K.Time := In.Time, K.NFP := In.NFP, K.IsMod := IsMod
 	K.Mods := K.MCtrl K.MShift K.MAlt K.MWin
 	K.LRMods := K.MLCtrl K.MRCtrl K.MLShift K.MRShift K.MLAlt K.MRAlt K.MLWin K.MRWin
 	K.VK := "vk" In.VK, K.SC := "sc" In.SC, K.TK := GetKeyName(K.VK K.SC)
 	K.TK := K.TK = "" ? K.VK K.SC : (StrLen(K.TK) = 1 ? Format("{:U}", K.TK) : K.TK)
 	(IsMod) ? (K.HK := K.Pref := K.LRPref := K.Name := K.IsCode := "", ModsOnly := K.Mods = "" ? 0 : 1)
-	: (K.IsCode := (SendCode != "name" && StrLen(K.TK) = 1)  ;;	 && !Instr("1234567890-=", K.TK)
+	; : (K.IsCode := (SendCode != "name" && StrLen(K.TK) = 1)  ;;	 && !Instr("1234567890-=", K.TK) 
+	: (K.IsCode := (SendCode != "name")  ; 03:15 07.02.2021  
 	, K.HK := K.IsCode ? K[SendCode] : K.TK
 	, K.Name := K.HK = "vkBF" ? "/" : K.TK
 	, K.Pref := K.PCtrl K.PShift K.PAlt K.PWin
@@ -3202,6 +3226,99 @@ OnlyShiftTab_LButton_Up_Wait:
 	ToolTip("Stop", 300) 
 	return
 
+
+Window_CountList(PID) {
+	Process, Exist, %PID%
+	If !ErrorLevel
+		Return -1
+    WinGet, List, List, ahk_pid %PID% 
+	If !List
+		Return -2  
+	Loop % List
+	{
+		Hwnd := List%A_Index% 
+		WinGetClass, Class, ahk_id %Hwnd%   
+		WinGetTitle, Title, ahk_id %Hwnd%
+		WinGetPos, WinX, WinY, WinW, WinH, ahk_id %Hwnd%
+		vis := DllCall("IsWindowVisible", "Ptr", Hwnd) ? "" : " class='QStyle2'" 
+		tree .= "<span><span name='MS:' " vis ">" Class "</span>" 
+			. _DP  "<span name='MS:' class='title2'>" Title "</span>"
+			. _DP  "<span name='MS:' class='param'>x" WinX " y" WinY " w" WinW " h" WinH "</span>"
+			. _DP  "<span name='MS:'>" Format("0x{:06X}", Hwnd) "</span>"
+			. "<span name='MS:P'>     </span>"
+			. _DP _BP1 " id='b_hwnd_flash' value='" Hwnd "'> flash " _BP2 "</span>`n" 
+	} 
+	tree := _T1 " id='P__Tree_Window_CountList'" _T1P "> ( Window list: <span name='MS:' style='color: #" ColorFont ";'>" List "</span> ) </span><a></a>" 
+	. _BT1 " id='view_WindowCount2'> update " _BT2
+	. _DB _BT1 " id='WindowCountList_roll'> roll up " _BT2
+	. _DB _BT1 " id='copy__PRE1' name='pre_WindowCountList'> copy " _BT2 _T2 
+	. _PRE " id='pre_WindowCountList'>" "<span>" tree "</span>" _PRE2 
+	oOther.WindowCountList := tree
+	Return 1 
+}
+
+Window_ControlCountList(Hwnd) {
+	If !WinExist("ahk_id" Hwnd)
+		Return -1
+    WinGet, ListNN, ControlList, ahk_id %Hwnd%
+	If ListNN = 
+		Return -2
+	oList := []
+    WinGet, ListHwnd, ControlListHwnd, ahk_id %Hwnd%    
+	oListHwnd := StrSplit(ListHwnd,"`n") 
+	ControlGetPos, WinX, WinY, WinW, WinH, , ahk_id %Hwnd% 
+	Loop, Parse, ListNN, `n
+		oList.Push([A_LoopField, oListHwnd[A_Index]])
+	for k, v in oList
+	{  
+		vis := DllCall("IsWindowVisible", "Ptr", v[2]) ? "" : " class='QStyle2'" 
+		tree .= "<span><span name='MS:' " vis ">" v[1] "</span>"  
+			. _DP  "<span name='MS:' class='param'>x" WinX " y" WinY " w" WinW " h" WinH "</span>"
+			. _DP  "<span name='MS:'>" Format("0x{:06X}", v[2]) "</span>"
+			. "<span name='MS:P'>     </span>"
+			. _DP _BP1 " id='b_hwnd_flash' value='" v[2] "'> flash " _BP2 "</span>`n" 
+	}
+	tree := _T1 " id='P__Tree_ControlCountList'" _T1P "> ( Control list: <span name='MS:' style='color: #" ColorFont ";'>" oList.Count() "</span> ) </span><a></a>" 
+	. _BT1 " id='view_ControlCount2'> update " _BT2
+	. _DB _BT1 " id='ControlCountList_roll'> roll up " _BT2
+	. _DB _BT1 " id='copy__PRE1' name='pre_ControlCountList'> copy " _BT2 _T2 
+	. _PRE " id='pre_ControlCountList'>" "<span>" tree "</span>" _PRE2 
+	oOther.ControlCountList := tree
+	Return 1  
+}
+
+ChildList(Hwnd) {
+	If !WinExist("ahk_id" Hwnd)
+		Return -1
+    WinGet, ListNN, ControlList, ahk_id %Hwnd%
+	If ListNN = 
+		Return -2
+	oList := []
+    WinGet, ListHwnd, ControlListHwnd, ahk_id %Hwnd%    
+	oListHwnd := StrSplit(ListHwnd,"`n") 
+	ControlGetPos, WinX, WinY, WinW, WinH, , ahk_id %Hwnd% 
+	 
+	Loop, Parse, ListNN, `n
+		oList.Push([A_LoopField, oListHwnd[A_Index]])
+	for k, v in oList
+	{  
+		WinGet, ProcessName, ProcessName, % "ahk_id" v[2]
+		vis := DllCall("IsWindowVisible", "Ptr", v[2]) ? "" : " class='QStyle2'" 
+		tree .= "<span><span name='MS:' " vis ">" v[1] "</span>"
+			. _DP  "<span name='MS:' class='param'>x" WinX " y" WinY " w" WinW " h" WinH "</span>"
+			. _DP  "<span name='MS:'>" Format("0x{:06X}", v[2]) "</span>"
+			. _DP  "<span name='MS:'>" ProcessName "</span><span name='MS:P'>     </span>"
+			. _DP _BP1 " id='b_hwnd_flash' value='" v[2] "'> flash " _BP2 "</span>`n" 
+	}  
+	tree := _T1 " id='P__Tree_Control_Child'" _T1P "> ( Child list: <span name='MS:' style='color: #" ColorFont ";'>" oList.Count() "</span> ) </span><a></a>" 
+	. _BT1 " id='control_child2'> update " _BT2
+	. _DB _BT1 " id='Control_Child_roll'> roll up " _BT2
+	. _DB _BT1 " id='copy__PRE1' name='pre_Control_Child'> copy " _BT2 _T2 
+	. _PRE " id='pre_Control_Child'>" "<span>" tree "</span>" _PRE2 
+	oOther.ChildList := tree
+	Return 1 
+}
+
    ;;  http://forum.script-coding.com/viewtopic.php?pid=131490#p131490
 /*
 ChildFromPath(str, hwnd) 
@@ -3222,6 +3339,8 @@ ChildFromPath(str, hwnd)
 	}
 } 
 */
+
+
 ChildToPath(hwnd) {
 	If !WinExist("ahk_id" hwnd)
 		Return 0
@@ -3232,11 +3351,13 @@ ChildToPath(hwnd) {
 		Hwnd := Format("0x{:06X}", v.Hwnd)
 		WinGetClass, WinClass, ahk_id %Hwnd%
 		WinGet, ProcessName, ProcessName, ahk_id %Hwnd%
+		vis := DllCall("IsWindowVisible", "Ptr", Hwnd) ? "" : " class='QStyle2'" 
 		tree .= AddSpace2(k - 1) "<span><span name='MS:'>" v.Path "</span>" _DP  "<span name='MS:'>" Hwnd "</span>" 
-			. _DP "<span name='MS:'>" WinClass "</span>" _DP  "<span name='MS:'>" ProcessName "</span></span><span name='MS:P'>     </span>"
+			. _DP "<span name='MS:' " vis ">" WinClass "</span>" _DP  "<span name='MS:'>" ProcessName "</span></span><span name='MS:P'>     </span>"
 			. _DP _BP1 " id='b_hwnd_flash' value='" Hwnd "'> flash " _BP2 "`n"
 	} 
-	tree := _T1 " id='P__Tree_Control_Path'" _T1P "> ( Control path ) </span>" _T2 _PRE1 "<span>" tree "</span>" _PRE2 
+	tree := _T1 " id='P__Tree_Control_Path'" _T1P "> ( Control parent ) </span><a></a>" _BT1 " id='copy__PRE1' name='pre_Control_Path'> copy " _BT2 _T2 
+	. _LPRE " id='pre_Control_Path'>" "<span>" tree "</span>" _PRE2 
 	SaveChildPath(tree)
 	Return 1
 }
@@ -3337,10 +3458,10 @@ MsgZoom(wParam, lParam) {  ;;	получает
 }	
 
 WM_COPYDATA(wParam, lParam) { 
-    CopyOfData := StrGet(NumGet(lParam + 2*A_PtrSize))   
+    CopyOfData := StrGet(NumGet(lParam + 2 * A_PtrSize))   
 	If (wParam = 1 && ThisMode = "Control") {
 		arr := StrSplit(CopyOfData, "`n") 
-		BGR := arr[1], offX := arr[2], offY := arr[3]
+		BGR := arr[1], offX := arr[2], offY := arr[3], reset := arr[4]
 		ColorRGB := Format("0x{:06X}", (BGR & 0xFF) << 16 | (BGR & 0xFF00) | (BGR >> 16))
 		ColorBGR := Format("0x{:06X}", BGR)
 		oDoc.getElementById("ColorRGB").innerText := ColorRGB
@@ -3351,6 +3472,7 @@ WM_COPYDATA(wParam, lParam) {
 		oDoc.getElementById("sInvert_RGB0").innerText := "0x" sInvert_RGB
 		oDoc.getElementById("sInvert_RGB").innerText := sInvert_RGB 
 		oDoc.getElementById("RenderInvert_RGB").style.backgroundColor := "#" sInvert_RGB
+		
 		GuiControl, TB: -Redraw, ColorProgress
 		GuiControl, % "TB: +c" SubStr(ColorRGB, 3), ColorProgress
 		GuiControl, TB: +Redraw, ColorProgress  
@@ -3361,6 +3483,9 @@ WM_COPYDATA(wParam, lParam) {
 		oDoc.getElementById("coord_awin").innerText := "x" (osCoords.MXWA + offX) " y" (osCoords.MYWA + offY)
 		oDoc.getElementById("coord_rwin").innerText := Round((osCoords.RWinX + offX) / osCoords.WinW, 4) ", " Round((osCoords.RWinY + offY) / osCoords.WinH, 4)
 		oDoc.getElementById("coord_rclient").innerText := Round((osCoords.MXC + offX) / osCoords.caW, 4) ", " Round((osCoords.MYC + offY) / osCoords.caH, 4)
+		
+		If reset
+			HTML_Control := oDivNew.innerHTML
 	}
     return true
 }
@@ -3621,7 +3746,9 @@ FlashArea(x, y, w, h, att = 1) {
 }
 
 CreateMarkerInvert() {    
-	Gui, MI: -DPIScale +HWNDhMarkerGui -Caption +AlwaysOnTop +ToolWindow +E%WS_EX_TRANSPARENT% 
+	; Gui, MI: -DPIScale +Owner +HWNDhMarkerGui -Caption +%WS_CHILDWINDOW% +E%WS_EX_NOACTIVATE% +AlwaysOnTop +ToolWindow +E%WS_EX_TRANSPARENT%-%WS_POPUP% 
+
+	Gui, MI: -DPIScale +Owner%hGui% +HWNDhMarkerGui -Caption +AlwaysOnTop +ToolWindow +E%WS_EX_TRANSPARENT% 
 	hDCMarkerInvert := DllCall("GetDC", "Ptr", hMarkerGui)
 	WinSet, TransParent, 0, ahk_id %hMarkerGui% 
 }
@@ -3842,10 +3969,35 @@ GetCommandLineProc(PID, ByRef Cmd, ByRef Bit, ByRef IsAdmin) {
 
 	DllCall("advapi32\OpenProcessToken", "ptr", hProc, "uint", 0x0008, "ptr*", hToken)
 	DllCall("advapi32\GetTokenInformation", "ptr", hToken, "int", 20, "uint*", IsAdmin, "uint", 4, "uint*", size)
-	DllCall("CloseHandle", "ptr", hToken)
-	IsAdmin := (IsAdmin ? "Admin" _DP : "")
+	DllCall("CloseHandle", "ptr", hToken) 
 
 	DllCall("CloseHandle", Ptr, hProc)
+	IsAdmin := IsAdmin ? "true" : "false"
+}
+
+GetProcessOwner(PID, value)  { ; https://www.autohotkey.com/boards/viewtopic.php?t=38546#p176907
+   static PROCESS_QUERY_INFORMATION := 0x400, TOKEN_QUERY := 0x8
+        , TokenUser := 1, TokenOwner := 4, MAX_NAME := 32, isAdmin 
+        
+   if !hProcess := DllCall("OpenProcess", UInt, PROCESS_QUERY_INFORMATION, UInt, false, UInt, PID, Ptr)
+      Return 0 ;   ErrorHandling("OpenProcess")
+   if !DllCall("Advapi32\OpenProcessToken", Ptr, hProcess, UInt, TOKEN_QUERY, PtrP, hToken)
+      Return 0 ;   ErrorHandling("OpenProcessToken", hProcess)
+   
+   tokenType := value = "user" ? TokenUser : TokenOwner
+   DllCall("Advapi32\GetTokenInformation", Ptr, hToken, Int, tokenType, Ptr, 0, Int, 0, UIntP, bites)
+   VarSetCapacity(buff, bites, 0)
+   if !DllCall("Advapi32\GetTokenInformation", Ptr, hToken, Int, tokenType, Ptr, &buff, Int, bites, UIntP, bites)
+      Return 0 ;   ErrorHandling("GetTokenInformation", hProcess, hToken)
+   
+   VarSetCapacity(sName, MAX_NAME << !!A_IsUnicode, 0)
+   VarSetCapacity(sDomainName, MAX_NAME << !!A_IsUnicode, 0)
+   VarSetCapacity(szName, 4, 0), NumPut(MAX_NAME, szName)
+   if !DllCall( "Advapi32\LookupAccountSid", Ptr, 0, Ptr, NumGet(buff), Str, sName, Ptr, &szName
+                                           , Str, sDomainName, Ptr, &szName, IntP, SID_NAME_USE )
+      Return 0 ;  ErrorHandling("LookupAccountSid", hProcess, hToken)
+   DllCall("CloseHandle", Ptr, hProcess), DllCall("CloseHandle", Ptr, hToken)
+   Return sName
 }
 
 SeDebugPrivilege() {
@@ -3968,7 +4120,7 @@ ExecCommandAutoHotkey(Command, PID) {
 	PostMessage WM_COMMAND, % Commands[Command],,, % "ahk_class AutoHotkey ahk_pid" . PID   
 } 
 
-GetCLSIDExplorer(hwnd) {
+GetCLSIDExplorer(hwnd) { 
 	for window in ComObjCreate("Shell.Application").Windows
 		If (window.hwnd = hwnd)
 			Return (CLSID := window.Document.Folder.Self.Path) ~= "^::\{" ? "`n<span class='param'>CLSID: </span><span name='MS:'>" CLSID "</span>": ""
@@ -5647,6 +5799,9 @@ body {
 	white-space: pre;
 	color: #%ColorTitle%;
 }
+.title2 {
+	color: #%ColorTitle%;
+}
 .hr {
 	position: absolute;
 	width: 100`%;
@@ -6020,6 +6175,58 @@ ButtonClick(oevent) {
 		oJScript.menuitemdisplay(!MenuIdView ? "none" : "inline")
 		oDoc.getElementById("menu_idview").innerText :=  " id - " (MenuIdView ? "view" : "hide") " "
 	}
+	Else If (thisid = "copy__PRE1")
+	{
+		item := oDoc.getElementById(oevent.name)
+		preclone := item.cloneNode(true)
+		oJScript.removemenuitem(preclone, ".menuitemsub")
+		If !MenuIdView
+			oJScript.removemenuitem(preclone, ".menuitemid") 
+		OuterText := RegExReplace(preclone.OuterText, "m)       ▪   flash")
+		OuterText := RegExReplace(OuterText, "m)\s+$") 
+		GetKeyState("Shift") ? ClipAdd(OuterText, 1) : (Clipboard := OuterText)
+		HighLight([item]), preclone := ""
+	}
+	Else If (thisid = "copy__Control_Child")
+	{
+		item := oDoc.getElementById("pre_Control_Child")
+		preclone := item.cloneNode(true)
+		oJScript.removemenuitem(preclone, ".menuitemsub")
+		If !MenuIdView
+			oJScript.removemenuitem(preclone, ".menuitemid") 
+		OuterText := RegExReplace(preclone.OuterText, "m)       ▪   flash")
+		OuterText := RegExReplace(OuterText, "m)\s+$") 
+		GetKeyState("Shift") ? ClipAdd(OuterText, 1) : (Clipboard := OuterText)
+		HighLight([item]), preclone := ""
+	}  
+	Else If (thisid = "copy__ControlCountList")
+	{
+		item := oDoc.getElementById("pre_ControlCountList")
+		preclone := item.cloneNode(true)
+		oJScript.removemenuitem(preclone, ".menuitemsub")
+		If !MenuIdView
+			oJScript.removemenuitem(preclone, ".menuitemid") 
+		OuterText := RegExReplace(preclone.OuterText, "m)       ▪   flash")
+		OuterText := RegExReplace(OuterText, "m)\s+$") 
+		GetKeyState("Shift") ? ClipAdd(OuterText, 1) : (Clipboard := OuterText)
+		HighLight([item]), preclone := ""
+	}   
+	Else If (thisid = "Control_Child_roll")
+	{
+		view_control_child := 0, IniWrite(view_control_child, "view_control_child") 
+		oDoc.getElementById("control_child_value").innerHTML := ""
+		HTML_Control := oDivNew.innerHTML
+	}
+	Else If (thisid = "ControlCountList_roll")
+	{ 
+		oDoc.getElementById("view_ControlCount_value").innerHTML := ""
+		HTML_Win := oDivNew.innerHTML
+	} 
+	Else If (thisid = "WindowCountList_roll")
+	{ 
+		oDoc.getElementById("view_WindowCount_value").innerHTML := ""
+		HTML_Win := oDivNew.innerHTML
+	} 
 	Else If (thisid = "copy_menutext")
 	{
 		pre_menutext := oDoc.getElementById("pre_menutext")
@@ -6063,19 +6270,18 @@ ButtonClick(oevent) {
 	Else If thisid = keyname
 	{ 
 		edithotkey := oDoc.getElementById("edithotkey"), editkeyname := oDoc.getElementById("editkeyname")
-		value := edithotkey.value 
+		value := edithotkey.value   
 		
 		If (value = "    " || value = A_Tab)
 			value := A_Tab
 		Else If (value != " ")
-			value := RegExReplace(value, "^\s*(.*?)\s*$", "$1")
-			
-		If RegExMatch(value, "i)^0x([0-9a-f]+)$", M)
-			key := (StrLen(M1) > 2 ? "sc" : "vk") . Format("{:U}", M1)
-		Else
-			key := value 
-		oDoc.getElementById("edithotkey").value := key 
+			value := RegExReplace(value, "^\s*(.*?)\s*$", "$1")		
 		
+		If RegExMatch(value, "i)^[0x]*([0-9a-f]+)$", M)
+			key := ((SendCode = "name" || SendCode = "vk") ? "vk" : "sc") . Format("{:U}", M1)
+		Else
+			key := value  
+		oDoc.getElementById("edithotkey").value := key  
 		name := GetKeyName(key)
 		If (name = key)
 			editkeyname.value := Format("vk{:X}", GetKeyVK(key)) (!(sc := GetKeySC(key)) ? "" : Format("sc{:X}", sc))
@@ -6167,9 +6373,13 @@ ButtonClick(oevent) {
 		Events.num_scroll(thisid)
 	Else If thisid = locale_change
 		Events.NextChangeLocal()
-	Else If thisid = paste_keyname
+	Else If thisid = paste_keyname 
+	{ 
+		If (StrLen(Clipboard) > 40)
+			Return ToolTip("Long string", 500)  
 		edithotkey := oDoc.getElementById("edithotkey"), edithotkey.value := "", edithotkey.focus()
-		, oDoc.execCommand("Paste"), oDoc.getElementById("keyname").click()
+		oDoc.execCommand("Paste"), oDoc.getElementById("keyname").click() 
+	}
 	Else If thisid = get_styles_w
 		ViewStylesWin()
 	Else If thisid = update_styles_w
@@ -6306,13 +6516,20 @@ ButtonClick(oevent) {
 		acc_path_func(1)
 	Else If thisid = control_path 
 		control_path_func()
+	Else If (thisid = "control_child" || thisid = "control_child2")
+		control_child_func() 
+	Else If (thisid = "view_WindowCount" || thisid = "view_WindowCount2")
+		Window_Count_func() 
+	Else If (thisid = "view_ControlCount" || thisid = "view_ControlCount2")
+		Window_ControlCount_func() 
 	Else If thisid = b_CASend
 	{  
 		h := (oOther.ControlID ? oOther.ControlID : oOther.MouseWinID)
 		If !WinExist("ahk_id " h)
 			Return ToolTip("Window not found!", 500)
+		SetKeyDelay 50, 50
 		ControlSend, , % oOther.ControlSend, ahk_id %h%
-		ToolTip("send to " . (oOther.ControlID ? "control: " oOther.CtrlClass : "window: " oOther.MouseWinClass), 700)
+		ToolTip("send to " . (oOther.ControlID ? "control: " oOther.ControlNN : "window: " oOther.MouseWinClass), 700)
 	} 
 	Else If InStr(thisid, "ahkscript_")
 	{
@@ -6358,6 +6575,38 @@ control_path_func() {
 	If !ChildToPath(oOther.ControlID)
 		oDoc.getElementById("control_path_error").outerHTML := "<span style='color:#" ColorErrorAccPath "'>  control not found</span>" 
 	oDoc.getElementById("control_path_value").innerHTML := SaveChildPath()
+	HTML_Control := oDivNew.innerHTML
+}
+
+Window_Count_func() { 
+	r := Window_CountList(oOther.WinPID)
+	If r = -1
+		Return ToolTip("Process not found", 800)
+	If r = -2
+		Return ToolTip("Process not window", 800)
+	oDoc.getElementById("view_WindowCount_value").innerHTML := oOther.WindowCountList
+	HTML_Win := oDivNew.innerHTML
+}
+
+Window_ControlCount_func() {  
+	r := Window_ControlCountList(oOther.WinID)
+	If r = -1
+		Return ToolTip("Window not found", 800)
+	If r = -2
+		Return ToolTip("Window not children", 800)
+	oDoc.getElementById("view_ControlCount_value").innerHTML := oOther.ControlCountList
+	HTML_Win := oDivNew.innerHTML
+}
+
+control_child_func() {
+	If !view_control_child
+		view_control_child := 1, IniWrite(view_control_child, "view_control_child") 
+	r := ChildList(oOther.ControlID)
+	If r = -1
+		Return ToolTip("control not found", 800)
+	If r = -2
+		Return ToolTip("control not children", 800)
+	oDoc.getElementById("control_child_value").innerHTML := oOther.ChildList
 	HTML_Control := oDivNew.innerHTML
 }
 
@@ -6843,7 +7092,7 @@ ZoomOnClose() {
 }
 
 	; wParam: 0 hide, 1 show, 2 пауза AhkSpy, 3 однократный зум, 4 MemoryZoomSize, 5 MinSize, 6 ActiveNoPause
-	; , 7 WinActive AhkSpy, 8 Suspend, 9 Menu, 10 Hotkey, 11 MIN, 12 ShiftTab
+	; , 7 WinActive AhkSpy, 8 Suspend, 9 Menu, 10 Hotkey, 11 MIN, 12 ShiftTab, 13 ZoomResetCoords
 
 Zoom_Msg(wParam, lParam) {
 	If wParam = 0  ;;	hide
@@ -6875,6 +7124,8 @@ Zoom_Msg(wParam, lParam) {
 		ZoomRules("MIN", 1)
 	Else If wParam = 12  ;;	ShiftTab
 		ZoomRules("ShiftTab", lParam)
+	Else If wParam = 13  ;;	ZoomResetCoords
+		ZoomResetCoords() 
 }
 
 Z_MsgZoom(wParam, lParam) {
@@ -7205,7 +7456,7 @@ CoupCrop() {
 	SendCoords()
 }
 
-SendCoords() { 
+SendCoords() {  
 	OffX := (oZoom.nXOriginSrc - oZoom.sXOriginSrc)
 	OffY := (oZoom.nYOriginSrc - oZoom.sYOriginSrc)
 	If (oZoom.displaced && OffX OffY = "00" && (1, oZoom.displaced := 0))
@@ -7214,8 +7465,20 @@ SendCoords() {
 		Gui, Zoom: Color, %GuiColorDisp% 
 	BGR := DllCall("gdi32.dll\GetPixel", "Ptr", oZoom.hdcMemory, "int", oZoom.nXOriginSrc, "int", oZoom.nYOriginSrc)
 	Send_WM_COPYDATA(1, BGR "`n" OffX "`n" OffY, hAhkSpy)
-}
+} 
 
+ZoomResetCoords() { 
+	If !oZoom.displaced 
+		Return
+	oZoom.nXOriginSrc := oZoom.sXOriginSrc
+	oZoom.nYOriginSrc := oZoom.sYOriginSrc
+	oZoom.displaced := 0
+	Gui, Zoom: Color, %GuiColor% 
+	Redraw()
+	BGR := DllCall("gdi32.dll\GetPixel", "Ptr", oZoom.hdcMemory, "int", oZoom.nXOriginSrc, "int", oZoom.nYOriginSrc)
+	Send_WM_COPYDATA(1, BGR "`n" 0 "`n" 0 "`n" 1, hAhkSpy)
+}
+	
 Hand() {
 	SetTimer, Magnify, Off
 	DllCall("GetCursorPos", "int64P", pt)
@@ -7650,10 +7913,10 @@ CryptBinaryToStringBASE64(pData, Bytes, NOCRLF = "")  {
    CRYPT := CRYPT_STRING_BASE64 | (NOCRLF ? CRYPT_STRING_NOCRLF : 0)
    
    DllCall("Crypt32\CryptBinaryToString", Ptr, pData, UInt, Bytes, UInt, CRYPT, Ptr, 0, UIntP, Chars)
-   VarSetCapacity(OutData, Chars * (A_IsUnicode ? 2 : 1))
+   VarSetCapacity(OutData, Chars * (A_IsUnicode ? 2 : 1), 0)
    DllCall("Crypt32\CryptBinaryToString", Ptr, pData, UInt, Bytes, UInt, CRYPT, Str, OutData, UIntP, Chars)
    Return OutData
 }
 	; ___________________________ End _________________________________________________
 
-	;;)			01:58 20.01.2021
+	;;)
