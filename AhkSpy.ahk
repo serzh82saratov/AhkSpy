@@ -1,3 +1,4 @@
+
 /*
 ©©©©©©©©©©©©©©©©©©©©©©©©©©©©©©©©©©©©©©©©©©©©©©©©©©©©©©©©©©©©©©©©©©©©
 ©©©©©©©©©©©©©©©©©©©©©©©©©©©©©©©©©©©©©©©©©©©©©©©©©©©©©©©©©© AhkSpy ©©
@@ -26,7 +27,7 @@
 */
 
 
-Global AhkSpyVersion := 4.80
+Global AhkSpyVersion := 4.81
 
 	; ___________________________ Caption _________________________________________________
 
@@ -3233,7 +3234,7 @@ Window_CountList(PID) {
 		Return -1
     WinGet, List, List, ahk_pid %PID% 
 	If !List
-		Return -2  
+		Return -2
 	Loop % List
 	{
 		Hwnd := List%A_Index% 
@@ -3247,7 +3248,7 @@ Window_CountList(PID) {
 			. _DP  "<span name='MS:'>" Format("0x{:06X}", Hwnd) "</span>"
 			. "<span name='MS:P'>     </span>"
 			. _DP _BP1 " id='b_hwnd_flash' value='" Hwnd "'> flash " _BP2 "</span>`n" 
-	} 
+	}
 	tree := _T1 " id='P__Tree_Window_CountList'" _T1P "> ( Window list: <span name='MS:' style='color: #" ColorFont ";'>" List "</span> ) </span><a></a>" 
 	. _BT1 " id='view_WindowCount2'> update " _BT2
 	. _DB _BT1 " id='WindowCountList_roll'> roll up " _BT2
@@ -3266,11 +3267,11 @@ Window_ControlCountList(Hwnd) {
 	oList := []
     WinGet, ListHwnd, ControlListHwnd, ahk_id %Hwnd%    
 	oListHwnd := StrSplit(ListHwnd,"`n") 
-	ControlGetPos, WinX, WinY, WinW, WinH, , ahk_id %Hwnd% 
 	Loop, Parse, ListNN, `n
 		oList.Push([A_LoopField, oListHwnd[A_Index]])
 	for k, v in oList
 	{  
+		ControlGetPos, WinX, WinY, WinW, WinH, , % "ahk_id" v[2]
 		vis := DllCall("IsWindowVisible", "Ptr", v[2]) ? "" : " class='QStyle2'" 
 		tree .= "<span><span name='MS:' " vis ">" v[1] "</span>"  
 			. _DP  "<span name='MS:' class='param'>x" WinX " y" WinY " w" WinW " h" WinH "</span>"
@@ -3295,13 +3296,13 @@ ChildList(Hwnd) {
 		Return -2
 	oList := []
     WinGet, ListHwnd, ControlListHwnd, ahk_id %Hwnd%    
-	oListHwnd := StrSplit(ListHwnd,"`n") 
-	ControlGetPos, WinX, WinY, WinW, WinH, , ahk_id %Hwnd% 
+	oListHwnd := StrSplit(ListHwnd,"`n")  
 	 
 	Loop, Parse, ListNN, `n
 		oList.Push([A_LoopField, oListHwnd[A_Index]])
 	for k, v in oList
 	{  
+		ControlGetPos, WinX, WinY, WinW, WinH, , % "ahk_id" v[2]
 		WinGet, ProcessName, ProcessName, % "ahk_id" v[2]
 		vis := DllCall("IsWindowVisible", "Ptr", v[2]) ? "" : " class='QStyle2'" 
 		tree .= "<span><span name='MS:' " vis ">" v[1] "</span>"
