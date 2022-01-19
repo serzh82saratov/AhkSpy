@@ -27,7 +27,7 @@
 */
 
 
-Global AhkSpyVersion := 4.81
+Global AhkSpyVersion := 4.82
 
 	; ___________________________ Caption _________________________________________________
 
@@ -1225,11 +1225,11 @@ HTML_Control:
 			. _DP _BB1 " id='get_styles_c'> " (!c_ShowStyles ? "show styles" : "hide styles") " " _BB2
 			. _DP _BB1 " id='update_styles_c'> update styles " _BB2   _PRE2
 		
+		. "`n<span id=ControlStyles>" ControlStyles "</span>" 
+		
 		. "`n<span id='control_path_value'>" control_path_value "</span>" 
 		
 		. "`n<span id='control_child_value'>" control_child_value "</span>"
-		
-		. "`n<span id=ControlStyles>" ControlStyles "</span>" 
 	} 
 	
 	HTML_Control := ""
@@ -3226,13 +3226,15 @@ OnlyShiftTab_LButton_Up_Wait:
 	Sleep 100
 	ToolTip("Stop", 300) 
 	return
+	
+	; ___________________________ List Window _________________________________________________
 
 
 Window_CountList(PID) {
 	Process, Exist, %PID%
 	If !ErrorLevel
 		Return -1
-    WinGet, List, List, ahk_pid %PID% 
+    WinGet, List, List, ahk_pid %PID%
 	If !List
 		Return -2
 	Loop % List
@@ -3243,11 +3245,11 @@ Window_CountList(PID) {
 		WinGetPos, WinX, WinY, WinW, WinH, ahk_id %Hwnd%
 		vis := DllCall("IsWindowVisible", "Ptr", Hwnd) ? "" : " class='QStyle2'" 
 		tree .= "<span><span name='MS:' " vis ">" Class "</span>" 
+			. _DP _BP1 " id='b_hwnd_flash' value='" Hwnd "'> flash " _BP2  
 			. _DP  "<span name='MS:' class='title2'>" Title "</span>"
 			. _DP  "<span name='MS:' class='param'>x" WinX " y" WinY " w" WinW " h" WinH "</span>"
 			. _DP  "<span name='MS:'>" Format("0x{:06X}", Hwnd) "</span>"
-			. "<span name='MS:P'>     </span>"
-			. _DP _BP1 " id='b_hwnd_flash' value='" Hwnd "'> flash " _BP2 "</span>`n" 
+			. "<span name='MS:P'>     </span></span>`n"
 	}
 	tree := _T1 " id='P__Tree_Window_CountList'" _T1P "> ( Window list: <span name='MS:' style='color: #" ColorFont ";'>" List "</span> ) </span><a></a>" 
 	. _BT1 " id='view_WindowCount2'> update " _BT2
@@ -3271,13 +3273,18 @@ Window_ControlCountList(Hwnd) {
 		oList.Push([A_LoopField, oListHwnd[A_Index]])
 	for k, v in oList
 	{  
-		ControlGetPos, WinX, WinY, WinW, WinH, , % "ahk_id" v[2]
+		ControlGetPos, WinX, WinY, WinW, WinH, , % "ahk_id" v[2] 
+		ControlGetText, Text, , % "ahk_id" v[2] 
+		If StrLen(Text) > 100
+			Text := SubStr(Text, 1, 100) "..."
+		Text := RegExReplace(Text,  "\R+", " ")
 		vis := DllCall("IsWindowVisible", "Ptr", v[2]) ? "" : " class='QStyle2'" 
 		tree .= "<span><span name='MS:' " vis ">" v[1] "</span>"  
+			. _DP _BP1 " id='b_hwnd_flash' value='" v[2] "'> flash " _BP2   
+			. _DP  "<span name='MS:' class='title2'>" Text "</span>"
 			. _DP  "<span name='MS:' class='param'>x" WinX " y" WinY " w" WinW " h" WinH "</span>"
 			. _DP  "<span name='MS:'>" Format("0x{:06X}", v[2]) "</span>"
-			. "<span name='MS:P'>     </span>"
-			. _DP _BP1 " id='b_hwnd_flash' value='" v[2] "'> flash " _BP2 "</span>`n" 
+			. "<span name='MS:P'>     </span></span>`n"
 	}
 	tree := _T1 " id='P__Tree_ControlCountList'" _T1P "> ( Control list: <span name='MS:' style='color: #" ColorFont ";'>" oList.Count() "</span> ) </span><a></a>" 
 	. _BT1 " id='view_ControlCount2'> update " _BT2
@@ -3304,12 +3311,18 @@ ChildList(Hwnd) {
 	{  
 		ControlGetPos, WinX, WinY, WinW, WinH, , % "ahk_id" v[2]
 		WinGet, ProcessName, ProcessName, % "ahk_id" v[2]
+		ControlGetText, Text, , % "ahk_id" v[2] 
+		If StrLen(Text) > 100
+			Text := SubStr(Text, 1, 100) "..."
+		Text := RegExReplace(Text,  "\R+", " ")
+
 		vis := DllCall("IsWindowVisible", "Ptr", v[2]) ? "" : " class='QStyle2'" 
 		tree .= "<span><span name='MS:' " vis ">" v[1] "</span>"
+			. _DP _BP1 " id='b_hwnd_flash' value='" v[2] "'> flash " _BP2
+			. _DP  "<span name='MS:' class='title2'>" Text "</span>"
 			. _DP  "<span name='MS:' class='param'>x" WinX " y" WinY " w" WinW " h" WinH "</span>"
 			. _DP  "<span name='MS:'>" Format("0x{:06X}", v[2]) "</span>"
-			. _DP  "<span name='MS:'>" ProcessName "</span><span name='MS:P'>     </span>"
-			. _DP _BP1 " id='b_hwnd_flash' value='" v[2] "'> flash " _BP2 "</span>`n" 
+			. _DP  "<span name='MS:'>" ProcessName "</span><span name='MS:P'>     </span>" "</span>`n" 
 	}  
 	tree := _T1 " id='P__Tree_Control_Child'" _T1P "> ( Child list: <span name='MS:' style='color: #" ColorFont ";'>" oList.Count() "</span> ) </span><a></a>" 
 	. _BT1 " id='control_child2'> update " _BT2
@@ -3354,8 +3367,9 @@ ChildToPath(hwnd) {
 		WinGet, ProcessName, ProcessName, ahk_id %Hwnd%
 		vis := DllCall("IsWindowVisible", "Ptr", Hwnd) ? "" : " class='QStyle2'" 
 		tree .= AddSpace2(k - 1) "<span><span name='MS:'>" v.Path "</span>" _DP  "<span name='MS:'>" Hwnd "</span>" 
-			. _DP "<span name='MS:' " vis ">" WinClass "</span>" _DP  "<span name='MS:'>" ProcessName "</span></span><span name='MS:P'>     </span>"
-			. _DP _BP1 " id='b_hwnd_flash' value='" Hwnd "'> flash " _BP2 "`n"
+			. _DP "<span name='MS:' " vis ">" WinClass "</span>" 
+			. _DP _BP1 " id='b_hwnd_flash' value='" Hwnd "'> flash " _BP2
+			. _DP  "<span name='MS:'>" ProcessName "</span></span><span name='MS:P'>     </span>" "`n"
 	} 
 	tree := _T1 " id='P__Tree_Control_Path'" _T1P "> ( Control parent ) </span><a></a>" _BT1 " id='copy__PRE1' name='pre_Control_Path'> copy " _BT2 _T2 
 	. _LPRE " id='pre_Control_Path'>" "<span>" tree "</span>" _PRE2 
@@ -6182,36 +6196,12 @@ ButtonClick(oevent) {
 		preclone := item.cloneNode(true)
 		oJScript.removemenuitem(preclone, ".menuitemsub")
 		If !MenuIdView
-			oJScript.removemenuitem(preclone, ".menuitemid") 
-		OuterText := RegExReplace(preclone.OuterText, "m)       ▪   flash")
-		OuterText := RegExReplace(OuterText, "m)\s+$") 
-		GetKeyState("Shift") ? ClipAdd(OuterText, 1) : (Clipboard := OuterText)
-		HighLight([item]), preclone := ""
-	}
-	Else If (thisid = "copy__Control_Child")
-	{
-		item := oDoc.getElementById("pre_Control_Child")
-		preclone := item.cloneNode(true)
-		oJScript.removemenuitem(preclone, ".menuitemsub")
-		If !MenuIdView
-			oJScript.removemenuitem(preclone, ".menuitemid") 
-		OuterText := RegExReplace(preclone.OuterText, "m)       ▪   flash")
+			oJScript.removemenuitem(preclone, ".menuitemid")  
+		OuterText := RegExReplace(preclone.OuterText, "m)  ▪   flash   ▪  ")
 		OuterText := RegExReplace(OuterText, "m)\s+$") 
 		GetKeyState("Shift") ? ClipAdd(OuterText, 1) : (Clipboard := OuterText)
 		HighLight([item]), preclone := ""
 	}  
-	Else If (thisid = "copy__ControlCountList")
-	{
-		item := oDoc.getElementById("pre_ControlCountList")
-		preclone := item.cloneNode(true)
-		oJScript.removemenuitem(preclone, ".menuitemsub")
-		If !MenuIdView
-			oJScript.removemenuitem(preclone, ".menuitemid") 
-		OuterText := RegExReplace(preclone.OuterText, "m)       ▪   flash")
-		OuterText := RegExReplace(OuterText, "m)\s+$") 
-		GetKeyState("Shift") ? ClipAdd(OuterText, 1) : (Clipboard := OuterText)
-		HighLight([item]), preclone := ""
-	}   
 	Else If (thisid = "Control_Child_roll")
 	{
 		view_control_child := 0, IniWrite(view_control_child, "view_control_child") 
