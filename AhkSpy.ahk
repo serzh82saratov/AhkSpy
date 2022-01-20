@@ -27,7 +27,7 @@
 */
 
 
-Global AhkSpyVersion := 4.83
+Global AhkSpyVersion := 4.84
 
 	; ___________________________ Caption _________________________________________________
 
@@ -3295,7 +3295,7 @@ Window_ControlCountList(Hwnd) {
 			. (ProcessStart = ProcessName ? "" : _DP  "<span name='MS:' class = 'error'>" ProcessName "</span>") 
 			. "<span name='MS:P'>    </span></span>`n" 
 	}
-	tree := _T1 " id='P__Tree_ControlCountList'" _T1P "> ( Control list: <span name='MS:' style='color: #" ColorFont ";'>" oList.Count() "</span> ) </span><a></a>" 
+	tree := _T1 " id='P__Tree_ControlCountList'" _T1P "> ( Control list: <span name='MS:' style='color: #" ColorFont ";'>" oList.Count() - 1 "</span> ) </span><a></a>" 
 	. _BT1 " id='view_ControlCount2'> update " _BT2
 	. _DB _BT1 " id='ControlCountList_roll'> roll up " _BT2
 	. _DB _BT1 " id='copy__PRE1' name='pre_ControlCountList'> copy " _BT2 _T2 
@@ -3336,7 +3336,7 @@ ChildList(Hwnd) {
 			. (ProcessStart = ProcessName ? "" : _DP  "<span name='MS:' class = 'error'>" ProcessName "</span>") 
 			. "<span name='MS:P'>     </span></span>`n" 
 	}  
-	tree := _T1 " id='P__Tree_Control_Child'" _T1P "> ( Child list: <span name='MS:' style='color: #" ColorFont ";'>" oList.Count() "</span> ) </span><a></a>" 
+	tree := _T1 " id='P__Tree_Control_Child'" _T1P "> ( Child list: <span name='MS:' style='color: #" ColorFont ";'>" oList.Count() - 1 "</span> ) </span><a></a>" 
 	. _BT1 " id='control_child2'> update " _BT2
 	. _DB _BT1 " id='Control_Child_roll'> roll up " _BT2
 	. _DB _BT1 " id='copy__PRE1' name='pre_Control_Child'> copy " _BT2 _T2 
