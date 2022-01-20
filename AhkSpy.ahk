@@ -27,7 +27,7 @@
 */
 
 
-Global AhkSpyVersion := 4.82
+Global AhkSpyVersion := 4.83
 
 	; ___________________________ Caption _________________________________________________
 
@@ -3234,22 +3234,25 @@ Window_CountList(PID) {
 	Process, Exist, %PID%
 	If !ErrorLevel
 		Return -1
-    WinGet, List, List, ahk_pid %PID%
+    WinGet, List, List, ahk_pid %PID% 
 	If !List
-		Return -2
+		Return -2 
+	WinGet, ProcessStart, ProcessName, ahk_pid %PID%
 	Loop % List
 	{
 		Hwnd := List%A_Index% 
 		WinGetClass, Class, ahk_id %Hwnd%   
 		WinGetTitle, Title, ahk_id %Hwnd%
 		WinGetPos, WinX, WinY, WinW, WinH, ahk_id %Hwnd%
+		WinGet, ProcessName, ProcessName, % "ahk_id" Hwnd
 		vis := DllCall("IsWindowVisible", "Ptr", Hwnd) ? "" : " class='QStyle2'" 
 		tree .= "<span><span name='MS:' " vis ">" Class "</span>" 
 			. _DP _BP1 " id='b_hwnd_flash' value='" Hwnd "'> flash " _BP2  
 			. _DP  "<span name='MS:' class='title2'>" Title "</span>"
 			. _DP  "<span name='MS:' class='param'>x" WinX " y" WinY " w" WinW " h" WinH "</span>"
 			. _DP  "<span name='MS:'>" Format("0x{:06X}", Hwnd) "</span>"
-			. "<span name='MS:P'>     </span></span>`n"
+			. (ProcessStart = ProcessName ? "" : _DP  "<span name='MS:' class = 'error'>" ProcessName "</span>") 
+			. "<span name='MS:P'>    </span></span>`n" 
 	}
 	tree := _T1 " id='P__Tree_Window_CountList'" _T1P "> ( Window list: <span name='MS:' style='color: #" ColorFont ";'>" List "</span> ) </span><a></a>" 
 	. _BT1 " id='view_WindowCount2'> update " _BT2
@@ -3262,29 +3265,35 @@ Window_CountList(PID) {
 
 Window_ControlCountList(Hwnd) {
 	If !WinExist("ahk_id" Hwnd)
-		Return -1
-    WinGet, ListNN, ControlList, ahk_id %Hwnd%
-	If ListNN = 
-		Return -2
-	oList := []
-    WinGet, ListHwnd, ControlListHwnd, ahk_id %Hwnd%    
-	oListHwnd := StrSplit(ListHwnd,"`n") 
-	Loop, Parse, ListNN, `n
-		oList.Push([A_LoopField, oListHwnd[A_Index]])
+		Return -1 
+	oList := GetChildList(Hwnd) 
+	If oList.MaxIndex() < 1
+		Return -2 
+	WinGet, PID, PID, ahk_id %Hwnd%
+	WinGet, ProcessStart, ProcessName, ahk_pid %PID%  
+	NN := {}
+ 
 	for k, v in oList
 	{  
-		ControlGetPos, WinX, WinY, WinW, WinH, , % "ahk_id" v[2] 
-		ControlGetText, Text, , % "ahk_id" v[2] 
+		If k = 1
+			Continue
+		ControlGetPos, WinX, WinY, WinW, WinH, , % "ahk_id" v.ID
+		ControlGetText, Text, , % "ahk_id" v.ID
+		WinGet, ProcessName, ProcessName, % "ahk_id" v.ID
 		If StrLen(Text) > 100
 			Text := SubStr(Text, 1, 100) "..."
-		Text := RegExReplace(Text,  "\R+", " ")
-		vis := DllCall("IsWindowVisible", "Ptr", v[2]) ? "" : " class='QStyle2'" 
-		tree .= "<span><span name='MS:' " vis ">" v[1] "</span>"  
-			. _DP _BP1 " id='b_hwnd_flash' value='" v[2] "'> flash " _BP2   
+		Text := RegExReplace(Text,  "\R+", " ") 
+		If !NN[v.Class]
+			NN[v.Class] := 0
+		++NN[v.Class]	
+		vis := DllCall("IsWindowVisible", "Ptr", v.ID) ? "" : " class='QStyle2'" 
+		tree .= AddSpace2(v.depth - 2, "  ") "<span><span name='MS:' " vis ">" v.Class NN[v.Class] "</span>"  
+			. _DP _BP1 " id='b_hwnd_flash' value='" v.ID "'> flash " _BP2   
 			. _DP  "<span name='MS:' class='title2'>" Text "</span>"
 			. _DP  "<span name='MS:' class='param'>x" WinX " y" WinY " w" WinW " h" WinH "</span>"
-			. _DP  "<span name='MS:'>" Format("0x{:06X}", v[2]) "</span>"
-			. "<span name='MS:P'>     </span></span>`n"
+			. _DP  "<span name='MS:'>" v.ID "</span>"
+			. (ProcessStart = ProcessName ? "" : _DP  "<span name='MS:' class = 'error'>" ProcessName "</span>") 
+			. "<span name='MS:P'>    </span></span>`n" 
 	}
 	tree := _T1 " id='P__Tree_ControlCountList'" _T1P "> ( Control list: <span name='MS:' style='color: #" ColorFont ";'>" oList.Count() "</span> ) </span><a></a>" 
 	. _BT1 " id='view_ControlCount2'> update " _BT2
@@ -3292,37 +3301,40 @@ Window_ControlCountList(Hwnd) {
 	. _DB _BT1 " id='copy__PRE1' name='pre_ControlCountList'> copy " _BT2 _T2 
 	. _PRE " id='pre_ControlCountList'>" "<span>" tree "</span>" _PRE2 
 	oOther.ControlCountList := tree
-	Return 1  
+	Return 1   
 }
 
 ChildList(Hwnd) {
 	If !WinExist("ahk_id" Hwnd)
 		Return -1
-    WinGet, ListNN, ControlList, ahk_id %Hwnd%
-	If ListNN = 
+	oList := GetChildList(Hwnd)
+	If oList.MaxIndex() <= 1
 		Return -2
-	oList := []
-    WinGet, ListHwnd, ControlListHwnd, ahk_id %Hwnd%    
-	oListHwnd := StrSplit(ListHwnd,"`n")  
-	 
-	Loop, Parse, ListNN, `n
-		oList.Push([A_LoopField, oListHwnd[A_Index]])
+	NN := {}
+	WinGet, PID, PID, ahk_id %Hwnd%
+	WinGet, ProcessStart, ProcessName, ahk_pid %PID%
+	
 	for k, v in oList
 	{  
-		ControlGetPos, WinX, WinY, WinW, WinH, , % "ahk_id" v[2]
-		WinGet, ProcessName, ProcessName, % "ahk_id" v[2]
-		ControlGetText, Text, , % "ahk_id" v[2] 
+		If k = 1
+			Continue
+		ControlGetPos, WinX, WinY, WinW, WinH, , % "ahk_id" v.ID
+		WinGet, ProcessName, ProcessName, % "ahk_id" v.ID
+		ControlGetText, Text, , % "ahk_id" v.ID 
 		If StrLen(Text) > 100
 			Text := SubStr(Text, 1, 100) "..."
-		Text := RegExReplace(Text,  "\R+", " ")
-
-		vis := DllCall("IsWindowVisible", "Ptr", v[2]) ? "" : " class='QStyle2'" 
-		tree .= "<span><span name='MS:' " vis ">" v[1] "</span>"
-			. _DP _BP1 " id='b_hwnd_flash' value='" v[2] "'> flash " _BP2
+		Text := RegExReplace(Text,  "\R+", " ") 
+		If !NN[v.Class]
+			NN[v.Class] := 0
+		++NN[v.Class]	 
+		vis := DllCall("IsWindowVisible", "Ptr", v.ID) ? "" : " class='QStyle2'" 
+		tree .= AddSpace2(v.depth - 2, "  ") "<span><span name='MS:' " vis ">" v.Class NN[v.Class] "</span>"
+			. _DP _BP1 " id='b_hwnd_flash' value='" v.ID "'> flash " _BP2
 			. _DP  "<span name='MS:' class='title2'>" Text "</span>"
 			. _DP  "<span name='MS:' class='param'>x" WinX " y" WinY " w" WinW " h" WinH "</span>"
-			. _DP  "<span name='MS:'>" Format("0x{:06X}", v[2]) "</span>"
-			. _DP  "<span name='MS:'>" ProcessName "</span><span name='MS:P'>     </span>" "</span>`n" 
+			. _DP  "<span name='MS:'>" v.ID "</span>"
+			. (ProcessStart = ProcessName ? "" : _DP  "<span name='MS:' class = 'error'>" ProcessName "</span>") 
+			. "<span name='MS:P'>     </span></span>`n" 
 	}  
 	tree := _T1 " id='P__Tree_Control_Child'" _T1P "> ( Child list: <span name='MS:' style='color: #" ColorFont ";'>" oList.Count() "</span> ) </span><a></a>" 
 	. _BT1 " id='control_child2'> update " _BT2
@@ -3330,7 +3342,7 @@ ChildList(Hwnd) {
 	. _DB _BT1 " id='copy__PRE1' name='pre_Control_Child'> copy " _BT2 _T2 
 	. _PRE " id='pre_Control_Child'>" "<span>" tree "</span>" _PRE2 
 	oOther.ChildList := tree
-	Return 1 
+	Return 1  
 }
 
    ;;  http://forum.script-coding.com/viewtopic.php?pid=131490#p131490
@@ -3360,16 +3372,26 @@ ChildToPath(hwnd) {
 		Return 0
 	arr := []
  	_ChildToPath(hwnd, arr) 
+	WinGet, PID, PID, ahk_id %Hwnd%
+	WinGet, ProcessStart, ProcessName, ahk_pid %PID% 
 	for k, v in arr
 	{  
 		Hwnd := Format("0x{:06X}", v.Hwnd)
 		WinGetClass, WinClass, ahk_id %Hwnd%
-		WinGet, ProcessName, ProcessName, ahk_id %Hwnd%
+		WinGet, ProcessName, ProcessName, ahk_id %Hwnd% 
+		ControlGetText, Text, , % "ahk_id" Hwnd 
+		If StrLen(Text) > 100
+			Text := SubStr(Text, 1, 100) "..."
+		Text := RegExReplace(Text,  "\R+", " ")
+ 
 		vis := DllCall("IsWindowVisible", "Ptr", Hwnd) ? "" : " class='QStyle2'" 
-		tree .= AddSpace2(k - 1) "<span><span name='MS:'>" v.Path "</span>" _DP  "<span name='MS:'>" Hwnd "</span>" 
+		tree .= AddSpace2(k - 1) "<span><span name='MS:'>" v.Path "</span>" 
 			. _DP "<span name='MS:' " vis ">" WinClass "</span>" 
 			. _DP _BP1 " id='b_hwnd_flash' value='" Hwnd "'> flash " _BP2
-			. _DP  "<span name='MS:'>" ProcessName "</span></span><span name='MS:P'>     </span>" "`n"
+			. _DP  "<span name='MS:' class='title2'>" Text "</span>"
+			. _DP  "<span name='MS:'>" Hwnd "</span>" 
+			. (ProcessStart = ProcessName ? "" : _DP  "<span name='MS:' class = 'error'>" ProcessName "</span>") 
+			. "<span name='MS:P'>     </span></span>`n" 
 	} 
 	tree := _T1 " id='P__Tree_Control_Path'" _T1P "> ( Control parent ) </span><a></a>" _BT1 " id='copy__PRE1' name='pre_Control_Path'> copy " _BT2 _T2 
 	. _LPRE " id='pre_Control_Path'>" "<span>" tree "</span>" _PRE2 
@@ -3390,11 +3412,47 @@ _ChildToPath(hwnd, arr, i = 1) {
 	return _ChildToPath(hParent, arr, 1)
 }
 
-AddSpace2(c) {
+GetChildList(hwnd) {
+	Static GW_HWNDNEXT := 2, GW_CHILD := 5    
+	WinGetClass, WinClass, ahk_id %hwnd% 
+	List := [{id: Format("0x{:x}", hwnd), depth: 1, Class: WinClass}]
+	Stack := [hwnd] 
+	GW := GW_CHILD
+	
+	While Stack.MaxIndex() > 1 || A_Index = 1
+	{ 
+		_hwnd := DllCall("GetWindow", "Ptr", hwnd, UInt, GW, "Ptr") 
+		If _hwnd   
+		{  
+			hwnd := _hwnd 
+			If (GW = GW_HWNDNEXT) 
+				Stack.Pop()   
+			WinGetClass, WinClass, ahk_id %hwnd%   
+			Stack.Push(hwnd)
+			List.Push({id: Format("0x{:x}", hwnd), depth: Stack.MaxIndex(), Class: WinClass})
+			GW := GW_CHILD
+		}
+		Else 
+		{
+			If (GW = GW_CHILD)
+			{
+				GW := GW_HWNDNEXT
+				Continue
+			} 
+			Stack.Pop()
+			hwnd := Stack[Stack.MaxIndex()]
+			GW := GW_HWNDNEXT 
+		}		 
+	}
+	Return List 
+} 
+
+AddSpace2(c, pr = "") {
 	loop % c
-		Tab .= "<span class='param';'>&#8595;  </span>"
+		Tab .= "<span class='param';'>" pr "&#8595;  </span>"
 	Return Tab
-}
+} 
+
 SaveChildPath(Path = "") {
 	Static p
 	If Path =
@@ -5847,7 +5905,7 @@ pre {
 }
 .QStyle2 {
 	color: #%ColorStyleComment2%;
-}
+} 
 .error {
 	color: #%ColorDelimiter%;
 }  
