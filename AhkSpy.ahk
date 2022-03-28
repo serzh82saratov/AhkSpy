@@ -27,7 +27,7 @@
 */
 
 
-Global AhkSpyVersion := 4.84
+Global AhkSpyVersion := 4.85
 
 	; ___________________________ Caption _________________________________________________
 
@@ -822,6 +822,7 @@ Spot_Win(NotHTML = 0) {
 		Return 0, HideAllMarkers()
 		
 	SetPosObject("Window", [WinX, WinY, WinWidth, WinHeight])   
+	SetPosObject("Client", [WinX + caX, WinY + caY, caW, caH])   
 	SetPosObject("AhkSpy", WinGetPosToArray(hActiveX))
 	
 	If !StateAllwaysSpot 
@@ -3295,7 +3296,7 @@ Window_ControlCountList(Hwnd) {
 			. (ProcessStart = ProcessName ? "" : _DP  "<span name='MS:' class = 'error'>" ProcessName "</span>") 
 			. "<span name='MS:P'>    </span></span>`n" 
 	}
-	tree := _T1 " id='P__Tree_ControlCountList'" _T1P "> ( Control list: <span name='MS:' style='color: #" ColorFont ";'>" oList.Count() - 1 "</span> ) </span><a></a>" 
+	tree := _T1 " id='P__Tree_ControlCountList'" _T1P "> ( Control tree: <span name='MS:' style='color: #" ColorFont ";'>" oList.Count() - 1 "</span> ) </span><a></a>" 
 	. _BT1 " id='view_ControlCount2'> update " _BT2
 	. _DB _BT1 " id='ControlCountList_roll'> roll up " _BT2
 	. _DB _BT1 " id='copy__PRE1' name='pre_ControlCountList'> copy " _BT2 _T2 
@@ -3336,7 +3337,7 @@ ChildList(Hwnd) {
 			. (ProcessStart = ProcessName ? "" : _DP  "<span name='MS:' class = 'error'>" ProcessName "</span>") 
 			. "<span name='MS:P'>     </span></span>`n" 
 	}  
-	tree := _T1 " id='P__Tree_Control_Child'" _T1P "> ( Child list: <span name='MS:' style='color: #" ColorFont ";'>" oList.Count() - 1 "</span> ) </span><a></a>" 
+	tree := _T1 " id='P__Tree_Control_Child'" _T1P "> ( Child tree: <span name='MS:' style='color: #" ColorFont ";'>" oList.Count() - 1 "</span> ) </span><a></a>" 
 	. _BT1 " id='control_child2'> update " _BT2
 	. _DB _BT1 " id='Control_Child_roll'> roll up " _BT2
 	. _DB _BT1 " id='copy__PRE1' name='pre_Control_Child'> copy " _BT2 _T2 
@@ -6811,9 +6812,11 @@ MenuAdd("Zoom", "Save to temp file and edit", "_gSave_to_file")
 MenuAdd("Zoom", "Save to clipboard", "_gSave_to_Clipboard")
 MenuAdd("Zoom", "Save to clipboard as Base64", "_gSave_as_Base64") 
 MenuAdd("Zoom")
+MenuAdd("Zoom", "Save as file", "_gSave_as_file") 
 MenuAdd("Zoom", "Save to file", "_gSave_to_file")
 MenuAdd("Zoom", "Save to file and edit", "_gSave_to_file") 
 MenuAdd("Zoom", "Select window", "_gMenuZoom", "+BarBreak")
+MenuAdd("Zoom", "Select client", "_gMenuZoom", "")
 MenuAdd("Zoom", "Select control", "_gMenuZoom")
 MenuAdd("Zoom", "Select accesible", "_gMenuZoom")
 MenuAdd("Zoom")
@@ -7434,7 +7437,26 @@ _gSave_as_Base64() {
 	; ToolTip("Copy to clipboard as Base64" (Control ? " and format AHK variable" : ""), 800)
 }  
 
-_gSave_to_file() { 
+_gSave_as_file() {  
+	If !pBitmap := GetBitmap()
+		Return ToolTip("Bitmap not found!", 800) 
+	Name := "\AhkSpy picture " A_YYYY "-" A_MM "-" A_DD " " A_Hour "." A_Min "." A_Sec ".png" 
+	Dir := IniRead("MemoryZoomSaveFolder")
+	ObjActive.AhkSpy_Minimize()
+	FileSelectFile, SelectedFile, S 16, %Dir%\%Name%, Сохранение изображения, Изображения (*.png)	
+	If SelectedFile =
+	{  
+		Return
+	}
+	SplitPath, SelectedFile, , Dir, Ext
+	IniWrite(Dir, "MemoryZoomSaveFolder")
+	SelectedFile := Ext = "png" ? SelectedFile : SelectedFile ".png"
+	SaveBitmapToFile(pBitmap, SelectedFile)
+	DllCall("gdiplus\GdipDisposeImage", "UPtr", pBitmap)
+	SelectFilePath(SelectedFile)
+}
+
+_gSave_to_file() {
 	If !pBitmap := GetBitmap()
 		Return ToolTip("Bitmap not found!", 800)
 	ThisMenuItem := oOther.MenuItemExist ? oOther.ThisMenuItem : A_ThisMenuItem
@@ -7969,3 +7991,35 @@ CryptBinaryToStringBASE64(pData, Bytes, NOCRLF = "")  {
 	; ___________________________ End _________________________________________________
 
 	;;)
+	
+	
+	
+	
+	
+	
+	
+	
+/*
+
+01:58 20.01.2021
+Добавить кнопку обновить данные
+	
+	
+	
+
+#If isAhkSpy && Sleep != 1 && WinActive("ahk_id" hGui)
+
+1::
+  
+
+WinSet, ExStyle, +%WS_EX_TRANSPARENT%, ahk_id %hGui%
+Return
+2::
+  
+
+WinSet, ExStyle, -%WS_EX_TRANSPARENT%, ahk_id %hGui%
+Return
+
+
+
+*/
