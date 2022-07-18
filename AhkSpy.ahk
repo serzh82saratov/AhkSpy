@@ -24,10 +24,13 @@
     Обсуждение - http://forum.script-coding.com/viewtopic.php?pid=72244#p72244
     Обсуждение на офф. форуме- https://autohotkey.com/boards/viewtopic.php?f=6&t=52872
     Актуальный исходник - https://raw.githubusercontent.com/serzh82saratov/AhkSpy/master/AhkSpy.ahk
+	
+	баги
+		64bit https://forum.script-coding.com/viewtopic.php?pid=153917#p153917
 */
 
 
-Global AhkSpyVersion := 4.86
+Global AhkSpyVersion := 4.87
 
 	; ___________________________ Caption _________________________________________________
 
@@ -142,7 +145,7 @@ Global ThisMode := IniRead("StartMode", "Control"), LastModeSave := (ThisMode = 
 , AnchorFullScroll := IniRead("AnchorFullScroll", 1), MemoryAnchor := IniRead("MemoryAnchor", 1), MenuIdView := IniRead("MenuIdView", 0)
 , StateAllwaysSpot := IniRead("AllwaysSpot", 0), w_ShowStyles := IniRead("w_ShowStyles", 0), MarkerInvertFrame := IniRead("MarkerInvertFrame", 1)
 , c_ShowStyles := IniRead("c_ShowStyles", 0), ViewStrPos := IniRead("ViewStrPos", 0), OnlyShiftTab := IniRead("OnlyShiftTab", 0)
-, view_control_child := IniRead("view_control_child", 0), gLocalData, gLocalOpen := {}
+, view_control_child := IniRead("view_control_child", 0), gLocalData, gLocalOpen := {Control:[], Win:[]}
 , WordWrap := IniRead("WordWrap", 0), PreMaxHeightStr := IniRead("MaxHeightOverFlow", "1 / 3"), UpdRegister := IniRead("UpdRegister2", 0)
 , UseUIA := IniRead("UseUIA", 0), UIAAlienDetect := IniRead("UIAAlienDetect", 0), MinimizeEscape := IniRead("MinimizeEscape", 0)
 , DetectHiddenText := IniRead("DetectHiddenText", "on"), MoveTitles := IniRead("MoveTitles", 1), DynamicAccPath := IniRead("DynamicAccPath", 0)
@@ -1035,10 +1038,11 @@ Spot_Control(NotHTML = 0) {
 		MouseGetPos, MXS, MYS, WinID, tControlNN 
 	}
 	Else {
-		WinID := gLocalData.Win, ControlID := gLocalData.Child
-		WinGetPos, WinX, WinY, WinW, WinH, ahk_id %WinID%
-		MXS := WinX + WinWidth // 2, MYS := WinY + WinHeight // 2
-		tControlNN := gLocalData.ChildNN  
+		WinID := gLocalData.Win
+		ControlID := gLocalData.Child
+		tControlNN := gLocalData.ChildNN   
+		WinGetPos, WinX, WinY, WinW, WinH, ahk_id %ControlID% 
+		MXS := WinX + WinW // 2, MYS := WinY + WinH // 2
 	}
 	
 	If (WinID = hGui || WinID = oOther.hZoom || WinID = oOther.hZoomLW)
@@ -1049,7 +1053,7 @@ Spot_Control(NotHTML = 0) {
 	If !gLocalData
 	{
 		CoordMode, Mouse, Window
-		MouseGetPos, MXWA, MYWA, , tControlID, 2 
+		MouseGetPos, MXWA, MYWA, , tControlID, 2
 	}
 	Else {
 		tControlID := ControlID
@@ -1140,8 +1144,10 @@ Spot_Control(NotHTML = 0) {
 				Else
 					CtrlInfo = %_T1% id='__Info_Class'> ( Info - %CtrlClass% ) </span><a></a>%_T2%%_PRE1%%CtrlInfo%%_PRE2%
 			}
-		}
-		WithRespectControl := _DP "<span name='MS:'>" Round(rmCtrlX / CtrlW, 4) ", " Round(rmCtrlY / CtrlH, 4) "</span>"
+		} 
+		osCoords.rmCtrlX := rmCtrlX, osCoords.rmCtrlY := rmCtrlY
+		osCoords.CtrlW := CtrlW, osCoords.CtrlH := CtrlH
+		WithRespectControl := _DP "<span name='MS:' id='coord_wrc'>" Round(rmCtrlX / CtrlW, 4) ", " Round(rmCtrlY / CtrlH, 4) "</span>"
 	}
 	Else
 		rmCtrlX := rmCtrlY := ""
@@ -1262,7 +1268,7 @@ HTML_Control:
 			. _DP "<span name='MS:'>x&sup2;" CtrlSCX2 " y&sup2;" CtrlSCY2 "</span>"
 			. ViewStrPos2 
 			
-		. "`n" _BP1 " id='set_pos'>Mouse relative control:" _BP2 "  <span name='MS:'>x" rmCtrlX " y" rmCtrlY "</span>" WithRespectControl 
+		. "`n" _BP1 " id='set_pos'>Mouse relative control:" _BP2 "  <span name='MS:' id='coord_mrc'>x" rmCtrlX " y" rmCtrlY "</span>" WithRespectControl 
 		
 		. "`n<span class='param'>HWND:</span>  <span name='MS:'>" ControlID "</span>" _DP  _BB1 " id='control_show_hide'> show / hide " _BB2 
 			. _DP  _BB1 " id='control_destroy'> close " _BB2  _DP  _BP1 " id='control_child'> Get child " _BP2 
@@ -1353,14 +1359,19 @@ Write_Control(scroll = 0) {
 	Return 1
 } 
 
+
+
 LocalOpenWin(Win) {
 	gLocalData := {}
 	gLocalData.Win := Win 
 	gLocalData.Child := oOther.ChildID
-	gLocalOpen.Win := HTML_Win 
+	gLocalOpen.Win.Push(HTML_Win) 
 	Spot_Win() 
 	Write_Win()
-	gLocalData := "" 
+	gLocalData := ""  
+	If oOther.ZoomShow
+		ZoomMsg(14, Win)
+
 }
 
 LocalOpenWinChild(ControlID, ChildNN) {
@@ -1369,10 +1380,12 @@ LocalOpenWinChild(ControlID, ChildNN) {
 	gLocalData.ChildNN := ChildNN
 	gLocalData.Win := oOther.WinID 
 	Gosub Mode_Control
-	gLocalOpen.Control := HTML_Control 
+	gLocalOpen.Control.Push(HTML_Control)
 	Spot_Control()
 	Write_Control()
 	gLocalData := "" 
+	If oOther.ZoomShow
+		ZoomMsg(14, ControlID)
 }
 
 LocalOpenChild(ControlID, ChildNN) {
@@ -1380,19 +1393,21 @@ LocalOpenChild(ControlID, ChildNN) {
 	gLocalData.Child := ControlID
 	gLocalData.ChildNN := ChildNN
 	gLocalData.Win := oOther.MouseWinID   
-	gLocalOpen.Control := HTML_Control 
+	gLocalOpen.Control.Push(HTML_Control)
 	Spot_Control()
 	Write_Control()
 	gLocalData := "" 
+	If oOther.ZoomShow
+		ZoomMsg(14, ControlID)
 }
 
-LocalBackWin() {  
-	HTML_Win := gLocalOpen.Win   
+LocalBackWin() {   
+	HTML_Win := gLocalOpen.Win.Pop()
 	Write_Win() 
 }
 
-LocalBackChild() {  
-	HTML_Control := gLocalOpen.Control   
+LocalBackChild() {    
+	HTML_Control := gLocalOpen.Control.Pop()
 	Write_Control() 
 }
 
@@ -1736,7 +1751,7 @@ AccInfoUnderMouse(mx, my, wx, wy, cx, cy, caX, caY, WinID, ControlID, fromhandle
 	 
 	If !IsObject(AccObj)
 		Return
-	
+		
 	ObjAddRef(pAccObj) 
 	child := NumGet(varChild, 8, "UInt")
 	
@@ -1798,7 +1813,7 @@ AccInfoUnderMouse(mx, my, wx, wy, cx, cy, caX, caY, WinID, ControlID, fromhandle
 			. _DP "<span class='param'>Size: </span>"
 			. "<span name='MS:'>w" CaretPos.w " h" CaretPos.h "</span>" . _PRE2
 	} 
-	If ((Hwnd := AccWindowFromObject(pAccObj)) != ControlID && Hwnd != WinID) {   ;	можно Acc вместо pAccObj, then ComObjValue
+	If (pAccObj && (Hwnd := AccWindowFromObject(pAccObj)) != ControlID && Hwnd != WinID) {   ;	можно Acc вместо pAccObj, then ComObjValue
 		WinGetClass, CtrlClass, ahk_id %Hwnd%
 		WinGet, WinProcess, ProcessName, ahk_id %Hwnd%
 		WinGet, WinPID, PID, ahk_id %Hwnd%
@@ -3661,7 +3676,10 @@ WM_COPYDATA(wParam, lParam) {
 		oDoc.getElementById("coord_awin").innerText := "x" (osCoords.MXWA + offX) " y" (osCoords.MYWA + offY)
 		oDoc.getElementById("coord_rwin").innerText := Round((osCoords.RWinX + offX) / osCoords.WinW, 4) ", " Round((osCoords.RWinY + offY) / osCoords.WinH, 4)
 		oDoc.getElementById("coord_rclient").innerText := Round((osCoords.MXC + offX) / osCoords.caW, 4) ", " Round((osCoords.MYC + offY) / osCoords.caH, 4)
-		
+		 
+		oDoc.getElementById("coord_mrc").innerText := "x" (osCoords.rmCtrlX + offX) " y" (osCoords.rmCtrlY + offY)
+		oDoc.getElementById("coord_wrc").innerText := Round((osCoords.rmCtrlX + offX) / osCoords.CtrlW, 4) ", " Round((osCoords.rmCtrlY + offY) / osCoords.CtrlH, 4)
+  
 		If reset
 			HTML_Control := oDivNew.innerHTML
 	}
@@ -7272,7 +7290,7 @@ ZoomOnClose() {
 }
 
 	; wParam: 0 hide, 1 show, 2 пауза AhkSpy, 3 однократный зум, 4 MemoryZoomSize, 5 MinSize, 6 ActiveNoPause
-	; , 7 WinActive AhkSpy, 8 Suspend, 9 Menu, 10 Hotkey, 11 MIN, 12 ShiftTab, 13 ZoomResetCoords
+	; , 7 WinActive AhkSpy, 8 Suspend, 9 Menu, 10 Hotkey, 11 MIN, 12 ShiftTab, 13 ZoomResetCoords, 14 MagnifyHWND 
 
 Zoom_Msg(wParam, lParam) {
 	If wParam = 0  ;;	hide
@@ -7306,6 +7324,8 @@ Zoom_Msg(wParam, lParam) {
 		ZoomRules("ShiftTab", lParam)
 	Else If wParam = 13  ;;	ZoomResetCoords
 		ZoomResetCoords() 
+	Else If wParam = 14  ;;	MagnifyHWND
+		MagnifyHWND(lParam)
 }
 
 Z_MsgZoom(wParam, lParam) {
@@ -7794,6 +7814,42 @@ Magnify(one = 0) {
 	;; ToolTip % A_TickCount "`nMagnify", 4, 4, 4
 }
 
+; в режиме перехода по окнам
+
+MagnifyHWND(hwnd) {  
+	; Gdip_BitmapFromHWND(hwnd) 
+	WinGetPos,,, Width, Height, ahk_id %hwnd%
+	hbm := CreateDIBSection2(Width, Height), hdc := CreateCompatibleDC(), obm := SelectObject(hdc, hbm)
+ 
+	ok := PrintWindow(hwnd, hdc) 
+	If !ok
+	{
+		Return 0, SelectObject(hdc, obm), DeleteObject(hbm), DeleteDC(hdc) 
+	} 
+	oZoom.NewSpot := 1, oZoom.MouseX := ObjActive.ScreenX, oZoom.MouseY := ObjActive.ScreenY 
+	
+	oZoom.nXOriginSrc := oZoom.sXOriginSrc := Width // 2 
+	oZoom.nYOriginSrc := oZoom.sYOriginSrc := Height // 2   
+	
+	UpdateWindow(hdc, Width // 2 - oZoom.nXOriginSrcOffset,  Height // 2 - oZoom.nYOriginSrcOffset)   
+	MemoryHWND(hdc, Width, Height)
+	SelectObject(hdc, obm), DeleteObject(hbm), DeleteDC(hdc)
+}
+
+MemoryHWND(hdc, Width, Height) { 
+	oZoom.VSX := VSX := 0
+	oZoom.VSY := VSY := 0
+	VirtualScreenWidth := Width
+	VirtualScreenHeight := Height
+	hBM := DllCall("Gdi32.Dll\CreateCompatibleBitmap", "Ptr", hdc, "Int", VirtualScreenWidth, "Int", VirtualScreenHeight)
+	DllCall("Gdi32.Dll\SelectObject", "Ptr", oZoom.hdcMemory, "Ptr", hBM), DllCall("DeleteObject", "Ptr", hBM)
+	StretchBlt(oZoom.hdcMemory, 0, 0, VirtualScreenWidth, VirtualScreenHeight, hdc, VSX, VSY, VirtualScreenWidth, VirtualScreenHeight)
+	oZoom.VirtualScreenWidth := VirtualScreenWidth, oZoom.VirtualScreenHeight := VirtualScreenHeight
+	oZoom.NewSpot := 0
+	If oZoom.displaced && (1, oZoom.displaced := 0)
+		Gui, Zoom: Color, %GuiColor% 
+} 		
+
 Redraw() {
 	UpdateWindow(oZoom.hdcMemory, oZoom.nXOriginSrc - oZoom.nXOriginSrcOffset , oZoom.nYOriginSrc - oZoom.nYOriginSrcOffset)
 }
@@ -7929,6 +7985,45 @@ CreateDIBSection(w, h, hdc) {
 					, "UPtr*",
 					, "UPtr", 0
 					, "uint", 0, "UPtr")
+}
+
+GetDC(hwnd=0)
+{
+	return DllCall("GetDC", A_PtrSize ? "UPtr" : "UInt", hwnd)
+}
+
+CreateDIBSection2(w, h, hdc="", bpp=32, ByRef ppvBits=0)
+{
+	Ptr := A_PtrSize ? "UPtr" : "UInt"
+	
+	hdc2 := hdc ? hdc : GetDC()
+	VarSetCapacity(bi, 40, 0)
+	
+	NumPut(w, bi, 4, "uint")
+	, NumPut(h, bi, 8, "uint")
+	, NumPut(40, bi, 0, "uint")
+	, NumPut(1, bi, 12, "ushort")
+	, NumPut(0, bi, 16, "uInt")
+	, NumPut(bpp, bi, 14, "ushort")
+	
+	hbm := DllCall("CreateDIBSection"
+					, Ptr, hdc2
+					, Ptr, &bi
+					, "uint", 0
+					, A_PtrSize ? "UPtr*" : "uint*", ppvBits
+					, Ptr, 0
+					, "uint", 0, Ptr)
+
+	if !hdc
+		ReleaseDC(hdc2)
+	return hbm
+}
+
+PrintWindow(hwnd, hdc, Flags=0)
+{
+	Ptr := A_PtrSize ? "UPtr" : "UInt"
+	
+	return DllCall("PrintWindow", Ptr, hwnd, Ptr, hdc, "uint", Flags)
 }
 
 DrawImage(pGraphics, pBitmap, dx, dy, dw, dh) {
@@ -8119,35 +8214,3 @@ CryptBinaryToStringBASE64(pData, Bytes, NOCRLF = "")  {
 	; ___________________________ End _________________________________________________
 
 	;;)
-	
-	
-	
-	
-	
-	
-	
-	
-/*
-
-01:58 20.01.2021
-Добавить кнопку обновить данные
-	
-	
-	
-
-#If isAhkSpy && Sleep != 1 && WinActive("ahk_id" hGui)
-
-1::
-  
-
-WinSet, ExStyle, +%WS_EX_TRANSPARENT%, ahk_id %hGui%
-Return
-2::
-  
-
-WinSet, ExStyle, -%WS_EX_TRANSPARENT%, ahk_id %hGui%
-Return
-
-
-
-*/
