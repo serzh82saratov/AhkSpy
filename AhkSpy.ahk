@@ -30,7 +30,7 @@
 */
 
 
-Global AhkSpyVersion := 4.87
+Global AhkSpyVersion := 4.88
 
 	; ___________________________ Caption _________________________________________________
 
@@ -1731,7 +1731,9 @@ AccInfoUnderMouse(mx, my, wx, wy, cx, cy, caX, caY, WinID, ControlID, fromhandle
 	}
 	If !hLibrary
 		hLibrary := DllCall("LoadLibrary", "Str", "oleacc", "Ptr")
-
+	
+	WinID := RealHwnd(WinID)
+	ControlID := RealHwnd(ControlID)
 	AccObj := ""
 	If (oOther.AccCLOAKEDWinID != oPubObj.Acc.WinID)
 		ObjRelease(oPubObj.Acc.pAccObj)
@@ -3341,6 +3343,12 @@ OnlyShiftTab_LButton_Up_Wait:
 	ToolTip("Stop", 300) 
 	return
 	
+RealHwnd(hwnd) {
+   varsetcapacity(var, 8, 0)
+   numput(hwnd, var, 0, "uint64")
+   return numget(var, 0, "uint")
+}
+
 	; ___________________________ List Window _________________________________________________
 
 
