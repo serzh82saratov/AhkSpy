@@ -27,7 +27,7 @@
 */
 
 
-Global AhkSpyVersion := 4.85
+Global AhkSpyVersion := 4.86
 
 	; ___________________________ Caption _________________________________________________
 
@@ -142,7 +142,7 @@ Global ThisMode := IniRead("StartMode", "Control"), LastModeSave := (ThisMode = 
 , AnchorFullScroll := IniRead("AnchorFullScroll", 1), MemoryAnchor := IniRead("MemoryAnchor", 1), MenuIdView := IniRead("MenuIdView", 0)
 , StateAllwaysSpot := IniRead("AllwaysSpot", 0), w_ShowStyles := IniRead("w_ShowStyles", 0), MarkerInvertFrame := IniRead("MarkerInvertFrame", 1)
 , c_ShowStyles := IniRead("c_ShowStyles", 0), ViewStrPos := IniRead("ViewStrPos", 0), OnlyShiftTab := IniRead("OnlyShiftTab", 0)
-, view_control_child := IniRead("view_control_child", 0) 
+, view_control_child := IniRead("view_control_child", 0), gLocalData, gLocalOpen := {}
 , WordWrap := IniRead("WordWrap", 0), PreMaxHeightStr := IniRead("MaxHeightOverFlow", "1 / 3"), UpdRegister := IniRead("UpdRegister2", 0)
 , UseUIA := IniRead("UseUIA", 0), UIAAlienDetect := IniRead("UIAAlienDetect", 0), MinimizeEscape := IniRead("MinimizeEscape", 0)
 , DetectHiddenText := IniRead("DetectHiddenText", "on"), MoveTitles := IniRead("MoveTitles", 1), DynamicAccPath := IniRead("DynamicAccPath", 0)
@@ -460,7 +460,7 @@ MButton:: SetTimer(Func("WM_RBUTTONDOWN").Bind(0, 0, 0, hColorProgress), "-" 1) 
 MButton::
 +MButton::
 +RButton:: SetTimer(Func("WM_RBUTTONDOWN").Bind(0, 0, 0, hColorProgress), "-" 1)  ; WM_RBUTTONDOWN(0, 0, 0, hColorProgress)
-	
+
 #If Shift_Tab_Work
 
 +Tab:: Return
@@ -476,6 +476,7 @@ MButton::
 		OnlyShiftTab := 0, oOther.OnlyShiftTabReset := 1 
 	TransParent(0) 
 	SetTimer, Mod_Up_Wait_And_TransParent, -1
+	
 +Tab:: 
 SpotProc:
 SpotProc2:  
@@ -585,12 +586,13 @@ F12::
 !Space:: SetTimer, ShowSys, -1
 
 Esc::
+	; oObjActive.ZoomMaximize
 	If isFindView
 		FindHide()
 	Else If FullScreenMode
 		FullScreenMode()
 	Else
-		GuiClose()
+		GuiClose() 
 	Return
 
 +#Tab:: AhkSpyZoomShow()
@@ -734,18 +736,21 @@ Loop_Win:
 Repeat_Loop_Win:
 	If (!isPaused && ThisMode = "Win" && !OnlyShiftTab)
 		SetTimer, Loop_Win, -%RangeTimer%
-	Return
+	Return 
 
 Spot_Win(NotHTML = 0) {
 	Static PrWinPID, ComLine, _ComLine, ProcessBitSize, IsAdmin, WinProcessPath, WinProcessName, ProcessUserName
 	
 	If NotHTML
 		GoTo HTML_Win
-	MouseGetPos, , , WinID, hChild, 3
-
+	If !gLocalData
+		MouseGetPos, , , WinID, hChild, 3
+	Else {
+		WinID := gLocalData.Win, hChild := gLocalData.Child
+	}
 	If (WinID = hGui || WinID = oOther.hZoom || WinID = oOther.hZoomLW)
 		Return 0, HideAllMarkers()
-
+		
 	WinGetTitle, WinTitle, ahk_id %WinID%
 	WinTitle := TransformHTML(WinTitle)
 	WinGetPos, WinX, WinY, WinWidth, WinHeight, ahk_id %WinID%
@@ -816,8 +821,15 @@ Spot_Win(NotHTML = 0) {
 	If (ProcessUserName != "")
 		ProcessUserNameStr := _DP "<span class='param' name='MS:N'>User name:</span>  <span name='MS:'>" ProcessUserName "</span>"
 
-	CoordMode, Mouse
-	MouseGetPos, WinXS, WinYS, h
+	If !gLocalData
+	{
+		CoordMode, Mouse
+		MouseGetPos, WinXS, WinYS, h 
+	}
+	Else { 
+		h := WinID
+		WinXS := WinX + WinWidth // 2, WinYS := WinY + WinHeight // 2
+	}
 	If (h = hGui || h = oOther.hZoom || h = oOther.hZoomLW)
 		Return 0, HideAllMarkers()
 		
@@ -825,7 +837,7 @@ Spot_Win(NotHTML = 0) {
 	SetPosObject("Client", [WinX + caX, WinY + caY, caW, caH])   
 	SetPosObject("AhkSpy", WinGetPosToArray(hActiveX))
 	
-	If !StateAllwaysSpot 
+	If !StateAllwaysSpot && !gLocalData
 	{
 		oObjActive.ScreenX := WinXS, oObjActive.ScreenY := WinYS
 		PixelGetColor, ColorRGB, %WinXS%, %WinYS%, RGB
@@ -873,8 +885,11 @@ HTML_Win:
 	If w_ShowStyles
 		WinStyles := GetStyles(WinClass, WinStyle, WinExStyle, WinID)
 		 
+	If gLocalData
+		back_openwin := _DB _BT1 " id='b_back_openwin'> return " _BT2
+		
 	HTML_Win := ""
-	. _T1 " id='__Title'> ( Title ) </span>" _BT1 " id='pause_button'> pause " _BT2 _T2  _BR 
+	. _T1 " id='__Title'> ( Title ) </span>" _BT1 " id='pause_button'> pause " _BT2 back_openwin _T2  _BR 
 	
 	. _PRE1 "<span id='wintitle1' name='MS:'>" WinTitle "</span>" _PRE2 
 	
@@ -935,8 +950,11 @@ HTML_Win:
 	oOther.WinPID := WinPID
 	oOther.WinID := WinID
 	oOther.ChildID := hChild
-	If StateLightMarker && (ThisMode = "Win") && (StateLight = 1 || (StateLight = 3 && GetKeyState("Shift")))
-		ShowMarker(WinX, WinY, WinWidth, WinHeight, 5) 
+	If !gLocalData 
+	{ 
+		If StateLightMarker && (ThisMode = "Win") && (StateLight = 1 || (StateLight = 3 && GetKeyState("Shift")))
+			ShowMarker(WinX, WinY, WinWidth, WinHeight, 5) 
+	}
 	Return 1
 }
 
@@ -1010,17 +1028,32 @@ Repeat_Loop_Control:
 Spot_Control(NotHTML = 0) {
 	If NotHTML
 		GoTo HTML_Control
-		
-	CoordMode, Mouse, Screen
-	MouseGetPos, MXS, MYS, WinID, tControlNN
+
+	If !gLocalData
+	{
+		CoordMode, Mouse, Screen
+		MouseGetPos, MXS, MYS, WinID, tControlNN 
+	}
+	Else {
+		WinID := gLocalData.Win, ControlID := gLocalData.Child
+		WinGetPos, WinX, WinY, WinW, WinH, ahk_id %WinID%
+		MXS := WinX + WinWidth // 2, MYS := WinY + WinHeight // 2
+		tControlNN := gLocalData.ChildNN  
+	}
 	
 	If (WinID = hGui || WinID = oOther.hZoom || WinID = oOther.hZoomLW)
 		Return 0, HideAllMarkers()
 		
 	osCoords.MXS := MXS, osCoords.MYS := MYS
 	oObjActive.ScreenX := MXS, oObjActive.ScreenY := MYS
-	CoordMode, Mouse, Window
-	MouseGetPos, MXWA, MYWA, , tControlID, 2
+	If !gLocalData
+	{
+		CoordMode, Mouse, Window
+		MouseGetPos, MXWA, MYWA, , tControlID, 2 
+	}
+	Else {
+		tControlID := ControlID
+	}
 	osCoords.MXWA := MXWA, osCoords.MYWA := MYWA
 	WinGet, ProcessName_A, ProcessName, A
 	WinGet, HWND_A, ID, A
@@ -1045,7 +1078,7 @@ Spot_Control(NotHTML = 0) {
 
 	ControlGetPos, CtrlX, CtrlY, CtrlW, CtrlH,, ahk_id %ControlID%
 	
-	AccText := AccInfoUnderMouse(MXS, MYS, WinX, WinY, CtrlX, CtrlY, caX, caY, WinID, ControlID)
+	AccText := AccInfoUnderMouse(MXS, MYS, WinX, WinY, CtrlX, CtrlY, caX, caY, WinID, ControlID, !!gLocalData)
 	If AccText !=
 		AccText := _T1 " id='__AccInfo'> ( Accessible ) </span><a></a>" _BT1 " id='flash_acc'> flash " _BT2 _ButAccViewer _T2 AccText
 		
@@ -1116,8 +1149,14 @@ Spot_Control(NotHTML = 0) {
 	ControlGetFocus, CtrlFocus, ahk_id %WinID%
 	WinGet, ProcessName, ProcessName, ahk_id %WinID%
 	WinGetClass, WinClass, ahk_id %WinID%
+
+	If !gLocalData {
+		MouseGetPos, , , h 
+	}
+	Else {
+		h := WinID
+	}
 	
-	MouseGetPos, , , h
 	If (h = hGui || h = oOther.hZoom || h = oOther.hZoomLW)
 		Return 0, HideAllMarkers()
 		
@@ -1126,17 +1165,18 @@ Spot_Control(NotHTML = 0) {
  
 	SetPosObject("AhkSpy", WinGetPosToArray(hActiveX)) 
 	
-	If UseUIA && exUIASub.Release() && exUIASub.ElementFromPoint(MXS, MYS)
+	If UseUIA && exUIASub.Release()
+		&& (gLocalData ? exUIASub.ElementFromHandle((ControlID ? ControlID : WinID)) : exUIASub.ElementFromPoint(MXS, MYS)) 
 	{ 
 		UIAPID := exUIASub.CurrentProcessId 
+		UIACurrentName := exUIASub.CurrentName
 		CurrentControlTypeIndex := Format("0x{:X}", exUIASub.CurrentControlType)
 		CurrentControlTypeName := exUIASub.__ControlType(CurrentControlTypeIndex)
 		CurrentAutomationId := exUIASub.CurrentAutomationId  
 		CurrentLocalizedControlType := exUIASub.CurrentLocalizedControlType
 		CurrentHelpText := exUIASub.CurrentHelpText
 		UIAHWND := exUIASub.CurrentNativeWindowHandle
-		
-		
+		 
 		WinGet, UIAProcessName, ProcessName, ahk_pid %UIAPID%
 		WinGet, UIAProcessPath, ProcessPath, ahk_pid %UIAPID%
 		
@@ -1163,7 +1203,13 @@ Spot_Control(NotHTML = 0) {
 		. (UIAProcessName != ""
 			? _DN "<span class='param' name='MS:N'>ProcessName:</span>  <span name='MS:'>" TransformHTML(UIAProcessName) "</span>"
 			. _DP "<span class='param' name='MS:N'>ProcessPath:</span>  <span name='MS:'>" TransformHTML(UIAProcessPath) "</span>" : "")
-		. "</div>" _PRE2
+		. _PRE2
+		
+		. (UIACurrentName = "" ? ""
+			 : _DN _T1 " id='P__UIACurrentName'" _T1P "> ( CurrentName ) </span><a></a>" _BT1 " id='copy_button'> copy " _BT2 _T2 
+			 . _LPRE ">" TransformHTML(UIACurrentName) _PRE2)
+
+		. "</div>"  
 	}
 	PixelGetColor, ColorBGR, %MXS%, %MYS%
 	ColorRGB := Format("0x{:06X}", (ColorBGR & 0xFF) << 16 | (ColorBGR & 0xFF00) | (ColorBGR >> 16))
@@ -1174,15 +1220,17 @@ Spot_Control(NotHTML = 0) {
 	GuiControl, TB: -Redraw, ColorProgress
 	GuiControl, % "TB: +c" sColorRGB, ColorProgress
 	GuiControl, TB: +Redraw, ColorProgress
-
-	If (!isIE && ThisMode = "Control" && (StateLight = 1 || (StateLight = 3 && GetKeyState("Shift"))))
+	If !gLocalData
 	{
-		If ControlID && StateLightMarker 
-			ShowMarker(CtrlSCX, CtrlSCY, CtrlW, CtrlH)
-		Else
-			HideMarker()
+		If (!isIE && ThisMode = "Control" && (StateLight = 1 || (StateLight = 3 && GetKeyState("Shift"))))
+		{
+			If ControlID && StateLightMarker 
+				ShowMarker(CtrlSCX, CtrlSCY, CtrlW, CtrlH)
+			Else
+				HideMarker()
 			
-		StateLightAcc ? ShowAccMarker(AccCoord[1], AccCoord[2], AccCoord[3], AccCoord[4]) : 0
+			StateLightAcc ? ShowAccMarker(AccCoord[1], AccCoord[2], AccCoord[3], AccCoord[4]) : 0
+		}
 	}
 	If ((S_CaretX := A_CaretX) != "")
 		CaretPosStr = <span class='param'>Caret:</span>  <span name='MS:'>x%S_CaretX% y%A_CaretY%</span>
@@ -1232,9 +1280,11 @@ HTML_Control:
 		
 		. "`n<span id='control_child_value'>" control_child_value "</span>"
 	} 
-	
+	If gLocalData
+		back_openchild := _DB _BT1 " id='b_back_openchild'> return " _BT2
+		
 	HTML_Control := ""
-	. _T1 " id='__Mouse'> ( Mouse ) </span>" _BT1 " id='pause_button'> pause " _BT2 _T2 
+	. _T1 " id='__Mouse'> ( Mouse ) </span>" _BT1 " id='pause_button'> pause " _BT2 back_openchild _T2 
 	
 	. _PRE1  _BP1 " id='set_pos'>Screen:" _BP2 "  <span name='MS:' id='coord_screen'>x" MXS " y" MYS "</span>" _DP  _BP1 " id='set_pos'>Window:" _BP2 
 		. "  <span name='MS:' id='coord_win'>x" RWinX " y" RWinY "</span>" _DP  _BP1 " id='set_pos'>Client:" _BP2 
@@ -1301,6 +1351,49 @@ Write_Control(scroll = 0) {
 	oDivNew.style.visibility := "visible"
 	oDivOld.innerHTML := ""
 	Return 1
+} 
+
+LocalOpenWin(Win) {
+	gLocalData := {}
+	gLocalData.Win := Win 
+	gLocalData.Child := oOther.ChildID
+	gLocalOpen.Win := HTML_Win 
+	Spot_Win() 
+	Write_Win()
+	gLocalData := "" 
+}
+
+LocalOpenWinChild(ControlID, ChildNN) {
+	gLocalData := {}
+	gLocalData.Child := ControlID
+	gLocalData.ChildNN := ChildNN
+	gLocalData.Win := oOther.WinID 
+	Gosub Mode_Control
+	gLocalOpen.Control := HTML_Control 
+	Spot_Control()
+	Write_Control()
+	gLocalData := "" 
+}
+
+LocalOpenChild(ControlID, ChildNN) {
+	gLocalData := {} 
+	gLocalData.Child := ControlID
+	gLocalData.ChildNN := ChildNN
+	gLocalData.Win := oOther.MouseWinID   
+	gLocalOpen.Control := HTML_Control 
+	Spot_Control()
+	Write_Control()
+	gLocalData := "" 
+}
+
+LocalBackWin() {  
+	HTML_Win := gLocalOpen.Win   
+	Write_Win() 
+}
+
+LocalBackChild() {  
+	HTML_Control := gLocalOpen.Control   
+	Write_Control() 
 }
 
 	; ___________________________ Get Menu _________________________________________________
@@ -1614,7 +1707,7 @@ WBGet(hwnd) {
 
 	;;  http://www.autohotkey.com/board/topic/77888-accessible-info-viewer-alpha-release-2012-09-20/
 	   
-AccInfoUnderMouse(mx, my, wx, wy, cx, cy, caX, caY, WinID, ControlID) {
+AccInfoUnderMouse(mx, my, wx, wy, cx, cy, caX, caY, WinID, ControlID, fromhandle = 0) {
 	Static hLibrary, AccObj, WM_GETOBJECT := 0x003D, OBJID_CARET := 0xFFFFFFF8
 	
 	If (WinID = "") { 
@@ -1627,17 +1720,20 @@ AccInfoUnderMouse(mx, my, wx, wy, cx, cy, caX, caY, WinID, ControlID) {
 	AccObj := ""
 	If (oOther.AccCLOAKEDWinID != oPubObj.Acc.WinID)
 		ObjRelease(oPubObj.Acc.pAccObj)
-		
-		;;  https://docs.microsoft.com/en-us/windows/win32/api/oleacc/nf-oleacc-accessibleobjectfrompoint
-	If DllCall("oleacc\AccessibleObjectFromPoint"
-		, "Int64", mx & 0xFFFFFFFF | my << 32, "Ptr*", pAccObj
-		, "Ptr", VarSetCapacity(varChild, 8 + 2 * A_PtrSize, 0) * 0 + &varChild) = 0
-		
-	; http://forum.script-coding.com/viewtopic.php?pid=139109#p139109
-	; Acc := ComObjEnwrap(9, pacc, 1), child := NumGet(varChild,8,"UInt")
-	
-	AccObj := ComObject(9, pAccObj, 1)
-	
+	If !fromhandle
+	{
+			;;  https://docs.microsoft.com/en-us/windows/win32/api/oleacc/nf-oleacc-accessibleobjectfrompoint
+		If DllCall("oleacc\AccessibleObjectFromPoint"
+			, "Int64", mx & 0xFFFFFFFF | my << 32, "Ptr*", pAccObj
+			, "Ptr", VarSetCapacity(varChild, 8 + 2 * A_PtrSize, 0) * 0 + &varChild) = 0
+			AccObj := ComObject(9, pAccObj, 1)
+			
+		; http://forum.script-coding.com/viewtopic.php?pid=139109#p139109
+		; Acc := ComObjEnwrap(9, pacc, 1), child := NumGet(varChild,8,"UInt")
+	}
+	Else 
+		AccObj := Acc_ObjectFromWindow(ControlID ? ControlID : WinID) 
+	 
 	If !IsObject(AccObj)
 		Return
 	
@@ -1857,6 +1953,8 @@ AddSpace(c) {
 		Tab .= "<span class='param';'>&#8595;    </span>"
 	Return Tab
 }
+
+; accNavigate https://forum.script-coding.com/viewtopic.php?pid=152860#p152860
 
 GetAccPath() { 
 	if !Acc_GetPath(arr)
@@ -3249,6 +3347,7 @@ Window_CountList(PID) {
 		vis := DllCall("IsWindowVisible", "Ptr", Hwnd) ? "" : " class='QStyle2'" 
 		tree .= "<span><span name='MS:' " vis ">" Class "</span>" 
 			. _DP _BP1 " id='b_hwnd_flash' value='" Hwnd "'> flash " _BP2  
+			. _BP1 " id='b_open_win' value='" Hwnd "'> > " _BP2  
 			. _DP  "<span name='MS:' class='title2'>" Title "</span>"
 			. _DP  "<span name='MS:' class='param'>x" WinX " y" WinY " w" WinW " h" WinH "</span>"
 			. _DP  "<span name='MS:'>" Format("0x{:06X}", Hwnd) "</span>"
@@ -3289,7 +3388,8 @@ Window_ControlCountList(Hwnd) {
 		++NN[v.Class]	
 		vis := DllCall("IsWindowVisible", "Ptr", v.ID) ? "" : " class='QStyle2'" 
 		tree .= AddSpace2(v.depth - 2, "  ") "<span><span name='MS:' " vis ">" v.Class NN[v.Class] "</span>"  
-			. _DP _BP1 " id='b_hwnd_flash' value='" v.ID "'> flash " _BP2   
+			. _DP _BP1 " id='b_hwnd_flash' value='" v.ID "'> flash " _BP2 
+			. _BP1 " id='b_open_win_ctrl' value='" v.ID "|" v.Class NN[v.Class] "'> > " _BP2    
 			. _DP  "<span name='MS:' class='title2'>" Text "</span>"
 			. _DP  "<span name='MS:' class='param'>x" WinX " y" WinY " w" WinW " h" WinH "</span>"
 			. _DP  "<span name='MS:'>" v.ID "</span>"
@@ -3331,6 +3431,7 @@ ChildList(Hwnd) {
 		vis := DllCall("IsWindowVisible", "Ptr", v.ID) ? "" : " class='QStyle2'" 
 		tree .= AddSpace2(v.depth - 2, "  ") "<span><span name='MS:' " vis ">" v.Class NN[v.Class] "</span>"
 			. _DP _BP1 " id='b_hwnd_flash' value='" v.ID "'> flash " _BP2
+			. _BP1 " id='b_open_ctrl' value='" v.ID "|" v.Class NN[v.Class] "'> > " _BP2    
 			. _DP  "<span name='MS:' class='title2'>" Text "</span>"
 			. _DP  "<span name='MS:' class='param'>x" WinX " y" WinY " w" WinW " h" WinH "</span>"
 			. _DP  "<span name='MS:'>" v.ID "</span>"
@@ -3380,6 +3481,7 @@ ChildToPath(hwnd) {
 		Hwnd := Format("0x{:06X}", v.Hwnd)
 		WinGetClass, WinClass, ahk_id %Hwnd%
 		WinGet, ProcessName, ProcessName, ahk_id %Hwnd% 
+		ControlGetPos, WinX, WinY, WinW, WinH, , % "ahk_id" Hwnd
 		ControlGetText, Text, , % "ahk_id" Hwnd 
 		If StrLen(Text) > 100
 			Text := SubStr(Text, 1, 100) "..."
@@ -3389,7 +3491,9 @@ ChildToPath(hwnd) {
 		tree .= AddSpace2(k - 1) "<span><span name='MS:'>" v.Path "</span>" 
 			. _DP "<span name='MS:' " vis ">" WinClass "</span>" 
 			. _DP _BP1 " id='b_hwnd_flash' value='" Hwnd "'> flash " _BP2
+			. _BP1 " id='b_open_ctrl' value='" Hwnd "|" WinClass "'> > " _BP2   
 			. _DP  "<span name='MS:' class='title2'>" Text "</span>"
+			. _DP  "<span name='MS:' class='param'>x" WinX " y" WinY " w" WinW " h" WinH "</span>"
 			. _DP  "<span name='MS:'>" Hwnd "</span>" 
 			. (ProcessStart = ProcessName ? "" : _DP  "<span name='MS:' class = 'error'>" ProcessName "</span>") 
 			. "<span name='MS:P'>     </span></span>`n" 
@@ -3785,7 +3889,8 @@ ShowMarkersCreate(arr, color) {
 	{
 		Gui, New
 		Gui, Margin, 0, 0
-		Gui, -DPIScale +Owner +HWNDHWND -Caption +%WS_CHILDWINDOW% +E%WS_EX_NOACTIVATE% +ToolWindow -%WS_POPUP% +AlwaysOnTop  +E%WS_EX_TRANSPARENT% 
+		Gui, -DPIScale
+		Gui, +Owner +HWNDHWND -Caption +%WS_CHILDWINDOW% +E%WS_EX_NOACTIVATE% +ToolWindow -%WS_POPUP% +AlwaysOnTop  +E%WS_EX_TRANSPARENT% 
 		Gui, Color, %color% 
 		WinSet, TransParent, 250, ahk_id %HWND%
 		%arr%[A_Index] := HWND
@@ -6561,7 +6666,29 @@ ButtonClick(oevent) {
 	{ 
 		WinGetPos, X, Y, W, H, % "ahk_id" oevent.value
 		FlashArea(x, y, w, h)
+	} 
+	Else If thisid = b_open_win
+	{ 
+		LocalOpenWin(oevent.value) 
 	}
+	Else If thisid = b_open_win_ctrl
+	{ 
+		o := StrSplit(oevent.value, "|")
+		LocalOpenWinChild(o[1], o[2]) 
+	}
+	Else If thisid = b_open_ctrl
+	{  
+		o := StrSplit(oevent.value, "|")
+		LocalOpenChild(o[1], o[2]) 
+	} 
+	Else If thisid = b_back_openchild
+	{  
+		LocalBackChild()
+	} 
+	Else If thisid = b_back_openwin
+	{  
+		LocalBackWin()
+	}   
 	Else If thisid = acc_path 
 		acc_path_func(1)
 	Else If thisid = control_path 
@@ -6813,8 +6940,8 @@ MenuAdd("Zoom", "Save to clipboard", "_gSave_to_Clipboard")
 MenuAdd("Zoom", "Save to clipboard as Base64", "_gSave_as_Base64") 
 MenuAdd("Zoom")
 MenuAdd("Zoom", "Save as file", "_gSave_as_file") 
-MenuAdd("Zoom", "Save to file", "_gSave_to_file")
-MenuAdd("Zoom", "Save to file and edit", "_gSave_to_file") 
+MenuAdd("Zoom", "Save to desktop", "_gSave_to_file")
+MenuAdd("Zoom", "Save to desktop and edit", "_gSave_to_file") 
 MenuAdd("Zoom", "Select window", "_gMenuZoom", "+BarBreak")
 MenuAdd("Zoom", "Select client", "_gMenuZoom", "")
 MenuAdd("Zoom", "Select control", "_gMenuZoom")
@@ -7116,6 +7243,7 @@ ZoomOnSize() {
 
 ZoomMaximize() { 
 	WinGet, Min, MinMax, % "ahk_id " oZoom.hGui
+	ObjActive.ZoomMaximize := !Min
 	If Min = 1
 		WinRestore, % "ahk_id " oZoom.hGui
 	Else 
@@ -7469,7 +7597,7 @@ _gSave_to_file() {
 	
 	SaveBitmapToFile(pBitmap, file)
 	DllCall("gdiplus\GdipDisposeImage", "UPtr", pBitmap)
-	If (ThisMenuItem = "Save to file and edit") || (ThisMenuItem = "Save to temp file and edit")
+	If (ThisMenuItem = "Save to desktop and edit") || (ThisMenuItem = "Save to temp file and edit")
 	{ 
 		WinClose % "ahk_class #32768 ahk_pid " oZoom.CurrentProcessId
 		If GetMinMax(oZoom.hGui) = 1
