@@ -30,7 +30,7 @@
 */
 
 
-Global AhkSpyVersion := 4.88
+Global AhkSpyVersion := 4.89
 
 	; ___________________________ Caption _________________________________________________
 
@@ -2086,7 +2086,7 @@ Acc_ObjectFromPoint(ByRef _idChild_ = "", x = "", y = "") {
 		Return ComObjEnwrap(9,pacc,1), _idChild_:=NumGet(varChild,8,"UInt")
 }
 Acc_ObjectFromWindow(hWnd, idObject = 0) {
-	If DllCall("oleacc\AccessibleObjectFromWindow", "Ptr", hWnd, "UInt", idObject&=0xFFFFFFFF
+	If DllCall("oleacc\AccessibleObjectFromWindow", "UPtr", hWnd, "UInt", idObject&=0xFFFFFFFF
 		, "Ptr", -VarSetCapacity(IID,16)+NumPut(idObject==0xFFFFFFF0?0x46000000000000C0:0x719B3800AA000C81
 		,NumPut(idObject==0xFFFFFFF0?0x0000000000020400:0x11CF3C3D618736E0,IID,"Int64"),"Int64"), "Ptr*", pacc)=0
 		Return ComObjEnwrap(9,pacc,1)
