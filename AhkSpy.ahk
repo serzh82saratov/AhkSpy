@@ -30,7 +30,7 @@
 */
 
 
-Global AhkSpyVersion := 4.89
+Global AhkSpyVersion := 4.90
 
 	; ___________________________ Caption _________________________________________________
 
@@ -1270,15 +1270,20 @@ HTML_Control:
 			
 		. "`n" _BP1 " id='set_pos'>Mouse relative control:" _BP2 "  <span name='MS:' id='coord_mrc'>x" rmCtrlX " y" rmCtrlY "</span>" WithRespectControl 
 		
-		. "`n<span class='param'>HWND:</span>  <span name='MS:'>" ControlID "</span>" _DP  _BB1 " id='control_show_hide'> show / hide " _BB2 
-			. _DP  _BB1 " id='control_destroy'> close " _BB2  _DP  _BP1 " id='control_child'> Get child " _BP2 
-			.   _DP  _BP1 " id='control_path'> Get parent " _BP2 
-			. "<span id='control_path_error'></span>" _ParentControl 
-			
-		. "`n<span class='param'>Style:</span>  <span id='c_Style' name='MS:'>" CtrlStyle "</span>" 
-			. _DP "<span class='param'>ExStyle:</span>  <span id='c_ExStyle' name='MS:'>" CtrlExStyle "</span>" 
-			. _DP _BB1 " id='get_styles_c'> " (!c_ShowStyles ? "show styles" : "hide styles") " " _BB2
-			. _DP _BB1 " id='update_styles_c'> update styles " _BB2   _PRE2
+		. "`n<span class='param'>HWND:</span>  <span name='MS:'>" ControlID "</span>" 
+		. _DP "<span class='param'>Style:</span>  <span id='c_Style' name='MS:'>" CtrlStyle "</span>" 
+		. _DP "<span class='param'>ExStyle:</span>  <span id='c_ExStyle' name='MS:'>" CtrlExStyle "</span>" 
+		. _DP _BB1 " id='get_styles_c'> " (!c_ShowStyles ? "show styles" : "hide styles") " " _BB2
+		. _DP _BB1 " id='update_styles_c'> update styles " _BB2  
+		 
+		. "`n" _BB1 " id='control_show_hide'> show / hide " _BB2 
+		. _DP  _BB1 " id='control_destroy'> close " _BB2  
+		. _DP  _BP1 " id='control_totree'> View to tree " _BP2
+		. _DP  _BP1 " id='control_child'> Get child " _BP2 
+		. _DP  _BP1 " id='control_path'> Get parent " _BP2 
+		. "<span id='control_path_error'></span>" _ParentControl 
+			  
+		. _PRE2
 		
 		. "`n<span id=ControlStyles>" ControlStyles "</span>" 
 		
@@ -3386,7 +3391,7 @@ Window_CountList(PID) {
 	Return 1 
 }
 
-Window_ControlCountList(Hwnd) {
+Window_ControlCountList(Hwnd, find = 0) {
 	If !WinExist("ahk_id" Hwnd)
 		Return -1 
 	oList := GetChildList(Hwnd) 
@@ -3409,8 +3414,14 @@ Window_ControlCountList(Hwnd) {
 		If !NN[v.Class]
 			NN[v.Class] := 0
 		++NN[v.Class]	
+		
+		
+		If (find && v.ID = find)
+		{ 
+			find_anch := "id='a_find_anch'" 
+		}
 		vis := DllCall("IsWindowVisible", "Ptr", v.ID) ? "" : " class='QStyle2'" 
-		tree .= AddSpace2(v.depth - 2, "  ") "<span><span name='MS:' " vis ">" v.Class NN[v.Class] "</span>"  
+		tree .= AddSpace2(v.depth - 2, "  ") "<span " find_anch "><span name='MS:' " vis ">" v.Class NN[v.Class] "</span>"  
 			. _DP _BP1 " id='b_hwnd_flash' value='" v.ID "'> flash " _BP2 
 			. _BP1 " id='b_open_win_ctrl' value='" v.ID "|" v.Class NN[v.Class] "'> > " _BP2    
 			. _DP  "<span name='MS:' class='title2'>" Text "</span>"
@@ -6038,6 +6049,9 @@ pre {
 .QStyle2 {
 	color: #%ColorStyleComment2%;
 } 
+.QStyle3 {
+	color: #%ColorSelAnchor%;
+} 
 .error {
 	color: #%ColorDelimiter%;
 }  
@@ -6719,6 +6733,8 @@ ButtonClick(oevent) {
 		acc_path_func(1)
 	Else If thisid = control_path 
 		control_path_func()
+	Else If thisid = control_totree 
+		control_totree() 
 	Else If (thisid = "control_child" || thisid = "control_child2")
 		control_child_func() 
 	Else If (thisid = "view_WindowCount" || thisid = "view_WindowCount2")
@@ -6772,6 +6788,31 @@ ButtonClick(oevent) {
 				ExecCommandAutoHotkey("Edit Script", oOther.WinPID) 
 		}
 	}  
+}
+
+control_totree() {
+	If !WinExist("ahk_id" oOther.MouseWinID)
+		Return ToolTip("Window not found", 800)
+	
+	If (oOther.WinID != oOther.MouseWinID) 
+	{
+		gLocalData := {}
+		gLocalData.Win := oOther.MouseWinID 
+		gLocalData.Child := oOther.ControlID 
+		Spot_Win() 
+		Write_Win()
+		gLocalData := ""   
+	} 
+	Gosub Mode_Win
+
+	r := Window_ControlCountList(oOther.MouseWinID, oOther.ControlID) 
+	If r = -2
+		Return ToolTip("Window not children", 800)
+	oDoc.getElementById("view_ControlCount_value").innerHTML := oOther.ControlCountList
+	HTML_Win := oDivNew.innerHTML
+	oDivNew.scrollTop := oDivNew.scrollTop + oDoc.getElementById("a_find_anch").getBoundingClientRect().top - 6	 
+	; HighLight([oDoc.all.item(oDoc.getElementById("a_find_anch").sourceIndex + 4)], 1000)
+	HighLight([oDoc.getElementById("a_find_anch").firstChild.parentElement], 1000) 
 }
 
 control_path_func() {
@@ -8169,7 +8210,7 @@ BitmapToBase64(pBitmap, NOCRLF, byref Base64) {
 	Base64 := CryptBinaryToStringBASE64(&buff, nSize, NOCRLF)
 	return 0
 }  
- 
+
 FormatBase64ToVaribles(Base64, Name, LenRow = 128) {
 	DATALen := StrLen(Base64)
 	RowLen := !LenRow ? 16000 : LenRow
