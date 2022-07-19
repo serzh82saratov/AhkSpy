@@ -30,8 +30,8 @@
 */
 
 
-Global AhkSpyVersion := 4.92
-
+Global AhkSpyVersion := 4.93
+          
 	; ___________________________ Caption _________________________________________________
 
 ComObjError(false)
@@ -2344,7 +2344,8 @@ Write_HotkeyHTML(K, scroll = 0) {
 		Comment := "<span class='param' name='MS:SP'>    `;  """ KeyName """</span>"
 	If (Hotkey != "")
 		FComment := "<span class='param' name='MS:SP'>    `;  """ (K.HK = "" ? K.TK : Mods KeyName) """</span>"
-
+		, b_ASend := _DP  _BP1 " id='b_ASend'> send " _BP2
+		
 	If (LRMods != "")
 	{
 		LRMStr := "<span name='MS:'>" LRMods KeyName "</span>"
@@ -2377,11 +2378,11 @@ Write_HotkeyHTML(K, scroll = 0) {
 	s_DecimalCode := DecimalCode ? "dec" : "hex"
    
 	If (DUMods != "") 
-		LRSend := "  " _DP "  <span><span name='MS:'>" SendMode  " <span name='MS:'>" DUMods "</span></span>" Comment "</span>" 
+		LRSend := "  " _DP "  <span><span><span name='MS:P' id='h_SendMode1'>" SendMode "</span>  <span name='MS:'>" DUMods "</span></span>" Comment "</span>" 
 	
 	If SCCode !=
 		ThisKeySC := "   " _DP "   <span name='MS:'>" VKCode "</span>   " _DP "   <span name='MS:'>" SCCode "</span>   "
-		. _DP "   <span name='MS:' id='v_VKDHCode'>" VKCode_ "</span>   " _DP "   <span name='MS:' id='v_SCDHCode'>" SCCode_ "</span>"
+		. _DP "   <span name='MS:' id='v_VKDHCode'>" VKCode_ "</span>   " _DP "   <span name='MS:'>" SCCode_ "</span>"
 	Else
 		ThisKeySC := "   " _DP "   <span name='MS:' id='v_VKDHCode'>" VKCode_ "</span>"
 	
@@ -2397,7 +2398,7 @@ Write_HotkeyHTML(K, scroll = 0) {
 
 	. "`n<span name='MS:P'>        </span>"
 
-	. "`n<span><span name='MS:'>" SendMode " <span name='MS:'>" Prefix "{" SendHotkey "}</span></span>" Comment "</span>" _DP  _BP1 " id='b_ASend'> send " _BP2 LRSend  
+	. "`n<span><span><span name='MS:P' id='h_SendMode2'>" SendMode "</span> <span name='MS:'>" Prefix "{" SendHotkey "}</span></span>" Comment "</span>" b_ASend LRSend  
 
 	. "`n<span name='MS:P'>        </span>"
 
@@ -6342,7 +6343,10 @@ Class Events {  ;;	http://forum.script-coding.com/viewtopic.php?pid=82283#p82283
 	
 	SendMode() {
 		IniWrite(SendMode := {Send:"SendInput",SendInput:"SendPlay",SendPlay:"SendEvent",SendEvent:"Send"}[SendMode], "SendMode")
-		SendModeStr := Format("{:L}", SendMode), oDoc.getElementById("SendMode").innerText := " " SendModeStr " "
+		SendModeStr := Format("{:L}", SendMode)
+		oDoc.getElementById("SendMode").innerText := " " SendModeStr " "
+		oDoc.getElementById("h_SendMode1").innerText := SendMode 
+		oDoc.getElementById("h_SendMode2").innerText := SendMode 
 	}
 	SendCode() {
 		IniWrite(SendCode := {vk:"sc",sc:"name",name:"vk"}[SendCode], "SendCode")
@@ -6768,7 +6772,7 @@ ButtonClick(oevent) {
 		ToolTip("send to " 
 		. (oOther.ControlID ? "control: " oOther.ControlNN  
 		: oOther.MouseWinID ? "window: " oOther.MouseWinClass
-		: oOther.WinID ? "window: " oOther.WinClass), 700)
+		: oOther.WinID ? "window: " oOther.WinClass) "`n" oOther.ControlSend, 700)
 	} 
 	Else If thisid = b_ASend
 	{   
@@ -6796,8 +6800,9 @@ ButtonClick(oevent) {
 		Else If (SendMode = "SendPlay") 
 			SendPlay % oOther.ControlSend
 		Else If (SendMode = "SendInput")
-			SendInput % oOther.ControlSend 
-		ToolTip(SendMode " " oOther.ControlSend, 750) 
+			SendInput % oOther.ControlSend  
+		WinGetClass, WinClass, ahk_id %h%
+		ToolTip(WinClass "`n" SendMode " " oOther.ControlSend, 750) 
 	}  
 	Else If InStr(thisid, "ahkscript_")
 	{
