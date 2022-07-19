@@ -30,7 +30,7 @@
 */
 
 
-Global AhkSpyVersion := 4.90
+Global AhkSpyVersion := 4.92
 
 	; ___________________________ Caption _________________________________________________
 
@@ -253,7 +253,7 @@ OnMessage(0x4a, "WM_COPYDATA")
 ;; OnMessage(WM_MOVE := 0x03, "WM_WINDOWPOSCHANGED")
 
 OnMessage(MsgAhkSpyZoom := DllCall("RegisterWindowMessage", "Str", "MsgAhkSpyZoom"), "MsgZoom")
-DllCall("PostMessage", "Ptr", A_ScriptHWND, "UInt", 0x50, "UInt", 0,	 "UInt", 0x409) ;; eng layout
+DllCall("PostMessage", "UPtr", A_ScriptHWND, "UInt", 0x50, "UInt", 0,	 "UInt", 0x409) ;; eng layout
 SetWinEventHook("EVENT_OBJECT_CLOAKED", 0x8017)
 SetWinEventHook("EVENT_OBJECT_UNCLOAKED", 0x8018) 
 
@@ -447,7 +447,7 @@ If !UpdRegister
 	SetTimer, UpdRegister, -1000 
 	
 WinSet, TransParent, 255, ahk_id %hGui%
-DllCall("RedrawWindow", "Ptr", hGui, "Uint", 0, "Uint", 0, "Uint", 0x1|0x4)
+DllCall("RedrawWindow", "UPtr", hGui, "Uint", 0, "Uint", 0, "Uint", 0x1|0x4)
 
 ; MsgBox % oDoc.documentMode  "`n" oDoc.compatMode  "`n" oDoc.designMode := "On"
 Return 
@@ -784,7 +784,7 @@ Spot_Win(NotHTML = 0) {
 		If WinTransColor !=
 			TransColorStr := _BP1 "id='set_button_TransColor'>TransColor:</span>" _BP2 "  <span id='get_win_TransColor' name='MS:'>"  WinTransColor "</span>"
 	
-		OwnedId := DllCall("GetWindow", "Ptr", WinID, UInt, 4, "Ptr")
+		OwnedId := DllCall("GetWindow", "UPtr", WinID, UInt, 4, "Ptr")
 		If OwnedId
 			OwnedIdStr := "<span class='param'>Owned Id:</span> <span name='MS:'>" Format("0x{:x}", OwnedId) "</span>"
 			
@@ -820,7 +820,7 @@ Spot_Win(NotHTML = 0) {
 	If ViewStrPos
 		ViewStrPos1 := _DP "<span name='MS:'>" WinX ", " WinY ", " WinX2 ", " WinY2 "</span>" _DP "<span name='MS:'>" WinX ", " WinY ", " WinWidth ", " WinHeight "</span>"
  
-	IsWindowUnicodeStr := _DP "<span class='param' name='MS:N'>Is unicode:</span>  <span name='MS:'>" (DllCall("user32\IsWindowUnicode", "Ptr", WinID) ? "true" : "false") "</span>"
+	IsWindowUnicodeStr := _DP "<span class='param' name='MS:N'>Is unicode:</span>  <span name='MS:'>" (DllCall("user32\IsWindowUnicode", "UPtr", WinID) ? "true" : "false") "</span>"
 	If (ProcessUserName != "")
 		ProcessUserNameStr := _DP "<span class='param' name='MS:N'>User name:</span>  <span name='MS:'>" ProcessUserName "</span>"
 
@@ -872,14 +872,14 @@ Spot_Win(NotHTML = 0) {
 			. _BP1 " id='ahkscript_keyhistory'> key history " _BP2 _DN2 "</div>"
 			. _PRE1 "<span id='ahkscriptpath' name='MS:'>" TransformHTML(AhkScriptPAth) "</span>" _PRE2
 	}
-	If (hParent := DllCall("GetAncestor", "Ptr", WinID, Uint, 1)) && (hParent != WinID)
+	If (hParent := DllCall("GetAncestor", "UPtr", WinID, Uint, 1)) && (hParent != WinID)
 	{
 		WinGet, ParentProcessName, ProcessName, ahk_id %hParent% 
 		WinGetClass, ParentClass, ahk_id %hParent%
 		_ParentWindow := "`n<span class='param'>Parent window:</span>  <span name='MS:'>" ParentClass "</span>" 
 			. _DP " <span name='MS:'>" ParentProcessName "</span>" _DP "<span name='MS:'>" Format("0x{:x}", hParent) "</span>"
 	}
-	DllCall("GetWindowBand", "ptr", WinID, "uint*", band) 
+	DllCall("GetWindowBand", "Uptr", WinID, "uint*", band) 
 	WindowBand := _DP "<span class='param'>WindowBand:</span>  <span name='MS:Q'>" oZBID[band] " := <span class='param' name='MS:'>" band "</span></span>"	
 
 	; ___________________________ HTML_Win _________________________________________________
@@ -929,12 +929,16 @@ HTML_Win:
 
 	. _PRE1 "<span class='param' name='MS:N'>PID:</span>  <span name='MS:'>" WinPID "</span>" 
 		. _DP  ProcessBitSize _BP1 " id='view_WindowCount'>Window count:" _BP2 "  <span name='MS:'>" WinCountProcess "</span>"    
-		. _DP  _BB1 " id='process_close'> process close " _BB2 
+		. _DP _BP1 " id='view_ControlCount'>Control count:" _BP2 "  <span name='MS:'>" CountControl "</span>" 
 		. _DP "<span class='param'>Create info time:  </span><span name='MS:'>" A_Hour ":" A_Min ":" A_Sec 
 		. ".<span class='param' style='font-size: 0.75em'>" A_MSec "</span></span>"
 		
-	. "`n<span class='param' name='MS:N'>HWND:</span>  <span name='MS:'>" WinID "</span>" _DP  _BB1 " id='window_show_hide'> show / hide " _BB2
-		. _DP  _BB1 " id='win_close'> close " _BB2  _DP _BP1 " id='view_ControlCount'>Control count:" _BP2 "  <span name='MS:'>" CountControl "</span>" 
+	. "`n<span class='param' name='MS:N'>HWND:</span>  <span name='MS:'>" WinID "</span>" 
+		. _DP  _BB1 " id='win_close'> close " _BB2   
+		. _DP  _BB1 " id='process_close'> process close " _BB2 
+		. _DP  _BB1 " id='window_show_hide'> show / hide " _BB2
+		. _DP  _BB1 " id='window_minimize'> minimize " _BB2
+		. _DP  _BB1 " id='window_restore'> restore " _BB2
 	
 	. "`n<span class='param' name='MS:N'>IsAdmin:</span>  <span name='MS:'>" IsAdmin "</span>"
 		. IsWindowUnicodeStr ProcessUserNameStr WindowBand 
@@ -1105,7 +1109,7 @@ Spot_Control(NotHTML = 0) {
 		ControlGet, CtrlExStyle, ExStyle,,, ahk_id %ControlID%
 		WinGetClass, CtrlClass, ahk_id %ControlID%
 		
-		If (hParent := DllCall("GetParent", "Ptr", ControlID)) && (hParent != WinID)
+		If (hParent := DllCall("GetParent", "UPtr", ControlID)) && (hParent != WinID)
 		{
 			WinGetClass, ParentClass, ahk_id %hParent%
 			_ParentControl := _DP "<span class='param'>Parent control:</span>  <span name='MS:'>" ParentClass "</span>" _DP "<span name='MS:'>" Format("0x{:x}", hParent) "</span>"
@@ -1433,7 +1437,7 @@ GetMenu(hWnd) {
 
 GetMenuText(hMenu, child = 0)
 {
-	Loop, % DllCall("GetMenuItemCount", "Ptr", hMenu)
+	Loop, % DllCall("GetMenuItemCount", "UPtr", hMenu)
 	{
 		idx := A_Index - 1
 		nSize++ := DllCall("GetMenuString", "Ptr", hMenu, "int", idx, "Uint", 0, "int", 0, "Uint", 0x400)   ;;  MF_BYPOSITION
@@ -1516,7 +1520,7 @@ GetInfo_Edit(hwnd) {
 	Edit_GetFont(hwnd, FName, FSize)
 	Return GetInfo_Scintilla(hwnd) "`n<span class='param' name='MS:N'>FontSize:</span> <span name='MS:'>" FSize "</span>" 
 		. _DP "<span class='param' name='MS:N'>FontName:</span> <span name='MS:'>" FName "</span>"
-		. "`n<span class='param' name='MS:N'>DlgCtrlID:</span> <span name='MS:'>" DllCall("GetDlgCtrlID", Ptr, hwnd) "</span>"
+		. "`n<span class='param' name='MS:N'>DlgCtrlID:</span> <span name='MS:'>" DllCall("GetDlgCtrlID", "UPtr", hwnd) "</span>"
 }
 
 Edit_GetFont(hwnd, byref FontName, byref FontSize) {
@@ -1847,8 +1851,10 @@ AccInfoUnderMouse(mx, my, wx, wy, cx, cy, caX, caY, WinID, ControlID, fromhandle
 	If (child &&(Var := AccRole(AccObj)) != "")
 		code .= _T1 " id='P__Role_parent_Acc'" _T1P "> ( Role - parent ) </span>" _T2 _PRE1 "<span name='MS:'>" TransformHTML(Var) "</span>"
 		. _DP "<span class='param' name='MS:N'>code: </span><span name='MS:'>" AccObj.accRole(0) "</span>" _PRE2
-		
-	If ((Var := AccObj.accDefaultAction(child)) != "")
+	
+	; http://forum.script-coding.com/viewtopic.php?pid=146925#p146925	 ToolTip % Format("0x{:x}", RealHwnd(A_LastError))
+	Var := AccObj.accDefaultAction(child)  
+	If (!A_LastError)
 		code .= _T1 " id='P__Action_Acc'" _T1P "> ( Action ) </span>" _T2 _PRE1 "<span name='MS:'>" TransformHTML(Var) "</span>" 
 		. _DP _BP1 " id='acc_DoDefaultAction'> Execute " _BP2 _PRE2
 		
@@ -2277,7 +2283,7 @@ class UIASub {
 			, x = "" ? 0 * DllCall("GetCursorPos", "Int64*", pt) + pt : x & 0xFFFFFFFF | y << 32, "ptr*", pElement)) ? pElement : 0 
 	}
 	ElementFromHandle(hwnd) {
-		Return this.pElement := this.__Hr(DllCall(this.__Vt(6, this.pUIA), "ptr", this.pUIA, "ptr", hwnd, "ptr*", pElement)) ? pElement : 0 
+		Return this.pElement := this.__Hr(DllCall(this.__Vt(6, this.pUIA), "ptr", this.pUIA, "Uptr", hwnd, "ptr*", pElement)) ? pElement : 0 
 	}
 }
 
@@ -2358,8 +2364,8 @@ Write_HotkeyHTML(K, scroll = 0) {
 	SendHotkey := Hotkey
 
 	oOther.ControlSend := (DUMods = "" ? "{" SendHotkey "}" : DUMods)
-
-	If (oOther.ControlID || oOther.MouseWinID)
+	
+	If (oOther.ControlID || oOther.MouseWinID || oOther.WinID)
 		CASend := _DP  _BP1 " id='b_CASend'> send to " (oOther.ControlID ? "control" : "window") " " _BP2  
 	CtrlClass := (oOther.ControlID ? oOther.ControlNN : "ahk_parent")
   
@@ -2369,9 +2375,10 @@ Write_HotkeyHTML(K, scroll = 0) {
 	If DecimalCode
 		(VKCode_ += 0), SCCode_ += 0
 	s_DecimalCode := DecimalCode ? "dec" : "hex"
-
+   
 	If (DUMods != "") 
-		LRSend := "  " _DP "  <span><span name='MS:'>" SendMode  " <span name='MS:'>" DUMods "</span></span>" Comment "</span>"
+		LRSend := "  " _DP "  <span><span name='MS:'>" SendMode  " <span name='MS:'>" DUMods "</span></span>" Comment "</span>" 
+	
 	If SCCode !=
 		ThisKeySC := "   " _DP "   <span name='MS:'>" VKCode "</span>   " _DP "   <span name='MS:'>" SCCode "</span>   "
 		. _DP "   <span name='MS:' id='v_VKDHCode'>" VKCode_ "</span>   " _DP "   <span name='MS:' id='v_SCDHCode'>" SCCode_ "</span>"
@@ -2390,7 +2397,7 @@ Write_HotkeyHTML(K, scroll = 0) {
 
 	. "`n<span name='MS:P'>        </span>"
 
-	. "`n<span><span name='MS:'>" SendMode " <span name='MS:'>" Prefix "{" SendHotkey "}</span></span>" Comment "</span>" LRSend 
+	. "`n<span><span name='MS:'>" SendMode " <span name='MS:'>" Prefix "{" SendHotkey "}</span></span>" Comment "</span>" _DP  _BP1 " id='b_ASend'> send " _BP2 LRSend  
 
 	. "`n<span name='MS:P'>        </span>"
 
@@ -2622,7 +2629,7 @@ Hotkey_Arr(P*) {
 Hotkey_LowLevelKeyboardProc(nCode, wParam, lParam) {
 	Static Mods := {"A4":"LAlt","A5":"RAlt","A2":"LCtrl","A3":"RCtrl"
 	,"A0":"LShift","A1":"RShift","5B":"LWin","5C":"RWin"}, oMem := []
-	, HEAP_ZERO_MEMORY := 0x8, Size := 16, hHeap := DllCall("GetProcessHeap", Ptr)
+	, HEAP_ZERO_MEMORY := 0x8, Size := 16, hHeap := DllCall("GetProcessHeap", "Ptr")
 	Local pHeap, Lp, Ext, VK, SC, SC1, SC2, IsMod, Time, NFP, KeyUp
 	Critical
 
@@ -2764,14 +2771,14 @@ GetScanCode(id) {
 ShowSys(x, y) {
 ShowSys:
 	ZoomMsg(9, 1)
-	DllCall("SetTimer", "Ptr", A_ScriptHwnd, "Ptr", 1, "UInt", 116, "Ptr", RegisterCallback("MenuCheck", "Fast"))
+	DllCall("SetTimer", "UPtr", A_ScriptHwnd, "Ptr", 1, "UInt", 116, "Ptr", RegisterCallback("MenuCheck", "Fast"))
 	Menu, Sys, Show, % x, % y
 	ZoomMsg(9, 0)
 	Return
 }
 
 MenuCheck()  {
-	DllCall("KillTimer", "Ptr", A_ScriptHwnd, "Ptr", 1)
+	DllCall("KillTimer", "UPtr", A_ScriptHwnd, "Ptr", 1)
 	If !WinExist("ahk_class #32768 ahk_pid " oOther.CurrentProcessId)
 		Return
 	If GetKeyState("RButton")
@@ -2791,7 +2798,7 @@ MenuCheck()  {
 		}
 		KeyWait, RButton
 	}
-	DllCall("SetTimer", "Ptr", A_ScriptHwnd, "Ptr", 1, "UInt", 16, "Ptr", RegisterCallback("MenuCheck", "Fast"))
+	DllCall("SetTimer", "UPtr", A_ScriptHwnd, "Ptr", 1, "UInt", 16, "Ptr", RegisterCallback("MenuCheck", "Fast"))
 }
 
 GetMenuForMenu(hWnd) {
@@ -3372,7 +3379,7 @@ Window_CountList(PID) {
 		WinGetTitle, Title, ahk_id %Hwnd%
 		WinGetPos, WinX, WinY, WinW, WinH, ahk_id %Hwnd%
 		WinGet, ProcessName, ProcessName, % "ahk_id" Hwnd
-		vis := DllCall("IsWindowVisible", "Ptr", Hwnd) ? "" : " class='QStyle2'" 
+		vis := DllCall("IsWindowVisible", "UPtr", Hwnd) ? "" : " class='QStyle2'" 
 		tree .= "<span><span name='MS:' " vis ">" Class "</span>" 
 			. _DP _BP1 " id='b_hwnd_flash' value='" Hwnd "'> flash " _BP2  
 			. _BP1 " id='b_open_win' value='" Hwnd "'> > " _BP2  
@@ -3420,7 +3427,7 @@ Window_ControlCountList(Hwnd, find = 0) {
 		{ 
 			find_anch := "id='a_find_anch'" 
 		}
-		vis := DllCall("IsWindowVisible", "Ptr", v.ID) ? "" : " class='QStyle2'" 
+		vis := DllCall("IsWindowVisible", "UPtr", v.ID) ? "" : " class='QStyle2'" 
 		tree .= AddSpace2(v.depth - 2, "  ") "<span " find_anch "><span name='MS:' " vis ">" v.Class NN[v.Class] "</span>"  
 			. _DP _BP1 " id='b_hwnd_flash' value='" v.ID "'> flash " _BP2 
 			. _BP1 " id='b_open_win_ctrl' value='" v.ID "|" v.Class NN[v.Class] "'> > " _BP2    
@@ -3462,7 +3469,7 @@ ChildList(Hwnd) {
 		If !NN[v.Class]
 			NN[v.Class] := 0
 		++NN[v.Class]	 
-		vis := DllCall("IsWindowVisible", "Ptr", v.ID) ? "" : " class='QStyle2'" 
+		vis := DllCall("IsWindowVisible", "UPtr", v.ID) ? "" : " class='QStyle2'" 
 		tree .= AddSpace2(v.depth - 2, "  ") "<span><span name='MS:' " vis ">" v.Class NN[v.Class] "</span>"
 			. _DP _BP1 " id='b_hwnd_flash' value='" v.ID "'> flash " _BP2
 			. _BP1 " id='b_open_ctrl' value='" v.ID "|" v.Class NN[v.Class] "'> > " _BP2    
@@ -3486,7 +3493,7 @@ ChildList(Hwnd) {
 ChildFromPath(str, hwnd) 
 {
 	Static GW_HWNDNEXT := 2, GW_CHILD := 5
-	hwnd := DllCall("GetWindow", "Ptr", hwnd, UInt, GW_CHILD, "Ptr")
+	hwnd := DllCall("GetWindow", "UPtr", hwnd, UInt, GW_CHILD, "Ptr")
 	arr := StrSplit(str, "."), off := 1, i := 1
 	Loop 
 	{
@@ -3494,9 +3501,9 @@ ChildFromPath(str, hwnd)
 		{
 			If (off = arr.Count())
 				return hwnd
-			hwnd := DllCall("GetWindow", "Ptr", hwnd, UInt, GW_CHILD, "Ptr"), ++off, i := 1 
+			hwnd := DllCall("GetWindow", "UPtr", hwnd, UInt, GW_CHILD, "Ptr"), ++off, i := 1 
 		}
-		Else If (++i) && !(hwnd := DllCall("GetWindow", "Ptr", hwnd, UInt, GW_HWNDNEXT, "Ptr"))
+		Else If (++i) && !(hwnd := DllCall("GetWindow", "UPtr", hwnd, UInt, GW_HWNDNEXT, "Ptr"))
 			return   
 	}
 } 
@@ -3521,7 +3528,7 @@ ChildToPath(hwnd) {
 			Text := SubStr(Text, 1, 100) "..."
 		Text := RegExReplace(Text,  "\R+", " ")
  
-		vis := DllCall("IsWindowVisible", "Ptr", Hwnd) ? "" : " class='QStyle2'" 
+		vis := DllCall("IsWindowVisible", "UPtr", Hwnd) ? "" : " class='QStyle2'" 
 		tree .= AddSpace2(k - 1) "<span><span name='MS:'>" v.Path "</span>" 
 			. _DP "<span name='MS:' " vis ">" WinClass "</span>" 
 			. _DP _BP1 " id='b_hwnd_flash' value='" Hwnd "'> flash " _BP2
@@ -3541,10 +3548,10 @@ ChildToPath(hwnd) {
 _ChildToPath(hwnd, arr, i = 1) {
 	Static GA_PARENT := 1, GA_ROOT := 2, GW_HWNDPREV := 3
 	Static DesktopHwnd := DllCall("User32.dll\GetDesktopWindow", "ptr") 
-	While hPrev := DllCall("GetWindow", "Ptr", hwnd, UInt, GW_HWNDPREV, "Ptr")
+	While hPrev := DllCall("GetWindow", "UPtr", hwnd, UInt, GW_HWNDPREV, "Ptr")
 		++i, hwnd := hPrev
-	   ;;  DllCall("GetParent", "Ptr", hwnd)
-	hParent := DllCall("GetAncestor", "Ptr", hwnd, Uint, GA_PARENT)
+	   ;;  DllCall("GetParent", "UPtr", hwnd)
+	hParent := DllCall("GetAncestor", "UPtr", hwnd, Uint, GA_PARENT)
 	if !hParent || (hParent = DesktopHwnd)
 		return
 	arr.InsertAt(1, {Hwnd:hParent,Path: RTrim(i "." arr[1].Path, ".")})
@@ -3560,7 +3567,7 @@ GetChildList(hwnd) {
 	
 	While Stack.MaxIndex() > 1 || A_Index = 1
 	{ 
-		_hwnd := DllCall("GetWindow", "Ptr", hwnd, UInt, GW, "Ptr") 
+		_hwnd := DllCall("GetWindow", "UPtr", hwnd, UInt, GW, "Ptr") 
 		If _hwnd   
 		{  
 			hwnd := _hwnd 
@@ -3628,7 +3635,7 @@ WM_CONTEXTMENU() {
 
 IsTextArea() {
 	MouseGetPos, , , , cid, 3
-	Return (DllCall("GetParent", Ptr, cid) = hActiveX)
+	Return (DllCall("GetParent", "UPtr", cid) = hActiveX)
 }
 
 ControlsMove(Width, Height) { 
@@ -3732,7 +3739,7 @@ AhkSpyZoomShow() {
 			Run "%A_AHKPath%" "%A_ScriptFullPath%" "Zoom" "%hGui%" "%ActiveNoPause%" "%isPaused%" "%Suspend%" "%Hotkey%" "%OnlyShiftTab%" "%oPubObjGUID%" "%HeigtButton%", , , PID
 		WinWait, % "ahk_pid" PID, , 1
 	}
-	Else If DllCall("IsWindowVisible", "Ptr", oOther.hZoom)
+	Else If DllCall("IsWindowVisible", "UPtr", oOther.hZoom)
 		ZoomMsg(0)
 	Else
 		ZoomMsg(1) 
@@ -3965,7 +3972,7 @@ CreateMarkerInvert() {
 	; Gui, MI: -DPIScale +Owner +HWNDhMarkerGui -Caption +%WS_CHILDWINDOW% +E%WS_EX_NOACTIVATE% +AlwaysOnTop +ToolWindow +E%WS_EX_TRANSPARENT%-%WS_POPUP% 
 
 	Gui, MI: -DPIScale +Owner%hGui% +HWNDhMarkerGui -Caption +AlwaysOnTop +ToolWindow +E%WS_EX_TRANSPARENT% 
-	hDCMarkerInvert := DllCall("GetDC", "Ptr", hMarkerGui)
+	hDCMarkerInvert := DllCall("GetDC", "UPtr", hMarkerGui)
 	WinSet, TransParent, 0, ahk_id %hMarkerGui% 
 }
 
@@ -3982,7 +3989,7 @@ ShowMarkerInvert(x, y, w, h, b := 6) {
 		WinSet, Region, % "0-0 " w "-0 " w "-" h " 0-" h " 0-0 " b "-" b
 			. " " w-b "-" b " " w-b "-" h-b " " b "-" h-b " " b "-" b, ahk_id %hMarkerGui%
 	}
-	hDC := DllCall("GetDC", "Ptr", 0, "Ptr") 
+	hDC := DllCall("GetDC", "UPtr", 0, "Ptr") 
 	
 	DllCall("BitBlt", "Ptr", hDCMarkerInvert, "int", 0, "int", 0, "int", w, "int", h
 			, "Ptr", hDC, "int", X, "int", Y, "Uint", 0x00330008)   ;; NOTSRCCOPY
@@ -3994,17 +4001,17 @@ ShowMarkerInvert(x, y, w, h, b := 6) {
 
 SetEditColor(hwnd, BG, FG) {
 	Edits[hwnd] := {BG:BG,FG:FG}
-	WM_CTLCOLOREDIT(DllCall("GetDC", "Ptr", hwnd), hwnd)
-	DllCall("RedrawWindow", "Ptr", hwnd, "Uint", 0, "Uint", 0, "Uint", 0x1|0x4)
+	WM_CTLCOLOREDIT(DllCall("GetDC", "UPtr", hwnd), hwnd)
+	DllCall("RedrawWindow", "UPtr", hwnd, "Uint", 0, "Uint", 0, "Uint", 0x1|0x4)
 }
 
 WM_CTLCOLOREDIT(wParam, lParam) {
 	If !Edits.HasKey(lParam)
 		Return 0
 	hBrush := DllCall("CreateSolidBrush", UInt, Edits[lParam].BG)
-	DllCall("SetTextColor", Ptr, wParam, UInt, Edits[lParam].FG)
-	DllCall("SetBkColor", Ptr, wParam, UInt, Edits[lParam].BG)
-	DllCall("SetBkMode", Ptr, wParam, UInt, 2)
+	DllCall("SetTextColor", "UPtr", wParam, UInt, Edits[lParam].FG)
+	DllCall("SetBkColor", "UPtr", wParam, UInt, Edits[lParam].BG)
+	DllCall("SetBkMode", "UPtr", wParam, UInt, 2)
 	Return hBrush
 }
 
@@ -4237,7 +4244,7 @@ SeDebugPrivilege() {
 
 GetClientPos(hwnd, ByRef left, ByRef top, ByRef w, ByRef h) {
 	Static _ := VarSetCapacity(pwi, 60, 0)
-	DllCall("GetWindowInfo", "Ptr", hwnd, "Ptr", &pwi)
+	DllCall("GetWindowInfo", "UPtr", hwnd, "Ptr", &pwi)
 	left := NumGet(pwi, 20, "Int") - NumGet(pwi, 4, "Int")
 	top := NumGet(pwi, 24, "Int") - NumGet(pwi, 8, "Int")
 	w := NumGet(pwi, 28, "Int") - NumGet(pwi, 20, "Int")
@@ -4349,7 +4356,7 @@ ChangeLocal(hWnd) {
 
 GetLangName(hWnd) {
 	Static LOCALE_SENGLANGUAGE := 0x1001
-	Locale := DllCall("GetKeyboardLayout", Ptr, DllCall("GetWindowThreadProcessId", Ptr, hWnd, UInt, 0, Ptr), Ptr) & 0xFFFF
+	Locale := DllCall("GetKeyboardLayout", Ptr, DllCall("GetWindowThreadProcessId", "UPtr", hWnd, UInt, 0, Ptr), Ptr) & 0xFFFF
 	Size := DllCall("GetLocaleInfo", UInt, Locale, UInt, LOCALE_SENGLANGUAGE, UInt, 0, UInt, 0) * 2
 	VarSetCapacity(lpLCData, Size, 0)
 	DllCall("GetLocaleInfo", UInt, Locale, UInt, LOCALE_SENGLANGUAGE, Str, lpLCData, UInt, Size)
@@ -4420,7 +4427,7 @@ MouseStep(x, y) {
 	If (WinActive("ahk_id" hGui) && !ActiveNoPause) || OnlyShiftTab
 	{
 		(ThisMode = "Control" ? (Spot_Control() (StateAllwaysSpot ? Spot_Win() : 0) Write_Control()) : (Spot_Win() (StateAllwaysSpot ? Spot_Control() : 0) Write_Win()))
-		If DllCall("IsWindowVisible", "Ptr", oOther.hZoom)
+		If DllCall("IsWindowVisible", "UPtr", oOther.hZoom)
 			ZoomMsg(3)
 	}
 	Shift_Tab_Down := 1
@@ -4498,9 +4505,9 @@ TaskbarProgress(state, hwnd, pct = "") {
 	}
 	if tbl = error
 		Return
-	DllCall(NumGet(NumGet(tbl+0)+10*A_PtrSize), "ptr", tbl, "ptr", hwnd, "uint", state)
+	DllCall(NumGet(NumGet(tbl+0)+10*A_PtrSize), "ptr", tbl, "UPtr", hwnd, "uint", state)
 	if pct !=
-		DllCall(NumGet(NumGet(tbl+0)+9*A_PtrSize), "ptr", tbl, "ptr", hwnd, "int64", pct, "int64", 100)
+		DllCall(NumGet(NumGet(tbl+0)+9*A_PtrSize), "ptr", tbl, "UPtr", hwnd, "int64", pct, "int64", 100)
 }
 
 /*
@@ -4915,7 +4922,7 @@ GetStyles(Class, Style, ExStyle, hWnd, IsChild = 0, IsChildInfoExist = 0) {
 	Res .= ChildExStyles 
 		
 	;;  https://docs.microsoft.com/en-us/windows/desktop/api/winuser/nf-winuser-setclasslongw
-	StyleBits := DllCall("GetClassLong", "Ptr", hWnd, "int", GCL_STYLE)	
+	StyleBits := DllCall("GetClassLong", "UPtr", hWnd, "int", GCL_STYLE)	
 	For K, V In ClassStyles
 		If (StyleBits & V) && (%K% := 1)
 				RetClass .= QStyle(K, V) 
@@ -5622,7 +5629,7 @@ GetStyle_ComboBox(Style, hWnd, byref ResEx)  {
 		, oExStyles := {"CBES_EX_CASESENSITIVE":"0x0010","CBES_EX_NOEDITIMAGE":"0x0001","CBES_EX_NOEDITIMAGEINDENT":"0x0002"
 		,"CBES_EX_NOSIZELIMIT":"0x0008","CBES_EX_PATHWORDBREAKPROC":"0x0004","CBES_EX_TEXTENDELLIPSIS":"0x0020"}
 	
-	If (hParent := DllCall("GetParent", "Ptr", hWnd))
+	If (hParent := DllCall("GetParent", "UPtr", hWnd))
 	{
 		WinGetClass, ParentClass, ahk_id %hParent%
 		If ParentClass = ComboBoxEx32
@@ -5751,17 +5758,17 @@ FullScreenMode() {
 
 WinGetNormalPos(hwnd, ByRef x, ByRef y, ByRef w, ByRef h) {
 	VarSetCapacity(wp, 44), NumPut(44, wp)
-	DllCall("GetWindowPlacement", "Ptr", hwnd, "Ptr", &wp)
+	DllCall("GetWindowPlacement", "UPtr", hwnd, "Ptr", &wp)
 	x := NumGet(wp, 28, "int"), y := NumGet(wp, 32, "int")
 	w := NumGet(wp, 36, "int") - x,  h := NumGet(wp, 40, "int") - y
 }
 
 WinSetNormalPos(hwnd, x, y, w, h) {
 	VarSetCapacity(wp, 44, 0), NumPut(44, wp, 0, "uint")
-	DllCall("GetWindowPlacement", "Ptr", hWnd, "Ptr", &wp)
+	DllCall("GetWindowPlacement", "UPtr", hWnd, "Ptr", &wp)
 	NumPut(x, wp, 28, "int"), NumPut(y, wp, 32, "int")
 	NumPut(w + x, wp, 36, "int"), NumPut(h + y, wp, 40, "int")
-	DllCall("SetWindowPlacement", "Ptr", hWnd, "Ptr", &wp)
+	DllCall("SetWindowPlacement", "UPtr", hWnd, "Ptr", &wp)
 }
 
 	; ___________________________ Find _________________________________________________
@@ -5794,7 +5801,7 @@ FindOption(Hwnd) {
 		Return
 	ControlGet, Style, Style,, , ahk_id %Hwnd%
 	ControlGetText, Text, , ahk_id %Hwnd%
-	DllCall("DestroyWindow", "Ptr", Hwnd)
+	DllCall("DestroyWindow", "UPtr", Hwnd)
 	; BS_PUSHLIKE := 0x1000
 	Gui, %A_Gui%: Add, Text, % "x" pX " y" pY " w" pW " h" pH " g" A_ThisFunc " c" ColorFont " " (Style & 0x1000 ? "+0x0201" : "+Border +0x1201"), % Text
 	InStr(Text, "sensitive") ? (oFind.Registr := !(Style & 0x1000)) : (oFind.Whole := !(Style & 0x1000))
@@ -6552,12 +6559,16 @@ ButtonClick(oevent) {
 		Hwnd := thisid = "window_show_hide" ? oOther.WinID : oOther.ControlID
 		If !WinExist("ahk_id" Hwnd)  
 			Return ToolTip("window not exist", 500)
-		If b := DllCall("IsWindowVisible", "Ptr", Hwnd) 
+		If b := DllCall("IsWindowVisible", "UPtr", Hwnd) 
 			WinHide, % "ahk_id" Hwnd
 		Else 
 			WinShow, % "ahk_id" Hwnd
 		ToolTip(b ? "Hide" : "Show" , 500)
 	}
+	Else If (thisid = "window_minimize" && (WinExist("ahk_id" oOther.WinID) || !ToolTip("window not exist", 500))) 
+		WinMinimize, % "ahk_id" oOther.WinID
+	Else If (thisid = "window_restore" && (WinExist("ahk_id" oOther.WinID) || !ToolTip("window not exist", 500)))   
+		WinRestore, % "ahk_id" oOther.WinID 
 	Else If (thisid = "SendCode")
 		Events.SendCode()
 	Else If (thisid = "SendMode")
@@ -6743,13 +6754,51 @@ ButtonClick(oevent) {
 		Window_ControlCount_func() 
 	Else If thisid = b_CASend
 	{  
-		h := (oOther.ControlID ? oOther.ControlID : oOther.MouseWinID)
+		h := (oOther.ControlID ? oOther.ControlID 
+			: oOther.MouseWinID ? oOther.MouseWinID 
+			: oOther.WinID ? oOther.WinID : 0)
 		If !WinExist("ahk_id " h)
-			Return ToolTip("Window not found!", 500)
+			Return ToolTip("Window not found!", 500) 
+		KeyWait Shift  
+		KeyWait LButton
+		Sleep 300
 		SetKeyDelay 50, 50
 		ControlSend, , % oOther.ControlSend, ahk_id %h%
-		ToolTip("send to " . (oOther.ControlID ? "control: " oOther.ControlNN : "window: " oOther.MouseWinClass), 700)
+		
+		ToolTip("send to " 
+		. (oOther.ControlID ? "control: " oOther.ControlNN  
+		: oOther.MouseWinID ? "window: " oOther.MouseWinClass
+		: oOther.WinID ? "window: " oOther.WinClass), 700)
 	} 
+	Else If thisid = b_ASend
+	{   
+		a := WinActive("ahk_id" hGui)
+		If !a
+			h := WinActive("A")
+		Else 
+			h := (oOther.ControlID ? oOther.ControlID 
+				: oOther.MouseWinID ? oOther.MouseWinID 
+				: oOther.WinID ? oOther.WinID : 0) 
+		KeyWait Shift  
+		KeyWait LButton 
+		Sleep 300
+		If a
+		{  
+			WinShow, ahk_id %h%
+			Sleep 300
+		}	
+		WinActivate, ahk_id %h%
+		Sleep 400
+		If (SendMode = "Send")
+			Send % oOther.ControlSend
+		Else If (SendMode = "SendEvent")
+			SendEvent % oOther.ControlSend
+		Else If (SendMode = "SendPlay") 
+			SendPlay % oOther.ControlSend
+		Else If (SendMode = "SendInput")
+			SendInput % oOther.ControlSend 
+		ToolTip(SendMode " " oOther.ControlSend, 750) 
+	}  
 	Else If InStr(thisid, "ahkscript_")
 	{
 		ToolTip("Ok", 300)
@@ -7068,8 +7117,8 @@ ZoomCreate() {
 	Gui, Zoom: -Caption -DPIScale +Border +LabelZoomOn +HWNDhGuiZoom +AlwaysOnTop +E%WS_EX_NOACTIVATE%    ;;	+Owner%hAhkSpy%
 	Gui, Zoom: Color, %GuiColor%
 	Gui, Zoom: Add, Text, hwndhStatic +Border
-	; DllCall("SetClassLong", "Ptr", hGuiZoom, "int", -26
-	; , "int", DllCall("GetClassLong", "Ptr", hGuiZoom, "int", -26) | 0x20000)
+	; DllCall("SetClassLong", "UPtr", hGuiZoom, "int", -26
+	; , "int", DllCall("GetClassLong", "UPtr", hGuiZoom, "int", -26) | 0x20000)
 
 	Gui, LW: -Caption +E%WS_EX_LAYERED% +AlwaysOnTop +ToolWindow +HWNDhLW +E%WS_EX_NOACTIVATE% +Owner%hGuiZoom% ;;	++E%WS_EX_NOACTIVATE% +E%WS_EX_TRANSPARENT%
 
@@ -7355,7 +7404,7 @@ Zoom_Msg(wParam, lParam) {
 		If (oZoom.MemoryZoomSize := lParam)
 			IniWrite(oZoom.GuiWidth, "MemoryZoomSizeW"), IniWrite(oZoom.GuiHeight, "MemoryZoomSizeH")
 	}
-	Else If (wParam = 5 && DllCall("IsWindowVisible", "Ptr", oZoom.hGui))  ;;	MinSize
+	Else If (wParam = 5 && DllCall("IsWindowVisible", "UPtr", oZoom.hGui))  ;;	MinSize
 		Gui, Zoom:Show, % "NA w" oZoom.GuiMinW " h" oZoom.GuiMinH
 	Else If wParam = 6  ;;	ActiveNoPause
 		ActiveNoPause := lParam, ZoomRules("Win", ActiveNoPause ? 0 : SpyActive)
@@ -7529,7 +7578,7 @@ ZoomMenu() {
 	ObjActive.ZoomSleep()
 	WinActivate, % "ahk_id " oZoom.hGui
 	ZoomRules("Win", 0)
-	DllCall("SetTimer", "Ptr", A_ScriptHwnd, "Ptr", 1, "UInt", 333, "Ptr", RegisterCallback("ZoomMenuCheck", "Fast"))
+	DllCall("SetTimer", "UPtr", A_ScriptHwnd, "Ptr", 1, "UInt", 333, "Ptr", RegisterCallback("ZoomMenuCheck", "Fast"))
 	CoordMode, Menu, Screen 
 	If A_GuiControl =
 	{
@@ -7545,7 +7594,7 @@ ZoomMenu() {
 }
 
 ZoomMenuCheck()  {
-	DllCall("KillTimer", "Ptr", A_ScriptHwnd, "Ptr", 1) 
+	DllCall("KillTimer", "UPtr", A_ScriptHwnd, "Ptr", 1) 
 	If !WinExist("ahk_class #32768 ahk_pid " oZoom.CurrentProcessId)
 		Return
 	If GetKeyState("RButton")
@@ -7568,7 +7617,7 @@ ZoomMenuCheck()  {
 		}
 		KeyWait, RButton
 	}
-	DllCall("SetTimer", "Ptr", A_ScriptHwnd, "Ptr", 1, "UInt", 64, "Ptr", RegisterCallback("ZoomMenuCheck", "Fast"))
+	DllCall("SetTimer", "UPtr", A_ScriptHwnd, "Ptr", 1, "UInt", 64, "Ptr", RegisterCallback("ZoomMenuCheck", "Fast"))
 }
 
 _gMenuZoom() { 
@@ -7608,7 +7657,7 @@ _gSave_as_Base64() {
 		Return DllCall("gdiplus\GdipDisposeImage", "UPtr", pBitmap), ToolTip("Error BitmapToBase64!", 1200) 
 
 	DllCall("gdiplus\GdipDisposeImage", "UPtr", pBitmap) 
-	DllCall("OpenClipboard", Ptr, 0)
+	DllCall("OpenClipboard", "Ptr", 0)
 	DllCall("EmptyClipboard")
 	DllCall("CloseClipboard")
 	If tovar
@@ -7871,10 +7920,10 @@ MagnifyHWND(hwnd) {
 	hbm := CreateDIBSection2(Width, Height), hdc := CreateCompatibleDC(), obm := SelectObject(hdc, hbm)
  
 	ok := PrintWindow(hwnd, hdc) 
-	If !ok
-	{
-		Return 0, SelectObject(hdc, obm), DeleteObject(hbm), DeleteDC(hdc) 
-	} 
+	; If !ok
+	; {
+		; Return 0, SelectObject(hdc, obm), DeleteObject(hbm), DeleteDC(hdc) 
+	; } 
 	oZoom.NewSpot := 1, oZoom.MouseX := ObjActive.ScreenX, oZoom.MouseY := ObjActive.ScreenY 
 	
 	oZoom.nXOriginSrc := oZoom.sXOriginSrc := Width // 2 
