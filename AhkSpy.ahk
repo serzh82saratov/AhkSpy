@@ -27,10 +27,11 @@
 	
 	баги
 		64bit https://forum.script-coding.com/viewtopic.php?pid=153917#p153917
+		Acc_GetPath http://forum.script-coding.com/viewtopic.php?pid=147218#p147218
 */
 
 
-Global AhkSpyVersion := 4.93
+Global AhkSpyVersion := 4.94
           
 	; ___________________________ Caption _________________________________________________
 
@@ -184,6 +185,7 @@ Global _S1 := "<span>", _S2 := "</span>", _DB := "<span style='position: relativ
 , _PRE1 := "<pre contenteditable='true'>", _PRE2 := "</pre>"
 , _LPRE := "<pre contenteditable='true' class='lpre'", _PRE := "<pre contenteditable='true' "
 , _DP := "  <span style='color: #" ColorDelimiter "'>&#9642</span>  "
+, _DP2 := "  <span style='color: #" ColorDelimiter "' name='MS:P'>&#9642</span>  "
 , _StIf := "    <span class='QStyle1'>&#9642</span>    <span class='QStyle2' name='MS:'>"
 , _BR := "<p class='br'></p>", _DN := "`n", _DN2 := "<div style='height: 0.50em`;'></div>" 
 
@@ -1987,14 +1989,20 @@ AddSpace(c) {
 GetAccPath() { 
 	if !Acc_GetPath(arr)
 		Return 0  
-	If !CompareAcc(Acc_Get("Object", arr[1].Path, 0, "ahk_id " arr[1].hWnd), Object(oPubObj.Acc.AccObj))
+	i := arr[1].Path = 0 ? 2 : 1
+	If !CompareAcc(Acc_Get("Object", arr[i].Path, 0, "ahk_id " arr[i].hWnd), Object(oPubObj.Acc.AccObj))
 		Return ""
 		
 	for k, v in arr
-	{ 
-		tree .= AddSpace(k - 1) "<span><span name='MS:'>" v.Path "</span>" _DP  "<span name='MS:'>" v.Hwnd "</span>" 
-			. _DP "<span name='MS:'>" v.WinClass "</span>" _DP  "<span name='MS:'>" v.ProcessName "</span></span><span name='MS:P'>     </span>"
-			. _DP _BP1 " id='b_hwnd_flash' value='" v.Hwnd "'> flash " _BP2 "`n" 
+	{
+		If (v.Path = 0) 
+			tree .= AddSpace(k - 1) "<span><span style='color:#" ColorErrorAccPath "'>path not found</span>" _DP  "<span name='MS:'>" v.Hwnd "</span>" 
+			. _DP "<span name='MS:'>" v.WinClass "</span>" _DP  "<span name='MS:'>" v.ProcessName "</span></span>"
+			. _DP2 _BP1 " id='b_hwnd_flash' value='" v.Hwnd "'> flash " _BP2 "`n" 
+		Else 
+			tree .= AddSpace(k - 1) "<span><span name='MS:'>" v.Path "</span>" _DP  "<span name='MS:'>" v.Hwnd "</span>" 
+			. _DP "<span name='MS:'>" v.WinClass "</span>" _DP  "<span name='MS:'>" v.ProcessName "</span></span>"
+			. _DP2 _BP1 " id='b_hwnd_flash' value='" v.Hwnd "'> flash " _BP2 "`n" 
 	}
 	tree := _T1 " id='P__Tree_Acc_Path'" _T1P "> ( Accessible path ) </span>" _T2 _PRE1 "<span>" tree "</span>" _PRE2
 	SaveAccPath(tree)
@@ -2006,26 +2014,40 @@ Acc_GetPath(byref arr) {
 	If oPubObj.Acc.CLOAKED
 		Return 0
 	Acc := Object(oPubObj.Acc.AccObj) 
-	arr := []
-	
+	arr := [] 
 	While Hwnd := Acc_WindowFromObject(Parent := Acc_Parent(Acc)) { 
 		If (DesktopHwnd != Hwnd)
-			t1 := GetEnumIndex(Acc)
+			t1 := GetEnumIndex(Acc)  
 		If t1 = -1
 			Return arr := ""
 		If (PrHwnd != "" && Hwnd != PrHwnd)
-		{
+		{ 
 			PrHwnd := Format("0x{:06X}", PrHwnd)
 			WinGetClass, WinClass, ahk_id %PrHwnd%
 			WinGet, ProcessName, ProcessName, ahk_id %PrHwnd%
-			arr.InsertAt(1, {Hwnd: PrHwnd, Path: SubStr(t2, 1, -1), WinClass: WinClass, ProcessName: ProcessName})
+			arr.InsertAt(1, {Hwnd: PrHwnd, Path: SubStr(t2, 1, -1), WinClass: WinClass, ProcessName: ProcessName}) 
+			if (t1 = "" && Hwnd != DesktopHwnd)
+			{
+				Hwnd := Format("0x{:06X}", Hwnd)
+				WinGetClass, WinClass, ahk_id %Hwnd%
+				WinGet, ProcessName, ProcessName, ahk_id %Hwnd%
+				arr.InsertAt(1, {Hwnd: Hwnd, Path: "0", WinClass: WinClass, ProcessName: ProcessName}) 
+			}
 		}
 		if (t1 = "" || Hwnd = DesktopHwnd)
-		   break
-		t2 := t1 "." t2
+		   break 
 		PrHwnd := Hwnd
-		Acc := Parent 
+		Acc := Parent
+		t2 := t1 "." t2
 	}
+	; If (arr[1].hWnd != oPubObj.Acc.WinID)
+		; Return 0
+		
+		; MsgBox %  Format("0x{:06X}", Acc_WindowFromObject( Acc_Parent(Acc)))
+	; SetFormat, IntegerFast, H
+	; MsgBox % arr[1].Path "`n" arr[1].hWnd + 0  "`n" DesktopHwnd + 0 "`n" oPubObj.Acc.WinID + 0
+	; "4.1.2.1.1.1.1.1.2.1.2.3.1.1".accName(0)    arr[1].Path
+	; MsgBox %  Acc_Get("Object", "4.1.1.1.2.1.2.3.1.1", 0, "ahk_id " 0x030F50).accName(0)
 	Return arr.Count()
 }
 
@@ -2045,8 +2067,7 @@ CompareAcc(Acc1, Acc2) {
 	&& (Acc1.accDefaultAction(0) = Acc2.accDefaultAction(0)) 	
 	&& (Acc1.accDescription(0) = Acc2.accDescription(0)) 	
 	&& (Acc1.accHelp(0) = Acc2.accHelp(0)) 	
-	&& (Acc1.accKeyboardShortcut(0) = Acc.accKeyboardShortcut(0)) 
-	
+	&& (Acc1.accKeyboardShortcut(0) = Acc2.accKeyboardShortcut(0))
 	&& (Acc1.accChildCount = Acc2.accChildCount) 
 	&& (Acc1.accName(0) = Acc2.accName(0)) 	
 	&& (Acc1.accRole(0) = Acc2.accRole(0)) 	
@@ -2344,7 +2365,7 @@ Write_HotkeyHTML(K, scroll = 0) {
 		Comment := "<span class='param' name='MS:SP'>    `;  """ KeyName """</span>"
 	If (Hotkey != "")
 		FComment := "<span class='param' name='MS:SP'>    `;  """ (K.HK = "" ? K.TK : Mods KeyName) """</span>"
-		, b_ASend := _DP  _BP1 " id='b_ASend'> send " _BP2
+		, b_ASend := "  " _DP "  " _BP1 " id='b_ASend'> send " _BP2
 		
 	If (LRMods != "")
 	{
@@ -2367,7 +2388,9 @@ Write_HotkeyHTML(K, scroll = 0) {
 	oOther.ControlSend := (DUMods = "" ? "{" SendHotkey "}" : DUMods)
 	
 	If (oOther.ControlID || oOther.MouseWinID || oOther.WinID)
-		CASend := _DP  _BP1 " id='b_CASend'> send to " (oOther.ControlID ? "control" : "window") " " _BP2  
+		CASend := "  " _DP "  " _BP1 " id='b_CASend'> send to " (oOther.ControlID ? "control" : "window") " " _BP2 . "`n<span name='MS:P4'>        </span>" 
+	Else 
+		CASend := "`n<span name='MS:P'>        </span>"
 	CtrlClass := (oOther.ControlID ? oOther.ControlNN : "ahk_parent")
   
 	VKCode_ := "0x" SubStr(VKCode, 3)
@@ -2382,7 +2405,7 @@ Write_HotkeyHTML(K, scroll = 0) {
 	
 	If SCCode !=
 		ThisKeySC := "   " _DP "   <span name='MS:'>" VKCode "</span>   " _DP "   <span name='MS:'>" SCCode "</span>   "
-		. _DP "   <span name='MS:' id='v_VKDHCode'>" VKCode_ "</span>   " _DP "   <span name='MS:'>" SCCode_ "</span>"
+		. _DP "   <span name='MS:' id='v_VKDHCode'>" VKCode_ "</span>   " _DP "   <span name='MS:' id='v_SCDHCode'>" SCCode_ "</span>"
 	Else
 		ThisKeySC := "   " _DP "   <span name='MS:' id='v_VKDHCode'>" VKCode_ "</span>"
 	
@@ -2403,8 +2426,6 @@ Write_HotkeyHTML(K, scroll = 0) {
 	. "`n<span name='MS:P'>        </span>"
 
 	. "`n<span><span name='MS:'>ControlSend, " CtrlClass ", <span name='MS:'>" oOther.ControlSend "</span>, WinTitle</span>" Comment "</span>" . CASend
-
-	. "`n<span name='MS:P'>        </span>"
 	
 	. "`n<span><span name='MS:'>GetKeyState(""" SendHotkey """, ""P"")</span>" Comment "</span>   " 
 		. _DP "   <span><span name='MS:'>KeyWait, " SendHotkey ", D T0.5</span>" Comment "</span>"
@@ -5940,6 +5961,8 @@ MS_Select(EL) {
 		oMS.ELSel := oDoc.all.item(EL.sourceIndex + 1)
 	Else If EL.Name = "MS:P"
 		oMS.ELSel := oDoc.all.item(EL.sourceIndex - 1).ParentElement
+	Else If EL.Name = "MS:P4"
+		oMS.ELSel := oDoc.all.item(EL.sourceIndex - 4).ParentElement
 	Else
 		oMS.ELSel := EL
 		
