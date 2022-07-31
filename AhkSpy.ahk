@@ -31,7 +31,7 @@
 */
 
 
-Global AhkSpyVersion := 4.94
+Global AhkSpyVersion := 4.95
           
 	; ___________________________ Caption _________________________________________________
 
@@ -419,6 +419,11 @@ Menu, Sys, Add, % name := "Suspend hotkeys", % oMenu.Sys[name] := "_Suspend"
 Menu, Sys, Add, % name := "Default size", % oMenu.Sys[name] := "DefaultSize"
 Menu, Sys, Add, % name := "Full screen", % oMenu.Sys[name] := "FullScreenMode"
 Menu, Sys, Add, % name := "Find to page", % oMenu.Sys[name] := "_FindView"
+
+Menu, Sys, Add
+Menu, Sys, Add, Open window from clipboard, Menu_LocalOpenWin
+Menu, Sys, Add, Open control from clipboard, Menu_LocalOpenChild
+
 
 ; Menu, Sys, Color, % ColorBgOriginal
 
@@ -1370,7 +1375,19 @@ Write_Control(scroll = 0) {
 	Return 1
 } 
 
+Menu_LocalOpenWin() {
+	If !WinExist("ahk_id" Clipboard)
+		Return ToolTip("Window not found", 700) 
+	Gosub Mode_Win
+	LocalOpenWin(Clipboard)
+}
 
+Menu_LocalOpenChild() {
+	If !WinExist("ahk_id" Clipboard)
+		Return ToolTip("Window not found", 700)  
+	Gosub Mode_Control
+	LocalOpenChild(Clipboard, GetClassNN(Clipboard))
+}
 
 LocalOpenWin(Win) {
 	gLocalData := {}
@@ -1381,8 +1398,7 @@ LocalOpenWin(Win) {
 	Write_Win()
 	gLocalData := ""  
 	If oOther.ZoomShow
-		ZoomMsg(14, Win)
-
+		ZoomMsg(14, Win) 
 }
 
 LocalOpenWinChild(ControlID, ChildNN) {
@@ -1840,7 +1856,8 @@ AccInfoUnderMouse(mx, my, wx, wy, cx, cy, caX, caY, WinID, ControlID, fromhandle
 		code .= _T1 " id='P__Name_Acc'" _T1P "> ( Name ) </span><a></a>" _BT1 " id='copy_button'> copy " _BT2 _T2 _LPRE ">" TransformHTML(Var) _PRE2
 		
 	If ((Var := AccObj.accValue(child)) != "")
-		code .= _T1 " id='P__Value_Acc'" _T1P "> ( Value ) </span><a></a>" _BT1 " id='copy_button'> copy " _BT2 _T2 _LPRE ">" TransformHTML(Var) _PRE2
+		code .= _T1 " id='P__Value_Acc'" _T1P "> ( Value ) </span><a></a>" _BT1 " id='copy_button'> copy " _BT2 
+		. _DB _BT1 " id='set_accvalue'> set " _BT2 _T2 _LPRE " id='get_accvalue'>" TransformHTML(Var) _PRE2
 		
 	AccState(AccObj, child, style, strstyles)
 	If (strstyles != "")
@@ -1911,7 +1928,14 @@ EVENT_OBJECT_UNCLOAKED(hWinEventHook, event, hwnd, idObject, idChild) {
 	oOther.AccCLOAKEDpAccObj := ""
 	oOther.AccCLOAKEDWinID := ""
 }
- 
+
+accset_accvalue() { 
+	If oPubObj.Acc.CLOAKED
+		Return 0, ToolTip("CLOAKED", 500)
+	Acc := Object(oPubObj.Acc.AccObj)   
+	Acc.accValue := oDoc.getElementById("get_accvalue").innerText 
+} 
+
 accDoDefaultAction() { 
 	If oPubObj.Acc.CLOAKED
 		Return 0, ToolTip("CLOAKED", 500)
@@ -2000,9 +2024,9 @@ GetAccPath() {
 			. _DP "<span name='MS:'>" v.WinClass "</span>" _DP  "<span name='MS:'>" v.ProcessName "</span></span>"
 			. _DP2 _BP1 " id='b_hwnd_flash' value='" v.Hwnd "'> flash " _BP2 "`n" 
 		Else 
-			tree .= AddSpace(k - 1) "<span><span name='MS:'>" v.Path "</span>" _DP  "<span name='MS:'>" v.Hwnd "</span>" 
-			. _DP "<span name='MS:'>" v.WinClass "</span>" _DP  "<span name='MS:'>" v.ProcessName "</span></span>"
-			. _DP2 _BP1 " id='b_hwnd_flash' value='" v.Hwnd "'> flash " _BP2 "`n" 
+			tree .= AddSpace(k - 1) "<span><span name='MS:'>" v.Path "</span>" _DP  "<span name='MS:'>" v.Hwnd "</span>"
+			. _DP2 _BP1 " id='b_hwnd_flash' value='" v.Hwnd "'> flash " _BP2 
+			. _DP "<span name='MS:'>" v.WinClass "</span>" _DP  "<span name='MS:'>" v.ProcessName "</span></span>" "`n" 
 	}
 	tree := _T1 " id='P__Tree_Acc_Path'" _T1P "> ( Accessible path ) </span>" _T2 _PRE1 "<span>" tree "</span>" _PRE2
 	SaveAccPath(tree)
@@ -3383,6 +3407,20 @@ RealHwnd(hwnd) {
    return numget(var, 0, "uint")
 }
 
+GetClassNN(hc)   { 
+	If !hp := DllCall("GetAncestor", "UPtr", hc, Uint, 2)
+		Return
+    WinGet, HwndList, ControlListHwnd, ahk_id %hp%
+    WinGet, ControlNNList, ControlList, ahk_id %hp%
+	cnl := StrSplit(ControlNNList,"`n")
+    Loop, parse, HwndList, `n
+    { 
+		If (A_LoopField = hc)
+			Return cnl[A_Index]
+    }
+	Return 
+}
+
 	; ___________________________ List Window _________________________________________________
 
 
@@ -3417,7 +3455,7 @@ Window_CountList(PID) {
 	. _DB _BT1 " id='copy__PRE1' name='pre_WindowCountList'> copy " _BT2 _T2 
 	. _PRE " id='pre_WindowCountList'>" "<span>" tree "</span>" _PRE2 
 	oOther.WindowCountList := tree
-	Return 1 
+	Return 1    
 }
 
 Window_ControlCountList(Hwnd, find = 0) {
@@ -6738,8 +6776,10 @@ ButtonClick(oevent) {
 		str := oDoc.getElementById("v_VKDHCode").innerText
 		oDoc.getElementById("v_VKDHCode").innerText := (DecimalCode) ? Format("{:d}", str) : Format("0x{:X}", str)
 	}
+	Else If (thisid = "set_accvalue")
+		accset_accvalue()  
 	Else If (thisid = "acc_DoDefaultAction" || thisid = "acc_DoDefaultAction2")
-		accDoDefaultAction()  
+		accDoDefaultAction()   
 	Else If thisid = b_hwnd_flash
 	{ 
 		WinGetPos, X, Y, W, H, % "ahk_id" oevent.value
