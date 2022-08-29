@@ -31,7 +31,7 @@
 */
 
 
-Global AhkSpyVersion := 4.97
+Global AhkSpyVersion := 4.98
           
 	; ___________________________ Caption _________________________________________________
 
@@ -6619,10 +6619,14 @@ ButtonClick(oevent) {
 			hwnd := oOther.WinID	
 			If 1
 			{ 
+					ToolTip %  (s ? "+" : "-") style
 				If (caption = "__Styles_Win") 
 					WinSet, Style, % (s ? "+" : "-") style, % "ahk_id" hwnd
 				Else If (caption = "__ExStyles_Win") 
 					WinSet, ExStyle, % (s ? "+" : "-") style, % "ahk_id" hwnd
+				If (style = 0x00000008) 
+					WinSet, AlwaysOnTop, % (s ? "On" : "Off"), % "ahk_id" hwnd
+				
 				Else If (caption = "__ClassStyles_Win") 
 				{
 					; StyleBits := DllCall("GetClassLong", "UPtr", hWnd, "int", -26) ; GCL_STYLE
