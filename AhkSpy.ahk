@@ -31,7 +31,7 @@
 */
 
 
-Global AhkSpyVersion := 4.98
+Global AhkSpyVersion := 4.99
           
 	; ___________________________ Caption _________________________________________________
 
@@ -6618,8 +6618,7 @@ ButtonClick(oevent) {
 		{ 
 			hwnd := oOther.WinID	
 			If 1
-			{ 
-					ToolTip %  (s ? "+" : "-") style
+			{  
 				If (caption = "__Styles_Win") 
 					WinSet, Style, % (s ? "+" : "-") style, % "ahk_id" hwnd
 				Else If (caption = "__ExStyles_Win") 
