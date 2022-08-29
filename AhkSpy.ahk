@@ -31,7 +31,7 @@
 */
 
 
-Global AhkSpyVersion := 4.96
+Global AhkSpyVersion := 4.97
           
 	; ___________________________ Caption _________________________________________________
 
@@ -4903,7 +4903,7 @@ GetStyles(Class, Style, ExStyle, hWnd, IsChild = 0, IsChildInfoExist = 0) {
 	Ret .= QStyle("WS_CAPTION", "0x00C00000", ""  ;;	WS_CAPTION && WS_BORDER 
 	, (Style & 0x00C00000) = 0x00C00000  && (WS_CAPTION := 1, WS_BORDER := 1, Style -= 0x00C00000)) 
 	
-	Ret .= QStyle("WS_BORDER", "0x00800000", "", !!(WS_CAPTION))  
+	; Ret .= QStyle("WS_BORDER", "0x00800000", "", !!(WS_CAPTION))  
 		
 	Ret .= QStyle("WS_DLGFRAME", "0x00400000", "!(WS_CAPTION)"
 	, !WS_CAPTION && (Style & 0x00400000) && (WS_DLGFRAME := 1, Style -= 0x00400000))  ;;	WS_DLGFRAME 
@@ -6638,6 +6638,23 @@ ButtonClick(oevent) {
 				oJScript.ButtonOverColor := "#" color 
 				oevent.innerText := (s ? "✔" : "✖")  
 				oDoc.all.item(oevent.sourceIndex  + 1).className := (s ? "" : "QStyle4")  
+				
+				Sleep 200
+				WinGet, WinStyle, Style, % "ahk_id" oOther.WinID
+				WinGet, WinExStyle, ExStyle, % "ahk_id" oOther.WinID
+				
+				If (WinStyle WinExStyle = "")
+					Return ToolTip("Window not exist", 500)
+				oDoc.getElementById("w_Style").innerText := WinStyle
+				oDoc.getElementById("w_ExStyle").innerText := WinExStyle 
+
+				Styles := "<a></a>" GetStyles(oOther.WinClass
+					, oDoc.getElementById("w_Style").innerText
+					, oDoc.getElementById("w_ExStyle").innerText
+					, oOther.WinID)
+
+				oDoc.getElementById("WinStyles").innerHTML := Styles
+				HTML_Win := oDivNew.innerHTML 
 			}  
 		} 
 		Else 
@@ -6668,7 +6685,23 @@ ButtonClick(oevent) {
 				oJScript.ButtonOverColor := "#" color 
 				oevent.innerText := (s ? "✔" : "✖")  
 				oDoc.all.item(oevent.sourceIndex  + 1).className := (s ? "" : "QStyle4")   
-			}  
+				
+				Sleep 200
+				ControlGet, CtrlStyle, Style,,, % "ahk_id" oOther.ControlID
+				ControlGet, CtrlExStyle, ExStyle,,, % "ahk_id" oOther.ControlID
+				
+				If (CtrlStyle CtrlExStyle = "")
+					Return ToolTip("Window not exist", 500)
+				oDoc.getElementById("c_Style").innerText := CtrlStyle
+				oDoc.getElementById("c_ExStyle").innerText := CtrlExStyle
+		
+				Styles := "<a></a>" GetStyles(oOther.CtrlClass
+					, CtrlStyle
+					, CtrlExStyle
+					, oOther.ControlID)
+				oDoc.getElementById("ControlStyles").innerHTML := Styles
+				HTML_Control := oDivNew.innerHTML 
+			}
 		}
 	}
 	Else If (thisid = "window_minimize" && (WinExist("ahk_id" oOther.WinID) || !ToolTip("window not exist", 500))) 
