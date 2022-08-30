@@ -31,7 +31,7 @@
 */
 
 
-Global AhkSpyVersion := 4.99
+Global AhkSpyVersion := 5.00
           
 	; ___________________________ Caption _________________________________________________
 
@@ -5005,8 +5005,8 @@ QStyleRest(F, V) {
 	Return "<span style='color: #" ColorDelimiter ";' name='MS:'>" Format("0x{1:0" F "X}", V) "</span>`n"
 }
 QStyle(k, v, q = "", e = "") { 
-	Return (e ? _BP1 " id='___WStyleChange'>&#10004" _BP2 " " : _BPE1 " id='___WStyleChange'>&#10006" _BPE2 " ")    
-		. "<span name='MS:Q'" (e ? "" : " class='QStyle4'") ">" k " := <span class='param' name='MS:'>" v "</span></span>" 
+	Return " " (e ? _BP1 " id='___WStyleChange'>&#10004" _BP2 : _BPE1 " id='___WStyleChange'>&#10006" _BPE2)    
+		. "  <span name='MS:Q'" (e ? "" : " class='QStyle4'") ">" k " := <span class='param' name='MS:'>" v "</span></span>" 
 		. (q != "" ? _StIf q "</span>`n" : "`n")  
 } 
 
@@ -6612,11 +6612,14 @@ ButtonClick(oevent) {
 	Else If (thisid = "___WStyleChange") {
 		caption := oDoc.all.item(oevent.parentElement.parentElement.sourceIndex - 3).id 
 		style := oDoc.all.item(oevent.sourceIndex + 2).OuterText   
-		s := (oevent.OuterText = "✖") 
+		 ; 0x2716 ✖ ; 0x2714 ✔
+		s := (oevent.OuterText = Chr(0x2716)) 
 		color := (s ? ColorParam : ColorStyleNoApply) 
 		If (ThisMode = "Win")
 		{ 
-			hwnd := oOther.WinID	
+			hwnd := oOther.WinID			
+			If (!WinExist("ahk_id" hwnd))
+				Return ToolTip("Window not exist", 500)
 			If 1
 			{  
 				If (caption = "__Styles_Win") 
@@ -6639,7 +6642,7 @@ ButtonClick(oevent) {
 				}
 				oDoc.all.item(oevent.sourceIndex - 0).style.color := color
 				oJScript.ButtonOverColor := "#" color 
-				oevent.innerText := (s ? "✔" : "✖")  
+				oevent.innerText := (s ? Chr(0x2714) : Chr(0x2716))  
 				oDoc.all.item(oevent.sourceIndex  + 1).className := (s ? "" : "QStyle4")  
 				
 				Sleep 200
@@ -6663,6 +6666,8 @@ ButtonClick(oevent) {
 		Else 
 		{
 			hwnd := oOther.ControlID	
+			If (!WinExist("ahk_id" hwnd))
+				Return ToolTip("Window not exist", 500)
 			If caption = 
 				caption := oDoc.all.item(oevent.parentElement.parentElement.sourceIndex - 4).id  
 			If 1
@@ -6686,7 +6691,7 @@ ButtonClick(oevent) {
 				}
 				oDoc.all.item(oevent.sourceIndex - 0).style.color := color
 				oJScript.ButtonOverColor := "#" color 
-				oevent.innerText := (s ? "✔" : "✖")  
+				oevent.innerText := (s ? Chr(0x2714) : Chr(0x2716))  
 				oDoc.all.item(oevent.sourceIndex  + 1).className := (s ? "" : "QStyle4")   
 				
 				Sleep 200
@@ -8457,57 +8462,3 @@ CryptBinaryToStringBASE64(pData, Bytes, NOCRLF = "")  {
 	; ___________________________ End _________________________________________________
 
 	;;)
-	
-	
-	
-	
-	
-	
-	
-	
-/*
-
-
-DllCall\(.*Ptr\*
-
-
-comobjerror(false)
-loop
-	{
-		Acc_test(child).accName(child)
-	   tooltip %  "`n" Acc_test(child).accDefaultAction(child) "`n" A_LastError
-	}
-
-
-Acc_test(ByRef _idChild_ = "", x = "", y = "")
-{
-	Static	h
-	If Not	h
-		h:=DllCall("LoadLibrary","Str","oleacc","Ptr")
-	If	DllCall("oleacc\AccessibleObjectFromPoint", "Int64", x==""||y==""?0*DllCall("GetCursorPos","Int64*",pt)+pt:x&0xFFFFFFFF|y<<32, "Ptr*", pacc, "Ptr", VarSetCapacity(varChild,8+2*A_PtrSize,0)*0+&varChild)=0
-	Return	ComObjEnwrap(9,pacc,1), _idChild_:=NumGet(varChild,8,"UInt")
-}
-
-
-01:58 20.01.2021
-Добавить кнопку обновить данные
-	
-	
-	
-
-#If isAhkSpy && Sleep != 1 && WinActive("ahk_id" hGui)
-
-1::
-  
-
-WinSet, ExStyle, +%WS_EX_TRANSPARENT%, ahk_id %hGui%
-Return
-2::
-  
-
-WinSet, ExStyle, -%WS_EX_TRANSPARENT%, ahk_id %hGui%
-Return
-
-
-
-*/
