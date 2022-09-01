@@ -31,7 +31,7 @@
 */
 
 
-Global AhkSpyVersion := 5.01
+Global AhkSpyVersion := 5.02
           
 	; ___________________________ Caption _________________________________________________
 
@@ -2378,7 +2378,8 @@ Write_HotkeyHTML(K, scroll = 0, upd = 0) {
 	If upd 
 	{
 		K := oOther.HotkeyK 
-		K.IsCode := (SendCode != "name")
+		If !K.IsMouse
+			K.IsCode := (SendCode != "name")
 		K.HK := K.IsCode ? K[SendCode] : K.TK 
 	}	
 	Else 
@@ -2386,6 +2387,7 @@ Write_HotkeyHTML(K, scroll = 0, upd = 0) {
 	Mods := K.Mods, KeyName := K.Name
 	Prefix := K.Pref 
 	Hotkey := K.HK = "" ? K.TK : K.HK
+	If !K.IsMouse
 	K.IsCode := (SendCode != "name") ; 03:15 07.02.2021
 	If (K.HK = "") && (K.IsCode) ; 03:15 07.02.2021
 		Hotkey := K[SendCode]  ; 03:15 07.02.2021
@@ -2570,7 +2572,7 @@ Hotkey_Main(In) {
 	Static Prefix := {"LCtrl":"<^","LShift":"<+","LAlt":"<!","LWin":"<#"
 	,"RCtrl":">^","RShift":">+","RAlt":">!","RWin":">#"}, K := {}, ModsOnly
 	Local IsMod, sIsMod
-	IsMod := In.IsMod
+	IsMod := In.IsMod 
 	If (In.Opt = "Down") {
 		If (K["M" IsMod] != "")
 			Return 1
@@ -2603,6 +2605,7 @@ Hotkey_Main(In) {
 	Else If (In = "LButton")
 		GoTo, Hotkey_PressLButton
 	
+	K.IsMouse := 0
 	K.UP := In.UP, K.IsJM := 0, K.Time := In.Time, K.NFP := In.NFP, K.IsMod := IsMod
 	K.Mods := K.MCtrl K.MShift K.MAlt K.MWin
 	K.LRMods := K.MLCtrl K.MRCtrl K.MLShift K.MRShift K.MLAlt K.MRAlt K.MLWin K.MRWin
@@ -2633,6 +2636,7 @@ Hotkey_PressMouse:
 	ThisHotkey := A_ThisHotkey
 	K.NFP := !GetKeyState(ThisHotkey, "P")
 Hotkey_Drop:
+	K.IsMouse := 1
 	K.Time := A_TickCount
 	K.Mods := K.MCtrl K.MShift K.MAlt K.MWin
 	K.LRMods := K.MLCtrl K.MRCtrl K.MLShift K.MRShift K.MLAlt K.MRAlt K.MLWin K.MRWin
