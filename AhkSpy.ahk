@@ -31,7 +31,7 @@
 */
 
 
-Global AhkSpyVersion := 5.00
+Global AhkSpyVersion := 5.01
           
 	; ___________________________ Caption _________________________________________________
 
@@ -2372,10 +2372,17 @@ Mode_Hotkey:
 		FindNewText()		
 	oDoc.getElementById("b_CASend").innerText := " send to " (oOther.ControlID ? "control" : "window")
 	Return
-
-Write_HotkeyHTML(K, scroll = 0) {
+	
+Write_HotkeyHTML(K, scroll = 0, upd = 0) {
 	Static PrHK1, PrHK2, Name
-
+	If upd 
+	{
+		K := oOther.HotkeyK 
+		K.IsCode := (SendCode != "name")
+		K.HK := K.IsCode ? K[SendCode] : K.TK 
+	}	
+	Else 
+		oOther.HotkeyK := K.Clone() 
 	Mods := K.Mods, KeyName := K.Name
 	Prefix := K.Pref 
 	Hotkey := K.HK = "" ? K.TK : K.HK
@@ -4977,12 +4984,12 @@ GetStyles(Class, Style, ExStyle, hWnd, IsChild = 0, IsChildInfoExist = 0) {
 	IF Style
 		Ret .= QStyleRest(8, Style) 
 	If Ret !=
-		Res .= _T1 " id='__Styles_Win'>" QStyleTitle("Styles", "", 4, sStyle) "</span>" _T2 _PRE1 Ret _PRE2  
+		Res .= "<a></a>" _T1 " id='__Styles_Win'>" QStyleTitle("Styles", "", 4, sStyle) "</span>" _T2 _PRE1 Ret _PRE2  
 	Res .= ChildStyles
 	IF ExStyle
 		RetEx .= QStyleRest(8, ExStyle)  
 	If RetEx !=
-		Res .= _T1 " id='__ExStyles_Win'>" QStyleTitle("ExStyles", "", 8, sExStyle) "</span>" _T2 _PRE1 RetEx _PRE2 
+		Res .= "<a></a>" _T1 " id='__ExStyles_Win'>" QStyleTitle("ExStyles", "", 8, sExStyle) "</span>" _T2 _PRE1 RetEx _PRE2 
 	Res .= ChildExStyles 
 		
 	;;  https://docs.microsoft.com/en-us/windows/desktop/api/winuser/nf-winuser-setclasslongw
@@ -4991,7 +4998,7 @@ GetStyles(Class, Style, ExStyle, hWnd, IsChild = 0, IsChildInfoExist = 0) {
 		RetClass .= QStyle(K, V, "", (StyleBits & V) && (%K% := 1)) 
 	
 	If RetClass !=
-		Res .= _T1 " id='__ClassStyles_Win'>" QStyleTitle("Class Styles", "", 8, StyleBits) "</span>" _T2 _PRE1 RetClass _PRE2
+		Res .= "<a></a>" _T1 " id='__ClassStyles_Win'>" QStyleTitle("Class Styles", "", 8, StyleBits) "</span>" _T2 _PRE1 RetClass _PRE2
 
 	Return Res
 }
@@ -5035,7 +5042,7 @@ GetStyle_#32770(Style, hWnd)  {
 	IF Style
 		Ret .= QStyleRest(4, Style)
 	If Ret !=
-		Res .= _T1 " id='__Styles_Control'>" QStyleTitle("Styles", "#32770", 4, sStyle) "</span>" _T2 _PRE1 Ret _PRE2
+		Res .= "<a></a>" _T1 " id='__Styles_Control'>" QStyleTitle("Styles", "#32770", 4, sStyle) "</span>" _T2 _PRE1 Ret _PRE2
 	
 	Return Res
 }
@@ -5056,7 +5063,7 @@ GetStyle_tooltips_class32(Style, hWnd)  {
 	IF Style
 		Ret .= QStyleRest(4, Style)
 	If Ret !=
-		Res .= _T1 " id='__Styles_Control'>" QStyleTitle("Styles", "tooltips_class32", 4, sStyle) "</span>" _T2 _PRE1 Ret _PRE2
+		Res .= "<a></a>" _T1 " id='__Styles_Control'>" QStyleTitle("Styles", "tooltips_class32", 4, sStyle) "</span>" _T2 _PRE1 Ret _PRE2
 	
 	Return Res
 }
@@ -5093,7 +5100,7 @@ GetStyle_Static(Style, hWnd)  {
 	IF Style
 		Ret .= QStyleRest(4, Style)
 	If Ret !=
-		Res .= _T1 " id='__Styles_Control'>" QStyleTitle("Styles", "Static", 4, sStyle) "</span>" _T2 _PRE1 Ret _PRE2
+		Res .= "<a></a>" _T1 " id='__Styles_Control'>" QStyleTitle("Styles", "Static", 4, sStyle) "</span>" _T2 _PRE1 Ret _PRE2
 	
 	Return Res
 }
@@ -5139,7 +5146,7 @@ GetStyle_Button(Style, hWnd)  {
 	IF Style
 		Ret .= QStyleRest(4, Style)
 	If Ret !=
-		Res .= _T1 " id='__Styles_Control'>" QStyleTitle("Styles", "Button", 4, sStyle) "</span>" _T2 _PRE1 Ret _PRE2
+		Res .= "<a></a>" _T1 " id='__Styles_Control'>" QStyleTitle("Styles", "Button", 4, sStyle) "</span>" _T2 _PRE1 Ret _PRE2
 	
 	Return Res
 }
@@ -5173,7 +5180,7 @@ GetStyle_Edit(Style, hWnd, byref ResEx)  {
 	IF Style
 		Ret .= QStyleRest(4, Style)
 	If Ret !=
-		Res .= _T1 " id='__Styles_Control'>" QStyleTitle("Styles", "Edit", 4, sStyle) "</span>" _T2 _PRE1 Ret _PRE2
+		Res .= "<a></a>" _T1 " id='__Styles_Control'>" QStyleTitle("Styles", "Edit", 4, sStyle) "</span>" _T2 _PRE1 Ret _PRE2
 
 	IF ExStyle
 	{ 
@@ -5185,7 +5192,7 @@ GetStyle_Edit(Style, hWnd, byref ResEx)  {
 			RetEx .= QStyleRest(4, ExStyle)
 		
 		If RetEx !=
-			ResEx := _T1 " id='__ExStyles_Control'>" QStyleTitle("ExStyles", "Edit", 4, sExStyle) "</span>" _T2 _PRE1 RetEx _PRE2
+			ResEx := "<a></a>" _T1 " id='__ExStyles_Control'>" QStyleTitle("ExStyles", "Edit", 4, sExStyle) "</span>" _T2 _PRE1 RetEx _PRE2
 	} 
 	
 	Return Res
@@ -5221,7 +5228,7 @@ GetStyle_ListBox(Style, hWnd)  {
 	IF Style
 		Ret .= QStyleRest(4, Style)
 	If Ret !=
-		Res .= _T1 " id='__Styles_Control'>" QStyleTitle("Styles", "ListBox", 4, sStyle) "</span>" _T2 _PRE1 Ret _PRE2
+		Res .= "<a></a>" _T1 " id='__Styles_Control'>" QStyleTitle("Styles", "ListBox", 4, sStyle) "</span>" _T2 _PRE1 Ret _PRE2
 	
 	Return Res
 }
@@ -5240,7 +5247,7 @@ GetStyle_SysAnimate32(Style, hWnd)  {
 	IF Style
 		Ret .= QStyleRest(4, Style)
 	If Ret !=
-		Res .= _T1 " id='__Styles_Control'>" QStyleTitle("Styles", "SysAnimate32", 4, sStyle) "</span>" _T2 _PRE1 Ret _PRE2
+		Res .= "<a></a>" _T1 " id='__Styles_Control'>" QStyleTitle("Styles", "SysAnimate32", 4, sStyle) "</span>" _T2 _PRE1 Ret _PRE2
 	
 	Return Res
 }
@@ -5261,7 +5268,7 @@ GetStyle_SysPager(Style, hWnd)  {
 	IF Style
 		Ret .= QStyleRest(4, Style)  
 	If Ret !=
-		Res .= _T1 " id='__Styles_Control'>" QStyleTitle("Styles", "SysPager", 4, sStyle) "</span>" _T2 _PRE1 Ret _PRE2
+		Res .= "<a></a>" _T1 " id='__Styles_Control'>" QStyleTitle("Styles", "SysPager", 4, sStyle) "</span>" _T2 _PRE1 Ret _PRE2
 	
 	Return Res
 }
@@ -5282,7 +5289,7 @@ GetStyle_msctls_updown32(Style, hWnd)  {
 	IF Style
 		Ret .= QStyleRest(4, Style)  
 	If Ret !=
-		Res .= _T1 " id='__Styles_Control'>" QStyleTitle("Styles", "msctls_updown32", 4, sStyle) "</span>" _T2 _PRE1 Ret _PRE2
+		Res .= "<a></a>" _T1 " id='__Styles_Control'>" QStyleTitle("Styles", "msctls_updown32", 4, sStyle) "</span>" _T2 _PRE1 Ret _PRE2
 	
 	Return Res
 }
@@ -5306,7 +5313,7 @@ GetStyle_SysDateTimePick32(Style, hWnd)  {
 	IF Style
 		Ret .= QStyleRest(4, Style)  
 	If Ret !=
-		Res .= _T1 " id='__Styles_Control'>" QStyleTitle("Styles", "SysDateTimePick32", 4, sStyle) "</span>" _T2 _PRE1 Ret _PRE2
+		Res .= "<a></a>" _T1 " id='__Styles_Control'>" QStyleTitle("Styles", "SysDateTimePick32", 4, sStyle) "</span>" _T2 _PRE1 Ret _PRE2
 	
 	Return Res
 }
@@ -5327,7 +5334,7 @@ GetStyle_SysMonthCal32(Style, hWnd)  {
 	IF Style
 		Ret .= QStyleRest(4, Style) 
 	If Ret !=
-		Res .= _T1 " id='__Styles_Control'>" QStyleTitle("Styles", "SysMonthCal32", 4, sStyle) "</span>" _T2 _PRE1 Ret _PRE2
+		Res .= "<a></a>" _T1 " id='__Styles_Control'>" QStyleTitle("Styles", "SysMonthCal32", 4, sStyle) "</span>" _T2 _PRE1 Ret _PRE2
 	
 	Return Res
 }
@@ -5367,7 +5374,7 @@ GetStyle_msctls_trackbar32(Style, hWnd)  {
 	IF Style
 		Ret .= QStyleRest(4, Style)  
 	If Ret !=
-		Res .= _T1 " id='__Styles_Control'>" QStyleTitle("Styles", "msctls_trackbar32", 4, sStyle) "</span>" _T2 _PRE1 Ret _PRE2
+		Res .= "<a></a>" _T1 " id='__Styles_Control'>" QStyleTitle("Styles", "msctls_trackbar32", 4, sStyle) "</span>" _T2 _PRE1 Ret _PRE2
 	
 	Return Res
 }
@@ -5387,7 +5394,7 @@ GetStyle_msctls_statusbar32(Style, hWnd)  {
 	IF Style
 		Ret .= QStyleRest(4, Style)  
 	If Ret !=
-		Res .= _T1 " id='__Styles_Control'>" QStyleTitle("Styles", "msctls_statusbar32", 4, sStyle) "</span>" _T2 _PRE1 Ret _PRE2
+		Res .= "<a></a>" _T1 " id='__Styles_Control'>" QStyleTitle("Styles", "msctls_statusbar32", 4, sStyle) "</span>" _T2 _PRE1 Ret _PRE2
 	
 	Return Res
 }
@@ -5407,7 +5414,7 @@ GetStyle_msctls_progress32(Style, hWnd)  {
 	IF Style
 		Ret .= QStyleRest(4, Style)  
 	If Ret !=
-		Res .= _T1 " id='__Styles_Control'>" QStyleTitle("Styles", "msctls_progress32", 4, sStyle) "</span>" _T2 _PRE1 Ret _PRE2
+		Res .= "<a></a>" _T1 " id='__Styles_Control'>" QStyleTitle("Styles", "msctls_progress32", 4, sStyle) "</span>" _T2 _PRE1 Ret _PRE2
 	
 	Return Res
 }
@@ -5430,7 +5437,7 @@ GetStyle_SysHeader32(Style, hWnd)  {
 	IF Style
 		Ret .= QStyleRest(4, Style)  
 	If Ret !=
-		Res .= _T1 " id='__Styles_Control'>" QStyleTitle("Styles", "SysHeader32", 4, sStyle) "</span>" _T2 _PRE1 Ret _PRE2
+		Res .= "<a></a>" _T1 " id='__Styles_Control'>" QStyleTitle("Styles", "SysHeader32", 4, sStyle) "</span>" _T2 _PRE1 Ret _PRE2
 	
 	Return Res
 }
@@ -5451,7 +5458,7 @@ GetStyle_SysLink(Style, hWnd) {
 	IF Style
 		Ret .= QStyleRest(4, Style) 
 	If Ret !=
-		Res .= _T1 " id='__Styles_Control'>" QStyleTitle("Styles", "SysLink", 4, sStyle) "</span>" _T2 _PRE1 Ret _PRE2
+		Res .= "<a></a>" _T1 " id='__Styles_Control'>" QStyleTitle("Styles", "SysLink", 4, sStyle) "</span>" _T2 _PRE1 Ret _PRE2
 	
 	Return Res
 }
@@ -5472,7 +5479,7 @@ GetStyle_ReBarWindow32(Style, hWnd) {
 	IF Style
 		Ret .= QStyleRest(4, Style)  
 	If Ret !=
-		Res .= _T1 " id='__Styles_Control'>" QStyleTitle("Styles", "ReBarWindow32", 4, sStyle) "</span>" _T2 _PRE1 Ret _PRE2
+		Res .= "<a></a>" _T1 " id='__Styles_Control'>" QStyleTitle("Styles", "ReBarWindow32", 4, sStyle) "</span>" _T2 _PRE1 Ret _PRE2
 	Return Res
 }
 
@@ -5554,7 +5561,7 @@ GetStyle_SysListView32(Style, hWnd, byref ResEx)  {
 	IF Style
 		Ret .= QStyleRest(4, Style)  
 	If Ret !=
-		Res .= _T1 " id='__Styles_Control'>" QStyleTitle("Styles", "SysListView32", 4, sStyle) "</span>" _T2 _PRE1 Ret _PRE2
+		Res .= "<a></a>" _T1 " id='__Styles_Control'>" QStyleTitle("Styles", "SysListView32", 4, sStyle) "</span>" _T2 _PRE1 Ret _PRE2
 	 
 	For K, V In oExStyles 
 		RetEx .= QStyle(K, V, "", ((ExStyle & V) = V) && (%K% := 1, ExStyle -= V))
@@ -5562,7 +5569,7 @@ GetStyle_SysListView32(Style, hWnd, byref ResEx)  {
 	IF ExStyle
 		RetEx .= QStyleRest(8, ExStyle)  
 	If RetEx !=
-		ResEx := _T1 " id='__ExStyles_Control'>" QStyleTitle("ExStyles", "SysListView32", 8, sExStyle) "</span>" _T2 _PRE1 RetEx _PRE2
+		ResEx := "<a></a>" _T1 " id='__ExStyles_Control'>" QStyleTitle("ExStyles", "SysListView32", 8, sExStyle) "</span>" _T2 _PRE1 RetEx _PRE2
 	 
 	 Return Res
 }
@@ -5593,7 +5600,7 @@ GetStyle_SysTreeView32(Style, hWnd, byref ResEx)  {
 	IF Style
 		Ret .= QStyleRest(4, Style)  
 	If Ret !=
-		Res .= _T1 " id='__Styles_Control'>" QStyleTitle("Styles", "SysTreeView32", 4, sStyle) "</span>" _T2 _PRE1 Ret _PRE2
+		Res .= "<a></a>" _T1 " id='__Styles_Control'>" QStyleTitle("Styles", "SysTreeView32", 4, sStyle) "</span>" _T2 _PRE1 Ret _PRE2
  
 	For K, V In oExStyles 
 		RetEx .= QStyle(K, V, "", ((ExStyle & V) = V) && (1, ExStyle -= V))
@@ -5601,7 +5608,7 @@ GetStyle_SysTreeView32(Style, hWnd, byref ResEx)  {
 	IF ExStyle
 		RetEx .= QStyleRest(8, ExStyle)  
 	If RetEx !=
-		ResEx := _T1 " id='__ExStyles_Control'>" QStyleTitle("ExStyles", "SysTreeView32", 8, sExStyle) "</span>" _T2 _PRE1 RetEx _PRE2
+		ResEx := "<a></a>" _T1 " id='__ExStyles_Control'>" QStyleTitle("ExStyles", "SysTreeView32", 8, sExStyle) "</span>" _T2 _PRE1 RetEx _PRE2
 	
 	Return Res
 }
@@ -5638,7 +5645,7 @@ GetStyle_SysTabControl32(Style, hWnd, byref ResEx)  {
 	IF Style
 		Ret .= QStyleRest(4, Style)  
 	If Ret !=
-		Res .= _T1 " id='__Styles_Control'>" QStyleTitle("Styles", "SysTabControl32", 4, sStyle) "</span>" _T2 _PRE1 Ret _PRE2
+		Res .= "<a></a>" _T1 " id='__Styles_Control'>" QStyleTitle("Styles", "SysTabControl32", 4, sStyle) "</span>" _T2 _PRE1 Ret _PRE2
   
 		RetEx .= QStyle("TCS_EX_FLATSEPARATORS", "0x00000001"   ;;	TCS_EX_FLATSEPARATORS
 		, ((ExStyle & 0x00000001) = 0x00000001) && (1, ExStyle -= 0x00000001))
@@ -5648,7 +5655,7 @@ GetStyle_SysTabControl32(Style, hWnd, byref ResEx)  {
 	IF ExStyle
 		RetEx .= QStyleRest(8, ExStyle)  
 	If RetEx !=
-		ResEx := _T1 " id='__ExStyles_Control'>" QStyleTitle("ExStyles", "SysTabControl32", 8, sExStyle) "</span>" _T2 _PRE1 RetEx _PRE2
+		ResEx := "<a></a>" _T1 " id='__ExStyles_Control'>" QStyleTitle("ExStyles", "SysTabControl32", 8, sExStyle) "</span>" _T2 _PRE1 RetEx _PRE2
 	
 	Return Res
 }
@@ -5689,9 +5696,9 @@ GetStyle_ComboBox(Style, hWnd, byref ResEx)  {
 	IF Style
 		Ret .= QStyleRest(4, Style) 
 	If Ret !=
-		Res .= _T1 " id='__Styles_Control'>" QStyleTitle("Styles", "ComboBox", 4, sStyle) "</span>" _T2 _PRE1 Ret _PRE2 
+		Res .= "<a></a>" _T1 " id='__Styles_Control'>" QStyleTitle("Styles", "ComboBox", 4, sStyle) "</span>" _T2 _PRE1 Ret _PRE2 
 	If RetEx !=
-		ResEx := _T1 " id='__ExStyles_Control'>" QStyleTitle("ExStyles", "ComboBoxEx32", 4, sExStyle) "</span>" _T2 _PRE1 RetEx _PRE2
+		ResEx := "<a></a>" _T1 " id='__ExStyles_Control'>" QStyleTitle("ExStyles", "ComboBoxEx32", 4, sExStyle) "</span>" _T2 _PRE1 RetEx _PRE2
 	Return Res
 }
 
@@ -5722,14 +5729,14 @@ GetStyle_ToolbarWindow32(Style, hWnd, byref ResEx)  {
 	IF Style
 		Ret .= QStyleRest(8, Style)   
 	If Ret !=
-		Res .= _T1 " id='__Styles_Control'>" QStyleTitle("Styles", "ToolbarWindow32", 4, sStyle) "</span>" _T2 _PRE1 Ret _PRE2 
+		Res .= "<a></a>" _T1 " id='__Styles_Control'>" QStyleTitle("Styles", "ToolbarWindow32", 4, sStyle) "</span>" _T2 _PRE1 Ret _PRE2 
 	For K, V In oExStyles 
 		RetEx .= QStyle(K, V, "", ((ExStyle & V) = V) && (1, ExStyle -= V))
 
 	IF ExStyle
 		RetEx .= QStyleRest(4, ExStyle)  
 	If RetEx !=
-		ResEx := _T1 " id='__ExStyles_Control'>" QStyleTitle("ExStyles", "ToolbarWindow32", 4, sExStyle) "</span>" _T2 _PRE1 RetEx _PRE2 
+		ResEx := "<a></a>" _T1 " id='__ExStyles_Control'>" QStyleTitle("ExStyles", "ToolbarWindow32", 4, sExStyle) "</span>" _T2 _PRE1 RetEx _PRE2 
 		
 	Return Res
 	
@@ -6386,7 +6393,8 @@ Class Events {  ;;	http://forum.script-coding.com/viewtopic.php?pid=82283#p82283
 	}
 	SendCode() {
 		IniWrite(SendCode := {vk:"sc",sc:"name",name:"vk"}[SendCode], "SendCode")
-		oDoc.getElementById("SendCode").innerText := " " SendCode " "
+		oDoc.getElementById("SendCode").innerText := " " SendCode " " 
+		Write_HotkeyHTML(oOther.HotkeyK, 0, 1)
 	}
 	LButton_Hotkey() {
 		If Hotkey_Arr("Hook")
@@ -6613,8 +6621,8 @@ ButtonClick(oevent) {
 		caption := oDoc.all.item(oevent.parentElement.parentElement.sourceIndex - 3).id 
 		style := oDoc.all.item(oevent.sourceIndex + 2).OuterText   
 		 ; 0x2716 ✖ ; 0x2714 ✔
-		s := (oevent.OuterText = Chr(0x2716)) 
-		color := (s ? ColorParam : ColorStyleNoApply) 
+		add := (oevent.OuterText = Chr(0x2716)) 
+		color := (add ? ColorParam : ColorStyleNoApply) 
 		If (ThisMode = "Win")
 		{ 
 			hwnd := oOther.WinID			
@@ -6623,17 +6631,17 @@ ButtonClick(oevent) {
 			If 1
 			{  
 				If (caption = "__Styles_Win") 
-					WinSet, Style, % (s ? "+" : "-") style, % "ahk_id" hwnd
+					WinSet, Style, % (add ? "+" : "-") style, % "ahk_id" hwnd
 				Else If (caption = "__ExStyles_Win") 
-					WinSet, ExStyle, % (s ? "+" : "-") style, % "ahk_id" hwnd
+					WinSet, ExStyle, % (add ? "+" : "-") style, % "ahk_id" hwnd
 				If (style = 0x00000008) 
-					WinSet, AlwaysOnTop, % (s ? "On" : "Off"), % "ahk_id" hwnd
+					WinSet, AlwaysOnTop, % (add ? "On" : "Off"), % "ahk_id" hwnd
 				
 				Else If (caption = "__ClassStyles_Win") 
 				{
 					; StyleBits := DllCall("GetClassLong", "UPtr", hWnd, "int", -26) ; GCL_STYLE
 					; ToolTip % (StyleBits & style) 
-					If s
+					If add
 						DllCall("SetClassLong", "UPtr", hWnd, "int", -26
 						, "int", DllCall("GetClassLong", "UPtr", hWnd, "int", -26) | style)
 					Else 
@@ -6642,25 +6650,27 @@ ButtonClick(oevent) {
 				}
 				oDoc.all.item(oevent.sourceIndex - 0).style.color := color
 				oJScript.ButtonOverColor := "#" color 
-				oevent.innerText := (s ? Chr(0x2714) : Chr(0x2716))  
-				oDoc.all.item(oevent.sourceIndex  + 1).className := (s ? "" : "QStyle4")  
+				oevent.innerText := (add ? Chr(0x2714) : Chr(0x2716))  
+				oDoc.all.item(oevent.sourceIndex  + 1).className := (add ? "" : "QStyle4")  
 				
 				Sleep 200
-				WinGet, WinStyle, Style, % "ahk_id" oOther.WinID
-				WinGet, WinExStyle, ExStyle, % "ahk_id" oOther.WinID
 				
-				If (WinStyle WinExStyle = "")
-					Return ToolTip("Window not exist", 500)
-				oDoc.getElementById("w_Style").innerText := WinStyle
-				oDoc.getElementById("w_ExStyle").innerText := WinExStyle 
+				ViewStylesWin(1)  
+				; WinGet, WinStyle, Style, % "ahk_id" oOther.WinID
+				; WinGet, WinExStyle, ExStyle, % "ahk_id" oOther.WinID
+				
+				; If (WinStyle WinExStyle = "")
+					; Return ToolTip("Window not exist", 500)
+				; oDoc.getElementById("w_Style").innerText := WinStyle
+				; oDoc.getElementById("w_ExStyle").innerText := WinExStyle 
 
-				Styles := "<a></a>" GetStyles(oOther.WinClass
-					, oDoc.getElementById("w_Style").innerText
-					, oDoc.getElementById("w_ExStyle").innerText
-					, oOther.WinID)
+				; Styles := "<a></a>" GetStyles(oOther.WinClass
+					; , oDoc.getElementById("w_Style").innerText
+					; , oDoc.getElementById("w_ExStyle").innerText
+					; , oOther.WinID)
 
-				oDoc.getElementById("WinStyles").innerHTML := Styles
-				HTML_Win := oDivNew.innerHTML 
+				; oDoc.getElementById("WinStyles").innerHTML := Styles
+				; HTML_Win := oDivNew.innerHTML 
 			}  
 		} 
 		Else 
@@ -6673,16 +6683,16 @@ ButtonClick(oevent) {
 			If 1
 			{ 
 				If (caption = "__Styles_Win") 
-					WinSet, Style, % (s ? "+" : "-") style, % "ahk_id" hwnd
+					WinSet, Style, % (add ? "+" : "-") style, % "ahk_id" hwnd
 				Else If (caption = "__ExStyles_Win") 
-					WinSet, ExStyle, % (s ? "+" : "-") style, % "ahk_id" hwnd
+					WinSet, ExStyle, % (add ? "+" : "-") style, % "ahk_id" hwnd
 				Else If (caption = "__Styles_Control")  
-					Control, Style, % (s ? "+" : "-") style, , % "ahk_id" hwnd
+					Control, Style, % (add ? "+" : "-") style, , % "ahk_id" hwnd
 				Else If (caption = "__ExStyles_Control") 
-					Control, ExStyle, % (s ? "+" : "-") style, , % "ahk_id" hwnd 
+					Control, ExStyle, % (add ? "+" : "-") style, , % "ahk_id" hwnd 
 				Else If (caption = "__ClassStyles_Win") 
 				{ 
-					If s
+					If add
 						DllCall("SetClassLong", "UPtr", hWnd, "int", -26
 						, "int", DllCall("GetClassLong", "UPtr", hWnd, "int", -26) | style)
 					Else 
@@ -6691,24 +6701,25 @@ ButtonClick(oevent) {
 				}
 				oDoc.all.item(oevent.sourceIndex - 0).style.color := color
 				oJScript.ButtonOverColor := "#" color 
-				oevent.innerText := (s ? Chr(0x2714) : Chr(0x2716))  
-				oDoc.all.item(oevent.sourceIndex  + 1).className := (s ? "" : "QStyle4")   
+				oevent.innerText := (add ? Chr(0x2714) : Chr(0x2716))  
+				oDoc.all.item(oevent.sourceIndex  + 1).className := (add ? "" : "QStyle4")   
 				
 				Sleep 200
-				ControlGet, CtrlStyle, Style,,, % "ahk_id" oOther.ControlID
-				ControlGet, CtrlExStyle, ExStyle,,, % "ahk_id" oOther.ControlID
+				ViewStylesControl(1)
+				; ControlGet, CtrlStyle, Style,,, % "ahk_id" oOther.ControlID
+				; ControlGet, CtrlExStyle, ExStyle,,, % "ahk_id" oOther.ControlID
 				
-				If (CtrlStyle CtrlExStyle = "")
-					Return ToolTip("Window not exist", 500)
-				oDoc.getElementById("c_Style").innerText := CtrlStyle
-				oDoc.getElementById("c_ExStyle").innerText := CtrlExStyle
+				; If (CtrlStyle CtrlExStyle = "")
+					; Return ToolTip("Window not exist", 500)
+				; oDoc.getElementById("c_Style").innerText := CtrlStyle
+				; oDoc.getElementById("c_ExStyle").innerText := CtrlExStyle
 		
-				Styles := "<a></a>" GetStyles(oOther.CtrlClass
-					, CtrlStyle
-					, CtrlExStyle
-					, oOther.ControlID)
-				oDoc.getElementById("ControlStyles").innerHTML := Styles
-				HTML_Control := oDivNew.innerHTML 
+				; Styles := "<a></a>" GetStyles(oOther.CtrlClass
+					; , CtrlStyle
+					; , CtrlExStyle
+					; , oOther.ControlID)
+				; oDoc.getElementById("ControlStyles").innerHTML := Styles
+				; HTML_Control := oDivNew.innerHTML 
 			}
 		}
 	}
