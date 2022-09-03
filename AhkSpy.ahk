@@ -31,7 +31,7 @@
 */
 
 
-Global AhkSpyVersion := 5.02
+Global AhkSpyVersion := 5.03
           
 	; ___________________________ Caption _________________________________________________
 
@@ -2374,7 +2374,7 @@ Mode_Hotkey:
 	Return
 	
 Write_HotkeyHTML(K, scroll = 0, upd = 0) {
-	Static PrHK1, PrHK2, Name
+	Static PrHK1, PrHK2, PrHKCode, Name
 	If upd 
 	{
 		K := oOther.HotkeyK 
@@ -2395,8 +2395,18 @@ Write_HotkeyHTML(K, scroll = 0, upd = 0) {
 	ThisKey := K.TK, VKCode := K.VK, SCCode := K.SC
 	If (K.NFP && Mods KeyName != "")
 		NotPhysical	:= " " _DP "<span style='color:#" ColorDelimiter "'> Emulated</span>"
+	
 	HK1 := K.IsCode ? Hotkey : ThisKey
-	HK2 := HK1 = PrHK1 ? PrHK2 : PrHK1, PrHK1 := HK1, PrHK2 := HK2
+	If upd
+	{
+		PrHK1 := HK2 := PrHKCode[SendCode]  
+	} Else  {
+		HK2 := HK1 = PrHK1 ? PrHK2 : PrHK1
+		PrHK1 := HK1
+		PrHK2 := HK2
+		PrHKCode := {vk : Format("vk{:X}", GetKeyVK(HK2)), sc : Format("sc{:X}", GetKeySC(HK2)), name : GetKeyName(HK2)}  
+	}
+	
 	HKComm1 := "    `;  """ (StrLen(Name := GetKeyName(HK2)) = 1 ? Format("{:U}", Name) : Name)
 	HKComm2 := (StrLen(Name := GetKeyName(HK1)) = 1 ? Format("{:U}", Name) : Name) """"
 
@@ -6948,7 +6958,8 @@ ButtonClick(oevent) {
 		Sleep 300
 		If a
 		{  
-			WinShow, ahk_id %h%
+			WinShow, ahk_id %h% 
+			ControlFocus, , ahk_id %h%
 			Sleep 300
 		}	
 		WinActivate, ahk_id %h%
