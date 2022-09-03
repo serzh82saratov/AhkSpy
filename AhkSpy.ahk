@@ -31,7 +31,7 @@
 */
 
 
-Global AhkSpyVersion := 5.03
+Global AhkSpyVersion := 5.04
           
 	; ___________________________ Caption _________________________________________________
 
@@ -106,7 +106,7 @@ If !DarkTheme
 	, ColorScrollArrows := "686868" 
 	, ColorScrollBack := "F0F0F0" 
 	, ColorScrollFace := "CDCDCD" 
-	, ColorStyleNoApply := "B93515" 
+	, ColorStyleNoApply := ColorStyleComment2 
 }
 Else 
 {
@@ -5009,7 +5009,7 @@ GetStyles(Class, Style, ExStyle, hWnd, IsChild = 0, IsChildInfoExist = 0) {
 	;;  https://docs.microsoft.com/en-us/windows/desktop/api/winuser/nf-winuser-setclasslongw
 	StyleBits := DllCall("GetClassLong", "UPtr", hWnd, "int", GCL_STYLE)	
 	For K, V In ClassStyles 
-		RetClass .= QStyle(K, V, "", (StyleBits & V) && (%K% := 1)) 
+		RetClass .= QStyleNB(K, V, "", (StyleBits & V) && (%K% := 1)) 
 	
 	If RetClass !=
 		Res .= "<a></a>" _T1 " id='__ClassStyles_Win'>" QStyleTitle("Class Styles", "", 8, StyleBits) "</span>" _T2 _PRE1 RetClass _PRE2
@@ -5028,6 +5028,10 @@ QStyleRest(F, V) {
 QStyle(k, v, q = "", e = "") { 
 	Return " " (e ? _BP1 " id='___WStyleChange'>&#10004" _BP2 : _BPE1 " id='___WStyleChange'>&#10006" _BPE2)    
 		. "  <span name='MS:Q'" (e ? "" : " class='QStyle4'") ">" k " := <span class='param' name='MS:'>" v "</span></span>" 
+		. (q != "" ? _StIf q "</span>`n" : "`n")  
+} 
+QStyleNB(k, v, q = "", e = "") { 
+	Return "<span name='MS:Q'" (e ? "" : " class='QStyle4'") ">" k " := <span class='param' name='MS:'>" v "</span></span>" 
 		. (q != "" ? _StIf q "</span>`n" : "`n")  
 } 
 
