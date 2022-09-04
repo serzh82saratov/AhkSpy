@@ -31,7 +31,7 @@
 */
 
 
-Global AhkSpyVersion := 5.04
+Global AhkSpyVersion := 5.05
           
 	; ___________________________ Caption _________________________________________________
 
@@ -1259,6 +1259,13 @@ Spot_Control(NotHTML = 0) {
 		CaretPosStr = <span class='param'>Caret:</span>  <span name='MS:'>x%S_CaretX% y%A_CaretY%</span>
 	Else 
 		CaretPosStr = <span class='error'>Caret position undefined</span>
+		
+	If ((iNCHITTEST := WM_NCHITTEST(MXS, MYS, WinID, HITTESTname)) != "")
+	{
+		NCHITTESTStr :=_DP "<span class='param'>WM_NCHITTEST:</span>  <span name='MS:'>"
+		. (IsObject(HITTESTname) ? HITTESTname[1] " := " HITTESTname[2] : HITTESTname) " := " iNCHITTEST "</span>"
+	}	
+		
 	
 	; ___________________________ HTML_Control _________________________________________________
  
@@ -1342,7 +1349,7 @@ HTML_Control:
 
 	. "`n<span class='param'>Cursor:</span>  <span name='MS:'>" A_Cursor "</span>" 
 		. _DP  CaretPosStr  _DP "<span class='param'>Client area:</span>  <span name='MS:'>x" caX " y" caY " w" caW " h" caH "</span>"
-
+		. NCHITTESTStr
 	. "`n" _BP1 " id='set_button_focus_ctrl'>Focus control:" _BP2 "  <span name='MS:'>" CtrlFocus "</span>" _PRE2 
 
 	. "`n" HTML_ControlExist 
@@ -3446,6 +3453,24 @@ GetClassNN(hc)   {
 			Return cnl[A_Index]
     }
 	Return 
+}
+
+WM_NCHITTEST(x, y, hWnd, byref name) { 
+	Static arr 
+	If !arr
+		arr := {WM_NCHITTEST: 0x84, "FAIL": "", -2: "HTERROR", -1: "HTTRANSPARENT", 0: "HTNOWHERE", 1: "HTCLIENT"
+		, 2: "HTCAPTION", 3: "HTSYSMENU", 4: ["HTGROWBOX", "HTSIZE"], 5: "HTMENU", 6: "HTHSCROLL"
+		, 7: "HTVSCROLL", 8: ["HTMINBUTTON", "HTREDUCE"], 9: ["HTMAXBUTTON", "HTZOOM"]
+		, 10: "HTLEFT", 11: "HTRIGHT", 12: "HTTOP", 13: "HTTOPLEFT", 14: "HTTOPRIGHT", 15: "HTBOTTOM"
+		, 16: "HTBOTTOMLEFT", 17: "HTBOTTOMRIGHT", 18: "HTBORDER", 19: "undefined", 20: "HTCLOSE", 21: "HTHELP"}
+			
+	; CoordMode, Mouse
+	; MouseGetPos, x, y, hWnd
+	; SendMessage, WM_NCHITTEST := 0x84, 0, x | y << 16,, ahk_id %hWnd%  ; неправильно
+	; https://www.autohotkey.com/board/topic/20431-wm-nchittest-wrapping-whats-under-a-screen-point/
+	; https://docs.microsoft.com/ru-ru/windows/win32/inputdev/wm-nchittest
+	SendMessage, arr.WM_NCHITTEST, 0, (x & 0xFFFF) | (y & 0xFFFF) << 16, , ahk_id %hWnd%   
+	Return ErrorLevel, name := arr[ErrorLevel]
 }
 
 	; ___________________________ List Window _________________________________________________
