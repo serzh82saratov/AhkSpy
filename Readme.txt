@@ -1,1 +1,1 @@
-version 5.05
+version 5.06
