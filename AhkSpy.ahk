@@ -31,7 +31,7 @@
 */
 
 
-Global AhkSpyVersion := 5.05
+Global AhkSpyVersion := 5.06
           
 	; ___________________________ Caption _________________________________________________
 
@@ -280,7 +280,7 @@ Gui, TB: Add, Text, % "Border hwndhButtonZoom +0x201 c" ColorFont " BackGroundTr
 Gui, TB: Add, Progress, % "x+1 y0 h" HeigtButton-1 " w" wColor " vColorProgress HWNDhColorProgress c" ColorBgOriginal, 100
 
 Gui, TB: Add, Progress, % "x+1 y0 h" HeigtButton-1 " w" wKey " vColor_Button Background" ColorBgModeButton  
-Gui, TB: Add, Text, % "Border hwndhButtonButton +0x201 c" ColorFont " BackGroundTrans xp yp hp wp", Button
+Gui, TB: Add, Text, % "Border hwndhButtonButton +0x201 c" ColorFont " BackGroundTrans xp yp hp wp", Keys
 
 Gui, TB: Show, % "x0 y0 NA h" HeigtButton " w" widthTB := wKey * 3 + wColor + HeigtButton + 6
 
@@ -547,7 +547,7 @@ _PausedScript:
 	HideAllMarkers(), CheckHideMarker()
 	Menu, Sys, % (isPaused ? "Check" : "UnCheck"), Pause
 	isPaused ? TaskbarProgress(4, hGui, 100) : TaskbarProgress(0, hGui)
-	TitleText := (TitleTextP1 := "AhkSpy - " ({"Win":"Window","Control":"Control","Hotkey":"Button"}[ThisMode]))
+	TitleText := (TitleTextP1 := "AhkSpy - " ({"Win":"Window","Control":"Control","Hotkey":"Keys"}[ThisMode]))
 	. (TitleTextP2 := (isPaused ? "                Paused..." : TitleTextP2_Reserved))
 	SendMessage, 0xC, 0, &TitleText, , ahk_id %hGui%
 	PausedTitleText()
@@ -1775,8 +1775,8 @@ AccInfoUnderMouse(mx, my, wx, wy, cx, cy, caX, caY, WinID, ControlID, fromhandle
 	WinID := RealHwnd(WinID)
 	ControlID := RealHwnd(ControlID)
 	AccObj := ""
-	If (oOther.AccCLOAKEDWinID != oPubObj.Acc.WinID)
-		ObjRelease(oPubObj.Acc.pAccObj)
+	If (oOther.AccCLOAKEDWinID != oPubObj.Acc.WinID && oPubObj.Acc.pAccObj)
+		ObjRelease(oPubObj.Acc.pAccObj), oPubObj.Acc.pAccObj := 0 
 	If !fromhandle
 	{
 			;;  https://docs.microsoft.com/en-us/windows/win32/api/oleacc/nf-oleacc-accessibleobjectfrompoint
@@ -2370,7 +2370,7 @@ Mode_Hotkey:
 	Else 
 		Write_Hotkey(prNotThisMode)
 	
-	TitleText := (TitleTextP1 := "AhkSpy - Button") . TitleTextP2
+	TitleText := (TitleTextP1 := "AhkSpy - Keys") . TitleTextP2
 	SendMessage, 0xC, 0, &TitleText, , ahk_id %hGui% 
 	; WinActivate ahk_id %hGui%  
 	If A_GuiControl
@@ -3456,7 +3456,7 @@ GetClassNN(hc)   {
 }
 
 WM_NCHITTEST(x, y, hWnd, byref name) { 
-	Static arr 
+	Static arr
 	If !arr
 		arr := {WM_NCHITTEST: 0x84, "FAIL": "", -2: "HTERROR", -1: "HTTRANSPARENT", 0: "HTNOWHERE", 1: "HTCLIENT"
 		, 2: "HTCAPTION", 3: "HTSYSMENU", 4: ["HTGROWBOX", "HTSIZE"], 5: "HTMENU", 6: "HTHSCROLL"
@@ -6986,7 +6986,9 @@ ButtonClick(oevent) {
 		KeyWait LButton 
 		Sleep 300
 		If a
-		{  
+		{
+			If oOther.ControlID
+				WinActivate, % "ahk_id" DllCall("GetAncestor", "UPtr", oOther.WinID, Uint, 1) 
 			WinShow, ahk_id %h% 
 			ControlFocus, , ahk_id %h%
 			Sleep 300
