@@ -31,13 +31,13 @@
 */
 
 
-Global AhkSpyVersion := 5.06
+Global AhkSpyVersion := 5.07
           
 	; ___________________________ Caption _________________________________________________
 
 ComObjError(false)
 
-Global WS_EX_APPWINDOW := 0x40000, WS_CHILDWINDOW := 0x40000000, WS_EX_LAYERED := 0x80000
+WS_EX_APPWINDOW := 0x40000, WS_CHILDWINDOW := 0x40000000, WS_EX_LAYERED := 0x80000
 		, WS_EX_TRANSPARENT := 0x20, WS_POPUP := 0x80000000, WS_EX_NOACTIVATE := 0x8000000
 
 p1 = %1%
@@ -4037,6 +4037,7 @@ HideMarkers(arr) {
 }
 
 ShowMarkersCreate(arr, color) {
+	Global WS_CHILDWINDOW, WS_EX_NOACTIVATE, WS_POPUP, WS_EX_TRANSPARENT
 	If !!%arr%
 		Return
 	S_DefaultGui := A_DefaultGui, %arr% := {}
@@ -4082,7 +4083,7 @@ FlashArea(x, y, w, h, att = 1) {
 
 CreateMarkerInvert() {    
 	; Gui, MI: -DPIScale +Owner +HWNDhMarkerGui -Caption +%WS_CHILDWINDOW% +E%WS_EX_NOACTIVATE% +AlwaysOnTop +ToolWindow +E%WS_EX_TRANSPARENT%-%WS_POPUP% 
-
+	Global WS_EX_TRANSPARENT
 	Gui, MI: -DPIScale +Owner%hGui% +HWNDhMarkerGui -Caption +AlwaysOnTop +ToolWindow +E%WS_EX_TRANSPARENT% 
 	hDCMarkerInvert := DllCall("GetDC", "UPtr", hMarkerGui)
 	WinSet, TransParent, 0, ahk_id %hMarkerGui% 
@@ -4922,6 +4923,7 @@ GetStyles(Class, Style, ExStyle, hWnd, IsChild = 0, IsChildInfoExist = 0) {
 	;;	http://forum.script-coding.com/viewtopic.php?pid=130846#p130846
 	
 	Static Styles, ExStyles, ClassStyles, DlgStyles, ToolTipStyles, GCL_STYLE := -26 
+	
 	If !hWnd
 		Return
 	If !Styles
@@ -4952,7 +4954,7 @@ GetStyles(Class, Style, ExStyle, hWnd, IsChild = 0, IsChildInfoExist = 0) {
 	; Ret .= QStyle("WS_BORDER", "0x00800000", "", !!(WS_CAPTION))  
 		
 	Ret .= QStyle("WS_DLGFRAME", "0x00400000", "!(WS_CAPTION)"
-	, !WS_CAPTION && (Style & 0x00400000) && (WS_DLGFRAME := 1, Style -= 0x00400000))  ;;	WS_DLGFRAME 
+	, !WS_CAPTION && ((Style & 0x00400000) = 0x00400000) && (WS_DLGFRAME := 1, Style -= 0x00400000))  ;;	WS_DLGFRAME 
 		
 	For K, V In Styles 
 		Ret .= QStyle(K, V, "", (Style & V) = V && (%K% := 1, Style -= V))
@@ -4974,7 +4976,7 @@ GetStyles(Class, Style, ExStyle, hWnd, IsChild = 0, IsChildInfoExist = 0) {
 
 	Ret .= QStyle("WS_POPUP", "0x80000000", "!(WS_CHILD)"
 	, (Style & 0x80000000) && !WS_CHILD && (WS_POPUP := 1, Style -= 0x80000000))  ;;	WS_POPUP  
-
+	
 	Ret .= QStyle("WS_POPUPWINDOW", "0x80880000", "(WS_POPUP | WS_BORDER | WS_SYSMENU)"
 	, (WS_POPUP && WS_BORDER && WS_SYSMENU) && (WS_POPUPWINDOW := 1))  ;;	WS_POPUPWINDOW
 
@@ -7311,12 +7313,14 @@ Esc:: ZoomMaximize()
 ; 2::Gui, Zoom: -Caption +E%WS_EX_NOACTIVATE%
 
 ZoomCreate() { 
+	Global WS_EX_NOACTIVATE, WS_EX_LAYERED, WS_EX_NOACTIVATE, WS_CHILDWINDOW, WS_POPUP, WS_EX_TRANSPARENT
 	oZoom.Zoom := IniRead("MagnifyZoom", 4)
 	oZoom.Mark := IniRead("MagnifyMark", "Cross")
 	oZoom.MemoryZoomSize := IniRead("MemoryZoomSize", 0)
 	oZoom.GuiMinW := 380
 	oZoom.GuiMinH := 351
 	FontSize := {96:12,120:10,144:8,168:6}[A_ScreenDPI]
+	
 	If oZoom.MemoryZoomSize
 		GuiW := IniRead("MemoryZoomSizeW", oZoom.GuiMinW), GuiH := IniRead("MemoryZoomSizeH", oZoom.GuiMinH)
 	Else
