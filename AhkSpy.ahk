@@ -31,14 +31,14 @@
 */
 
 
-Global AhkSpyVersion := 5.07
+Global AhkSpyVersion := 5.08
           
 	; ___________________________ Caption _________________________________________________
 
 ComObjError(false)
 
 WS_EX_APPWINDOW := 0x40000, WS_CHILDWINDOW := 0x40000000, WS_EX_LAYERED := 0x80000
-		, WS_EX_TRANSPARENT := 0x20, WS_POPUP := 0x80000000, WS_EX_NOACTIVATE := 0x8000000
+, WS_EX_TRANSPARENT := 0x20, WS_POPUP := 0x80000000, WS_EX_NOACTIVATE := 0x8000000
 
 p1 = %1%
 If (p1 = "Zoom")
@@ -51,6 +51,7 @@ SingleInstance()
 #NoEnv
 #UseHook
 #KeyHistory 0
+#MaxMem 4095
 
 SetBatchLines, -1
 ListLines, Off
@@ -788,13 +789,11 @@ Spot_Win(NotHTML = 0) {
 	WinGet, WinStyle, Style, ahk_id %WinID%
 	WinGet, WinExStyle, ExStyle, ahk_id %WinID% 
 	{
-		WinGet, WinTransparent, Transparent, ahk_id %WinID%
-		If WinTransparent !=
-			TransparentStr := _BP1 "id='set_button_Transparent'>Transparent:</span>" _BP2 "  <span id='get_win_Transparent' name='MS:'>"  WinTransparent "</span>"     
+		WinGet, WinTransparent, Transparent, ahk_id %WinID% 
+		TransparentStr := _BP1 "id='set_button_Transparent'>Transparent:</span>" _BP2 "  <span id='get_win_Transparent' name='MS:'>"  (WinTransparent = "" ? "Off" : WinTransparent) "</span>"     
 	
-		WinGet, WinTransColor, TransColor, ahk_id %WinID%
-		If WinTransColor !=
-			TransColorStr := _BP1 "id='set_button_TransColor'>TransColor:</span>" _BP2 "  <span id='get_win_TransColor' name='MS:'>"  WinTransColor "</span>"
+		WinGet, WinTransColor, TransColor, ahk_id %WinID% 
+		TransColorStr := _BP1 "id='set_button_TransColor'>TransColor:</span>" _BP2 "  <span id='get_win_TransColor' name='MS:'>"  (WinTransColor = "" ? "Off" : WinTransColor) "</span>"
 	
 		OwnedId := DllCall("GetWindow", "UPtr", WinID, UInt, 4, "Ptr")
 		If OwnedId
@@ -803,7 +802,10 @@ Spot_Win(NotHTML = 0) {
 		EX1Str := Add_DP(1, OwnedIdStr, TransparentStr, TransColorStr)
 	} 
 	WinGet, CountControl, ControlListHwnd, ahk_id %WinID%	
-	RegExReplace(CountControl, "m`a)$", "", CountControl)
+	If (CountControl != "")
+		RegExReplace(CountControl, "m`a)$", "", CountControl)
+	Else 
+		CountControl := 0   
 	GetClientPos(WinID, caX, caY, caW, caH)
 	caWinRight := WinWidth - caW - caX , caWinBottom := WinHeight - caH - caY
 	loop 1000
@@ -1259,12 +1261,8 @@ Spot_Control(NotHTML = 0) {
 		CaretPosStr = <span class='param'>Caret:</span>  <span name='MS:'>x%S_CaretX% y%A_CaretY%</span>
 	Else 
 		CaretPosStr = <span class='error'>Caret position undefined</span>
-		
-	If ((iNCHITTEST := WM_NCHITTEST(MXS, MYS, WinID, HITTESTname)) != "")
-	{
-		NCHITTESTStr :=_DP "<span class='param'>WM_NCHITTEST:</span>  <span name='MS:'>"
-		. (IsObject(HITTESTname) ? HITTESTname[1] " := " HITTESTname[2] : HITTESTname) " := " iNCHITTEST "</span>"
-	}	
+		 
+	NCHITTESTStr :=_DP "<span class='param'>WM_NCHITTEST:</span>  <span name='MS:'>" WM_NCHITTEST(MXS, MYS, WinID) "</span>" 
 		
 	
 	; ___________________________ HTML_Control _________________________________________________
@@ -1516,7 +1514,7 @@ GetInfo_SysListView(hwnd) {
 			. "<span class='param' name='MS:N'>Selected count:</span> <span name='MS:'>" SelectedCount "</span>" _DP
 			. "<span class='param' name='MS:N'>Focused row:</span> <span name='MS:'>" FocusedCount "</span>" _PRE2
 			. _T1 " id='__Content_SysListView'> ( Content ) </span>" _BT1 " id='copy_button'> copy " _BT2 _T2 _LPRE ">" TransformHTML(ListText)
-}
+} 
 
 GetInfo_SysTreeView(hwnd) { 
 	SendMessage 0x1105, 0, 0, , ahk_id %hwnd%   ;; TVM_GETCOUNT
@@ -1954,6 +1952,8 @@ accDoDefaultAction() {
 		Return 0, ToolTip("CLOAKED", 500)
 	Acc := Object(oPubObj.Acc.AccObj) 
 	Acc.accDoDefaultAction(oPubObj.Acc.child) 
+	
+	; https://learn.microsoft.com/ru-ru/windows/win32/winauto/selflag
 	; Acc.accSelect(0x00000002, oPubObj.Acc.child) 
 } 
 	
@@ -3455,7 +3455,7 @@ GetClassNN(hc)   {
 	Return 
 }
 
-WM_NCHITTEST(x, y, hWnd, byref name) { 
+WM_NCHITTEST(x, y, hWnd) { 
 	Static arr
 	If !arr
 		arr := {WM_NCHITTEST: 0x84, "FAIL": "", -2: "HTERROR", -1: "HTTRANSPARENT", 0: "HTNOWHERE", 1: "HTCLIENT"
@@ -3470,7 +3470,11 @@ WM_NCHITTEST(x, y, hWnd, byref name) {
 	; https://www.autohotkey.com/board/topic/20431-wm-nchittest-wrapping-whats-under-a-screen-point/
 	; https://docs.microsoft.com/ru-ru/windows/win32/inputdev/wm-nchittest
 	SendMessage, arr.WM_NCHITTEST, 0, (x & 0xFFFF) | (y & 0xFFFF) << 16, , ahk_id %hWnd%   
-	Return ErrorLevel, name := arr[ErrorLevel]
+	If ErrorLevel = FAIL
+		Return "FAIL"
+	If IsObject(arr[ErrorLevel])
+		Return arr[ErrorLevel][1] " := " arr[ErrorLevel][2] " := " ErrorLevel
+	Return arr[ErrorLevel] " := " ErrorLevel
 }
 
 	; ___________________________ List Window _________________________________________________
@@ -3513,17 +3517,17 @@ Window_CountList(PID) {
 Window_ControlCountList(Hwnd, find = 0) {
 	If !WinExist("ahk_id" Hwnd)
 		Return -1 
-	oList := GetChildList(Hwnd) 
-	If oList.MaxIndex() < 1
+	oList := GetChildList(Hwnd)  
+	If oList.Count() < 2
 		Return -2 
 	WinGet, PID, PID, ahk_id %Hwnd%
 	WinGet, ProcessStart, ProcessName, ahk_pid %PID%  
 	NN := {}
- 
+	
 	for k, v in oList
 	{  
 		If k = 1
-			Continue
+			Continue 
 		ControlGetPos, WinX, WinY, WinW, WinH, , % "ahk_id" v.ID
 		ControlGetText, Text, , % "ahk_id" v.ID
 		WinGet, ProcessName, ProcessName, % "ahk_id" v.ID
@@ -3553,7 +3557,7 @@ Window_ControlCountList(Hwnd, find = 0) {
 	. _BT1 " id='view_ControlCount2'> update " _BT2
 	. _DB _BT1 " id='ControlCountList_roll'> roll up " _BT2
 	. _DB _BT1 " id='copy__PRE1' name='pre_ControlCountList'> copy " _BT2 _T2 
-	. _PRE " id='pre_ControlCountList'>" "<span>" tree "</span>" _PRE2 
+	. _PRE " id='pre_ControlCountList'>" "<span>" tree "</span>" _PRE2  
 	oOther.ControlCountList := tree
 	Return 1   
 }
@@ -4136,7 +4140,9 @@ InArr(Val, Arr) {
 
 TransformHTML(str) {
 	Transform, str, HTML, %str%, 3
-	StringReplace, str, str, <br>, , 1
+	; StringReplace, str, str, <br>, , 1 
+	str := strreplace(str, "`r")
+	str := strreplace(str, "`n") 
 	Return str
 }
 
@@ -4834,7 +4840,8 @@ CheckAhkNewVersion() {
 	Static req, att := 0
 	req := ComObjCreate("WinHttp.WinHttpRequest.5.1")
 	req.Option(6) := 0
-	req.open("GET", "https://www.autohotkey.com/download/", 1)
+	; req.open("GET", "https://www.autohotkey.com/download/", 1)
+	req.open("GET", "https://www.autohotkey.com/download/1.1/version.txt", 1)
 	req.send()
 	SetTimer, lCheckAhkNewVersion, -3000
 	Return
@@ -4842,7 +4849,7 @@ CheckAhkNewVersion() {
 	lCheckAhkNewVersion:
 		++att
 		If (req.Status = 200)
-		{ 
+		{  
 			; RegExMatch(req.responseText, "O)<!--update-->v(.*?) - ", m), ver := m[1]
 			ver := RegExReplace(req.responseText, "s).*?<!--update-->v(.*?) - .*", "$1")
 			If StrReplace(ver, ".") <= StrReplace(A_AhkVersion, ".")
@@ -6810,9 +6817,9 @@ ButtonClick(oevent) {
 			Run % Path_User "\Window Detective.lnk"
 		TimerFunc(Func("MyWindowDetectiveStart").Bind(ThisMode = "Win" ? oOther.WinID : oOther.ControlID, WinExist() ? 1 : 0), -300)
 	}
-	Else If (thisid = "set_button_Transparent" && ToolTip((v := oDoc.getElementById("get_win_Transparent").innerText + 0), 500)) 
+	Else If (thisid = "set_button_Transparent" && ToolTip((v := oDoc.getElementById("get_win_Transparent").innerText), 500)) 
 		WinSet, Transparent, % v, % "ahk_id" oOther.WinID
-	Else If thisid = set_button_TransColor
+	Else If (thisid = "set_button_TransColor" && ToolTip((v := oDoc.getElementById("get_win_TransColor").innerText), 500))  
 		WinSet, TransColor, % oDoc.getElementById("get_win_TransColor").innerText, % "ahk_id" oOther.WinID
 	Else If thisid = set_button_pos
 	{
@@ -6829,6 +6836,9 @@ ButtonClick(oevent) {
 	}
 	Else If thisid = control_click
 	{
+		KeyWait, Shift
+		KeyWait, LButton
+		Sleep 10 
 		ControlClick, % oDoc.getElementById("coord_win").innerText, % "ahk_id" oOther.MouseWinID, , , , Pos
 	}
 	Else If thisid = set_button_focus_ctrl
@@ -8130,7 +8140,7 @@ MagnifyHWND(hwnd) {
 	WinGetPos,,, Width, Height, ahk_id %hwnd%
 	hbm := CreateDIBSection2(Width, Height), hdc := CreateCompatibleDC(), obm := SelectObject(hdc, hbm)
  
-	ok := PrintWindow(hwnd, hdc) 
+	ok := PrintWindow(hwnd, hdc, 1) 
 	; If !ok
 	; {
 		; Return 0, SelectObject(hdc, obm), DeleteObject(hbm), DeleteDC(hdc) 
@@ -8523,3 +8533,58 @@ CryptBinaryToStringBASE64(pData, Bytes, NOCRLF = "")  {
 	; ___________________________ End _________________________________________________
 
 	;;)
+	
+	
+	
+	
+	
+	
+	
+	
+/*
+инжект
+		http://forum.script-coding.com/viewtopic.php?pid=154638#p154638
+		
+DllCall\(.*Ptr\*
+
+
+comobjerror(false)
+loop
+	{
+		Acc_test(child).accName(child)
+	   tooltip %  "`n" Acc_test(child).accDefaultAction(child) "`n" A_LastError
+	}
+
+
+Acc_test(ByRef _idChild_ = "", x = "", y = "")
+{
+	Static	h
+	If Not	h
+		h:=DllCall("LoadLibrary","Str","oleacc","Ptr")
+	If	DllCall("oleacc\AccessibleObjectFromPoint", "Int64", x==""||y==""?0*DllCall("GetCursorPos","Int64*",pt)+pt:x&0xFFFFFFFF|y<<32, "Ptr*", pacc, "Ptr", VarSetCapacity(varChild,8+2*A_PtrSize,0)*0+&varChild)=0
+	Return	ComObjEnwrap(9,pacc,1), _idChild_:=NumGet(varChild,8,"UInt")
+}
+
+
+01:58 20.01.2021
+Добавить кнопку обновить данные
+	
+	
+	
+
+#If isAhkSpy && Sleep != 1 && WinActive("ahk_id" hGui)
+
+1::
+  
+
+WinSet, ExStyle, +%WS_EX_TRANSPARENT%, ahk_id %hGui%
+Return
+2::
+  
+
+WinSet, ExStyle, -%WS_EX_TRANSPARENT%, ahk_id %hGui%
+Return
+
+
+
+*/
