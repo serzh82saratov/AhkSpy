@@ -31,7 +31,7 @@
 */
 
 
-Global AhkSpyVersion := 5.08
+Global AhkSpyVersion := 5.09
           
 	; ___________________________ Caption _________________________________________________
 
@@ -795,10 +795,8 @@ Spot_Win(NotHTML = 0) {
 		WinGet, WinTransColor, TransColor, ahk_id %WinID% 
 		TransColorStr := _BP1 "id='set_button_TransColor'>TransColor:</span>" _BP2 "  <span id='get_win_TransColor' name='MS:'>"  (WinTransColor = "" ? "Off" : WinTransColor) "</span>"
 	
-		OwnedId := DllCall("GetWindow", "UPtr", WinID, UInt, 4, "Ptr")
-		If OwnedId
-			OwnedIdStr := "<span class='param'>Owned Id:</span> <span name='MS:'>" Format("0x{:x}", OwnedId) "</span>"
-			
+		OwnedId := Format("0x{:x}", DllCall("GetWindow", "UPtr", WinID, UInt, 4, "Ptr"))
+		OwnedIdStr := _BP1 "id='set_button_OwnedId'>Owned Id:</span>" _BP2 "  <span id='get_win_OwnedId' name='MS:'>"  (!OwnedId ? "Null" : OwnedId) "</span>"
 		EX1Str := Add_DP(1, OwnedIdStr, TransparentStr, TransColorStr)
 	} 
 	WinGet, CountControl, ControlListHwnd, ahk_id %WinID%	
@@ -886,12 +884,13 @@ Spot_Win(NotHTML = 0) {
 			. _BP1 " id='ahkscript_keyhistory'> key history " _BP2 _DN2 "</div>"
 			. _PRE1 "<span id='ahkscriptpath' name='MS:'>" TransformHTML(AhkScriptPAth) "</span>" _PRE2
 	}
-	If (hParent := DllCall("GetAncestor", "UPtr", WinID, Uint, 1)) && (hParent != WinID)
 	{
+		hParent := DllCall("GetAncestor", "UPtr", WinID, Uint, 1)
 		WinGet, ParentProcessName, ProcessName, ahk_id %hParent% 
 		WinGetClass, ParentClass, ahk_id %hParent%
-		_ParentWindow := "`n<span class='param'>Parent window:</span>  <span name='MS:'>" ParentClass "</span>" 
-			. _DP " <span name='MS:'>" ParentProcessName "</span>" _DP "<span name='MS:'>" Format("0x{:x}", hParent) "</span>"
+			_ParentWindow := "`n" _BP1 " id='set_button_ParentWindow' class='param'>Parent window:" _BP2 "  <span name='MS:'>" ParentClass "</span>" 
+			. _DP " <span name='MS:'>" ParentProcessName "</span>" 
+			. _DP "<span id='get_win_ParentWindow' name='MS:'>" Format("0x{:x}", hParent) "</span>" 
 	}
 	DllCall("GetWindowBand", "Uptr", WinID, "uint*", band) 
 	WindowBand := _DP "<span class='param'>WindowBand:</span>  <span name='MS:Q'>" oZBID[band] " := <span class='param' name='MS:'>" band "</span></span>"	
@@ -953,6 +952,7 @@ HTML_Win:
 		. _DP  _BB1 " id='window_show_hide'> show / hide " _BB2
 		. _DP  _BB1 " id='window_minimize'> minimize " _BB2
 		. _DP  _BB1 " id='window_restore'> restore " _BB2
+		. _DP  _BB1 " id='window_activate'> activate " _BB2
 	
 	. "`n<span class='param' name='MS:N'>IsAdmin:</span>  <span name='MS:'>" IsAdmin "</span>"
 		. IsWindowUnicodeStr ProcessUserNameStr WindowBand 
@@ -1291,6 +1291,7 @@ HTML_Control:
 			. ViewStrPos2 
 			
 		. "`n" _BP1 " id='set_pos'>Mouse relative control:" _BP2 "  <span name='MS:' id='coord_mrc'>x" rmCtrlX " y" rmCtrlY "</span>" WithRespectControl 
+		. _DP  _BB1 " id='control_open_as_window'> open as window " _BB2  
 		
 		. "`n<span class='param'>HWND:</span>  <span name='MS:'>" ControlID "</span>" 
 		. _DP "<span class='param'>Style:</span>  <span id='c_Style' name='MS:'>" CtrlStyle "</span>" 
@@ -3170,6 +3171,16 @@ Help_OpenScriptDir:
 	Return
 
 	; ___________________________ Functions _________________________________________________
+
+SetOwner(hwnd, newOwner) {
+    static GWL_HWNDPARENT := -8 
+	; MsgBox % hwnd "`n" newOwner "`n"  "`n" 
+    if A_PtrSize = 8
+        DllCall("SetWindowLongPtr", "ptr", hwnd, "int", GWL_HWNDPARENT, "ptr", newOwner)
+    else 
+        DllCall("SetWindowLong", "int", hwnd, "int", GWL_HWNDPARENT, "int", newOwner)
+}
+
 
 WM_ACTIVATE(wp, lp) {
 	Critical
@@ -6658,8 +6669,7 @@ ButtonClick(oevent) {
 		WinClose, % "ahk_id" oOther.WinID
 	Else If (thisid = "control_destroy" && (WinExist("ahk_id" oOther.ControlID) || !ToolTip("window not exist", 500)) && ConfirmAction("Window close?"))
 			WinClose, % "ahk_id" oOther.ControlID     ;; DllCall("DestroyWindow", "Ptr", oOther.ControlID)   ;;  не работает
-	Else If (thisid = "control_show_hide" || thisid = "window_show_hide")
-	{
+	Else If (thisid = "control_show_hide" || thisid = "window_show_hide") {
 		Hwnd := thisid = "window_show_hide" ? oOther.WinID : oOther.ControlID
 		If !WinExist("ahk_id" Hwnd)  
 			Return ToolTip("window not exist", 500)
@@ -6668,6 +6678,12 @@ ButtonClick(oevent) {
 		Else 
 			WinShow, % "ahk_id" Hwnd
 		ToolTip(b ? "Hide" : "Show" , 500)
+	}	 
+	Else If (thisid = "control_open_as_window") { 
+		If !WinExist("ahk_id" oOther.ControlID)
+			Return ToolTip("Window not found", 700) 
+		Gosub Mode_Win
+		LocalOpenWin(oOther.ControlID)
 	}
 	Else If (thisid = "___WStyleChange") {
 		caption := oDoc.all.item(oevent.parentElement.parentElement.sourceIndex - 3).id 
@@ -6779,6 +6795,8 @@ ButtonClick(oevent) {
 		WinMinimize, % "ahk_id" oOther.WinID
 	Else If (thisid = "window_restore" && (WinExist("ahk_id" oOther.WinID) || !ToolTip("window not exist", 500)))   
 		WinRestore, % "ahk_id" oOther.WinID 
+	Else If (thisid = "window_activate" && (WinExist("ahk_id" oOther.WinID) || !ToolTip("window not exist", 500)))   
+		WinActivate, % "ahk_id" oOther.WinID
 	Else If (thisid = "SendCode")
 		Events.SendCode()
 	Else If (thisid = "SendMode")
@@ -6821,6 +6839,21 @@ ButtonClick(oevent) {
 		WinSet, Transparent, % v, % "ahk_id" oOther.WinID
 	Else If (thisid = "set_button_TransColor" && ToolTip((v := oDoc.getElementById("get_win_TransColor").innerText), 500))  
 		WinSet, TransColor, % oDoc.getElementById("get_win_TransColor").innerText, % "ahk_id" oOther.WinID
+	Else If (thisid = "set_button_OwnedId")   
+	{
+		; ToolTip % oOther.WinID "`n" oDoc.getElementById("get_win_OwnedId").innerText
+		If (oDoc.getElementById("get_win_OwnedId").innerText + 0 = "" || oOther.WinID + 0 = "")
+			Return ToolTip("ERROR", 500)
+		SetOwner(oOther.WinID, oDoc.getElementById("get_win_OwnedId").innerText) 
+		ToolTip("OK", 500)
+	}
+	Else If (thisid = "set_button_ParentWindow")   
+	{
+		If (oDoc.getElementById("get_win_ParentWindow").innerText + 0 = "" || oOther.WinID + 0 = "")
+			Return ToolTip("ERROR", 500) 
+		DllCall("SetParent", "Ptr", oOther.WinID, "Ptr", oDoc.getElementById("get_win_ParentWindow").innerText)
+		ToolTip("OK", 500)
+	} 
 	Else If thisid = set_button_pos
 	{
 		HayStack := oevent.OuterText = "Pos:"
@@ -8200,7 +8233,7 @@ UpdateWindow(Src, X, Y) {
 	, Src, X, Y, oZoom.nWidthSrc, oZoom.nHeightSrc)
 	For k, v In oZoom.oMarkers[oZoom.Mark]
 		StretchBlt(oZoom.hDCBuf, v.x, v.y, v.w, v.h, oZoom.hDCBuf, v.x, v.y, v.w, v.h, 0x5A0049)	;; PATINVERT
-	CropRender()	  
+	CropRender()
 	DllCall("gdiplus\GdipCreateBitmapFromHBITMAP", "UPtr", hbm, "UPtr", 0, "UPtr*", pBitmap)
 	; DllCall("SelectObject", "UPtr", oZoom.hDCBuf, "UPtr", hbm)
 	DllCall("gdiplus\GdipCreateFromHDC", "UPtr", oZoom.hDCBuf, "UPtr*", G)
@@ -8533,58 +8566,3 @@ CryptBinaryToStringBASE64(pData, Bytes, NOCRLF = "")  {
 	; ___________________________ End _________________________________________________
 
 	;;)
-	
-	
-	
-	
-	
-	
-	
-	
-/*
-инжект
-		http://forum.script-coding.com/viewtopic.php?pid=154638#p154638
-		
-DllCall\(.*Ptr\*
-
-
-comobjerror(false)
-loop
-	{
-		Acc_test(child).accName(child)
-	   tooltip %  "`n" Acc_test(child).accDefaultAction(child) "`n" A_LastError
-	}
-
-
-Acc_test(ByRef _idChild_ = "", x = "", y = "")
-{
-	Static	h
-	If Not	h
-		h:=DllCall("LoadLibrary","Str","oleacc","Ptr")
-	If	DllCall("oleacc\AccessibleObjectFromPoint", "Int64", x==""||y==""?0*DllCall("GetCursorPos","Int64*",pt)+pt:x&0xFFFFFFFF|y<<32, "Ptr*", pacc, "Ptr", VarSetCapacity(varChild,8+2*A_PtrSize,0)*0+&varChild)=0
-	Return	ComObjEnwrap(9,pacc,1), _idChild_:=NumGet(varChild,8,"UInt")
-}
-
-
-01:58 20.01.2021
-Добавить кнопку обновить данные
-	
-	
-	
-
-#If isAhkSpy && Sleep != 1 && WinActive("ahk_id" hGui)
-
-1::
-  
-
-WinSet, ExStyle, +%WS_EX_TRANSPARENT%, ahk_id %hGui%
-Return
-2::
-  
-
-WinSet, ExStyle, -%WS_EX_TRANSPARENT%, ahk_id %hGui%
-Return
-
-
-
-*/
