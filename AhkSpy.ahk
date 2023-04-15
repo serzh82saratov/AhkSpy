@@ -31,7 +31,7 @@
 */
 
 
-Global AhkSpyVersion := 5.09
+Global AhkSpyVersion := 5.10
           
 	; ___________________________ Caption _________________________________________________
 
@@ -638,6 +638,8 @@ Tab:: PasteStrSelection("    ")							;;  &emsp	"&#x9;"  PasteStrSelection("&#x9
 
 Enter:: PasteHTMLSelection("<br>")
 
+~LShift:: HandleOpen()	
+
 #If isAhkSpy && Sleep != 1 && ThisMode != "Hotkey" && (IsIEFocus() || MS_IsSelection())
 
 #RButton:: ClipPaste()
@@ -755,7 +757,8 @@ Repeat_Loop_Win:
 	Return 
 
 Spot_Win(NotHTML = 0) {
-	Static PrWinPID, ComLine, _ComLine, ProcessBitSize, IsAdmin, WinProcessPath, WinProcessName, ProcessUserName
+	Static PrWinPID, ExeFileSize, ComLine, _ComLine, ProcessBitSize, IsAdmin
+		, WinProcessPath, WinProcessName, ProcessUserName
 	
 	If NotHTML
 		GoTo HTML_Win
@@ -781,7 +784,10 @@ Spot_Win(NotHTML = 0) {
 		WinGet, WinProcessPath, ProcessPath, ahk_id %WinID%
 		Loop, %WinProcessPath%
 			WinProcessPath = %A_LoopFileLongPath%
-		SplitPath, WinProcessPath, WinProcessName
+		SplitPath, WinProcessPath, WinProcessName  
+		FileGetSize, ExeFileSize, %WinProcessPath%, k
+		; ExeFileSize := StrReplace(Round(ExeFileSize * 0.001, 3), ".", ",") 
+		ExeFileSize := StrSplit(Round(ExeFileSize * 0.001, 3), ".") 
 	}
 	If (WinClass ~= "(Cabinet|Explore)WClass")
 		CLSID := GetCLSIDExplorer(WinID)
@@ -943,20 +949,22 @@ HTML_Win:
 	. _PRE1 "<span class='param' name='MS:N'>PID:</span>  <span name='MS:'>" WinPID "</span>" 
 		. _DP  ProcessBitSize _BP1 " id='view_WindowCount'>Window count:" _BP2 "  <span name='MS:'>" WinCountProcess "</span>"    
 		. _DP _BP1 " id='view_ControlCount'>Control count:" _BP2 "  <span name='MS:'>" CountControl "</span>" 
-		. _DP "<span class='param'>Create info time:  </span><span name='MS:'>" A_Hour ":" A_Min ":" A_Sec 
-		. ".<span class='param' style='font-size: 0.75em'>" A_MSec "</span></span>"
-		
+		. _DP "<span class='param' name='MS:N'>FileSize MB:</span>  <span name='MS:'>" ExeFileSize[1]  
+		. "<span class='param' style='font-size: 0.75em'>." ExeFileSize[2] "</span></span>"
+
 	. "`n<span class='param' name='MS:N'>HWND:</span>  <span name='MS:'>" WinID "</span>" 
 		. _DP  _BB1 " id='win_close'> close " _BB2   
 		. _DP  _BB1 " id='process_close'> process close " _BB2 
-		. _DP  _BB1 " id='window_show_hide'> show / hide " _BB2
+		. _DP  _BB1 " id='window_show_hide'> show / hide " _BB2 
 		. _DP  _BB1 " id='window_minimize'> minimize " _BB2
 		. _DP  _BB1 " id='window_restore'> restore " _BB2
 		. _DP  _BB1 " id='window_activate'> activate " _BB2
 	
-	. "`n<span class='param' name='MS:N'>IsAdmin:</span>  <span name='MS:'>" IsAdmin "</span>"
+	. "`n<span class='param' name='MS:N'>IsAdmin:</span>  <span name='MS:' id='w_IsAdmin'>" IsAdmin "</span>"
 		. IsWindowUnicodeStr ProcessUserNameStr WindowBand 
 		. _ParentWindow EX1Str CLSID 
+		. _DP "<span class='param'>Create info time:  </span><span name='MS:'>" A_Hour ":" A_Min ":" A_Sec 
+		. ".<span class='param' style='font-size: 0.75em'>" A_MSec "</span></span>"
   
 	. "`n<span class='param'>Style:  </span><span id='w_Style' name='MS:'>" WinStyle "</span>" 
 		. _DP "<span class='param'>ExStyle:  </span><span id='w_ExStyle' name='MS:'>" WinExStyle "</span>" 
@@ -2458,7 +2466,7 @@ Write_HotkeyHTML(K, scroll = 0, upd = 0) {
 	s_DecimalCode := DecimalCode ? "dec" : "hex"
    
 	If (DUMods != "") 
-		LRSend := "  " _DP "  <span><span><span name='MS:P' id='h_SendMode1'>" SendMode "</span>  <span name='MS:'>" DUMods "</span></span>" Comment "</span>" 
+		LRSend := "  " _DP "  <span><span><span name='MS:P' id='h_SendMode1'>" SendMode "</span> <span name='MS:'>" DUMods "</span></span>" Comment "</span>" 
 	
 	If SCCode !=
 		ThisKeySC := "   " _DP "   <span name='MS:'>" VKCode "</span>   " _DP "   <span name='MS:'>" SCCode "</span>   "
@@ -3285,6 +3293,44 @@ GuiClose() {
 	ExitApp
 }
 
+GetShellAsUser(Release = 0) {
+	; ShellExecute(Path)
+	; https://www.autohotkey.com/board/topic/72812-run-as-standard-limited-user/?p=522235
+	Static psv := 0, ptlb := 0
+	Local
+	If (psv || ptlb || Release)
+	{
+		ObjRelease(psv), ObjRelease(ptlb), psv := 0, ptlb := 0
+		If Release
+			Return
+	}  
+    shellWindows := ComObjCreate("{9BA05972-F6A8-11CF-A442-00A0C90A8F39}")
+    
+	desktop := shellWindows.Item(ComObj(19, 8)) ; VT_UI4, SCW_DESKTOP
+
+	; Retrieve top-level browser object.
+	if ptlb := ComObjQuery(desktop
+		, "{4C96BE40-915C-11CF-99D3-00AA004AE837}"  ; SID_STopLevelBrowser
+		, "{000214E2-0000-0000-C000-000000000046}") ; IID_IShellBrowser
+	{
+	; IShellBrowser.QueryActiveShellView -> IShellView
+		if DllCall(NumGet(NumGet(ptlb+0)+15*A_PtrSize), "ptr", ptlb, "ptr*", psv:=0) = 0
+		{
+			; Define IID_IDispatch.
+			VarSetCapacity(IID_IDispatch, 16)
+			NumPut(0x46000000000000C0, NumPut(0x20400, IID_IDispatch, "int64"), "int64")
+
+			; IShellView.GetItemObject -> IDispatch (object which implements IShellFolderViewDual)
+			DllCall(NumGet(NumGet(psv+0)+15*A_PtrSize), "ptr", psv
+			, "uint", 0, "ptr", &IID_IDispatch, "ptr*", pdisp:=0)
+			
+			; Get Shell object.
+			Return ComObj(9,pdisp,1).Application 
+		}
+	}
+	Return
+}
+
 CheckAhkVersion:
 	If A_AhkVersion < 1.1.33.02
 	{
@@ -3986,8 +4032,25 @@ RunAhkPath(Path, Param = "") {
 		RunPath("""" A_AHKPath """ """ Path """ """ Param """")
 }
 
-RunShell(Path) {
-	ComObjCreate("WScript.Shell").Exec(Path)
+RunShell(Path) {	
+	try ComObjCreate("WScript.Shell").Exec(Path)
+	Catch 
+		Return ToolTip("Launch error", 500)
+}
+
+RunAs(Path, Admin) {  
+	; If InStr(FileExist(Dir), "D")
+		; Return ToolTip("This file is folder", 500)
+
+	If (A_IsAdmin && (Admin = "false" || Admin = "0" || Admin = ""))
+	{	
+		try
+		{
+			GetShellAsUser().ShellExecute(Path)
+			Return GetShellAsUser(1)
+		} 
+	}  
+	RunRealPath(Path)
 }
 
 ExtraFile(Name, GetNoCompile = 0) {
@@ -4198,6 +4261,39 @@ ClipPaste() {
 	Else
 		oDoc.execCommand("Paste")
 	ToolTip("paste", 300)
+}
+
+HandleOpen() {  
+	If !oMS.ELSel
+		Return
+	hw := oMS.ELSel.OuterText
+	If !WinExist("ahk_id" hw)
+		Return ToolTip("!WinExist", 300)
+	OnMessage(0x44, "OnMsgBox")
+	Gui, %hGui%:+Disabled
+	MsgBox 0x42003, AhkSpy - handle open as, 
+	OnMessage(0x44, "") 
+	Gui, %hGui%:-Disabled
+	IfMsgBox Yes, {
+		Gosub Mode_Win
+		LocalOpenWin(hw)
+	} Else IfMsgBox No, {
+		Gosub Mode_Control
+		LocalOpenChild(hw, GetClassNN(hw))
+	} Else IfMsgBox Cancel, {
+
+	}  	
+	WinActivate % "ahk_id" hGui
+}
+
+OnMsgBox() {
+	DetectHiddenWindows, On
+	Process, Exist
+	If (WinExist("ahk_class #32770 ahk_pid " . ErrorLevel)) {
+		ControlSetText Button1, As window
+		ControlSetText Button2, As control
+		ControlSetText Button3, Cancel
+	}
 }
 
 CutSelection() {
@@ -6655,8 +6751,8 @@ ButtonClick(oevent) {
 	}
 	Else If thisid = paste_process_path
 		oDoc.getElementById("copy_processpath").innerHTML := TransformHTML(Trim(Trim(Clipboard), """"))
-	Else If thisid = w_command_line
-		RunRealPath(oDoc.getElementById("c_command_line").OuterText)
+	Else If thisid = w_command_line			; RunRealPath
+		RunAs(oDoc.getElementById("c_command_line").OuterText, oDoc.getElementById("w_IsAdmin").OuterText)
 	Else If thisid = clean_command_line
 		Events.clean_command_line()
 	Else If thisid = paste_command_line
