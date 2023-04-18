@@ -31,7 +31,7 @@
 */
 
 
-Global AhkSpyVersion := 5.12
+Global AhkSpyVersion := 5.13
           
 	; ___________________________ Caption _________________________________________________
 
@@ -1305,7 +1305,8 @@ HTML_Control:
 
 		. _PRE2
 
-		. _T1 " id='__Control'> ( Control ) </span>" _BT1 " id='flash_control'> flash " _BT2  _ButWindow_Detective  _T2 
+		. _T1 " id='__Control'> ( Control ) </span>" _BT1 " id='flash_control'> flash " _BT2 
+		. _DB _BT1 " id='control_open_as_window'> open as window " _BT2 _ButWindow_Detective  _T2  		
 		
 		. _PRE1 "<span class='param'>ClassNN:</span>  <span name='MS:'>" ControlNN "</span>"
 			. _DP  "<span class='param'>Class:</span>  <span name='MS:'>" CtrlClass "</span>"  
@@ -1322,7 +1323,6 @@ HTML_Control:
 		. _DP  _BP1 " id='control_child'> Get child " _BP2 
 		. _DP  _BP1 " id='control_path'> Get parent " _BP2 
 		. "<span id='control_path_error'></span>" _ParentControl 
-		. _DP  _BB1 " id='control_open_as_window'> open as window " _BB2
 			  
 		. _PRE2
 		
@@ -1405,11 +1405,14 @@ Write_Control(scroll = 0) {
 	Return 1
 } 
 
-Menu_Another_AhkSpy() {   
+Menu_Another_AhkSpy() {
 	if A_IsCompiled 
 		Run *RunAs "%A_AhkPath%" "%A_ScriptFullPath%" /Another
 	else
-		Run *RunAs "%A_ScriptFullPath%" /Another
+		Run *RunAs "%A_ScriptFullPath%" /Another   
+	If (!isPaused)
+		Gosub, PausedScript
+	Minimize()
 }
 
 Menu_LocalOpenWin() {
