@@ -31,7 +31,7 @@
 */
 
 
-Global AhkSpyVersion := 5.11
+Global AhkSpyVersion := 5.12
           
 	; ___________________________ Caption _________________________________________________
 
@@ -641,7 +641,7 @@ Tab:: PasteStrSelection("    ")							;;  &emsp	"&#x9;"  PasteStrSelection("&#x9
 
 Enter:: PasteHTMLSelection("<br>")
 
-~LShift:: HandleOpen()	
+~RShift:: HandleOpen()	
 
 #If isAhkSpy && Sleep != 1 && ThisMode != "Hotkey" && (IsIEFocus() || MS_IsSelection())
 
