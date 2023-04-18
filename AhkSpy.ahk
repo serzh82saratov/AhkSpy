@@ -31,7 +31,7 @@
 */
 
 
-Global AhkSpyVersion := 5.10
+Global AhkSpyVersion := 5.11
           
 	; ___________________________ Caption _________________________________________________
 
@@ -47,7 +47,9 @@ If (p1 = "Zoom")
 	Return
 }
 
-SingleInstance()
+If (p1 != "/Another") 
+	SingleInstance()
+	
 #NoEnv
 #UseHook
 #KeyHistory 0
@@ -425,7 +427,8 @@ Menu, Sys, Add, % name := "Suspend hotkeys", % oMenu.Sys[name] := "_Suspend"
 Menu, Sys, Add, % name := "Default size", % oMenu.Sys[name] := "DefaultSize"
 Menu, Sys, Add, % name := "Full screen", % oMenu.Sys[name] := "FullScreenMode"
 Menu, Sys, Add, % name := "Find to page", % oMenu.Sys[name] := "_FindView"
-
+Menu, Sys, Add
+Menu, Sys, Add, Another one AhkSpy, Menu_Another_AhkSpy 
 Menu, Sys, Add
 Menu, Sys, Add, Open window from clipboard, Menu_LocalOpenWin
 Menu, Sys, Add, Open control from clipboard, Menu_LocalOpenChild
@@ -911,7 +914,8 @@ HTML_Win:
 		back_openwin := _DB _BT1 " id='b_back_openwin'> return " _BT2
 		
 	HTML_Win := ""
-	. _T1 " id='__Title'> ( Title ) </span>" _BT1 " id='pause_button'> pause " _BT2 back_openwin _T2  _BR 
+	. _T1 " id='__Title'> ( Title ) </span>" _BT1 " id='b__set_wintitle'> set title " _BT2 _DB
+	. _BT1 " id='pause_button'> pause " _BT2 back_openwin _T2  _BR 
 	
 	. _PRE1 "<span id='wintitle1' name='MS:'>" WinTitle "</span>" _PRE2 
 	
@@ -1283,12 +1287,10 @@ HTML_Control:
 			ControlStyles := GetStyles(CtrlClass, CtrlStyle, CtrlExStyle, ControlID)
 			
 		HTML_ControlExist := ""
-		. _T1 " id='__Control'> ( Control ) </span>" _BT1 " id='flash_control'> flash " _BT2  _ButWindow_Detective  _T2 
 		
-		. _PRE1 "<span class='param'>ClassNN:</span>  <span name='MS:'>" ControlNN "</span>"
-			. _DP  "<span class='param'>Class:</span>  <span name='MS:'>" CtrlClass "</span>"
+			. _T1 " id='__Position__Control'> ( Position ) </span>" _T2 
 			
-		. "`n" _BP1 " id='set_button_pos'>Pos:" _BP2 "  <span name='MS:'>x" CtrlX " y" CtrlY "</span>" 
+		. _PRE1 _BP1 " id='set_button_pos'>Pos:" _BP2 "  <span name='MS:'>x" CtrlX " y" CtrlY "</span>" 
 			. _DP "<span name='MS:'>x&sup2;" CtrlX2 " y&sup2;" CtrlY2 "</span>" _DP  _BP1 " id='set_button_pos'>Size:"  _BP2 
 			. "  <span name='MS:'>w" CtrlW " h" CtrlH "</span>" ViewStrPos1 
 			
@@ -1298,8 +1300,15 @@ HTML_Control:
 			. _DP "<span name='MS:'>x&sup2;" CtrlSCX2 " y&sup2;" CtrlSCY2 "</span>"
 			. ViewStrPos2 
 			
-		. "`n" _BP1 " id='set_pos'>Mouse relative control:" _BP2 "  <span name='MS:' id='coord_mrc'>x" rmCtrlX " y" rmCtrlY "</span>" WithRespectControl 
-		. _DP  _BB1 " id='control_open_as_window'> open as window " _BB2  
+		. "`n" _BP1 " id='set_pos'>Mouse relative control:" 
+		. _BP2 "  <span name='MS:' id='coord_mrc'>x" rmCtrlX " y" rmCtrlY "</span>" WithRespectControl 
+
+		. _PRE2
+
+		. _T1 " id='__Control'> ( Control ) </span>" _BT1 " id='flash_control'> flash " _BT2  _ButWindow_Detective  _T2 
+		
+		. _PRE1 "<span class='param'>ClassNN:</span>  <span name='MS:'>" ControlNN "</span>"
+			. _DP  "<span class='param'>Class:</span>  <span name='MS:'>" CtrlClass "</span>"  
 		
 		. "`n<span class='param'>HWND:</span>  <span name='MS:'>" ControlID "</span>" 
 		. _DP "<span class='param'>Style:</span>  <span id='c_Style' name='MS:'>" CtrlStyle "</span>" 
@@ -1313,6 +1322,7 @@ HTML_Control:
 		. _DP  _BP1 " id='control_child'> Get child " _BP2 
 		. _DP  _BP1 " id='control_path'> Get parent " _BP2 
 		. "<span id='control_path_error'></span>" _ParentControl 
+		. _DP  _BB1 " id='control_open_as_window'> open as window " _BB2
 			  
 		. _PRE2
 		
@@ -1394,6 +1404,13 @@ Write_Control(scroll = 0) {
 	oDivOld.innerHTML := ""
 	Return 1
 } 
+
+Menu_Another_AhkSpy() {   
+	if A_IsCompiled 
+		Run *RunAs "%A_AhkPath%" "%A_ScriptFullPath%" /Another
+	else
+		Run *RunAs "%A_ScriptFullPath%" /Another
+}
 
 Menu_LocalOpenWin() {
 	If !WinExist("ahk_id" Clipboard)
@@ -4042,14 +4059,14 @@ RunAs(Path, Admin) {
 	; If InStr(FileExist(Dir), "D")
 		; Return ToolTip("This file is folder", 500)
 
-	If (A_IsAdmin && (Admin = "false" || Admin = "0" || Admin = ""))
-	{	
-		try
-		{
-			GetShellAsUser().ShellExecute(Path)
-			Return GetShellAsUser(1)
-		} 
-	}  
+	; If (A_IsAdmin && (Admin = "false" || Admin = "0" || Admin = ""))
+	; {	
+		; try
+		; {
+			; GetShellAsUser().ShellExecute(Path)
+			; Return GetShellAsUser(1)
+		; } 
+	; }  
 	RunRealPath(Path)
 }
 
@@ -6887,6 +6904,8 @@ ButtonClick(oevent) {
 			}
 		}
 	}
+	Else If (thisid = "b__set_wintitle" && (WinExist("ahk_id" oOther.WinID) || !ToolTip("window not exist", 500)))   
+		WinSetTitle, % "ahk_id" oOther.WinID, , % oDoc.getElementById("wintitle1").OuterText 
 	Else If (thisid = "window_minimize" && (WinExist("ahk_id" oOther.WinID) || !ToolTip("window not exist", 500))) 
 		WinMinimize, % "ahk_id" oOther.WinID
 	Else If (thisid = "window_restore" && (WinExist("ahk_id" oOther.WinID) || !ToolTip("window not exist", 500)))   
