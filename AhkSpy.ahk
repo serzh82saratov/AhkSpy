@@ -31,7 +31,7 @@
 */
 
 
-Global AhkSpyVersion := 5.13
+Global AhkSpyVersion := 5.14
           
 	; ___________________________ Caption _________________________________________________
 
@@ -222,13 +222,10 @@ If MemoryAnchor
 	If oOther.anchor["Control_text"] := IniRead("Control_Anchor")
 		oOther.anchor["Control"] := 1
 } 
-
-
-
+ 
 FixIE()
-SeDebugPrivilege() 
-OnExit("Exit")
-
+SeDebugPrivilege()  
+OnExit("Exit") 
 CreateMarkerInvert()
 ShowMarkersCreate("oShowAccMarkers", "26419F")  
 ShowMarkersCreate("oShowMarkers", "E14B30")
@@ -641,7 +638,10 @@ Tab:: PasteStrSelection("    ")							;;  &emsp	"&#x9;"  PasteStrSelection("&#x9
 
 Enter:: PasteHTMLSelection("<br>")
 
+#If isAhkSpy && IsIEFocus() && MS_IsSelection() && (ThisMode != "Hotkey" || isPaused)
+
 ~RShift:: HandleOpen()	
+CapsLock:: MS_Selected()
 
 #If isAhkSpy && Sleep != 1 && ThisMode != "Hotkey" && (IsIEFocus() || MS_IsSelection())
 
@@ -5128,8 +5128,11 @@ GetStyles(Class, Style, ExStyle, hWnd, IsChild = 0, IsChildInfoExist = 0) {
 		, (WS_OVERLAPPED && WS_SIZEBOX && WS_SYSMENU && WS_MINIMIZEBOX && WS_MAXIMIZEBOX) )   ;;	WS_OVERLAPPEDWINDOW := WS_TILEDWINDOW
 
 	If IsFunc("GetStyle_" Class)
-		ChildStyles := GetStyle_%Class%(orStyle, hWnd, ChildExStyles)
-				
+		ChildStyles := GetStyle_%Class%(orStyle, hWnd, ChildExStyles) 
+	If 0
+	{
+		ChildStyles := GetStyle_SysTreeView32(orStyle, hWnd, ChildExStyles)
+	}
 	sExStyle := ExStyle
 	For K, V In ExStyles 
 		RetEx .= QStyle(K, V, "", (ExStyle & V) && (%K% := 1, ExStyle -= V))  
@@ -5330,7 +5333,7 @@ GetStyle_Button(Style, hWnd)  {
 	Return Res
 }
 
-GetStyle_Edit(Style, hWnd, byref ResEx)  {
+GetStyle_Edit(Style, hWnd, byref ResEx)  { 
 	; https://www.autohotkey.com/boards/viewtopic.php?p=25848#p25848
 	; https://docs.microsoft.com/en-us/windows/desktop/controls/edit-control-styles
 	; https://docs.microsoft.com/en-us/windows/win32/controls/edit-control-window-extended-styles
@@ -6148,9 +6151,16 @@ MS_IsSelect(EL) {
 
 MS_IsSelection() {
 	Return oMS.ELSel.OuterText != ""
+} 
+
+MS_Selected() {
+	; https://learn.javascript.ru/range-textrange-selection
+	range := oBody.createTextRange() 
+	range.moveToElementText(oMS.ELSel)  
+	range.select()  
 }
 
-MS_Select(EL) { 
+MS_Select(EL) {  
 	If EL.Name = "MS:S" || EL.Name = "MS:SP"
 		oMS.ELSel := EL.ParentElement 
 	Else If EL.Name = "MS:N"
@@ -6799,7 +6809,7 @@ ButtonClick(oevent) {
 		If !WinExist("ahk_id" oOther.ControlID)
 			Return ToolTip("Window not found", 700) 
 		Gosub Mode_Win
-		LocalOpenWin(oOther.ControlID)
+		LocalOpenWin(Format("0x{:x}", oOther.ControlID))
 	}
 	Else If (thisid = "___WStyleChange") {
 		caption := oDoc.all.item(oevent.parentElement.parentElement.sourceIndex - 3).id 
@@ -7231,7 +7241,7 @@ control_totree() {
 	HTML_Win := oDivNew.innerHTML
 	oDivNew.scrollTop := oDivNew.scrollTop + oDoc.getElementById("a_find_anch").getBoundingClientRect().top - 6	 
 	; HighLight([oDoc.all.item(oDoc.getElementById("a_find_anch").sourceIndex + 4)], 1000)
-	HighLight([oDoc.getElementById("a_find_anch").firstChild.parentElement], 1000) 
+	HighLight([oDoc.getElementById("a_find_anch").firstChild.parentElement], 5000) 
 }
 
 control_path_func() {
