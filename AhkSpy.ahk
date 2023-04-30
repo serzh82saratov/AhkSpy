@@ -31,7 +31,7 @@
 */
 
 
-Global AhkSpyVersion := 5.14
+Global AhkSpyVersion := 5.15
           
 	; ___________________________ Caption _________________________________________________
 
@@ -224,7 +224,8 @@ If MemoryAnchor
 } 
  
 FixIE()
-SeDebugPrivilege()  
+SeDebugPrivilege()   
+DllCall("Ntdll.dll\RtlAdjustPrivilege", "UInt", 20, "UChar", TRUE, "UChar", FALSE, "UPtrP", 0)
 OnExit("Exit") 
 CreateMarkerInvert()
 ShowMarkersCreate("oShowAccMarkers", "26419F")  
@@ -1074,7 +1075,7 @@ Spot_Control(NotHTML = 0) {
 		WinGetPos, WinX, WinY, WinW, WinH, ahk_id %ControlID% 
 		MXS := WinX + WinW // 2, MYS := WinY + WinH // 2
 	}
-	
+	 
 	If (WinID = hGui || WinID = oOther.hZoom || WinID = oOther.hZoomLW)
 		Return 0, HideAllMarkers()
 		
@@ -1816,7 +1817,7 @@ AccInfoUnderMouse(mx, my, wx, wy, cx, cy, caX, caY, WinID, ControlID, fromhandle
 		; Acc := ComObjEnwrap(9, pacc, 1), child := NumGet(varChild,8,"UInt")
 	}
 	Else 
-		AccObj := Acc_ObjectFromWindow(ControlID ? ControlID : WinID) 
+		AccObj := Acc_ObjectFromWindow(ControlID ? ControlID : WinID)
 	 
 	If !IsObject(AccObj)
 		Return
@@ -4234,9 +4235,9 @@ InArr(Val, Arr) {
 
 TransformHTML(str) {
 	Transform, str, HTML, %str%, 3
-	; StringReplace, str, str, <br>, , 1 
-	str := strreplace(str, "`r")
-	str := strreplace(str, "`n") 
+	StringReplace, str, str, <br>, , 1
+	; str := strreplace(str, "`r")
+	; str := strreplace(str, "`n")  
 	Return str
 }
 
@@ -6614,9 +6615,11 @@ Class Events {  ;;	http://forum.script-coding.com/viewtopic.php?pid=82283#p82283
 
 ButtonClick(oevent) { 
 	thisid := oevent.id
-	If (thisid = "copy_wintext")
+	If (thisid = "copy_wintext") {
 		o := oDoc.getElementById("wintextcon")
-		, GetKeyState("Shift") ? ClipAdd(o.OuterText, 1) : (Clipboard := o.OuterText), HighLight([o])
+		GetKeyState("Shift") ? ClipAdd(o.OuterText, 1) : (Clipboard := o.OuterText)
+		HighLight([o]) 
+	}
 	Else If (thisid = "wintext_hidden")
 	{
 		R := oBody.createTextRange(), R.collapse(1), R.select()
