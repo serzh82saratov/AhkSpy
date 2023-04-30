@@ -31,7 +31,7 @@
 */
 
 
-Global AhkSpyVersion := 5.16
+Global AhkSpyVersion := 5.17
           
 	; ___________________________ Caption _________________________________________________
 
@@ -271,26 +271,23 @@ Gui, TB: +HWNDhTBGui -Caption -DPIScale +Parent%hGui% +%WS_CHILDWINDOW% -%WS_POP
 Gui, TB: Color, %ColorBg%
 Gui, TB: Font, % " s" FontDPI, Verdana
 
-Gui, TB: Add, Progress, % "  x1 y0 h" HeigtButton-1 " w" wKey " hwndhProgressWindow vColor_Window Background" ColorBgModeButton  
-Gui, TB: Add, Text, % "Border hwndhButtonWindow +0x201 c" ColorFont " BackGroundTrans xp yp hp wp", Window
+Gui, TB: Add, Progress, % "Border x1 y1 h" HeigtButton-1 " w" wKey " hwndhProgressWindow vColor_Window Background" ColorBgModeButton  
+Gui, TB: Add, Text, % "hwndhButtonWindow +0x201 c" ColorFont " BackGroundTrans xp yp hp wp", Window
 
-Gui, TB: Add, Progress, % "x+1 y0 h" HeigtButton-1 " w" wKey " hwndhProgressControl vColor_Control Background" ColorBgModeButton  
-Gui, TB: Add, Text, % "Border hwndhButtonControl +0x201 c" ColorFont " BackGroundTrans xp yp hp wp", Control
+Gui, TB: Add, Progress, % "Border x+1 y1 h" HeigtButton-1 " w" wKey " hwndhProgressControl vColor_Control Background" ColorBgModeButton  
+Gui, TB: Add, Text, % "hwndhButtonControl +0x201 c" ColorFont " BackGroundTrans xp yp hp wp", Control
 
-Gui, TB: Add, Progress, % "x+1 y0 h" HeigtButton-1 " w" HeigtButton " hwndhProgressZoom vColor_Zoom Background" ColorBgModeButton  
-Gui, TB: Add, Text, % "Border hwndhButtonZoom +0x201 c" ColorFont " BackGroundTrans xp yp hp wp", % Chr("0x1F50D") ; 🔍
+Gui, TB: Add, Progress, % "Border x+1 y1 h" HeigtButton-1 " w" HeigtButton " hwndhProgressZoom vColor_Zoom Background" ColorBgModeButton  
+Gui, TB: Add, Text, % "hwndhButtonZoom +0x201 c" ColorFont " BackGroundTrans xp yp hp wp", % Chr("0x1F50D") ; 🔍
 
-Gui, TB: Add, Progress, % "x+1 y0 h" HeigtButton-1 " w" wColor " vColorProgress HWNDhColorProgress c" ColorBgOriginal, 100
+Gui, TB: Add, Progress, % "x+1 y1 h" HeigtButton-1 " w" wColor " vColorProgress HWNDhColorProgress c" ColorBgOriginal, 100
 
-Gui, TB: Add, Progress, % "x+1 y0 h" HeigtButton-1 " w" wKey " hwndhProgressKeys vColor_Button Background" ColorBgModeButton  
-Gui, TB: Add, Text, % "Border hwndhButtonButton +0x201 c" ColorFont " BackGroundTrans xp yp hp wp", Keys
+Gui, TB: Add, Progress, % "Border x+1 y1 h" HeigtButton-1 " w" wKey " hwndhProgressKeys vColor_Button Background" ColorBgModeButton  
+Gui, TB: Add, Text, % "hwndhButtonButton +0x201 c" ColorFont " BackGroundTrans xp yp hp wp", Keys
 
 Gui, TB: Show, % "x0 y0 NA h" HeigtButton " w" widthTB := wKey * 3 + wColor + HeigtButton + 6
 
-MouseTracker.Track([hProgressWindow , Func("ButtonHover"), ""], [hProgressControl, Func("ButtonHover"), ""]
-, [hProgressKeys, Func("ButtonHover"), ""], [hProgressZoom, Func("ButtonHover"), ""])
-oOther.Progress_Mode := [], oOther.Progress_Mode[hProgressWindow] := "Win"
-oOther.Progress_Mode[hProgressControl] := "Control", oOther.Progress_Mode[hProgressKeys] := "Hotkey"
+Gosub MouseTrackerInit 
 
 Gui, F: +HWNDhFindGui -Caption -DPIScale +Parent%hGui% +%WS_CHILDWINDOW% -%WS_POPUP%
 Gui, F: Color, %ColorBgPaused%
@@ -3247,7 +3244,7 @@ Class MouseTracker
 	     , TME_CBSIZE           := A_PtrSize == 8 ? 24 : 16
 		 , TME_DWHOVERTIME      := 1 ; Arbitrary value.
 		 , FLAGS_CANCEL_LEAVE   := 0x80000000|0x00000002i
-		 , TIMER_SAFE_VALUE     := Abs(StrReplace(A_BatchLines, "ms"))+1
+		 , TIMER_SAFE_VALUE     := 10 ; Abs(StrReplace(A_BatchLines, "ms"))+1
 
 	; Disallow instantiation.
 	__New( )
@@ -3386,16 +3383,32 @@ __MT_MOUSELEAVE( wParam, lParam, Msg, hWnd )
 } 
 
 ButtonHover(aGui, aGuiCtrl, wParam, lParam, Msg, hWnd) { 
-	If (oOther.Progress_Mode[hWnd] != ThisMode)
-		ColorProgress(hWnd, ColorSelMouseHoverButt)    
-	MouseTracker.Track([hWnd, "", Func("ButtonLeave")])
+	If (oOther.Progress_Mode[hWnd] != ThisMode) 
+		ColorButtonHover(hWnd, ColorSelMouseHoverButt)
+	MouseTracker.Track([hWnd, "", Func("ButtonLeave"), ""])
 }
 
 ButtonLeave(aGui, aGuiCtrl, wParam, lParam, Msg, hWnd) {
-	If (oOther.Progress_Mode[hWnd] != ThisMode)
-		ColorProgress(hWnd, ColorBgModeButton) 
+	If (oOther.Progress_Mode[hWnd] != ThisMode) 
+		ColorButtonHover(hWnd, ColorBgModeButton)
 	MouseTracker.Track([hWnd, Func("ButtonHover"), ""])
 }
+
+MouseTrackerInit:
+	MouseTracker.Track([hProgressWindow , Func("ButtonHover"), ""], [hProgressControl, Func("ButtonHover"), ""]
+	, [hProgressKeys, Func("ButtonHover"), ""], [hProgressZoom, Func("ButtonHover"), ""])
+	
+	oOther.Progress_Mode := [], oOther.Progress_Mode[hProgressWindow] := "Win"
+	oOther.Progress_Mode[hProgressControl] := "Control", oOther.Progress_Mode[hProgressKeys] := "Hotkey"
+
+	oOther.Progress_Text := [], oOther.Progress_Text[hProgressWindow] := hButtonWindow, oOther.Progress_Text[hProgressZoom] := hButtonZoom
+	oOther.Progress_Text[hProgressControl] := hButtonControl, oOther.Progress_Text[hProgressKeys] := hButtonButton
+	Return
+
+ColorButtonHover(hWnd, color) {    
+	GuiControl, % "TB: +Background" color, %hWnd%  
+	GuiControl, TB: +Redraw, % oOther.Progress_Text[hWnd]
+} 
 
 	; ___________________________ Functions _________________________________________________
 
@@ -3660,10 +3673,10 @@ ColorButton(name) {
 		ColorProgress("Color_" v, v = name ? ColorSelModeButton : ColorBgModeButton) 
 }
 
-ColorProgress(name, color) {  
+ColorProgress(name, color) {    
 	GuiControl, % "TB: +Background" color, %name% 
-	Gui, TB: Color, %ColorBg%
-}
+	Gui, TB: Color, %ColorBg%  
+} 
 
 WM_LBUTTONDOWN(wp, lp, msg, hwnd) { 
 	If (A_GuiControl = "Color_Window")   
