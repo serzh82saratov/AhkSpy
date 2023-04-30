@@ -31,7 +31,7 @@
 */
 
 
-Global AhkSpyVersion := 5.17
+Global AhkSpyVersion := 5.18
           
 	; ___________________________ Caption _________________________________________________
 
@@ -7622,8 +7622,7 @@ Z_MsgZoom(12, OnlyShiftTab)
 
 oZoom.CurrentProcessId := DllCall("GetCurrentProcessId")
 OnMessage(MsgAhkSpyZoom := DllCall("RegisterWindowMessage", "Str", "MsgAhkSpyZoom"), "Z_MsgZoom")
-OnMessage(0x0020, "WM_SETCURSOR")
-OnMessage(0x0215, "WM_CAPTURECHANGED")
+OnMessage(0x0020, "WM_SETCURSOR") 
 OnExit("ZoomOnClose")
 OnMessage(0x201, "LBUTTONDOWN") ;; WM_LBUTTONDOWN
 OnMessage(0x204, "RBUTTONDOWN") ;; WM_RBUTTONDOWN
@@ -8118,12 +8117,7 @@ WM_SETCURSOR(W, L, M, H) {
 	}
 	Else
 		oZoom.SIZING := 0, oZoom.SIZINGType := ""
-}
-
-WM_CAPTURECHANGED(W, L, M, H) { 
-	ToolTip % H "`nwerwer" 
-}
-
+} 
 
 LBUTTONDOWN(W, L, M, H) { 
 	If oZoom.SIZING
