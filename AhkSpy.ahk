@@ -31,7 +31,7 @@
 */
 
 
-Global AhkSpyVersion := 5.18
+Global AhkSpyVersion := 5.19
           
 	; ___________________________ Caption _________________________________________________
 
@@ -1290,26 +1290,17 @@ HTML_Control:
 	{
 		If c_ShowStyles
 			ControlStyles := GetStyles(CtrlClass, CtrlStyle, CtrlExStyle, ControlID)
-			
-		HTML_ControlExist := ""
+		If (hParent := DllCall("GetAncestor", "UPtr", ControlID, Uint, GA_PARENT := 1)) && WinID != hParent  {
+			ControlGetPos, pCtrlX, pCtrlY, pCtrlW, pCtrlH,, ahk_id %hParent% 
+			WinGetClass, pClass, ahk_id %hParent%
+			ViewStrRelParent := _DP "<span class='param'>Relative parent:</span>  <span name='MS:'>x" CtrlX - pCtrlX " y" CtrlY - pCtrlY "</span>"
+			. _DP "<span name='MS:'>" pClass "</span>" 
+			. _DP _BP1 " id='b_hwnd_flash' value='" hParent "'> flash " _BP2
+			. _BP1 " id='b_open_ctrl' value='" hParent "|" pClass "'> > " _BP2
+		}
 		
-			. _T1 " id='__Position__Control'> ( Position ) </span>" _T2 
-			
-		. _PRE1 _BP1 " id='set_button_pos'>Pos:" _BP2 "  <span name='MS:'>x" CtrlX " y" CtrlY "</span>" 
-			. _DP "<span name='MS:'>x&sup2;" CtrlX2 " y&sup2;" CtrlY2 "</span>" _DP  _BP1 " id='set_button_pos'>Size:"  _BP2 
-			. "  <span name='MS:'>w" CtrlW " h" CtrlH "</span>" ViewStrPos1 
-			
-		. "`n" "<span class='param'>Relative client area:</span>  <span name='MS:'>x" CtrlCAX " y" CtrlCAY "</span>" 
-			. _DP "<span name='MS:'>x&sup2;" CtrlCAX2 " y&sup2;" CtrlCAY2 "</span>"
-			. _DP "<span class='param'>Relative screen:</span>  <span name='MS:'>x" CtrlSCX " y" CtrlSCY "</span>" 
-			. _DP "<span name='MS:'>x&sup2;" CtrlSCX2 " y&sup2;" CtrlSCY2 "</span>"
-			. ViewStrPos2 
-			
-		. "`n" _BP1 " id='set_pos'>Mouse relative control:" 
-		. _BP2 "  <span name='MS:' id='coord_mrc'>x" rmCtrlX " y" rmCtrlY "</span>" WithRespectControl 
-
-		. _PRE2
-
+		HTML_ControlExist := "" 
+		
 		. _T1 " id='__Control'> ( Control ) </span>" _BT1 " id='flash_control'> flash " _BT2 
 		. _DB _BT1 " id='control_open_as_window'> open as window " _BT2 _ButWindow_Detective  _T2  		
 		
@@ -1329,6 +1320,23 @@ HTML_Control:
 		. _DP  _BP1 " id='control_path'> Get parent " _BP2 
 		. "<span id='control_path_error'></span>" _ParentControl 
 			  
+		. _PRE2
+		
+		. _T1 " id='__Position__Control'> ( Position ) </span>" _T2 
+			
+		. _PRE1 _BP1 " id='set_button_pos'>Pos:" _BP2 "  <span name='MS:'>x" CtrlX " y" CtrlY "</span>" 
+			. _DP "<span name='MS:'>x&sup2;" CtrlX2 " y&sup2;" CtrlY2 "</span>" _DP  _BP1 " id='set_button_pos'>Size:"  _BP2 
+			. "  <span name='MS:'>w" CtrlW " h" CtrlH "</span>" ViewStrPos1 
+			
+		. "`n" "<span class='param'>Relative client area:</span>  <span name='MS:'>x" CtrlCAX " y" CtrlCAY "</span>" 
+			. _DP "<span name='MS:'>x&sup2;" CtrlCAX2 " y&sup2;" CtrlCAY2 "</span>"
+			. _DP "<span class='param'>Relative screen:</span>  <span name='MS:'>x" CtrlSCX " y" CtrlSCY "</span>" 
+			. _DP "<span name='MS:'>x&sup2;" CtrlSCX2 " y&sup2;" CtrlSCY2 "</span>"
+			. ViewStrPos2 
+			
+		. "`n" _BP1 " id='set_pos'>Mouse relative control:" 
+		. _BP2 "  <span name='MS:' id='coord_mrc'>x" rmCtrlX " y" rmCtrlY "</span>" WithRespectControl ViewStrRelParent
+
 		. _PRE2
 		
 		. "`n<span id=ControlStyles>" ControlStyles "</span>" 
@@ -5343,7 +5351,7 @@ GetStyles(Class, Style, ExStyle, hWnd, IsChild = 0, IsChildInfoExist = 0) {
 		ChildStyles := GetStyle_%Class%(orStyle, hWnd, ChildExStyles) 
 	If 0
 	{
-		ChildStyles := GetStyle_SysTreeView32(orStyle, hWnd, ChildExStyles)
+		ChildStyles := GetStyle_ToolbarWindow32(orStyle, hWnd, ChildExStyles)
 	}
 	sExStyle := ExStyle
 	For K, V In ExStyles 
