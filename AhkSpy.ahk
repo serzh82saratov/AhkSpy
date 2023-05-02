@@ -31,7 +31,7 @@
 */
 
 
-Global AhkSpyVersion := 5.20
+Global AhkSpyVersion := 5.21
           
 	; ___________________________ Caption _________________________________________________
 
@@ -522,6 +522,7 @@ SpotProc2:
 	Shift_Tab_Work := 0
 	Return
 	
++#Tab:: AhkSpyZoomShow()
 
 #Tab Up::
 F8 Up:: ChangeMode()
@@ -617,8 +618,6 @@ Esc::
 	Else
 		GuiClose() 
 	Return
-
-+#Tab:: AhkSpyZoomShow()
 
 #If isAhkSpy && Sleep != 1 && IsIEFocus() && (oDoc.selection.createRange().parentElement.isContentEditable)
 
@@ -2899,12 +2898,14 @@ ShowSys:
 	Menu, Sys, Show, % x, % y
 	ZoomMsg(9, 0)
 	Return
-}
+} 
 
 MenuCheck()  {
 	DllCall("KillTimer", "UPtr", A_ScriptHwnd, "Ptr", 1)
 	If !WinExist("ahk_class #32768 ahk_pid " oOther.CurrentProcessId)
 		Return
+	If GetKeyState("Esc", "P")
+		Return DllCall("EndMenu")
 	If GetKeyState("RButton")
 	{
 		MouseGetPos, , , WinID
@@ -3215,198 +3216,71 @@ Help_OpenScriptDir:
 	
 	
 	; ___________________________ MouseTracker _________________________________________________
-
-; ----------------------------------------------------------------------------------------------------------------------
-; Name .........: MouseTracker class library
-; Description ..: Track mouse when entering and leaving GUIs/Controls.
-; AHK Version ..: AHK_L 1.1.30.01 x32/64 ANSI/Unicode
-; Author .......: cyruz - http://ciroprincipe.info
-; License ......: WTFPL - http://www.wtfpl.net/txt/copying/
-; Changelog ....: Feb. 24, 2019 - v0.1   - First version.
-; ..............: Feb. 27, 2019 - v0.2   - Implemented multi handle tracking.
-; ..............: Feb. 27, 2019 - v0.2.1 - Fixed issue with WM_MOUSEMOVE events not flagged as managed.
-; Remarks ......: Uses the following functions, structures and messages from Win32 API.
-; ..............: "WM_MOUSEMOVE" Win32 message:
-; ..............: https://docs.microsoft.com/en-us/windows/desktop/inputdev/wm-mousemove
-; ..............: "WM_MOUSELEAVE" Win32 message:
-; ..............: https://docs.microsoft.com/en-us/windows/desktop/inputdev/wm-mouseleave
-; ..............: "TrackMouseEvent" Win32 function:
-; ..............: https://docs.microsoft.com/en-us/windows/desktop/api/winuser/nf-winuser-trackmouseevent
-; ..............: "TRACKMOUSEEVENT" Win32 structure:
-; ..............: https://docs.microsoft.com/en-us/windows/desktop/api/winuser/ns-winuser-tagtrackmouseevent
-; ----------------------------------------------------------------------------------------------------------------------
-
-
-; Name .........: MouseTracker - PUBLIC STATIC CLASS
-; Description ..: Manages mouse tracking on GUIs and Controls through WM_MOUSEMOVE and WM_MOUSELEAVE.
-Class MouseTracker
-{
-	Static WM_MOUSEMOVE         := 0x0200
-	     , WM_MOUSELEAVE        := 0x02A3
-		 , FN_MOUSEENTER        := "__MT_MOUSEMOVE"
-         , FN_MOUSELEAVE        := "__MT_MOUSELEAVE"
-	     , TME_LEAVE            := 0x00000002
-		 , TME_CANCEL           := 0x80000000
-	     , TME_CBSIZE_OFFT      := 0
-	     , TME_DWFLAGS_OFFT     := 4
-	     , TME_HWNDTRACK_OFFT   := 8
-	     , TME_DWHOVERTIME_OFFT := A_PtrSize == 8 ? 16 : 12
-	     , TME_CBSIZE           := A_PtrSize == 8 ? 24 : 16
-		 , TME_DWHOVERTIME      := 1 ; Arbitrary value.
-		 , FLAGS_CANCEL_LEAVE   := 0x80000000|0x00000002i
-		 , TIMER_SAFE_VALUE     := 10 ; Abs(StrReplace(A_BatchLines, "ms"))+1
-
-	; Disallow instantiation.
-	__New( )
-	{
-		Return False
-	}
-
-    ; Name .........: Track - PUBLIC STATIC METHOD
-    ; Description ..: Initialize mouse tracking on the desired handle.
-    ; Parameters ...: arrTracking* = Variadic parameter accepting a series of request arrays.
-	; ..............: Request array form is: [ hWnd, cbEnter, cbLeave ]
-	; ............... hWnd    = Handle to the GUI or Control to be checked for mouse tracking.
-	; ..............: cbEnter = Callback - Fires when the mouse is hovering the desired handle.
-	; ..............: cbLeave = Callback - Fires when the mouse has left the desired handle.
-	; ..............:                      Fires if mouse is not on the handle when called.
-	; Remarks ......: The functions used as callbacks must accept 6 parameters:
-	; ..............: A_Gui, A_GuiControl, wParam, lParam, Msg, hWnd.
-	; ..............: For info about those parameter, please check "OnMessage" in AutoHotkey documentation.
-	; ..............: Tracking lasts only for one event, it must be reinstantiated in the callbacks if required.
-	; ..............: Please keep tracking reinstantiation code as last line in the callback to avoid issues.
-	Track( arrTracking* )
-	{
-		; Initialize memory and requests object during first call.
-		If ( !MouseTracker.p_TME )
-		{
-			If ( (MouseTracker.p_TME := DllCall("LocalAlloc", UInt,0x0040, UInt,MouseTracker.TME_CBSIZE)) == "" )
-				Return False
-		    NumPut(MouseTracker.TME_CBSIZE,      MouseTracker.p_TME+0, MouseTracker.TME_CBSIZE_OFFT,      "UInt")
-		  , NumPut(MouseTracker.TME_DWHOVERTIME, MouseTracker.p_TME+0, MouseTracker.TME_DWHOVERTIME_OFFT, "UInt")
-		  , MouseTracker.Requests := {}		
+ 
+Hover(wp, lp = "", msg = "", hwnd = "") {
+	Static WM_MOUSEMOVE := 0x200, Arr := {}, Arr2 := {}, Handler, Prhwnd, waitleave := 0 
+	Local
+	If !hwnd && IsObject(wp)
+	{ 
+		If (wp.Monitor != "") {  
+			Return OnMessage(WM_MOUSEMOVE, Func("Hover"), wp.Monitor)
 		}
-
-		Loop % arrTracking.Length()
-		{
-			; Get single request array from parameters array:
-			; arrRequest[1] = hWnd GUI/Control.
-			; arrRequest[2] = Mouse Enter Callback.
-			; arrRequest[3] = Mouse Leave Callback.
-			arrRequest := arrTracking[A_Index]
-
-			; Create the request object, available globally, if not present. Request is identified by the hWnd:
-			; { hWnd : { "cb_ME" : Callback_Mouse_Enter , "cb_ML" " Callback_Mouse_Leave } }
-			If ( !MouseTracker.Requests[arrRequest[1]] )
-				MouseTracker.Requests[arrRequest[1]] := { "cb_ME":0, "cb_ML":0 }
-
-			; Track mouse leave. We implemented it monitoring the WM_MOUSELEAVE message. This 
-			; kind of tracking must be requested with the "TrackMouseEvent" Win32 system call.
-			If ( arrRequest[3] != "" ) ; arrRequest[3] = Mouse Leave Callback.
-			{
-				; Cancel a previous tracking request if it's of the same type of the new one.
-				If ( MouseTracker.Requests[arrRequest[1]].cb_ML )
-					NumPut( arrRequest[1]
-					      , MouseTracker.p_TME+0
-						  , MouseTracker.TME_HWNDTRACK_OFFT
-						  , "Ptr" )
-				  , NumPut( MouseTracker.FLAGS_CANCEL_LEAVE
-				          , MouseTracker.p_TME+0
-						  , MouseTracker.TME_DWFLAGS_OFFT
-						  , "UInt" )
-				  , DllCall("TrackMouseEvent", Ptr,MouseTracker.p_TME)
-				  , OnMessage(MouseTracker.WM_MOUSELEAVE, "")
-
-			   ; Issue a new request with the desired tracking values.
-			    NumPut( arrRequest[1]
-			          , MouseTracker.p_TME+0
-					  , MouseTracker.TME_HWNDTRACK_OFFT
-					  , "Ptr")
-			  , NumPut( MouseTracker.TME_LEAVE
-			          , MouseTracker.p_TME+0
-					  , MouseTracker.TME_DWFLAGS_OFFT
-					  , "UInt" )
-			  , DllCall("TrackMouseEvent", Ptr,MouseTracker.p_TME)
-
-				; Add the Mouse Leave Callback to the request object.
-			    MouseTracker.Requests[arrRequest[1]].cb_ML := arrRequest[3]
-			  , b_ML := True ; Flag WM_MOUSELEAVE monitoring as required.
-			}
-
-			; Track mouse enter. We implemented it monitoring the WM_MOUSEMOVE message. This message
-			; is normally sent to all windows when the mouse is hovering them. We ditched monitoring
-			; of the WM_MOUSEHOVER message because its usage is quirky and prone to errors.
-			If ( arrRequest[2] != "" ) ; arrRequest[2] = Mouse Enter Callback.
-				MouseTracker.Requests[arrRequest[1]].cb_ME := arrRequest[2]
-			  , b_MM := True ; Flag WM_MOUSEMOVE monitoring as required.
+		If wp.Hover { 
+			Handler := wp
+			Return
 		}
-
-		; Start monitoring if flagged as required.
-		If ( b_ML )
-			OnMessage(MouseTracker.WM_MOUSELEAVE, MouseTracker.FN_MOUSELEAVE)
-		If ( b_MM )
-			OnMessage(MouseTracker.WM_MOUSEMOVE,  MouseTracker.FN_MOUSEENTER)
-			
-		Return True
+		If wp.Binds { 
+			for i, v in wp.Binds 
+				Arr2[v[1]] := v[2], Arr[v[2]] := v[2]
+			Return  
+		} 
+		for k, handle in wp
+		{
+			WinGetClass, CtrlClass, % "ahk_id" handle 
+			If CtrlClass = Static
+				Control, Style, +0x100, , % "ahk_id" handle
+			Else If CtrlClass = ComboBox
+				SizeOfCBI := 40 + (A_PtrSize * 3)
+				, VarSetCapacity(CBI, SizeOfCBI, 0)
+				, NumPut(SizeOfCBI, CBI, 0, "UInt")
+				, DllCall("GetComboBoxInfo", "Ptr", handle, "Ptr", &CBI, "Int")
+				, h := NumGet(CBI, 40 + A_PtrSize, "UPtr")
+				, Arr[h] := handle 
+			Arr[handle] := handle
+		}  
+		Return 
+	} 
+	If !waitleave
+	{ 
+		If (Arr[hwnd] && Arr[hwnd] != Prhwnd)
+		{   
+			waitleave := 1
+			If Prhwnd
+				Handler.Leave.Call(Prhwnd)
+			Handler.Hover.Call(Arr[hwnd]) 
+			Prhwnd := Arr[hwnd] 
+		}
+		Else If Prhwnd && !Arr[hwnd]
+		{ 
+			Handler.Leave.Call(Prhwnd)
+			Prhwnd := 0  
+		}
 	}
-
-    ; Name .........: UnTrack - PUBLIC STATIC METHOD
-    ; Description ..: Disable all message management and free memory.
-	UnTrack()
+	Else If (!Arr[hwnd] && !Arr2[hwnd]) || (Prhwnd != Arr[hwnd] && Prhwnd != Arr2[hwnd])
 	{
-		OnMessage(MouseTracker.WM_MOUSEMOVE,  "")
-		OnMessage(MouseTracker.WM_MOUSELEAVE, "")
-		DllCall("LocalFree", Ptr,MouseTracker.p_TME)
-		MouseTracker.p_TME    := 0
-		MouseTracker.Requests := ""
-	}
+		Handler.Leave.Call(Prhwnd)
+		Prhwnd := 0  
+		waitleave := 0
+	}	
+	Return   
 }
 
-; Name .........: __HT_MOUSEMOVE - PRIVATE FUNCTION
-; Description ..: Manage WM_MOUSEMOVE message.
-__MT_MOUSEMOVE( wParam, lParam, Msg, hWnd )
-{
-	If ( !MouseTracker.Requests[hWnd].cb_ME )
-		Return
-
-	OnMessage(MouseTracker.WM_MOUSEMOVE, "")
-  , objBf := MouseTracker.Requests[hWnd].cb_ME.Bind(A_Gui, A_GuiControl, wParam, lParam, Msg, hWnd)
-  , MouseTracker.Requests[hWnd].cb_ME := 0 ; Avoid entering this function again for the same hWnd.
-	
-	; Call the BoundFounc object after the function returned.
-	SetTimer, % objBf, % -(MouseTracker.TIMER_SAFE_VALUE)
-
-	Return
-}
-
-; Name .........: __HT_MOUSELEAVE - PRIVATE FUNCTION
-; Description ..: Manage WM_MOUSELEAVE message.
-__MT_MOUSELEAVE( wParam, lParam, Msg, hWnd )
-{
-	OnMessage(MouseTracker.WM_MOUSELEAVE, "")
-  , objBf := MouseTracker.Requests[hWnd].cb_ML.Bind(A_Gui, A_GuiControl, wParam, lParam, Msg, hWnd)
-  , MouseTracker.Requests[hWnd].cb_ML := 0 ; Important for the "previous tracking request" check.
-
-	; Call the BoundFounc object after the function returned.
-	SetTimer, % objBf, % -(MouseTracker.TIMER_SAFE_VALUE)
-	Return
-} 
-
-ButtonHover(aGui, aGuiCtrl, wParam, lParam, Msg, hWnd) { 
-	If (oOther.Progress_Mode[hWnd] != ThisMode) 
-		ColorButtonHover(hWnd, ColorSelMouseHoverButt)
-	MouseTracker.Track([hWnd, "", Func("ButtonLeave"), ""])
-}
-
-ButtonLeave(aGui, aGuiCtrl, wParam, lParam, Msg, hWnd) {
-	If (oOther.Progress_Mode[hWnd] != ThisMode) 
-		ColorButtonHover(hWnd, ColorBgModeButton)
-	MouseTracker.Track([hWnd, Func("ButtonHover"), ""])
-}
-
-MouseTrackerInit:
-	MouseTracker.Track([hProgressWindow , Func("ButtonHover"), ""], [hProgressControl, Func("ButtonHover"), ""]
-	, [hProgressKeys, Func("ButtonHover"), ""], [hProgressZoom, Func("ButtonHover"), ""])
+MouseTrackerInit: 
+	Hover({Hover: Func("OnHover"), Leave: Func("OnLeave")}) 
+	Hover([hProgressWindow, hProgressControl, hProgressKeys, hProgressZoom])
+	; Hover({Binds: [[hButtonWindow, hProgressWindow], [hButtonControl, hProgressControl]
+		; , [hButtonButton, hProgressKeys], [hButtonZoom, hProgressZoom]]}) 
+	Hover({Monitor: 1}) 
 	
 	oOther.Progress_Mode := [], oOther.Progress_Mode[hProgressWindow] := "Win"
 	oOther.Progress_Mode[hProgressControl] := "Control", oOther.Progress_Mode[hProgressKeys] := "Hotkey"
@@ -3414,6 +3288,16 @@ MouseTrackerInit:
 	oOther.Progress_Text := [], oOther.Progress_Text[hProgressWindow] := hButtonWindow, oOther.Progress_Text[hProgressZoom] := hButtonZoom
 	oOther.Progress_Text[hProgressControl] := hButtonControl, oOther.Progress_Text[hProgressKeys] := hButtonButton
 	Return
+
+OnHover(hWnd) {  
+	If (oOther.Progress_Mode[hWnd] != ThisMode)
+		ColorButtonHover(hWnd, ColorSelMouseHoverButt) 
+}
+
+OnLeave(hWnd) { 
+	If (oOther.Progress_Mode[hWnd] != ThisMode) 
+		ColorButtonHover(hWnd, ColorBgModeButton)
+} 
 
 ColorButtonHover(hWnd, color) {    
 	GuiControl, % "TB: +Background" color, %hWnd%  
