@@ -31,7 +31,7 @@
 */
 
 
-Global AhkSpyVersion := 5.19
+Global AhkSpyVersion := 5.20
           
 	; ___________________________ Caption _________________________________________________
 
@@ -232,6 +232,8 @@ OnExit("Exit")
 CreateMarkerInvert()
 ShowMarkersCreate("oShowAccMarkers", "26419F")  
 ShowMarkersCreate("oShowMarkers", "E14B30")
+
+	; ___________________________ Gui Create _________________________________________________
 
 Gui, +AlwaysOnTop +HWNDhGui +ReSize -DPIScale +E%WS_EX_APPWINDOW%  ;   +E%WS_EX_NOACTIVATE%;  +Owner%hMarkerGui%
 Gui, Color, %ColorBgPaused%
@@ -4138,12 +4140,14 @@ ZoomNoSleep() {
 }
 
 AhkSpyZoomShow() {
+	Critical 
 	If !oPubObjGUID
 		ObjRegisterActive(oObjActive, oPubObjGUID := CreateGUID())
 		, oObjActive.AhkSpy_Minimize := Func("Minimize")
 		, oObjActive.ZoomSleep := Func("ZoomSleep")
-		, oObjActive.ZoomNoSleep := Func("ZoomNoSleep")
-	If !WinExist("ahk_id" oOther.hZoom) {
+		, oObjActive.ZoomNoSleep := Func("ZoomNoSleep") 
+	If !WinExist("ahk_id" oOther.hZoom) && !oOther.ZoomExist {
+		oOther.ZoomExist := 1
 		Hotkey := ThisMode = "Hotkey"
 		Suspend := !isAhkSpy
 		If A_IsCompiled
@@ -4153,7 +4157,7 @@ AhkSpyZoomShow() {
 		WinWait, % "ahk_pid" PID, , 1
 	}
 	Else If DllCall("IsWindowVisible", "UPtr", oOther.hZoom)
-		ZoomMsg(0)
+		ZoomMsg(0) 
 	Else
 		ZoomMsg(1) 
 	SetTimer(Func("ColorProgress").Bind("Color_Zoom", ColorSelModeButton), "-" 1)
@@ -7643,16 +7647,15 @@ SetWinEventHook("EVENT_SYSTEM_MOVESIZESTART", 0x000A)
 SetWinEventHook("EVENT_SYSTEM_MOVESIZEEND", 0x000B)			
 
 ObjActive.Magnify := Func("Magnify")
-ObjActive.Redraw := Func("Redraw") 
-
+ObjActive.Redraw := Func("Redraw")  
 ZoomCreate()  
 Send_AhkSpy(0, oZoom.hGui)  
 Send_AhkSpy(3, oZoom.hLW) 
 
 WinGet, Min, MinMax, % "ahk_id " hAhkSpy
 If Min != -1
-	ZoomShow()
-
+	ZoomShow(), SetSize(), Redraw()
+ 
 MenuAdd("Zoom", "Save to temp file and edit", "_gSave_to_file")
 MenuAdd("Zoom", "Save to clipboard", "_gSave_to_Clipboard")
 MenuAdd("Zoom", "Save to clipboard as Base64", "_gSave_as_Base64") 
@@ -7920,7 +7923,7 @@ ZoomShow() {
 	GuiControl, ZoomTB:, Focus, % oZoom.vTextZoom
 }
 
-ZoomHide() {
+ZoomHide() { 
 	ZoomRules("ZoomHide", 1)
 	ShowZoom(0) 
 	Send_AhkSpy(2, 0)
@@ -7956,7 +7959,7 @@ ZoomOnSize() {
 	If A_EventInfo != 0
 		Return
 	oZoom.GuiWidth := A_GuiWidth
-	oZoom.GuiHeight := A_GuiHeight
+	oZoom.GuiHeight := A_GuiHeight 
 	SetSize()
 	Redraw()
 }
