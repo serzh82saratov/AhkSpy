@@ -31,7 +31,7 @@
 */
 
 
-Global AhkSpyVersion := 5.21
+Global AhkSpyVersion := 5.22
           
 	; ___________________________ Caption _________________________________________________
 
@@ -967,8 +967,10 @@ HTML_Win:
 		. _DP  _BB1 " id='process_close'> process close " _BB2 
 		. _DP  _BB1 " id='window_show_hide'> show / hide " _BB2 
 		. _DP  _BB1 " id='window_minimize'> minimize " _BB2
+		. _DP  _BB1 " id='window_maxmize'> maxmize " _BB2
 		. _DP  _BB1 " id='window_restore'> restore " _BB2
 		. _DP  _BB1 " id='window_activate'> activate " _BB2
+		. _DP  _BB1 " id='window_redraw'> redraw " _BB2
 	
 	. "`n<span class='param' name='MS:N'>IsAdmin:</span>  <span name='MS:' id='w_IsAdmin'>" IsAdmin "</span>"
 		. IsWindowUnicodeStr ProcessUserNameStr WindowBand 
@@ -3218,8 +3220,14 @@ Help_OpenScriptDir:
 	; ___________________________ MouseTracker _________________________________________________
  
 Hover(wp, lp = "", msg = "", hwnd = "") {
-	Static WM_MOUSEMOVE := 0x200, Arr := {}, Arr2 := {}, Handler, Prhwnd, waitleave := 0 
+	Static WM_MOUSEMOVE := 0x200, Arr := {}, waitleave := 0
+		, Arr2 := {}, Handler, Prhwnd, TimerId := 400
+		, CT := RegisterCallback("Hover", "CDecl Fast", 4, 404)
 	Local
+		 ; ToolTip %  A_EventInfo "  `n"  Format("0x{:X}", Arr2[hwnd]) "`n" Format("0x{:X}", Arr[hwnd])
+	If (A_EventInfo = 404) { 
+		MouseGetPos, , , , hwnd, 3
+	}
 	If !hwnd && IsObject(wp)
 	{ 
 		If (wp.Monitor != "") {  
@@ -3248,31 +3256,36 @@ Hover(wp, lp = "", msg = "", hwnd = "") {
 				, Arr[h] := handle 
 			Arr[handle] := handle
 		}  
-		Return 
-	} 
+		Return  
+	}
+	; If (A_GUI != "TB")
+		; Return
 	If !waitleave
-	{ 
+	{
 		If (Arr[hwnd] && Arr[hwnd] != Prhwnd)
 		{   
 			waitleave := 1
 			If Prhwnd
 				Handler.Leave.Call(Prhwnd)
 			Handler.Hover.Call(Arr[hwnd]) 
-			Prhwnd := Arr[hwnd] 
+			Prhwnd := Arr[hwnd]   
+			DllCall("SetTimer", "UPtr", A_ScriptHwnd, "Ptr", TimerId, "UInt", 250, "Ptr", CT)
 		}
 		Else If Prhwnd && !Arr[hwnd]
 		{ 
+			DllCall("KillTimer", "UPtr", A_ScriptHwnd, "Ptr", TimerId)
 			Handler.Leave.Call(Prhwnd)
 			Prhwnd := 0  
 		}
 	}
 	Else If (!Arr[hwnd] && !Arr2[hwnd]) || (Prhwnd != Arr[hwnd] && Prhwnd != Arr2[hwnd])
 	{
+		DllCall("KillTimer", "UPtr", A_ScriptHwnd, "Ptr", TimerId)
 		Handler.Leave.Call(Prhwnd)
 		Prhwnd := 0  
 		waitleave := 0
 	}	
-	Return   
+	Return
 }
 
 MouseTrackerInit: 
@@ -3339,11 +3352,12 @@ WM_ACTIVATE(wp, lp) {
 WM_WINDOWPOSCHANGED(Wp, Lp) {
 	Static PtrAdd := A_PtrSize = 8 ? 8 : 0
 	; Critical
+	
 	If (NumGet(Lp + 0, 0, "Ptr") != hGui) || Sleep = 1
 		Return  
 		
 	If oOther.ZoomShow
-	{
+	{ 
 		x := NumGet(Lp + 0, 8 + PtrAdd, "UInt")
 		y := NumGet(Lp + 0, 12 + PtrAdd, "UInt")
 		w := NumGet(Lp + 0, 16 + PtrAdd, "UInt")
@@ -3365,10 +3379,11 @@ WM_WINDOWPOSCHANGED(Wp, Lp) {
 		, "Int", x + w + 1, "Int", y + 46, "Int", 0, "Int", 0
 		, "UInt", 0x0211)    ;; 0x0010 := SWP_NOACTIVATE | 0x0001 := SWP_NOSIZE | SWP_NOOWNERZORDER := 0x0200
 		
-		DllCall("EndDeferWindowPos", "Ptr", hDWP)
+		DllCall("EndDeferWindowPos", "Ptr", hDWP)  
 	}
 	If MemoryPos
 		SetTimer, SavePos, -400  
+	
 } 
 
 GuiSize:
@@ -3600,9 +3615,10 @@ WM_LBUTTONDOWN(wp, lp, msg, hwnd) {
 			{
 				ToolTip("Spot", 300) 
 				OnlyShiftTab := 0
-				ZoomMsg(12, 0)
-				SetTimer, Loop_%ThisMode%, -1
+				ZoomMsg(12, 0) 
+				Sleep 10
 				SetTimer, OnlyShiftTab_LButton_Up_Wait, -1
+				SetTimer, Loop_%ThisMode%, -150
 			}
 		}
 	}
@@ -7031,10 +7047,17 @@ ButtonClick(oevent) {
 		WinSetTitle, % "ahk_id" oOther.WinID, , % oDoc.getElementById("wintitle1").OuterText 
 	Else If (thisid = "window_minimize" && (WinExist("ahk_id" oOther.WinID) || !ToolTip("window not exist", 500))) 
 		WinMinimize, % "ahk_id" oOther.WinID
+	Else If (thisid = "window_maxmize" && (WinExist("ahk_id" oOther.WinID) || !ToolTip("window not exist", 500))) 
+		WinMaximize, % "ahk_id" oOther.WinID
 	Else If (thisid = "window_restore" && (WinExist("ahk_id" oOther.WinID) || !ToolTip("window not exist", 500)))   
 		WinRestore, % "ahk_id" oOther.WinID 
 	Else If (thisid = "window_activate" && (WinExist("ahk_id" oOther.WinID) || !ToolTip("window not exist", 500)))   
 		WinActivate, % "ahk_id" oOther.WinID
+	Else If (thisid = "window_redraw" && (WinExist("ahk_id" oOther.WinID) || !ToolTip("window not exist", 500)))   
+	{
+		WinSet, Redraw, , % "ahk_id" oOther.WinID 
+		; DllCall("RedrawWindow", "UPtr", oOther.WinID, "Uint", 0, "Uint", 0, "Uint", 0x1|0x4)
+	}
 	Else If (thisid = "SendCode")
 		Events.SendCode()
 	Else If (thisid = "SendMode")
