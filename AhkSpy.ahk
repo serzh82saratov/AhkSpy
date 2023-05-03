@@ -31,7 +31,7 @@
 */
 
 
-Global AhkSpyVersion := 5.22
+Global AhkSpyVersion := 5.23
           
 	; ___________________________ Caption _________________________________________________
 
@@ -141,6 +141,7 @@ Else
 	, ColorScrollBack := "0F0F0F" 
 	, ColorScrollFace := "323232" 
 	, ColorStyleNoApply := "E56749" 
+	, MenuDarkColor := "b6b6b6"   ; 5A6367 C0C0C0
 }
 Global ColorBgOriginal := ColorBg
 
@@ -437,8 +438,11 @@ Menu, Sys, Add
 Menu, Sys, Add, Open window from clipboard, Menu_LocalOpenWin
 Menu, Sys, Add, Open control from clipboard, Menu_LocalOpenChild
 
-
-; Menu, Sys, Color, % ColorBgOriginal
+If DarkTheme
+{ 
+	Menu, Sys, Color, %MenuDarkColor% 
+	Menu, Overflow, Color, %MenuDarkColor% 
+}
 
 #Include *i %A_AppData%\AhkSpy\Include.ahk  ;;	Для продолжения выполнения кода используйте GoTo IncludeLabel
 IncludeLabel:
@@ -3608,18 +3612,20 @@ WM_LBUTTONDOWN(wp, lp, msg, hwnd) {
 			oDoc.execCommand("Paste"), ToolTip("Paste", 300)
 		Else
 		{ 
-			SendInput {LAlt Down}{Escape}{LAlt Up}
-			ToolTip("Alt+Escape", 300)
-			ZoomMsg(7, 0)
 			If (OnlyShiftTab && !isPaused)
 			{
 				ToolTip("Spot", 300) 
+				
+				SetTimer(Func("ToolTip").Bind("Spot", 300), -400)
 				OnlyShiftTab := 0
 				ZoomMsg(12, 0) 
 				Sleep 10
 				SetTimer, OnlyShiftTab_LButton_Up_Wait, -1
 				SetTimer, Loop_%ThisMode%, -150
 			}
+			SendInput {LAlt Down}{Escape}{LAlt Up}
+			ToolTip("Alt+Escape", 300)
+			ZoomMsg(7, 0)
 		}
 	}
 }
