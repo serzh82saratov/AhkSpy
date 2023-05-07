@@ -31,7 +31,7 @@
 */
 
 
-Global AhkSpyVersion := 5.23
+Global AhkSpyVersion := 5.24
           
 	; ___________________________ Caption _________________________________________________
 
@@ -81,7 +81,7 @@ Global MemoryFontSize := IniRead("MemoryFontSize", 0)
 	wKey := 136								;;  Ширина кнопок
 	wColor := wKey // 2						;;  Ширина цветного фрагмента
 
-DarkTheme := IniRead("DarkTheme", 0)
+Global DarkTheme := IniRead("DarkTheme", 0)
 If !DarkTheme
 {
 	Global ColorFont := "000000"			;;  Цвет шрифта
@@ -163,7 +163,7 @@ Global ThisMode := IniRead("StartMode", "Control"), LastModeSave := (ThisMode = 
 , UpdRegisterLink := "https://u.to/zeONFA", testvar, oDivOld, oDivNew, DivWorkIndex := 2, oDivWork1, oDivWork2
 
 , FontDPI := {96:12,120:10,144:8,168:6}[A_ScreenDPI], ScrollPos := {}, AccCoord := [], oOther := {}
-, oFind := {}, Edits := [], oMS := {}, oMenu := {}, oPubObj := {}, osCoords := {}
+, oFind := {}, Edits := [], oMS := {}, oMenu := {}, oPubObj := {}, osCoords := {}, _Arr_Recent_windows := {Order:[], hwnd:{}}
 
 , ClipAdd_Before := 0, ClipAdd_Delimiter := "`r`n"
 , HTML_Win, HTML_Control, HTML_Hotkey, rmCtrlX, rmCtrlY, widthTB, FullScreenMode, hColorProgress, hFindAllText, MsgAhkSpyZoom
@@ -309,8 +309,13 @@ Gui, F: Add, Text, x+10 yp hp +0x201 w152 vFindMatches Left HWNDhFindAllText c%C
 
 	; ___________________________ Menu Create _________________________________________________
 
+; Menu, Sys, Add, % name := "Recent windows", % oMenu.Sys[name] := "_Sys_Recent_windows"
+; Menu, Sys, Add
+; Menu, Recent_windows, Add, ..., Return 
+; Menu, Recent_windows, Disable, ...
+; Menu, Sys, Add, Recent windows, :Recent_windows
 Menu, Sys, Add, % name := "Backlight allways", % oMenu.Sys[name] := "_Sys_Backlight"
-Menu, Sys, Add, % name := "Backlight hold shift button", % oMenu.Sys[name] := "_Sys_Backlight"
+Menu, Sys, Add, % name := "Backlight hold shift button", % oMenu.Sys[name] := "_Sys_Backlight" 
 Menu, Sys, Add, % name := "Backlight disable", % oMenu.Sys[name] := "_Sys_Backlight"
 Menu, Sys, Check, % BLGroup[StateLight]
 Menu, Sys, Add
@@ -783,8 +788,8 @@ Spot_Win(NotHTML = 0) {
 	If (WinID = hGui || WinID = oOther.hZoom || WinID = oOther.hZoomLW)
 		Return 0, HideAllMarkers()
 		
-	WinGetTitle, WinTitle, ahk_id %WinID%
-	WinTitle := TransformHTML(WinTitle)
+	WinGetTitle, _WinTitle, ahk_id %WinID%
+	WinTitle := TransformHTML(_WinTitle)
 	WinGetPos, WinX, WinY, WinWidth, WinHeight, ahk_id %WinID%
 	WinX2 := WinX + WinWidth - 1, WinY2 := WinY + WinHeight - 1
 	WinGetClass, WinClass, ahk_id %WinID%
@@ -913,7 +918,10 @@ Spot_Win(NotHTML = 0) {
 	}
 	DllCall("GetWindowBand", "Uptr", WinID, "uint*", band) 
 	WindowBand := _DP "<span class='param'>WindowBand:</span>  <span name='MS:Q'>" oZBID[band] " := <span class='param' name='MS:'>" band "</span></span>"	
-
+	
+	_Arr_Recent_windows.hwnd[WinID] := {Class: WinClass, Exe: WinProcessName, Title: SubStr(_WinTitle, 1, 20)}
+	_Arr_Recent_windows.Order.InsertAt(1, WinID)
+	
 	; ___________________________ HTML_Win _________________________________________________
 
 HTML_Win:
@@ -924,8 +932,10 @@ HTML_Win:
 		back_openwin := _DB _BT1 " id='b_back_openwin'> return " _BT2
 		
 	HTML_Win := ""
-	. _T1 " id='__Title'> ( Title ) </span>" _BT1 " id='b__set_wintitle'> set title " _BT2 _DB
-	. _BT1 " id='pause_button'> pause " _BT2 back_openwin _T2  _BR 
+	. _T1 " id='__Title'> ( Title ) </span>" _BT1 " id='b__set_wintitle'> set title " _BT2
+	. _DB _BT1 " id='pause_button'> pause " _BT2
+	. _DB _BT1 " id='recent_button'> recent " _BT2
+	.  back_openwin _T2  _BR 
 	
 	. _PRE1 "<span id='wintitle1' name='MS:'>" WinTitle "</span>" _PRE2 
 	
@@ -3101,7 +3111,7 @@ _Sys_Acclight:
 	StateLightAcc := IniWrite(!StateLightAcc, "StateLightAcc"), HideAccMarker()
 	Menu, Sys, % (StateLightAcc ? "Check" : "UnCheck"), Acc object backlight
 	Return
-
+	
 _Sys_WClight:
 	StateLightMarker := IniWrite(!StateLightMarker, "StateLightMarker"), HideMarker()
 	Menu, Sys, % (StateLightMarker ? "Check" : "UnCheck"), Window or control backlight
@@ -3172,6 +3182,44 @@ _WordWrap:
 	oJScript.WordWrap := WordWrap
 	ChangeCSS("css_Body", WordWrap ? _BodyWrapCSS : "")
 	Return
+ 
+_Sys_Recent_windows() {
+	; DllCall("KillTimer", "UPtr", A_ScriptHwnd, "Ptr", 1)
+	; DllCall("EndMenu")
+	Menu, Recent_windows, DeleteAll
+	oMenu.Recent_windows := {}  
+	for k, hwnd in _Arr_Recent_windows.Order.Clone()
+	{
+		If !WinExist("ahk_id" hwnd) {
+			_Arr_Recent_windows.Order.RemoveAt(k), _Arr_Recent_windows.hwnd.Delete(hwnd)
+			continue
+		} 
+		o := _Arr_Recent_windows.hwnd[hwnd]
+		name := Format("0x{:X}", hwnd) " • " o.Class " • " o.Exe " • " o.Title
+		Menu, Recent_windows, Add, % name, % oMenu.Recent_windows[name] := "_On_Recent_windows" 
+	}  
+	; Menu, Sys, Add, Recent windows, :Recent_windows
+	If DarkTheme 
+		Menu, Recent_windows, Color, %MenuDarkColor% 
+	; Menu, Recent_windows, Show  
+	Gosub ShowRecent_windows
+	Return 
+}
+	
+_On_Recent_windows:
+	ThisMenuItem := oOther.MenuItemExist ? oOther.ThisMenuItem : A_ThisMenuItem 
+	hwnd := StrSplit(ThisMenuItem, "•", " ")[1]  
+	If !WinExist("ahk_id" hwnd) && ToolTip("Window not found", 700) 
+		Return 
+	LocalOpenWin(hwnd)
+	Return
+	 
+ShowRecent_windows:
+	ZoomMsg(9, 1)
+	DllCall("SetTimer", "UPtr", A_ScriptHwnd, "Ptr", 1, "UInt", 116, "Ptr", RegisterCallback("MenuCheck", "Fast"))
+	Menu, Recent_windows, Show, % x, % y
+	ZoomMsg(9, 0)
+	Return 
 
 Sys_Help:
 	ThisMenuItem := oOther.MenuItemExist ? oOther.ThisMenuItem : A_ThisMenuItem
@@ -3207,6 +3255,8 @@ DefaultSize:
 		oDoc.getElementById("pre").style.fontSize := FontSize := 15
 	Return
 
+Return: 
+	Return
 Reload:
 	Reload
 	Return
@@ -6879,6 +6929,8 @@ ButtonClick(oevent) {
 		Hotkey_ClipCursor()
 	Else If thisid = pause_button
 		Gosub, PausedScript
+	Else If thisid = recent_button
+		_Sys_Recent_windows()
 	Else If (thisid = "infolder" || thisid = "command_line_infolder")
 	{	
 		If (thisid = "command_line_infolder")
