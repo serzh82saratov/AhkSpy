@@ -31,7 +31,7 @@
 */
 
 
-Global AhkSpyVersion := 5.24
+Global AhkSpyVersion := 5.25
           
 	; ___________________________ Caption _________________________________________________
 
@@ -65,7 +65,7 @@ Gosub, CheckAhkVersion
 Menu, Tray, UseErrorLevel
 Menu, Tray, Icon, Shell32.dll, % A_OSVersion = "WIN_XP" ? 222 : 278
 
-Global Path_User := A_AppData "\AhkSpy"
+Global Path_User := A_AppData "\AhkSpy", A_DPI := (A_ScreenDPI / 96)
 If !InStr(FileExist(Path_User), "D")
 	FileCreateDir, % Path_User
 
@@ -1106,10 +1106,38 @@ Spot_Control(NotHTML = 0) {
 	{
 		CoordMode, Mouse, Window
 		MouseGetPos, MXWA, MYWA, , tControlID, 2
+		
+		MouseGetPos, , , , AltMGP, 3
+		MouseGetPos, , , , AltMGPNN, 1
+		AltWFP := DllCall("WindowFromPoint", "Int64", MXS & 0xFFFFFFFF | MYS << 32)
+		; If (AltMGP != tControlID) || (AltMGPNN != tControlNN) || (AltWFP != tControlID || AltWFP != AltMGP)
+		{		
+			strAltControlGet := ""
+			If (AltMGPNN != tControlNN)
+				strAltControlGet .= (strAltControlGet != "" ? _DP : "")
+				. "<span class='param' name='MS:N'>MGP 1:</span><span name='MS:'> " AltMGPNN "</span>" 
+			If (AltMGP != tControlID) {
+				WinGetClass, pClass, ahk_id %AltMGP%
+				strAltControlGet .= (strAltControlGet != "" ? _DP : "")
+				. "<span class='param' name='MS:N'>MGP 3:</span><span name='MS:'> " AltMGP "</span>"  
+				. _DP _BP1 " id='b_hwnd_flash' value='" AltMGP "'> flash " _BP2
+				. _BP1 " id='b_open_ctrl' value='" AltMGP "|" pClass "'> > " _BP2
+			} 
+			If (AltWFP != AltMGP && AltWFP != WinID) {
+				WinGetClass, pClass, ahk_id %AltWFP%
+				strAltControlGet .= (strAltControlGet != "" ? _DP : "")
+				. "<span class='param' name='MS:N'>WFP:</span><span name='MS:'> " Format("0x{:x}", AltWFP) "</span>"  
+				. _DP _BP1 " id='b_hwnd_flash' value='" AltWFP "'> flash " _BP2
+				. _BP1 " id='b_open_ctrl' value='" AltWFP "|" pClass "'> > " _BP2
+			}
+			If (strAltControlGet != "")
+				strAltControlGet := "<div style='background-color: #" ColorHighLightBckg "'>" strAltControlGet "</div>"
+		}
 	}
 	Else {
 		tControlID := ControlID
-	}
+	}   
+		
 	osCoords.MXWA := MXWA, osCoords.MYWA := MYWA
 	WinGet, ProcessName_A, ProcessName, A
 	WinGet, HWND_A, ID, A
@@ -1375,7 +1403,8 @@ HTML_Control:
 	. "`n<span class='param'>Relative active window:</span>  <span name='MS:' id='coord_awin'>x" MXWA " y" MYWA "</span>" 
 		. _DP "<span class='param'>class</span> <span name='MS:'>" WinClass_A 
 		. "</span> <span class='param'>exe</span> <span name='MS:'>" ProcessName_A 
-		. "</span> <span class='param'>hwnd</span> <span name='MS:'>" HWND_A "</span>" _PRE2 
+		. "</span> <span class='param'>hwnd</span> <span name='MS:'>" HWND_A "</span>" 
+		. strAltControlGet _PRE2 
 	
 	. _T1 " id='__PixelColor'> ( PixelColor ) </span>" _T2 
 	
@@ -2639,8 +2668,7 @@ Hotkey_Init(Func, Options = "") {
 	#HotkeyInterval 0
 	Hotkey_Arr("Func", Func)
 	Hotkey_Arr("Up", !!InStr(Options, "U"))
-	Hotkey_MouseAndJoyInit(Options)
-	Hotkey_SetHook()
+	Hotkey_MouseAndJoyInit(Options) 
 	Hotkey_Arr("Hook") ? (Hotkey_Hook(0), Hotkey_Hook(1)) : 0
 }
 
@@ -2754,6 +2782,7 @@ Hotkey_MouseAndJoyInit(Options) {
 }
 
 Hotkey_Hook(Val = 1) {
+	Hotkey_SetHook(Val)
 	Hotkey_Arr("Hook", Val)
 	!Val && Hotkey_Main({Opt:"OnlyMods"})
 }
@@ -2806,17 +2835,23 @@ Hotkey_LowLevelKeyboardProc(nCode, wParam, lParam) {
 		}
 		Return
 }
-
+Hotkey_CheckWinA() {
+	If (WinActive("ahk_id" hGui) && ThisMode = "Hotkey" && !isPaused)
+		SetTimer("Hotkey_CheckWinA", -300)
+	Else 
+		Hotkey_Hook(0), SetTimer("Hotkey_CheckWinA", "Off")
+}
 Hotkey_SetHook(On = 1) {
 	Static hHook
-	If (On = 1 && !hHook)
+	If (On = 1)
 		hHook := DllCall("SetWindowsHookEx" . (A_IsUnicode ? "W" : "A")
 				, "Int", 13   ;;  WH_KEYBOARD_LL
 				, "Ptr", RegisterCallback("Hotkey_LowLevelKeyboardProc", "Fast")
 				, "Ptr", DllCall("GetModuleHandle", "UInt", 0, "Ptr")
 				, "UInt", 0, "Ptr")
+			, SetTimer("Hotkey_CheckWinA", -300)	
 	Else If !On
-		DllCall("UnhookWindowsHookEx", "Ptr", hHook), hHook := "", Hotkey_Hook(0)
+		DllCall("UnhookWindowsHookEx", "Ptr", hHook), hHook := ""
 }
 
 GetVKCodeName(id) {  
@@ -3473,8 +3508,8 @@ TimerFunc(hFunc, Time) {
 }
 
 Exit() {
-	Gui, %hGui%:, Hide
-	Hotkey_SetHook(0)
+	Gui, %hGui%:, Hide 
+	Hotkey_Hook(0) 
 	If LastModeSave
 		IniWrite(ThisMode, "LastMode")  
 	oDoc := ""
@@ -6923,7 +6958,7 @@ ButtonClick(oevent) {
 	{
 		Suspend On
 		Suspend Off
-		bool := Hotkey_Arr("Hook"), Hotkey_SetHook(0), Hotkey_SetHook(1), Hotkey_Arr("Hook", bool), ToolTip("Ok", 300)
+		bool := Hotkey_Arr("Hook"), Hotkey_Hook(0), Hotkey_Hook(1), Hotkey_Arr("Hook", bool), ToolTip("Ok", 300)
 	}
 	Else If thisid = hotkey_clip_cursor
 		Hotkey_ClipCursor()
@@ -7320,17 +7355,22 @@ ButtonClick(oevent) {
 	Else If (thisid = "view_ControlCount" || thisid = "view_ControlCount2")
 		Window_ControlCount_func() 
 	Else If thisid = b_CASend
-	{  
+	{   
 		h := (oOther.ControlID ? oOther.ControlID 
 			: oOther.MouseWinID ? oOther.MouseWinID 
 			: oOther.WinID ? oOther.WinID : 0)
 		If !WinExist("ahk_id " h)
 			Return ToolTip("Window not found!", 500) 
-		KeyWait Shift  
+		If Shift := GetKeyState("LShift", "P")
+			KeyWait LShift  
 		KeyWait LButton
 		Sleep 300
+		If st := Hotkey_Arr("Hook")
+			Hotkey_Arr("Hook", 0)
 		SetKeyDelay 50, 50
 		ControlSend, , % oOther.ControlSend, ahk_id %h%
+		If st
+			Hotkey_Arr("Hook", 1)
 		
 		ToolTip("send to " 
 		. (oOther.ControlID ? "control: " oOther.ControlNN  
@@ -7346,8 +7386,8 @@ ButtonClick(oevent) {
 			h := (oOther.ControlID ? oOther.ControlID 
 				: oOther.MouseWinID ? oOther.MouseWinID 
 				: oOther.WinID ? oOther.WinID : 0) 
-		KeyWait Shift  
 		KeyWait LButton 
+		KeyWait LShift  
 		Sleep 300
 		If a
 		{
@@ -7356,7 +7396,7 @@ ButtonClick(oevent) {
 			WinShow, ahk_id %h% 
 			ControlFocus, , ahk_id %h%
 			Sleep 300
-		}	
+		}	 
 		WinActivate, ahk_id %h%
 		Sleep 400
 		If (SendMode = "Send")
