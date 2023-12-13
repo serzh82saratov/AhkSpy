@@ -31,7 +31,7 @@
 */
 
 
-Global AhkSpyVersion := 5.26
+Global AhkSpyVersion := 5.27
           
 	; ___________________________ Caption _________________________________________________
 
@@ -6884,13 +6884,23 @@ Class Events {  ;;	http://forum.script-coding.com/viewtopic.php?pid=82283#p82283
 		cl := oDoc.getElementById("c_command_line").OuterText
 		StringReplace, cl, cl, ", , 1 
 		process := oDoc.getElementById("copy_processpath").OuterText
-		cl := RegExReplace(cl, "i)\Q" process "\E(.*)", "$1", , 1)
+		cl := RegExReplace(cl, "i)\Q" literalRegex(process) "\E(.*)", "$1", , 1)
 		StringReplace, cl, cl, /CP65001, , 1  
 		cl := Trim(cl, " ")
-		oDoc.getElementById("c_command_line").innerText :=  RegExReplace(cl, "i)\Q" process "\E(.*)", "$1", , 1)
+		oDoc.getElementById("c_command_line").innerText :=  RegExReplace(cl, "i)\Q" literalRegex(process) "\E(.*)", "$1", , 1)
 	}
 }
-
+literalRegex(str)
+{
+   if InStr(str, "\E", 1)
+   {
+      StringCaseSenseOld := A_StringCaseSense
+      StringCaseSense, On
+      str := StrReplace(str, "\E", "\E\\E\Q")
+      StringCaseSense, % StringCaseSenseOld
+   }
+   return str
+}
 ButtonClick(oevent) { 
 	thisid := oevent.id
 	If (thisid = "copy_wintext") {
